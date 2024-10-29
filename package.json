@@ -1,6 +1,6 @@
 {
   "name": "@adaas/a-concept",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -29,7 +29,6 @@
     "echo-version": "echo $npm_package_version",
     "build": "tsc --declaration --project tsconfig.json && tscpaths -p tsconfig.json -s ./ -o ./dist && rm -r ./dist/tests",
     "test:simple": "nodemon ./examples/simple/concept.ts"
-
   },
   "repository": {
     "type": "git",
