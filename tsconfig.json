@@ -37,7 +37,9 @@
       "@adaas/a-concept/decorators/*": ["src/decorators/*"],
       "@adaas/a-concept/managers/*": ["src/managers/*"],
       "@adaas/a-concept/providers/*": ["src/providers/*"],
-      "@adaas/a-concept/modules/*": ["src/modules/*"]
+      "@adaas/a-concept/modules/*": ["src/modules/*"],
+      "@adaas/a-concept/storage/*": ["src/storage/*"],
+      "@adaas/a-concept/base/*": ["src/base/*"]
     },
     "lib": [
       "dom",

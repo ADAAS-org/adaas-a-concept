@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HttpServer = void 0;
-const A_Namespace_class_1 = require("../../../src/global/A-Namespace/A_Namespace.class");
+const A_Namespace_class_1 = require("@adaas/a-concept/global/A-Namespace/A_Namespace.class");
 class HttpServer extends A_Namespace_class_1.A_Namespace {
     get port() {
         const [name, port] = this.name.split(':');

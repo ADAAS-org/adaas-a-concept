@@ -1,5 +1,6 @@
-import { A_TYPES__A_CONCEPT_RootRunParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
-import { A_Context } from "../A-Context/A-Context.class";
+import { A_TYPES__ConceptStageParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 /**
  * A_Concept is a placeholder for the concept of the ani program.
  *
@@ -12,35 +13,58 @@ import { A_Context } from "../A-Context/A-Context.class";
  *
  *
  */
-export declare class A_Concept {
+export declare class A_Concept<_Features extends A_Container<any>[] = any> {
+    protected props: A_TYPES__IConceptConstructor<_Features>;
     /**
-     * Context is a root namespace for the concept.
+     * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    Context: typeof A_Context;
+    static get Load(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
     /**
-     * Context provider is a singleton that provides the context for ALL concepts.
-     */
-    protected props: A_TYPES__IConceptConstructor;
-    constructor(props: A_TYPES__IConceptConstructor);
-    get namespace(): string;
-    /**
-     * Returns true if the class has inherited from the given class.
+     * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
      *
-     * @param cl
-     * @returns
+     * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    private hasInherited;
-    protected init(): Promise<void>;
+    static get Publish(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    /**
+     * Deploy the concept to the environment.
+     */
+    static get Deploy(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    /**
+     * Compiles the Concept in case there are some containers that require that.
+     *
+     * Can be used for static websites or any other concept that requires a build step.
+     *
+     */
+    static get Build(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    /**
+     *  Main execution of the concept.
+     */
+    static get Run(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    /**
+     *  Start the concept. Uses for servers or any other background services.
+     */
+    static get Start(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    /**
+     * Stop the concept. Uses for servers or any other background services.
+     */
+    static get Stop(): (config?: Partial<import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any>, propertyKey: string, descriptor: import("../../decorators/A-Stage/A-Stage.decorator.types").A_TYPES__A_StageDecoratorDescriptor) => void;
+    protected containers: A_Container<any>[];
+    constructor(props: A_TYPES__IConceptConstructor<_Features>);
+    get namespace(): string;
     /**
      * Run the concept.
      */
-    run(params?: A_TYPES__A_CONCEPT_RootRunParams): Promise<void>;
+    run(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
     /**
      * Build the concept.
      */
-    build(): Promise<void>;
+    build(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
+    deploy(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
+    publish(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
     /**
      * Call the specific method of the concept or included modules.
      */
-    call(): Promise<void>;
+    call<K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>>(container: K[keyof K], params?: A_Fragment[]): Promise<void>;
+    private runStage;
+    private execute;
 }

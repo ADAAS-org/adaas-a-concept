@@ -19,7 +19,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HttpServerController = void 0;
-const A_Load_decorator_1 = require("../../../src/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
+const A_Load_decorator_1 = require("@adaas/a-concept/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
 const A_Container_class_1 = require("../../../src/global/A-Container/A-Container.class");
 const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.decorator");
 const A_Config_namespace_1 = require("src/containers/A-Config/A-Config.namespace");

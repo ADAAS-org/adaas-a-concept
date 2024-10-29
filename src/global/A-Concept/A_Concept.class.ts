@@ -1,7 +1,15 @@
-import { A_CONCEPT_LifecycleDeclarationsStorage } from "src/storage/A_Concept.storage";
-import { A_TYPES__A_CONCEPT_RootRunParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
+import { A_TYPES__ConceptStage, A_TYPES__ConceptStageParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_Errors } from "src/containers/A-Errors/A-Errors.namespace";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
+import { A_Stage } from "@adaas/a-concept/decorators/A-Stage/A-Stage.decorator";
+
+
+
+
+// export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
 
 
 
@@ -17,55 +25,94 @@ import { A_Errors } from "src/containers/A-Errors/A-Errors.namespace";
  * 
  * 
  */
-export class A_Concept {
+export class A_Concept<
+    _Features extends A_Container<any>[] = any
+> {
 
+    // ==============================================================================
+    // ====================  STATIC LIFECYCLE DECORATORS  ===========================
+    // ==============================================================================
+    /**
+     * Load the concept. This step runs before any other steps to ensure that all components are loaded.
+     */
+    static get Load() {
+        return A_Stage(A_TYPES__ConceptStage.Load);
+    }
 
     /**
-     * Context is a root namespace for the concept.
+     * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
+     *
+     * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    Context!: typeof A_Context;
+    static get Publish() {
+        return A_Stage(A_TYPES__ConceptStage.Publish);
+    }
 
     /**
-     * Context provider is a singleton that provides the context for ALL concepts.
+     * Deploy the concept to the environment.
      */
+    static get Deploy() {
+        return A_Stage(A_TYPES__ConceptStage.Deploy);
+    }
 
-    protected props!: A_TYPES__IConceptConstructor;
+    /**
+     * Compiles the Concept in case there are some containers that require that. 
+     * 
+     * Can be used for static websites or any other concept that requires a build step.
+     * 
+     */
+    static get Build() {
+        return A_Stage(A_TYPES__ConceptStage.Build);
+    }
+
+    /**
+     *  Main execution of the concept.
+     */
+    static get Run() {
+        return A_Stage(A_TYPES__ConceptStage.Run);
+    }
+
+    /**
+     *  Start the concept. Uses for servers or any other background services.
+     */
+    static get Start() {
+        return A_Stage(A_TYPES__ConceptStage.Start);
+    }
+
+    /**
+     * Stop the concept. Uses for servers or any other background services.
+     */
+    static get Stop() {
+        return A_Stage(A_TYPES__ConceptStage.Stop);
+    }
+
+
+
+    // ==============================================================================
+    // ==========================  MAIN Class  ======================================
+    // ==============================================================================
+
+    protected containers: A_Container<any>[] = [];
 
     constructor(
-        props: A_TYPES__IConceptConstructor
+        protected props: A_TYPES__IConceptConstructor<_Features>
     ) {
-        this.props = props;
+        A_Context.allocate(this, {
+            name: props.name,
+            fragments: props.fragments || [],
+            // containers: props.containers
+            components: [
+                A_Logger,
+            ]
+        });
 
-        this.Context = A_Context;
+        this.containers = props.containers || [];
     }
 
 
     get namespace() {
-        return this.Context.root
+        return A_Context.scope(this).name;
     }
-
-
-    /**
-     * Returns true if the class has inherited from the given class.
-     * 
-     * @param cl 
-     * @returns 
-     */
-    private hasInherited(cl: { new(...args: any[]) }): boolean {
-        return this.constructor === cl
-            ? false
-            : true
-    }
-
-
-
-
-    protected async init() {
-        // await this.Context.init();
-
-        // await this.DM.init();
-    }
-
 
 
     // =======================================================================
@@ -76,35 +123,18 @@ export class A_Concept {
      * Run the concept.
      */
     async run(
-        params: A_TYPES__A_CONCEPT_RootRunParams = {}
+        params?: Partial<A_TYPES__ConceptStageParams>
     ) {
 
-        //  to prevent modification of the method parameters use the A_Context directly without decorators 
-        const [
-            Errors
-        ] = this.Context.resolve([A_Errors]);
-
-        if (this.hasInherited(A_Concept))
-            Errors.throw('[root.run] method can not be overridden in the inherited classes');
-
-
-        // const allRunDeclarations = A_CONCEPT_LifecycleDeclarationsStorage
-        //     .get(A_CONCEPT_STORAGE__DECORATORS_RUN_DECLARATIONS);
     }
 
 
     /**
      * Build the concept.
      */
-    async build() {
-        //  to prevent modification of the method parameters use the A_Context directly without decorators 
-        const [
-            Errors
-        ] = this.Context.resolve([A_Errors]);
-
-
-        if (this.hasInherited(A_Concept))
-            Errors.throw('[root.build] method can not be overridden in the inherited classes');
+    async build(
+        params?: Partial<A_TYPES__ConceptStageParams>
+    ) {
 
     }
 
@@ -112,32 +142,96 @@ export class A_Concept {
     // /**
     //  * Deploy the concept.
     //  */
-    // async deploy() {
-    //     if (this.hasInherited(A_Concept))
-    //         this.Context.Errors.throw('[root.deploy] method can not be overridden in the inherited classes');
-    // }
+    async deploy(
+        params?: Partial<A_TYPES__ConceptStageParams>
+    ) {
+
+    }
 
 
     // /**
     //  * Publish the concept.
     //  */
-    // async publish() {
-    //     if (this.hasInherited(A_Concept))
-    //         this.Context.Errors.throw('[root.publish] method can not be overridden in the inherited classes');
-    // }
+    async publish(
+        params?: Partial<A_TYPES__ConceptStageParams>
+    ) {
+
+    }
 
 
     /**
      * Call the specific method of the concept or included modules.
      */
-    async call() {
-        //  to prevent modification of the method parameters use the A_Context directly without decorators 
-        const [
-            Errors
-        ] = this.Context.resolve([A_Errors]);
+    async call<
+        K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>
+    >(
+        container: K[keyof K],
+        params?: A_Fragment[]
+    ) {
+        // for (const feature of this.features) {
+        //     if (methodName in feature) {
+        //         (feature as any)[methodName](...args);
+        //     }
 
-        // if (this.hasInherited(A_Concept))
-        //     this.Context.Errors.throw('[root.call] method can not be overridden in the inherited classes');
+        // }
+    }
+
+
+    private async runStage(
+        method: A_TYPES__ConceptStage,
+        params: Partial<A_TYPES__ConceptStageParams>
+    ) {
+
+        const stages: any[] = [];
+
+        this.containers.map(container => {
+            const meta = A_Context.meta(container);
+
+            const containerStages = meta.get(A_TYPES__ContainerMetaKey.STAGES)
+
+
+            if (containerStages) {
+                for (const [name, stage] of containerStages) {
+                    if (stage.name === method) {
+                        stages.push({
+                            name,
+                            container,
+                        });
+                    }
+                }
+
+            }
+        });
+
+        const scope = A_Context.allocate(this, {
+            components: params.components,
+            fragments: params.fragments,
+            parent: A_Context.scope(this)
+        });
+
+        for (const stage of stages) {
+            await stage.container[stage.name](params);
+        }
+
+    }
+
+
+    private async execute(
+        params: Partial<A_TYPES__ConceptStageParams>
+    ) {
+        const fragments = params.fragments || [];
+        const component = params.components || [];
+
+
+        this.containers.map(container => {
+            const meta = A_Context.meta(container);
+
+            meta.get(A_TYPES__ContainerMetaKey.FEATURES)
+
+        });
+
+
     }
 
 }
+

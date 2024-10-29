@@ -1,5 +1,8 @@
-import { A_Namespace } from "../../global/A-Namespace/A_Namespace.class";
 import { A_Component } from "../../global/A-Component/A-Component.class";
+import { A_Container } from "../../global/A-Container/A-Container.class";
+import { A_TYPES__A_InjectDecoratorReturn } from "./A-Inject.decorator.types";
+import { A_Fragment } from "../../global/A-Fragment/A-Fragment.class";
+import { A_Scope } from "../../global/A-Scope/A-Scope.class";
 /**
  * A-Inject decorator
  *
@@ -11,12 +14,11 @@ import { A_Component } from "../../global/A-Component/A-Component.class";
  * @param params
  * @returns
  */
-export declare function A_Inject<T extends {
-    new (...args: any[]): A_Component;
-}>(component: T): any;
-export declare function A_Inject<T extends {
-    new (...args: any[]): A_Namespace;
-}>(namespace: T): any;
-export declare function A_Inject<E extends {
-    new (...args: any[]): A_Namespace;
-}, T extends Array<E>>(namespaces: T): any;
+export declare function A_Inject(scope: typeof A_Scope): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject(component: typeof A_Component): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject(component: {
+    new (...args: any[]): any;
+}): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject(container: typeof A_Container): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject(fragment: typeof A_Fragment): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject<T extends Array<typeof A_Fragment>>(fragments: T): A_TYPES__A_InjectDecoratorReturn;

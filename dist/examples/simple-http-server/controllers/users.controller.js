@@ -1,11 +1,11 @@
 "use strict";
-// import { A_Load } from "../../../src/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator"
+// import { A_Load } from "@adaas/a-concept/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator"
 // import { A_Module } from "@adaas/a-concept/global/A_Module.class"
 // import { SimpleHTTPServerModule } from "../modules/simple-http-server.module"
 // import { IncomingMessage, ServerResponse } from "http"
 // import { SimpleHTTPServerContext } from "../modules/simple-http-server.context"
 // import { A_Dependency } from "@adaas/a-concept/decorators/A-Dependency/A-Dependency.decorator"
-// import { A_Run } from "../../../src/decorators/A-ConceptLifecycle/A-Run/A-Run.decorator"
+// import { A_Run } from "@adaas/a-concept/decorators/A-ConceptLifecycle/A-Run/A-Run.decorator"
 // import { A_Inject } from "../../../src/decorators/A-Inject/A-Inject.decorator"
 // import { OrderController } from "./orders.controller"
 // declare module "../modules/simple-http-server.types" {

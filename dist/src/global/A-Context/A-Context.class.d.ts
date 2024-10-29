@@ -1,5 +1,13 @@
-import { A_Namespace } from "../A-Namespace/A_Namespace.class";
 import { A_Component } from "../A-Component/A-Component.class";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Feature } from "../A-Feature/A-Feature.class";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
+import { A_Meta } from "../A-Meta/A-Meta.class";
+import { A_ComponentMeta } from "../A-Component/A-Component.meta";
+import { A_ContainerMeta } from "../A-Container/A-Container.meta";
+import { A_Concept } from "../A-Concept/A_Concept.class";
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -10,31 +18,23 @@ import { A_Component } from "../A-Component/A-Component.class";
 export declare class A_Context {
     static instance: A_Context;
     /**
-     * Stores all the Namespaces by namespace.
-     * There might be a Namespaces of the same type but with different namespaces.
-     * That might be useful for the cases when you need to have multiple instances of the same Namespace e.g.
-     * - multiple http servers
-     * - multitenant applications
-     * - etc.
+     * A set of globally registered containers.
      */
-    namespaced: Map<string, A_Namespace>;
+    protected containers: WeakMap<A_Container<any>, A_Scope>;
     /**
-     * Stores the singleton Namespaces.
-     * Singleton Namespaces are the Namespaces that are used only once in the program.
-     * In most cases, the singleton Namespace is the main Namespace of the program.
-     * It could be :
-     * - the main Namespace of the Program
-     * - the authentication Namespace
-     * - the main database Namespace
-     * - etc.
+     * A set of globally registered features.
      */
-    singleton: WeakMap<{
-        new (...args: any[]): A_Namespace;
-    }, A_Namespace>;
+    protected features: WeakMap<A_Feature, A_Scope>;
     /**
-     * Stores the components that are used in the program.
+     * A set of globally registered concepts.
      */
-    components: Map<string, any>;
+    protected concepts: WeakMap<A_Concept<any>, A_Scope>;
+    /**
+     * A set of allocated scopes per every element in the program.
+     */
+    protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>>;
+    protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta>;
+    protected componentsMeta: Map<typeof A_Container.constructor, A_ComponentMeta>;
     /**
      * Root Namespace is a Namespace that is used to run the program.
      */
@@ -48,41 +48,23 @@ export declare class A_Context {
     static getInstance(): A_Context;
     static get root(): string;
     static get environment(): 'server' | 'browser';
+    static allocate(component: any, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static allocate(feature: A_Feature, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static allocate(container: A_Container<any>, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static meta(container: typeof A_Container): A_ContainerMeta;
+    static meta(container: A_Container<any>): A_ContainerMeta;
+    static meta(component: typeof A_Component): A_ComponentMeta;
+    static meta(component: A_Component): A_ComponentMeta;
+    static meta<T extends Record<string, any>>(component: {
+        new (...args: any[]): any;
+    }): A_Meta<T>;
+    static scope(concept: A_Concept): A_Scope;
+    static scope(component: A_Container<any>): A_Scope;
+    static scope(component: A_Feature): A_Scope;
     /**
      * Register a Namespace in the provider.
      * @param Namespace
      */
-    static register(Namespace: A_Namespace): string;
-    static register(Namespace: A_Namespace, namespace?: string): string;
-    /**
-     * Get the Namespace by namespace.
-     * @param namespace
-     */
-    static get(namespace: string): A_Namespace<any> | undefined;
-    /**
-     * Resolve the Component by Class.
-     *
-     * @param component
-     */
-    static resolve<T extends A_Component>(component: {
-        new (...args: any[]): T;
-    }): T;
-    static resolve<T extends A_Namespace>(namespace: {
-        new (...args: any[]): T;
-    }): T;
-    static resolve<T extends A_Namespace>(namespaces: Array<{
-        new (...args: any[]): T;
-    }>): Array<T>;
-    static resolve<T extends A_Namespace>(namespace: {
-        new (...args: any[]): T;
-    }, name: string): T;
-    private static resolveComponent;
-    /**
-     *
-     * Allowing to resolve the Namespace by Class and Name.
-     *
-     * @param namespace
-     * @param name
-     */
-    private static resolveNamespace;
+    static register(Namespace: A_Fragment): string;
+    static register(Namespace: A_Fragment, namespace?: string): string;
 }

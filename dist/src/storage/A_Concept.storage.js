@@ -1,8 +1,8 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_CONCEPT_Storage = exports.A_CONCEPT_LifecycleDeclarationsStorage = exports.A_CONCEPT_ModulesDeclarationStorage = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootTest = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootPublish = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootBuild = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootLoad = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootRun = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Config = void 0;
 // --------------------------------------------------------------
 // ----- A Concept -> Module Declaration -> Main Config ---------
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.A_CONCEPT_Storage = exports.A_CONCEPT_LifecycleDeclarationsStorage = exports.A_CONCEPT_ModulesDeclarationStorage = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootTest = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootPublish = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootBuild = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootLoad = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Lifecycle_RootRun = exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Config = void 0;
 // --------------------------------------------------------------
 exports.A_CONCEPT_STORAGE__MODULE_DECLARATION_Config = Symbol('a-concept-modules-declaration');
 // -------------------------------------------------------------------------------

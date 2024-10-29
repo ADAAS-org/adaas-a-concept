@@ -22,11 +22,11 @@ exports.HttpServerRouter = void 0;
 const A_Container_class_1 = require("../../../src/global/A-Container/A-Container.class");
 const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.decorator");
 const A_Config_namespace_1 = require("src/containers/A-Config/A-Config.namespace");
-const A_ConceptLifecycle_1 = require("../../../src/decorators/A-ConceptLifecycle");
+const A_ConceptLifecycle_1 = require("@adaas/a-concept/decorators/A-ConceptLifecycle");
 class HttpServerRouter extends A_Container_class_1.A_Container {
     listen(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            const server = this.namespace.getServer(this.namespace.port);
+            // const server = this.namespace.getServer(this.namespace.port);
             // Do something with Server e.g. assign routes
         });
     }

@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Errors = void 0;
-const A_Namespace_class_1 = require("../../global/A-Namespace/A_Namespace.class");
+const A_Namespace_class_1 = require("@adaas/a-concept/global/A-Namespace/A_Namespace.class");
 const a_utils_1 = require("@adaas/a-utils");
 const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
 class A_Errors extends A_Namespace_class_1.A_Namespace {

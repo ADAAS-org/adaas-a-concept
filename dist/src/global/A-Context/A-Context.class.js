@@ -2,8 +2,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Context = void 0;
 const a_utils_1 = require("@adaas/a-utils");
-const A_Namespace_class_1 = require("../A-Namespace/A_Namespace.class");
 const A_Component_class_1 = require("../A-Component/A-Component.class");
+const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
+const A_Container_class_1 = require("../A-Container/A-Container.class");
+const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
+const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
+const A_Component_meta_1 = require("../A-Component/A-Component.meta");
+const A_Container_meta_1 = require("../A-Container/A-Container.meta");
+const A_Concept_class_1 = require("../A-Concept/A_Concept.class");
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -14,30 +20,28 @@ const A_Component_class_1 = require("../A-Component/A-Component.class");
 class A_Context {
     constructor() {
         /**
-         * Stores all the Namespaces by namespace.
-         * There might be a Namespaces of the same type but with different namespaces.
-         * That might be useful for the cases when you need to have multiple instances of the same Namespace e.g.
-         * - multiple http servers
-         * - multitenant applications
-         * - etc.
+         * A set of globally registered containers.
          */
-        this.namespaced = new Map();
+        this.containers = new WeakMap();
         /**
-         * Stores the singleton Namespaces.
-         * Singleton Namespaces are the Namespaces that are used only once in the program.
-         * In most cases, the singleton Namespace is the main Namespace of the program.
-         * It could be :
-         * - the main Namespace of the Program
-         * - the authentication Namespace
-         * - the main database Namespace
-         * - etc.
+         * A set of globally registered features.
          */
-        this.singleton = new WeakMap();
+        this.features = new WeakMap();
         /**
-         * Stores the components that are used in the program.
+         * A set of globally registered concepts.
          */
-        this.components = new Map();
+        this.concepts = new WeakMap();
+        /**
+         * A set of allocated scopes per every element in the program.
+         */
+        // protected scopes: WeakMap<A_Container<any> | A_Feature | A_Component | any, A_Scope> = new WeakMap();
+        this.conceptsMeta = new Map();
+        this.containersMeta = new Map();
+        this.componentsMeta = new Map();
     }
+    // ===================================================================================================
+    // ================================ META OPERATIONS ==================================================
+    // ===================================================================================================
     /**
      * Get the instance of the Namespace Provider.
      *
@@ -55,63 +59,125 @@ class A_Context {
     static get environment() {
         return a_utils_1.A_Polyfills.env;
     }
+    static allocate(param1, param2) {
+        const instance = this.getInstance();
+        const newScope = new A_Scope_class_1.A_Scope(param2, param2);
+        switch (true) {
+            case param1 instanceof A_Container_class_1.A_Container:
+                instance.containers.set(param1, newScope);
+                break;
+            case param1 instanceof A_Feature_class_1.A_Feature:
+                instance.features.set(param1, newScope);
+                break;
+            case param1 instanceof A_Concept_class_1.A_Concept:
+                instance.concepts.set(param1, newScope);
+                break;
+            default:
+                throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
+        }
+        return newScope;
+    }
+    static meta(param1) {
+        const instance = this.getInstance();
+        let metaStorage;
+        let property;
+        let meta;
+        switch (true) {
+            case param1 instanceof A_Container_class_1.A_Container: {
+                metaStorage = instance.containersMeta;
+                property = param1.constructor;
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Container_meta_1.A_ContainerMeta();
+                    metaStorage.set(property, new A_Container_meta_1.A_ContainerMeta().from(inheritMeta));
+                }
+                meta = metaStorage.get(property);
+                break;
+            }
+            case a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Container_class_1.A_Container): {
+                metaStorage = instance.containersMeta;
+                property = param1;
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Container_meta_1.A_ContainerMeta();
+                    metaStorage.set(property, new A_Container_meta_1.A_ContainerMeta().from(inheritMeta));
+                }
+                meta = metaStorage.get(property);
+                break;
+            }
+            case param1 instanceof A_Component_class_1.A_Component: {
+                metaStorage = instance.componentsMeta;
+                property = param1.constructor;
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Component_meta_1.A_ComponentMeta();
+                    metaStorage.set(property, new A_Component_meta_1.A_ComponentMeta().from(inheritMeta));
+                }
+                meta = metaStorage.get(property);
+                break;
+            }
+            case a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Component_class_1.A_Component): {
+                metaStorage = instance.componentsMeta;
+                property = param1;
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Component_meta_1.A_ComponentMeta();
+                    metaStorage.set(property, new A_Component_meta_1.A_ComponentMeta().from(inheritMeta));
+                }
+                meta = metaStorage.get(property);
+                break;
+            }
+            default: {
+                metaStorage = instance.componentsMeta;
+                property = typeof param1 === 'function' ? param1 : param1.constructor;
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Meta_class_1.A_Meta();
+                    metaStorage.set(property, new A_Meta_class_1.A_Meta().from(inheritMeta));
+                }
+                meta = metaStorage.get(property);
+                break;
+            }
+        }
+        // const inheritMeta: T = metaStorage.get(Object.getPrototypeOf(property))  || new A_Meta() as T;
+        // // we just know that the type of parent meta is the same as the type of the current meta
+        // const meta = metaStorage.get(property);
+        return meta;
+    }
+    static scope(param1) {
+        const instance = this.getInstance();
+        switch (true) {
+            case param1 instanceof A_Container_class_1.A_Container:
+                return instance.containers.get(param1);
+            case param1 instanceof A_Feature_class_1.A_Feature:
+                return instance.features.get(param1);
+            case param1 instanceof A_Concept_class_1.A_Concept:
+                return instance.concepts.get(param1);
+            default:
+                throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
+        }
+    }
     static register(param1, param2) {
         const instance = this.getInstance();
-        let Namespace;
-        let namespace;
+        let fragment;
+        let name;
         if (typeof param2 === 'string') {
-            namespace = param2;
-            Namespace = param1;
+            name = param2;
+            fragment = param1;
         }
         else {
-            Namespace = param1;
-            namespace = Namespace.name;
+            fragment = param1;
+            name = fragment.name;
         }
         /**
          * If the namespace is not provided, then use the root namespace.
          * If the root namespace is not provided, then use the default namespace.
          */
-        if (!namespace)
-            namespace = this.root
+        if (!name)
+            name = this.root
                 || process.env.ADAAS_NAMESPACE
                 || process.env.A_NAMESPACE
                 || process.env.ADAAS_APP_NAMESPACE
                 || 'a-concept';
         if (!this.root)
-            instance._root = namespace;
-        instance.namespaced.set(namespace, Namespace);
-        return namespace;
-    }
-    /**
-     * Get the Namespace by namespace.
-     * @param namespace
-     */
-    static get(namespace) {
-        const instance = this.getInstance();
-        return instance.namespaced.get(namespace);
-    }
-    static resolve(param1, param2) {
-        switch (true) {
-            // If the first parameter is a Namespace 
-            case Array.isArray(param1) && param1.every(namespace => a_utils_1.A_CommonHelper.isInheritedFrom(namespace, A_Namespace_class_1.A_Namespace)):
-                return param1.map(namespace => this.resolveNamespace(namespace));
-            // If the first parameter is a Namespace and the second parameter is a string
-            case !!param2 && typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Namespace_class_1.A_Namespace):
-                return this.resolveNamespace(param1, param2);
-            // If the first parameter is a Component
-            case !!param2 && typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Component_class_1.A_Component):
-                return this.resolveComponent(param1);
-            default:
-                throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
-        }
-    }
-    static resolveComponent(component) {
-        const instance = this.getInstance();
-        return instance.components.get(component.name);
-    }
-    static resolveNamespace(param1, param2) {
-        const instance = this.getInstance();
-        return instance.namespaced.get(param2 || param1.name);
+            instance._root = name;
+        // instance.namedFragments.set(namespace, Namespace);
+        return name;
     }
 }
 exports.A_Context = A_Context;

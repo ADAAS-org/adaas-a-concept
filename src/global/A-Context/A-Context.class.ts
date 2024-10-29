@@ -1,6 +1,14 @@
-import { A_CommonHelper, A_Polyfills } from "@adaas/a-utils";
-import { A_Namespace } from "../A-Namespace/A_Namespace.class";
+import { A_CommonHelper, A_Polyfills, A_TYPES__Dictionary } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Feature } from "../A-Feature/A-Feature.class";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
+import { A_Meta } from "../A-Meta/A-Meta.class";
+import { A_ComponentMeta } from "../A-Component/A-Component.meta";
+import { A_ContainerMeta } from "../A-Container/A-Container.meta";
+import { A_Concept } from "../A-Concept/A_Concept.class";
 
 
 /**
@@ -12,36 +20,34 @@ import { A_Component } from "../A-Component/A-Component.class";
  */
 export class A_Context {
 
-
     static instance: A_Context;
 
     /**
-     * Stores all the Namespaces by namespace.
-     * There might be a Namespaces of the same type but with different namespaces.
-     * That might be useful for the cases when you need to have multiple instances of the same Namespace e.g.
-     * - multiple http servers
-     * - multitenant applications
-     * - etc.
+     * A set of globally registered containers.
      */
-    namespaced: Map<string, A_Namespace> = new Map();
+    protected containers: WeakMap<A_Container<any>, A_Scope> = new WeakMap();
 
     /**
-     * Stores the singleton Namespaces. 
-     * Singleton Namespaces are the Namespaces that are used only once in the program.
-     * In most cases, the singleton Namespace is the main Namespace of the program.
-     * It could be :
-     * - the main Namespace of the Program
-     * - the authentication Namespace
-     * - the main database Namespace
-     * - etc.
+     * A set of globally registered features.
      */
-    singleton: WeakMap<{ new(...args: any[]): A_Namespace }, A_Namespace> = new WeakMap();
+    protected features: WeakMap<A_Feature, A_Scope> = new WeakMap();
+
+    /**
+     * A set of globally registered concepts.
+     */
+    protected concepts: WeakMap<A_Concept<any>, A_Scope> = new WeakMap();
+
 
 
     /**
-     * Stores the components that are used in the program.
+     * A set of allocated scopes per every element in the program.
      */
-    components: Map<string, any> = new Map();
+    // protected scopes: WeakMap<A_Container<any> | A_Feature | A_Component | any, A_Scope> = new WeakMap();
+
+    protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>> = new Map();
+    protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta> = new Map();
+    protected componentsMeta: Map<typeof A_Container.constructor, A_ComponentMeta> = new Map();
+
 
     /**
      * Root Namespace is a Namespace that is used to run the program.
@@ -49,9 +55,15 @@ export class A_Context {
     private _root!: string
 
 
-    private constructor() {
+    private constructor() { }
 
-    }
+
+
+    // ===================================================================================================
+    // ================================ META OPERATIONS ==================================================
+    // ===================================================================================================
+
+
 
     /**
      * Get the instance of the Namespace Provider.
@@ -74,114 +86,193 @@ export class A_Context {
         return A_Polyfills.env;
     }
 
-    /**
-     * Register a Namespace in the provider.
-     * @param Namespace 
-     */
-    static register(Namespace: A_Namespace): string
-    static register(
-        Namespace: A_Namespace,
-        namespace?: string
-    ): string
-    static register(
-        param1: A_Namespace,
-        param2?: A_Namespace | string,
-    ): string {
+
+
+
+    static allocate(
+        component: any,
+        importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+    ): A_Scope
+    static allocate(
+        feature: A_Feature,
+        importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+    ): A_Scope
+    static allocate(
+        container: A_Container<any>,
+        importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+    ): A_Scope
+    static allocate(
+        param1: A_Container<any> | A_Feature | A_Component | any,
+        param2: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+    ): A_Scope {
 
         const instance = this.getInstance();
 
-        let Namespace: A_Namespace;
-        let namespace: string;
-
-        if (typeof param2 === 'string') {
-            namespace = param2;
-            Namespace = param1;
-        } else {
-            Namespace = param1 as A_Namespace;
-            namespace = Namespace.name;
-        }
-
-        /**
-         * If the namespace is not provided, then use the root namespace.
-         * If the root namespace is not provided, then use the default namespace.
-         */
-        if (!namespace)
-            namespace = this.root
-                || process.env.ADAAS_NAMESPACE
-                || process.env.A_NAMESPACE
-                || process.env.ADAAS_APP_NAMESPACE
-                || 'a-concept'
-
-
-
-        if (!this.root)
-            instance._root = namespace;
-
-        instance.namespaced.set(namespace, Namespace);
-
-        return namespace;
-    }
-
-
-
-
-
-
-    /**
-     * Get the Namespace by namespace.
-     * @param namespace 
-     */
-    static get(namespace: string) {
-        const instance = this.getInstance();
-
-        return instance.namespaced.get(namespace)
-    }
-
-
-
-
-
-    /**
-     * Resolve the Component by Class. 
-     * 
-     * @param component 
-     */
-    static resolve<T extends A_Component>(
-        component: { new(...args: any[]): T }
-    ): T
-    static resolve<T extends A_Namespace>(
-        namespace: { new(...args: any[]): T }
-    ): T
-    static resolve<
-        T extends A_Namespace,
-    >(
-        namespaces: Array<{ new(...args: any[]): T }>
-    ): Array<T>
-    static resolve<T extends A_Namespace>(
-        namespace: { new(...args: any[]): T },
-        name: string
-    ): T
-    static resolve<
-        T extends A_Namespace,
-        K extends A_Component,
-    >(
-        param1: { new(...args: any[]): T } | { new(...args: any[]): K } | Array<{ new(...args: any[]): T }>,
-        param2?: string
-    ): T | K | Array<T> {
+        const newScope = new A_Scope(param2, param2);
 
         switch (true) {
+            case param1 instanceof A_Container:
+                instance.containers.set(param1, newScope);
+                break;
 
-            // If the first parameter is a Namespace 
-            case Array.isArray(param1) && param1.every(namespace => A_CommonHelper.isInheritedFrom(namespace, A_Namespace)):
-                return param1.map(namespace => this.resolveNamespace(namespace));
+            case param1 instanceof A_Feature:
+                instance.features.set(param1, newScope);
+                break;
 
-            // If the first parameter is a Namespace and the second parameter is a string
-            case !!param2 && typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Namespace):
-                return this.resolveNamespace(param1 as typeof A_Namespace, param2) as T;
+            case param1 instanceof A_Concept:
+                instance.concepts.set(param1, newScope);
+                break;
 
-            // If the first parameter is a Component
-            case !!param2 && typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Component):
-                return this.resolveComponent(param1 as { new(...args: any[]): A_Component }) as K;
+
+            default:
+                throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
+        }
+
+
+        return newScope;
+    }
+
+
+
+
+    static meta(
+        container: typeof A_Container,
+    ): A_ContainerMeta
+    static meta(
+        container: A_Container<any>,
+    ): A_ContainerMeta
+    static meta(
+        component: typeof A_Component,
+    ): A_ComponentMeta
+    static meta(
+        component: A_Component,
+    ): A_ComponentMeta
+    static meta<T extends Record<string, any>>(
+        component: { new(...args: any[]): any },
+    ): A_Meta<T>
+    static meta<T extends Record<string, any>>(
+        param1: typeof A_Container | A_Container<any> | { new(...args: any[]): any } | A_Component | typeof A_Component,
+    ): A_ContainerMeta | A_ComponentMeta | A_Meta<T> {
+        const instance = this.getInstance();
+
+        let metaStorage: WeakMap<typeof A_Container.constructor, A_Meta<any>>;
+        let property: Function;
+
+        let meta: A_Meta<any>;
+
+
+        switch (true) {
+            case param1 instanceof A_Container: {
+
+                metaStorage = instance.containersMeta;
+                property = param1.constructor;
+
+
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_ContainerMeta();
+                    metaStorage.set(property, new A_ContainerMeta().from(inheritMeta));
+                }
+
+                meta = metaStorage.get(property)!;
+
+                break;
+            }
+
+            case A_CommonHelper.isInheritedFrom(param1, A_Container): {
+                metaStorage = instance.containersMeta;
+                property = param1 as typeof A_Container<any>;
+
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_ContainerMeta();
+                    metaStorage.set(property, new A_ContainerMeta().from(inheritMeta));
+                }
+
+                meta = metaStorage.get(property)!;
+
+                break;
+            }
+
+            case param1 instanceof A_Component: {
+                metaStorage = instance.componentsMeta;
+                property = param1.constructor;
+
+
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_ComponentMeta();
+                    metaStorage.set(property, new A_ComponentMeta().from(inheritMeta));
+                }
+
+                meta = metaStorage.get(property)!;
+
+                break;
+            }
+
+            case A_CommonHelper.isInheritedFrom(param1, A_Component): {
+                metaStorage = instance.componentsMeta;
+                property = param1 as typeof A_Component;
+
+
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_ComponentMeta();
+                    metaStorage.set(property, new A_ComponentMeta().from(inheritMeta));
+                }
+
+                meta = metaStorage.get(property)!;
+
+                break;
+            }
+
+            default: {
+                metaStorage = instance.componentsMeta;
+                property = typeof (param1 as any) === 'function' ? param1 : param1.constructor;
+
+                if (!metaStorage.has(property)) {
+                    const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Meta();
+                    metaStorage.set(property, new A_Meta().from(inheritMeta));
+                }
+
+                meta = metaStorage.get(property)!;
+
+                break;
+            }
+        }
+
+        // const inheritMeta: T = metaStorage.get(Object.getPrototypeOf(property))  || new A_Meta() as T;
+        // // we just know that the type of parent meta is the same as the type of the current meta
+        // const meta = metaStorage.get(property);
+
+        return meta!;
+    }
+
+
+
+
+
+    static scope(
+        concept: A_Concept
+    ): A_Scope
+    static scope(
+        component: A_Container<any>
+    ): A_Scope
+    static scope(
+        component: A_Feature
+    ): A_Scope
+    static scope(
+        param1: A_Feature | A_Container<any> | A_Concept
+    ): A_Scope | undefined {
+
+        const instance = this.getInstance();
+
+        switch (true) {
+            case param1 instanceof A_Container:
+                return instance.containers.get(param1);
+
+            case param1 instanceof A_Feature:
+                return instance.features.get(param1);
+
+
+            case param1 instanceof A_Concept:
+                return instance.concepts.get(param1);
 
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
@@ -190,41 +281,51 @@ export class A_Context {
 
 
 
-    private static resolveComponent<T extends A_Component>(
-        component: { new(...args: any[]): T }
-    ): T {
-        const instance = this.getInstance();
-
-        return instance.components.get(component.name) as T;
-    }
-
-
-
     /**
-     * 
-     * Allowing to resolve the Namespace by Class and Name.
-     * 
-     * @param namespace 
-     * @param name 
+     * Register a Namespace in the provider.
+     * @param Namespace 
      */
-    private static resolveNamespace<T extends A_Namespace>(
-        namespace: { new(...args: any[]): T },
-        name: string
-    ): T
-    private static resolveNamespace<T extends A_Namespace>(
-        namespace: { new(...args: any[]): T }
-    ): T
-    private static resolveNamespace<T extends A_Namespace>(
-        param1: { new(...args: any[]): T },
-        param2?: string
-    ): T {
+    static register(Namespace: A_Fragment): string
+    static register(
+        Namespace: A_Fragment,
+        namespace?: string
+    ): string
+    static register(
+        param1: A_Fragment,
+        param2?: A_Fragment | string,
+    ): string {
+
         const instance = this.getInstance();
 
-        return instance.namespaced.get(
-            param2 || param1.name
-        ) as T;
+        let fragment: A_Fragment;
+        let name: string;
+
+        if (typeof param2 === 'string') {
+            name = param2;
+            fragment = param1;
+        } else {
+            fragment = param1 as A_Fragment;
+            name = fragment.name;
+        }
+
+        /**
+         * If the namespace is not provided, then use the root namespace.
+         * If the root namespace is not provided, then use the default namespace.
+         */
+        if (!name)
+            name = this.root
+                || process.env.ADAAS_NAMESPACE
+                || process.env.A_NAMESPACE
+                || process.env.ADAAS_APP_NAMESPACE
+                || 'a-concept'
+
+
+
+        if (!this.root)
+            instance._root = name;
+
+        // instance.namedFragments.set(namespace, Namespace);
+
+        return name;
     }
-
-
-
 }

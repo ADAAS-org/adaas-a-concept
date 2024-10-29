@@ -6,13 +6,6 @@ exports.A_Component = void 0;
  *
  */
 class A_Component {
-    constructor(
-    /**
-     * Primary context that impacts the component behavior
-     */
-    namespace) {
-        this.namespace = namespace;
-    }
 }
 exports.A_Component = A_Component;
 //# sourceMappingURL=A-Component.class.js.map

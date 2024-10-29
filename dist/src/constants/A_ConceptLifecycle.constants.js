@@ -1,12 +1,11 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_CONSTANTS__DEFAULT_CONCEPT_LIFECYCLE_METHOD_DECLARATION_CONFIG = void 0;
-exports.A_CONSTANTS__DEFAULT_CONCEPT_LIFECYCLE_METHOD_DECLARATION_CONFIG = {
-    name: '',
-    behavior: 'sync',
-    type: 'extension',
-    after: [],
-    before: [],
-    override: []
-};
+// import { A_TYPES__ConceptLifecycle_MethodDeclarationConfig } from "../decorators/A-ConceptLifecycle/A-ConceptLifecycle.decorator.types";
+// export const A_CONSTANTS__DEFAULT_CONCEPT_LIFECYCLE_METHOD_DECLARATION_CONFIG: A_TYPES__ConceptLifecycle_MethodDeclarationConfig = {
+//     name: '',
+//     behavior: 'sync',
+//     type: 'extension',
+//     after: [],
+//     before: [],
+//     override: []
+// } 
 //# sourceMappingURL=A_ConceptLifecycle.constants.js.map

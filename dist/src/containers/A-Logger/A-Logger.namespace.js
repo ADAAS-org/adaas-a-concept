@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_LoggerContext = void 0;
-const A_Namespace_class_1 = require("../../global/A-Namespace/A_Namespace.class");
+const A_Namespace_class_1 = require("@adaas/a-concept/global/A-Namespace/A_Namespace.class");
 class A_LoggerContext extends A_Namespace_class_1.A_Namespace {
     constructor() {
         super();

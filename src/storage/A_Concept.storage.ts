@@ -2,6 +2,9 @@
 
 // --------------------------------------------------------------
 // ----- A Concept -> Module Declaration -> Main Config ---------
+
+import { A_Container } from "../global/A-Container/A-Container.class";
+
 // --------------------------------------------------------------
 export const A_CONCEPT_STORAGE__MODULE_DECLARATION_Config = Symbol('a-concept-modules-declaration');
 
@@ -43,3 +46,4 @@ export const A_CONCEPT_LifecycleDeclarationsStorage: Map<Symbol, any> = new Map(
  * If any extra API is needed, it can be added here or replaced with a new class
  */
 export const A_CONCEPT_Storage = new WeakMap();
+

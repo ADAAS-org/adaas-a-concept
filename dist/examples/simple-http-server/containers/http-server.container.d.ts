@@ -1,12 +1,12 @@
 import { A_Container } from "../../../src/global/A-Container/A-Container.class";
-import { HttpServer } from "../contexts/http-server.namespace";
-import { Server } from "http";
-import { A_Concept } from "../../../src/global/A-Concept/A_Concept.class";
-import { A_TYPES__A_CONCEPT_RootRunParams } from "../../../src/global/A-Concept/A_Concept.types";
-import { A_Config } from "src/containers/A-Config/A-Config.namespace";
-export declare class DefaultHttpServer extends A_Container<HttpServer> {
+import { IncomingMessage, Server, ServerResponse } from "http";
+import { A_Config } from "../../../src/base/A-Config/A-Config.context";
+import { A_Feature } from "../../../src/global/A-Feature/A-Feature.class";
+export declare class HttpServer extends A_Container<['start', 'stop', 'onRequest']> {
     server: Server;
     port: number;
-    create(concept: A_Concept, config: A_Config<'PORT'>): Promise<void>;
-    run(params: A_TYPES__A_CONCEPT_RootRunParams): Promise<void>;
+    create(config: A_Config<'PORT'>): Promise<void>;
+    run(): Promise<void>;
+    onRequest(req: IncomingMessage, res: ServerResponse): Promise<A_Feature>;
+    stop(): Promise<void>;
 }

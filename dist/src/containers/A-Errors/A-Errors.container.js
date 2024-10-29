@@ -17,7 +17,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_ErrorsInitializer = void 0;
 const A_Container_class_1 = require("../../global/A-Container/A-Container.class");
-const A_Load_decorator_1 = require("../../decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
+const A_Load_decorator_1 = require("@adaas/a-concept/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
 class A_ErrorsInitializer extends A_Container_class_1.A_Container {
     init() {
         return __awaiter(this, void 0, void 0, function* () {

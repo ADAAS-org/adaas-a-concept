@@ -1,4 +1,4 @@
-import { A_Namespace } from "../../global/A-Namespace/A_Namespace.class";
+import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
 import { A_CONSTANTS__ERROR_CODES, A_Error, A_ServerError, A_TYPES__Dictionary, A_TYPES__Error, A_TYPES__ServerError } from "@adaas/a-utils";
 import { A_TYPES__A_ErrorsConstructor } from "./A-Errors.types";
 export declare class A_Errors extends A_Namespace<Partial<A_TYPES__A_ErrorsConstructor>> {

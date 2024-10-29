@@ -18,52 +18,56 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DefaultHttpServer = void 0;
+exports.HttpServer = void 0;
 const A_Container_class_1 = require("../../../src/global/A-Container/A-Container.class");
 const http_1 = require("http");
-const A_Run_decorator_1 = require("../../../src/decorators/A-ConceptLifecycle/A-Run/A-Run.decorator");
 const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.decorator");
-const A_ConceptLifecycle_1 = require("../../../src/decorators/A-ConceptLifecycle");
-const A_Config_namespace_1 = require("src/containers/A-Config/A-Config.namespace");
-class DefaultHttpServer extends A_Container_class_1.A_Container {
-    create(concept, config) {
+// import { A_Feature } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator";
+const A_Concept_class_1 = require("../../../src/global/A-Concept/A_Concept.class");
+const A_Config_context_1 = require("../../../src/base/A-Config/A-Config.context");
+const A_Feature_class_1 = require("../../../src/global/A-Feature/A-Feature.class");
+const http_request_context_1 = require("../contexts/http-request.context");
+class HttpServer extends A_Container_class_1.A_Container {
+    create(config) {
         return __awaiter(this, void 0, void 0, function* () {
             // Set the server to listen on port 3000
             this.port = config.get('PORT') || 3000;
             // Create the HTTP server
-            this.server = (0, http_1.createServer)((req, res) => {
-                // Set the response headers
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'text/plain');
-                // Routing logic (basic example)
-                if (req.url === '/') {
-                    res.end('Welcome to the homepage!');
-                }
-                else if (req.url === '/about') {
-                    res.end('Welcome to the about page!');
-                }
-                else {
-                    res.statusCode = 404;
-                    res.end('404 - Page not found');
-                }
-            });
-            this.namespace.registerServer(this.server, this.port);
+            this.server = (0, http_1.createServer)(this.onRequest.bind(this));
         });
     }
-    run(params) {
+    run() {
         return __awaiter(this, void 0, void 0, function* () {
             this.server.listen(this.port, () => {
                 console.log(`Server is running on http://localhost:${this.port}`);
             });
         });
     }
+    onRequest(req, res) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.call('onRequest', {
+                fragments: [
+                    new http_request_context_1.HTTPRequest(req, res)
+                ]
+            });
+        });
+    }
+    stop() {
+        return __awaiter(this, void 0, void 0, function* () { });
+    }
 }
-exports.DefaultHttpServer = DefaultHttpServer;
+exports.HttpServer = HttpServer;
 __decorate([
-    A_ConceptLifecycle_1.A_Lifecycle.Load(),
-    __param(1, (0, A_Inject_decorator_1.A_Inject)(A_Config_namespace_1.A_Config))
-], DefaultHttpServer.prototype, "create", null);
+    A_Concept_class_1.A_Concept.Load(),
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config))
+], HttpServer.prototype, "create", null);
 __decorate([
-    (0, A_Run_decorator_1.A_Run)({})
-], DefaultHttpServer.prototype, "run", null);
+    A_Concept_class_1.A_Concept.Start()
+], HttpServer.prototype, "run", null);
+__decorate([
+    A_Feature_class_1.A_Feature.Define()
+], HttpServer.prototype, "onRequest", null);
+__decorate([
+    A_Concept_class_1.A_Concept.Stop()
+], HttpServer.prototype, "stop", null);
 //# sourceMappingURL=http-server.container.js.map

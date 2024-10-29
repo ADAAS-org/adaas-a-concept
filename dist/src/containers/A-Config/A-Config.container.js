@@ -17,7 +17,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_ConfigInitializer = void 0;
 const A_Container_class_1 = require("../../global/A-Container/A-Container.class");
-const A_Load_decorator_1 = require("../../decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
+const A_Load_decorator_1 = require("@adaas/a-concept/decorators/A-ConceptLifecycle/A-Load/A-Load.decorator");
 const a_utils_1 = require("@adaas/a-utils");
 const FileConfigReader_component_1 = require("./components/FileConfigReader.component");
 const ENVConfigReader_component_1 = require("./components/ENVConfigReader.component");

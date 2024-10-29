@@ -1,4 +1,4 @@
-import { A_Namespace } from "../../../src/global/A-Namespace/A_Namespace.class";
+import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
 import { IncomingMessage, Server } from "http";
 import { A_TYPES__HttpServerNamespaceConstructor } from "./http-server.context.types";
 export declare class HttpServer extends A_Namespace<A_TYPES__HttpServerNamespaceConstructor> {

@@ -1,4 +1,4 @@
-import { A_Namespace } from "../../global/A-Namespace/A_Namespace.class";
+import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
 import { A_TYPES__ConfigContainerConstructor } from "./A-Config.types";
 export declare class A_Config<T extends string = any> extends A_Namespace<A_TYPES__ConfigContainerConstructor<T>> {
     private VARIABLES;

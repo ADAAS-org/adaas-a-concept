@@ -1,4 +1,4 @@
-import { A_TYPES__NamespaceConstructor } from "../../global/A-Namespace/A_Namespace.types";
+import { A_TYPES__NamespaceConstructor } from "@adaas/a-concept/global/A-Namespace/A_Namespace.types";
 export type A_TYPES__ConfigContainerConstructor<T extends string> = {
     /**
      * The name of the Config Container

@@ -9,28 +9,27 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const A_Concept_class_1 = require("../../src/global/A-Concept/A_Concept.class");
-const http_server_container_1 = require("./containers/http-server.container");
-const http_server_namespace_1 = require("./contexts/http-server.namespace");
 (() => __awaiter(void 0, void 0, void 0, function* () {
-    const simpleConcept = new A_Concept_class_1.A_Concept({
-        name: 'test-server',
-        // import: [
-        //     server1,
-        //     server2
-        // ],
-        containers: [
-            http_server_container_1.DefaultHttpServer
-        ],
-        context: [
-            new http_server_namespace_1.HttpServer({
-                port: 3000
-            }),
-            new http_server_namespace_1.HttpServer({
-                port: 3001
-            })
-        ],
-    });
-    yield simpleConcept.run();
+    // const simpleConcept = new A_Concept({
+    //     // name: 'test-server',
+    //     // // import: [
+    //     // //     server1,
+    //     // //     server2
+    //     // // ],
+    //     // containers: [
+    //     //     new DefaultHttpServer({
+    //     //         components: []
+    //     //     })
+    //     // ],
+    //     // context: [
+    //     //     new HttpServer({
+    //     //         port: 3000
+    //     //     }),
+    //     //     new HttpServer({
+    //     //         port: 3001
+    //     //     })
+    //     // ],
+    // })
+    // await simpleConcept.run();
 }))();
 //# sourceMappingURL=concept.js.map

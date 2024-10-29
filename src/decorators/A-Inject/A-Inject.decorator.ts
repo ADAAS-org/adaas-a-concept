@@ -1,6 +1,15 @@
-import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
-import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
+import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+import { A_TYPES__A_InjectDecoratorReturn, A_TYPES__A_InjectDecoratorStorageInstruction } from "./A-Inject.decorator.types";
+import { A_STORAGE__A_Inject_Instructions } from "@adaas/a-concept/storage/A_Inject.storage";
+import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
+import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
+import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
+
+
+
+
 
 /**
  * A-Inject decorator
@@ -13,63 +22,66 @@ import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.cla
  * @param params 
  * @returns 
  */
+export function A_Inject(
+    scope: typeof A_Scope
+): A_TYPES__A_InjectDecoratorReturn
+
+export function A_Inject(
+    component: typeof A_Component
+): A_TYPES__A_InjectDecoratorReturn
+export function A_Inject(
+    component: { new(...args: any[]): any }
+): A_TYPES__A_InjectDecoratorReturn
+
+//  Allows to inject just one container
+export function A_Inject(
+    container: typeof A_Container
+): A_TYPES__A_InjectDecoratorReturn
+
+// Allows to inject just one Context Fragment
+export function A_Inject(
+    fragment: typeof A_Fragment
+): A_TYPES__A_InjectDecoratorReturn
+
+// Allows to inject multiple Fragments 
 export function A_Inject<
-    T extends { new(...args: any[]): A_Component }
+    T extends Array<typeof A_Fragment>
 >(
-    component: T
-)
+    fragments: T
+): A_TYPES__A_InjectDecoratorReturn
+
+// ====================== BASE FUNCTION ======================
 export function A_Inject<
-    T extends { new(...args: any[]): A_Namespace }
+    T extends Array<typeof A_Fragment>
 >(
-    namespace: T
-)
-export function A_Inject<
-    E extends { new(...args: any[]): A_Namespace },
-    T extends Array<E>
->(
-    namespaces: T
-)
-export function A_Inject<
-    E extends { new(...args: any[]): A_Namespace },
-    K extends { new(...args: any[]): A_Component },
-    T extends Array<E>
->(
-    param1: T | E | K
-) {
-    switch (true) {
-        case param1 instanceof A_Component:
-            return function (
-                target: T,
-                propertyKey: string | symbol,
-                parameterIndex: number
-            ) {
-                //  It should be just register the parameter in method that will be resolved in the method
-            }
-        case param1 instanceof A_Namespace:
-            return function (
-                target: T,
-                propertyKey: string | symbol,
-                parameterIndex: number
-            ) {
-                //  It should be just register the parameter in method that will be resolved in the method
-            }
+    param1: T | typeof A_Fragment | typeof A_Component | typeof A_Container | typeof A_Fragment,
+): A_TYPES__A_InjectDecoratorReturn {
+    return function (
+        target: A_Component,
+        methodName: string | symbol | undefined,
+        parameterIndex: number
+    ) {
+
+        const method = methodName ? methodName : 'constructor';
+
+
+        const existedMeta = A_Context
+            .meta(target)
+            .get(A_TYPES__ComponentMetaKey.INJECTIONS)
+            || new Map();
+
+        const paramsArray = existedMeta.get(method) || [];
+
+        paramsArray[parameterIndex] = param1;
+
+        existedMeta.set(method, paramsArray);
+
+
+        A_Context
+            .meta(target)
+            .set(
+                A_TYPES__ComponentMetaKey.INJECTIONS,
+                existedMeta
+            )
     }
-
-    // const namespaces: Array<typeof A_Namespace> = [
-    //     ...(Array.isArray(param1) ? param1 : [param1])
-    // ];
-
-    // const resolvedNamespaces: Array<A_Namespace> = []
-
-    // for (const namespace of namespaces) {
-    //     resolvedNamespaces.push(A_Context.resolve(namespace));
-    // }
-
-    // return function (
-    //     target: T | E,
-    //     propertyKey: string | symbol,
-    //     parameterIndex: number
-    // ) {
-    //     //  It should be just register the parameter in method that will be resolved in the method
-    // }
 }

@@ -13,12 +13,8 @@
       "node_modules"
     ],
     "watch": [
-      "config",
-      "constants",
       "src",
-      "lib",
-      "db",
-      "shared"
+      "examples"
     ],
     "exec": "node -r tsconfig-paths/register -r ts-node/register ",
     "ext": "ts, js"
@@ -31,7 +27,9 @@
     "version": "echo git add .",
     "postversion": "git push --no-verify && git push --tags --no-verify && echo \"\n======Version Pushed Successfully=====\n\" ",
     "echo-version": "echo $npm_package_version",
-    "build": "tsc --declaration --project tsconfig.json && tscpaths -p tsconfig.json -s ./ -o ./dist && rm -r ./dist/tests"
+    "build": "tsc --declaration --project tsconfig.json && tscpaths -p tsconfig.json -s ./ -o ./dist && rm -r ./dist/tests",
+    "test:simple": "nodemon ./examples/simple/concept.ts"
+
   },
   "repository": {
     "type": "git",

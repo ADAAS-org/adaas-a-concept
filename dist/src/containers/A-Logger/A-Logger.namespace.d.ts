@@ -1,4 +1,4 @@
-import { A_Namespace } from "../../global/A-Namespace/A_Namespace.class";
+import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
 import { Logger } from "./components/Logger.component";
 export declare class A_LoggerContext extends A_Namespace {
     Logger: Logger;

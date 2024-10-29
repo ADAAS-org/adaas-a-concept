@@ -1,5 +1,5 @@
 import { A_Component } from "../../../global/A-Component/A-Component.class";
-import { A_Namespace } from "../../../global/A-Namespace/A_Namespace.class";
+import { A_Namespace } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class";
 import { A_Error } from "@adaas/a-utils";
 import { A_Config } from "src/containers/A-Config/A-Config.namespace";
 export declare class Logger extends A_Component {
