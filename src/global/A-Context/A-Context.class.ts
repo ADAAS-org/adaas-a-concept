@@ -47,6 +47,8 @@ export class A_Context {
     protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>> = new Map();
     protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta> = new Map();
     protected componentsMeta: Map<typeof A_Container.constructor, A_ComponentMeta> = new Map();
+    // uses to allow to store custom meta data
+    protected customMeta: Map<typeof A_Container.constructor, A_Meta<any>> = new Map();
 
 
     /**
@@ -223,7 +225,7 @@ export class A_Context {
             }
 
             default: {
-                metaStorage = instance.componentsMeta;
+                metaStorage = instance.customMeta;
                 property = typeof (param1 as any) === 'function' ? param1 : param1.constructor;
 
                 if (!metaStorage.has(property)) {

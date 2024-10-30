@@ -35,6 +35,7 @@ export declare class A_Context {
     protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>>;
     protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta>;
     protected componentsMeta: Map<typeof A_Container.constructor, A_ComponentMeta>;
+    protected customMeta: Map<typeof A_Container.constructor, A_Meta<any>>;
     /**
      * Root Namespace is a Namespace that is used to run the program.
      */

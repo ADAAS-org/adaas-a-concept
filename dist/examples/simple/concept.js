@@ -49,7 +49,7 @@ const A_Container_class_1 = require("../../src/global/A-Container/A-Container.cl
             new foo({})
         ]
     });
-    yield simpleConcept.run();
+    yield simpleConcept.run({});
     simpleConcept.call('method_B');
 }))();
 //# sourceMappingURL=concept.js.map

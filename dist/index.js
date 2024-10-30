@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Feature = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
+exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Feature = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
 // =================================================================================================
 // ============================= Export Framework Components =======================================
 // =================================================================================================
@@ -37,6 +37,9 @@ Object.defineProperty(exports, "A_Component", { enumerable: true, get: function 
 var A_Component_meta_1 = require("./src/global/A-Component/A-Component.meta");
 Object.defineProperty(exports, "A_ComponentMeta", { enumerable: true, get: function () { return A_Component_meta_1.A_ComponentMeta; } });
 __exportStar(require("./src/global/A-Component/A-Component.types"), exports);
+var A_Entity_class_1 = require("./src/global/A-Entity/A-Entity.class");
+Object.defineProperty(exports, "A_Entity", { enumerable: true, get: function () { return A_Entity_class_1.A_Entity; } });
+__exportStar(require("./src/global/A-Entity/A-Entity.types"), exports);
 // ---------------------- Common Components ----------------------
 var A_Feature_class_1 = require("./src/global/A-Feature/A-Feature.class");
 Object.defineProperty(exports, "A_Feature", { enumerable: true, get: function () { return A_Feature_class_1.A_Feature; } });

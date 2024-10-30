@@ -2,8 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Scope = void 0;
 const a_utils_1 = require("@adaas/a-utils");
-const A_Inject_storage_1 = require("../../storage/A_Inject.storage");
 const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
+const A_Context_class_1 = require("../A-Context/A-Context.class");
+const A_Component_types_1 = require("../A-Component/A-Component.types");
 /**
  *
  *
@@ -101,7 +102,8 @@ class A_Scope {
                 return this._components.get(component);
             }
             case this.components.includes(component) && !this._components.has(component): {
-                const argsMeta = A_Inject_storage_1.A_STORAGE__A_Inject_Instructions.get(component);
+                const componentMeta = A_Context_class_1.A_Context.meta(component);
+                const argsMeta = componentMeta.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
                 let resolvedArgs = [];
                 if (argsMeta)
                     resolvedArgs = (argsMeta.get('constructor') || [])

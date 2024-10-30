@@ -38,6 +38,32 @@ class A_Meta {
     get(key) {
         return this.meta.get(key);
     }
+    // Delete a key-value pair by key
+    delete(key) {
+        return this.meta.delete(key);
+    }
+    // Search for keys by regex
+    findByRegex(regex) {
+        const results = [];
+        for (const [key, value] of this.meta.entries()) {
+            if (regex.test(String(key))) {
+                results.push([key, value]);
+            }
+        }
+        return results;
+    }
+    // Check if a key exists
+    has(key) {
+        return this.meta.has(key);
+    }
+    // Get all entries in the map
+    entries() {
+        return this.meta.entries();
+    }
+    // Clear all entries
+    clear() {
+        this.meta.clear();
+    }
 }
 exports.A_Meta = A_Meta;
 //# sourceMappingURL=A-Meta.class.js.map

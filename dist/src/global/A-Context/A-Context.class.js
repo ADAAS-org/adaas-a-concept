@@ -38,6 +38,8 @@ class A_Context {
         this.conceptsMeta = new Map();
         this.containersMeta = new Map();
         this.componentsMeta = new Map();
+        // uses to allow to store custom meta data
+        this.customMeta = new Map();
     }
     // ===================================================================================================
     // ================================ META OPERATIONS ==================================================
@@ -124,7 +126,7 @@ class A_Context {
                 break;
             }
             default: {
-                metaStorage = instance.componentsMeta;
+                metaStorage = instance.customMeta;
                 property = typeof param1 === 'function' ? param1 : param1.constructor;
                 if (!metaStorage.has(property)) {
                     const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new A_Meta_class_1.A_Meta();

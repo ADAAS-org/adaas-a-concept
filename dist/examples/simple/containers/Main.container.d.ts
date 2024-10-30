@@ -5,7 +5,7 @@ export declare class MainContainer extends A_Container<[
     'method_B'
 ]> {
     load(): Promise<void>;
-    start(): Promise<void>;
+    start(params?: any): Promise<void>;
     method_A(): Promise<void>;
     method_B(): Promise<A_Feature>;
 }

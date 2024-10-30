@@ -3,6 +3,7 @@ import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { ContextFragmentA } from "../context/Fragment_A.context";
 import { ContextFragmentB } from "../context/Fragment_B.context";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
+import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
 
 
 
@@ -16,12 +17,17 @@ export class MainContainer extends A_Container<
     }
 
     @A_Concept.Start()
-    async start () {
-        console.log('Start');
+    async start(
+        @A_Inject(MainContainer) params?: any
+    ) {
+        if (params) {
+            console.log('Start');
+            
+        }
     }
 
 
-    
+
 
     @A_Feature.Define()
     async method_A() {

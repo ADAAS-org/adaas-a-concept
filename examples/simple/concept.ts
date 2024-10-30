@@ -46,7 +46,7 @@ import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.cla
         ]
     });
 
-    await simpleConcept.run()
+    await simpleConcept.run({})
 
     simpleConcept.call('method_B');
 

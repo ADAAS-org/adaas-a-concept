@@ -1,5 +1,10 @@
 import { A_TYPES__FragmentConstructor } from "@adaas/a-concept/global/A-Fragment/A-Fragment.types";
-import { A_TYPES__Dictionary } from "@adaas/a-utils";
+
+
+export enum A_TYPES__ConfigFeature {
+    
+}
+
 
 export type A_TYPES__ConfigContainerConstructor<T extends string> = {
 

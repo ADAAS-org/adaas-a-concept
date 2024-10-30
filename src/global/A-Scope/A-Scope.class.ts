@@ -1,7 +1,8 @@
 import { A_CommonHelper } from "@adaas/a-utils";
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
-import { A_STORAGE__A_Inject_Instructions } from "@adaas/a-concept/storage/A_Inject.storage";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Context } from "../A-Context/A-Context.class";
+import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 
 /**
  * 
@@ -163,7 +164,9 @@ export class A_Scope {
             }
             case this.components.includes(component) && !this._components.has(component): {
 
-                const argsMeta = A_STORAGE__A_Inject_Instructions.get(component);
+                const componentMeta = A_Context.meta(component)
+
+                const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
                 let resolvedArgs: Array<any> = [];
 

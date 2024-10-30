@@ -35,10 +35,6 @@
       "@adaas/a-concept/types/*": ["src/types/*"],
       "@adaas/a-concept/helpers/*": ["src/helpers/*"],
       "@adaas/a-concept/decorators/*": ["src/decorators/*"],
-      "@adaas/a-concept/managers/*": ["src/managers/*"],
-      "@adaas/a-concept/providers/*": ["src/providers/*"],
-      "@adaas/a-concept/modules/*": ["src/modules/*"],
-      "@adaas/a-concept/storage/*": ["src/storage/*"],
       "@adaas/a-concept/base/*": ["src/base/*"]
     },
     "lib": [

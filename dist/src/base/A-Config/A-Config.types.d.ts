@@ -1,4 +1,6 @@
 import { A_TYPES__FragmentConstructor } from "../../global/A-Fragment/A-Fragment.types";
+export declare enum A_TYPES__ConfigFeature {
+}
 export type A_TYPES__ConfigContainerConstructor<T extends string> = {
     /**
      * Allows to define the names of variable to be loaded

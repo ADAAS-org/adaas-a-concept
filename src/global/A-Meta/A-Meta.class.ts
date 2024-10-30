@@ -55,6 +55,42 @@ export class A_Meta<
     get<K extends keyof _StorageItems>(key: K): _StorageItems[K] | undefined {
         return this.meta.get(key) as _StorageItems[K];
     }
+
+
+    // Delete a key-value pair by key
+    delete(key: keyof _StorageItems): boolean {
+        return this.meta.delete(key);
+    }
+
+    // Search for keys by regex
+    findByRegex(regex: RegExp): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+        const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
+        for (const [key, value] of this.meta.entries()) {
+            if (regex.test(String(key))) {
+                results.push([key, value]);
+            }
+        }
+        return results;
+    }
+
+    // Check if a key exists
+    has(key: keyof _StorageItems): boolean {
+        return this.meta.has(key);
+    }
+
+    // Get all entries in the map
+    entries(): IterableIterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+        return this.meta.entries();
+    }
+
+
+    // Clear all entries
+    clear(): void {
+        this.meta.clear();
+    }
+
+
+
 }
 
 

@@ -1,7 +1,6 @@
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_TYPES__A_InjectDecoratorReturn, A_TYPES__A_InjectDecoratorStorageInstruction } from "./A-Inject.decorator.types";
-import { A_STORAGE__A_Inject_Instructions } from "@adaas/a-concept/storage/A_Inject.storage";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";

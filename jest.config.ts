@@ -13,10 +13,6 @@ const config: Config.InitialOptions = {
         "@adaas/a-concept/types/(.*)": ["<rootDir>/src/types/$1"],
         "@adaas/a-concept/helpers/(.*)": ["<rootDir>/src/helpers/$1"],
         "@adaas/a-concept/decorators/(.*)": ["<rootDir>/src/decorators/$1"],
-        "@adaas/a-concept/managers/(.*)": ["<rootDir>/src/managers/$1"],
-        "@adaas/a-concept/providers/(.*)": ["<rootDir>/src/providers/$1"],
-        "@adaas/a-concept/modules/(.*)": ["<rootDir>/src/modules/$1"],
-        "@adaas/a-concept/storage/(.*)": ["<rootDir>/src/storage/$1"],
         "@adaas/a-concept/base/(.*)": ["<rootDir>/src/base/$1"],
     }
 

@@ -18,6 +18,9 @@ export { A_Component } from './src/global/A-Component/A-Component.class';
 export { A_ComponentMeta } from './src/global/A-Component/A-Component.meta';
 export * from './src/global/A-Component/A-Component.types';
 
+export { A_Entity } from './src/global/A-Entity/A-Entity.class';
+export * from './src/global/A-Entity/A-Entity.types';
+
 
 // ---------------------- Common Components ----------------------
 export { A_Feature } from './src/global/A-Feature/A-Feature.class';
