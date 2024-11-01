@@ -21,11 +21,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigReader = void 0;
 const A_Scope_class_1 = require("../../../global/A-Scope/A-Scope.class");
 const A_Inject_decorator_1 = require("../../../decorators/A-Inject/A-Inject.decorator");
+const A_Component_class_1 = require("../../../global/A-Component/A-Component.class");
 /**
  * Config Reader
  */
-let ConfigReader = class ConfigReader {
+let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
     constructor(scope) {
+        super();
         this.scope = scope;
     }
     /**

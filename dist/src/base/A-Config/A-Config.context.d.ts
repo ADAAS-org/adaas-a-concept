@@ -7,6 +7,7 @@ export declare class A_Config<T extends string = any> extends A_Fragment {
     CONFIG_PROPERTIES: T[];
     protected DEFAULT_ALLOWED_TO_READ_PROPERTIES: readonly ["CONFIG_SDK_VALIDATION", "CONFIG_VERBOSE", "CONFIG_IGNORE_ERRORS"];
     constructor(config: A_TYPES__Required<Partial<A_TYPES__ConfigContainerConstructor<T>>, ['variables']>);
+    protected onInit(): Promise<void>;
     /**
      * This method is used to get the configuration property by name
      *

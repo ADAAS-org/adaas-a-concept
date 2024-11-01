@@ -25,8 +25,7 @@ class A_Fragment {
         /**
          * Register the Namespace in the global Namespace provider
          */
-        this.name = A_Context_class_1.A_Context
-            .register(this, this.name);
+        this.name = params.name || this.constructor.name;
         /**
          * Run Async Initialization
          */

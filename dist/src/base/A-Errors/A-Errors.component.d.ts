@@ -1,7 +1,8 @@
 import { A_Scope } from "../../global/A-Scope/A-Scope.class";
 import { A_Errors } from "./A-Errors.context";
 import { A_CONSTANTS__ERROR_CODES, A_Error, A_ServerError } from "@adaas/a-utils";
-export declare class A_ErrorsManager {
+import { A_Component } from "../../global/A-Component/A-Component.class";
+export declare class A_ErrorsManager extends A_Component {
     protected scope: A_Scope;
     protected errors: A_Errors;
     constructor(scope: A_Scope, errors: A_Errors);

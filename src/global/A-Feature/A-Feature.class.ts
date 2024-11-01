@@ -1,7 +1,6 @@
 import { A_Feature_Define } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Define.decorator";
 import { A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Extend.decorator";
-import { A_TYPES__FeatureConstructor, A_TYPES__FeatureState, A_TYPES__FeatureStep } from "./A-Feature.types";
-import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__FeatureConstructor, A_TYPES__FeatureIteratorReturn, A_TYPES__FeatureState, A_TYPES__FeatureStep } from "./A-Feature.types";
 import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 
@@ -37,7 +36,9 @@ export class A_Feature {
 
 
     // protected scope: A_Scope
-    protected steps: A_TYPES__FeatureStep[] = []
+    protected steps: A_TYPES__FeatureStep[] = [];
+    protected _current?: A_TYPES__FeatureStep;
+    protected _index: number = 0;
 
     state: A_TYPES__FeatureState = A_TYPES__FeatureState.INITIALIZED;
 
@@ -52,6 +53,61 @@ export class A_Feature {
 
         A_Context.allocate(this, params);
 
+    }
+
+
+    /**
+     * Custom iterator to iterate over the steps of the feature
+     * 
+     * @returns 
+     */
+    [Symbol.iterator](): Iterator<A_TYPES__FeatureIteratorReturn, any> {
+        return {
+            // Custom next method
+            next: (): IteratorResult<A_TYPES__FeatureIteratorReturn, any> => {
+                if (this._index < this.steps.length) {
+                    if (
+                        (this.state as any) === A_TYPES__FeatureState.FAILED
+                        ||
+                        (this.state as any) === A_TYPES__FeatureState.COMPLETED
+                    ) {
+                        throw new Error('FEATURE_PROCESSING_INTERRUPTED');
+                    }
+
+                    this._current = this.steps[this._index];
+
+                    const { component, handler, args } = this._current;
+
+                    const instance = A_Context.scope(this).resolve(component);
+
+                    return {
+                        value: async () => {
+
+                            if (instance[handler]) {
+                                const callArgs = A_Context.scope(this).resolve(args);
+                                await instance[handler](...callArgs);
+                            }
+
+                            this._index++;
+                        },
+                        done: false
+                    };
+                } else {
+                    this._current = undefined; // Reset current on end
+                    return { value: undefined, done: true };
+                }
+            }
+        };
+    }
+
+    // Access the current element
+    get current(): A_TYPES__FeatureStep | undefined {
+        return this._current;
+    }
+
+    // Custom end strategy or stop condition (could be expanded if needed)
+    isDone(): boolean {
+        return this.current === null;
     }
 
 
@@ -94,28 +150,14 @@ export class A_Feature {
         try {
             this.state = A_TYPES__FeatureState.PROCESSING;
 
-            for (const { component, handler, args } of this.steps) {
-
-                if (
-                    (this.state as any) === A_TYPES__FeatureState.FAILED
-                    ||
-                    (this.state as any) === A_TYPES__FeatureState.COMPLETED
-                ) {
-                    throw new Error('FEATURE_PROCESSING_INTERRUPTED');
-                }
-
-                const instance = A_Context.scope(this).resolve(component);
-
-                if (instance[handler]) {
-                    const callArgs = A_Context.scope(this).resolve(args);
-                    await instance[handler](...callArgs);
-                }
+            for (const step of this) {
+                await step();
             }
 
             await this.completed();
 
         } catch (error) {
-            console.log('Feature processing error:', error);
+            console.log('[!] Feature processing error:', error);
 
             await this.failed(error);
         }

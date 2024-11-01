@@ -5,11 +5,11 @@ export type A_TYPES__ConfigContainerConstructor<T extends string> = {
     /**
      * Allows to define the names of variable to be loaded
      */
-    variables?: Array<T>;
+    variables: Array<T>;
     /**
      * Allows to set the default values for the variables
      */
-    defaults?: {
+    defaults: {
         [key in T]?: any;
     };
 } & A_TYPES__FragmentConstructor;

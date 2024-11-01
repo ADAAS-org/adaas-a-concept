@@ -1,5 +1,4 @@
 export { A_Context } from './src/global/A-Context/A-Context.class';
-export * from './src/global/A-Context/A-Context.types';
 export { A_Concept } from './src/global/A-Concept/A_Concept.class';
 export { A_ConceptMeta } from './src/global/A-Concept/A_Concept.meta';
 export * from './src/global/A-Concept/A_Concept.types';
@@ -20,6 +19,11 @@ export { A_Fragment } from './src/global/A-Fragment/A-Fragment.class';
 export * from './src/global/A-Fragment/A-Fragment.types';
 export { A_Inject } from './src/decorators/A-Inject/A-Inject.decorator';
 export * from './src/decorators/A-Inject/A-Inject.decorator.types';
+export { A_Feature_Define } from './src/decorators/A-Feature/A-Feature-Define.decorator';
+export { A_Feature_Extend } from './src/decorators/A-Feature/A-Feature-Extend.decorator';
+export * from './src/decorators/A-Feature/A-Feature.decorator.types';
+export { A_Stage } from './src/decorators/A-Stage/A-Stage.decorator';
+export * from './src/decorators/A-Stage/A-Stage.decorator.types';
 export { A_ConfigLoader } from './src/base/A-Config/A-Config.container';
 export { A_Config } from './src/base/A-Config/A-Config.context';
 export { ConfigReader } from './src/base/A-Config/components/ConfigReader.component';

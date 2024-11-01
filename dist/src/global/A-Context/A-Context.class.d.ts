@@ -8,6 +8,9 @@ import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_ComponentMeta } from "../A-Component/A-Component.meta";
 import { A_ContainerMeta } from "../A-Container/A-Container.meta";
 import { A_Concept } from "../A-Concept/A_Concept.class";
+import { A_TYPES__EntityBaseMethod } from "../A-Entity/A-Entity.types";
+import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -30,11 +33,16 @@ export declare class A_Context {
      */
     protected concepts: WeakMap<A_Concept<any>, A_Scope>;
     /**
+     * Uses to store the scope of every element in the program.
+     */
+    protected registry: WeakMap<A_Concept<any> | A_Container<any> | A_Feature | A_Component | A_Fragment | A_Entity, A_Scope>;
+    /**
      * A set of allocated scopes per every element in the program.
      */
     protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>>;
     protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta>;
-    protected componentsMeta: Map<typeof A_Container.constructor, A_ComponentMeta>;
+    protected componentsMeta: Map<typeof A_Component, A_ComponentMeta>;
+    protected entitiesMeta: Map<typeof A_Entity.constructor, A_EntityMeta>;
     protected customMeta: Map<typeof A_Container.constructor, A_Meta<any>>;
     /**
      * Root Namespace is a Namespace that is used to run the program.
@@ -54,18 +62,39 @@ export declare class A_Context {
     static allocate(container: A_Container<any>, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
     static meta(container: typeof A_Container): A_ContainerMeta;
     static meta(container: A_Container<any>): A_ContainerMeta;
+    static meta(entity: A_Entity): A_ContainerMeta;
     static meta(component: typeof A_Component): A_ComponentMeta;
     static meta(component: A_Component): A_ComponentMeta;
     static meta<T extends Record<string, any>>(component: {
         new (...args: any[]): any;
     }): A_Meta<T>;
+    static scope(entity: A_Entity): A_Scope;
+    static scope(component: A_Component): A_Scope;
     static scope(concept: A_Concept): A_Scope;
-    static scope(component: A_Container<any>): A_Scope;
-    static scope(component: A_Feature): A_Scope;
+    static scope(container: A_Container<any>): A_Scope;
+    static scope(feature: A_Feature): A_Scope;
+    /**
+     * This method returns a component by its meta.
+     *
+     * @param meta
+     * @returns
+     */
+    static component(meta: A_ComponentMeta): typeof A_Component;
+    /**
+     * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
+     *
+     * @param scope
+     * @returns
+     */
+    static feature<T extends Array<string>>(entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature<T extends Array<string>>(container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature(component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
     /**
      * Register a Namespace in the provider.
      * @param Namespace
      */
-    static register(Namespace: A_Fragment): string;
-    static register(Namespace: A_Fragment, namespace?: string): string;
+    static register(scope: A_Scope, container: A_Container<any>): any;
+    static register(scope: A_Scope, entity: A_Entity): any;
+    static register(scope: A_Scope, component: A_Component): any;
+    static register(scope: A_Scope, fragment: A_Fragment): any;
 }

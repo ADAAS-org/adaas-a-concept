@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Container = void 0;
-const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 /**
  * This class should combine Components to achieve the goal withing Concept
@@ -30,6 +29,9 @@ class A_Container {
     get name() {
         return this.config.name || this.constructor.name;
     }
+    get Scope() {
+        return A_Context_class_1.A_Context.scope(this);
+    }
     constructor(
     /**
      * Configuration of the container that will be used to run it.
@@ -38,10 +40,7 @@ class A_Container {
         this.config = config;
         const components = config.components || [];
         const fragments = config.fragments || [];
-        A_Context_class_1.A_Context.allocate(this, {
-            components,
-            fragments
-        });
+        A_Context_class_1.A_Context.allocate(this, config);
         /**
          * Run Async Initialization
          */
@@ -74,26 +73,16 @@ class A_Container {
         });
     }
     call(param1, param2) {
-        let feature;
-        let params;
-        if (typeof param1 === 'string') {
-            feature = param1;
-            params = param2 || {};
-        }
-        else {
-            feature = param1.name;
-            params = param1;
-        }
-        const meta = A_Context_class_1.A_Context.meta(this);
-        const steps = meta.feature(this, feature);
-        const newFeature = new A_Feature_class_1.A_Feature({
-            name: `${this.constructor.name}.${feature}`,
-            fragments: (param2 === null || param2 === void 0 ? void 0 : param2.fragments) || [],
-            components: (param2 === null || param2 === void 0 ? void 0 : param2.components) || [],
-            steps,
-            parent: A_Context_class_1.A_Context.scope(this)
+        return __awaiter(this, void 0, void 0, function* () {
+            const feature = typeof param1 === 'string'
+                ? param1
+                : param1.name;
+            const params = typeof param1 === 'string'
+                ? param2 || {}
+                : param1;
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, params);
+            return yield newFeature.process();
         });
-        return newFeature;
     }
     // ==============================================================
     // ======================= HOOKS ================================

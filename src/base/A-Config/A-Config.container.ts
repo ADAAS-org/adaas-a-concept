@@ -19,10 +19,7 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
 
 
     async identifyReader(
-        @A_Inject(A_Scope) scope: A_Scope,
-        @A_Inject(A_Logger) logger: A_Logger
     ) {
-
         // OR Inject the logger by calling Context Provider
         // const logger2 = await this.CP.resolve(A_LoggerContext);
 
@@ -30,17 +27,17 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
 
         switch (true) {
 
-            case A_Context.environment === 'server' && !!fs.existsSync(`${scope.name}.conf.json`):
-                this.reader = scope.resolve(FileConfigReader);
+            case A_Context.environment === 'server' && !!fs.existsSync(`${this.Scope.name}.conf.json`):
+                this.reader = this.Scope.resolve(FileConfigReader);
                 break;
 
 
-            case A_Context.environment === 'server': !fs.existsSync(`${scope.name}.conf.json`)
-                this.reader = scope.resolve(ENVConfigReader);
+            case A_Context.environment === 'server': !fs.existsSync(`${this.Scope.name}.conf.json`)
+                this.reader = this.Scope.resolve(ENVConfigReader);
                 break;
 
             case A_Context.environment === 'browser':
-                this.reader = scope.resolve(ENVConfigReader);
+                this.reader = this.Scope.resolve(ENVConfigReader);
                 break;
 
             default:

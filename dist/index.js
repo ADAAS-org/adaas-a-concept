@@ -14,14 +14,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Feature = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
+exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Stage = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Feature = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
 // =================================================================================================
 // ============================= Export Framework Components =======================================
 // =================================================================================================
 // ---------------------- Major Components ----------------------
 var A_Context_class_1 = require("./src/global/A-Context/A-Context.class");
 Object.defineProperty(exports, "A_Context", { enumerable: true, get: function () { return A_Context_class_1.A_Context; } });
-__exportStar(require("./src/global/A-Context/A-Context.types"), exports);
+// export * from './src/global/A-Context/A-Context.types';
 var A_Concept_class_1 = require("./src/global/A-Concept/A_Concept.class");
 Object.defineProperty(exports, "A_Concept", { enumerable: true, get: function () { return A_Concept_class_1.A_Concept; } });
 var A_Concept_meta_1 = require("./src/global/A-Concept/A_Concept.meta");
@@ -59,6 +59,14 @@ __exportStar(require("./src/global/A-Fragment/A-Fragment.types"), exports);
 var A_Inject_decorator_1 = require("./src/decorators/A-Inject/A-Inject.decorator");
 Object.defineProperty(exports, "A_Inject", { enumerable: true, get: function () { return A_Inject_decorator_1.A_Inject; } });
 __exportStar(require("./src/decorators/A-Inject/A-Inject.decorator.types"), exports);
+var A_Feature_Define_decorator_1 = require("./src/decorators/A-Feature/A-Feature-Define.decorator");
+Object.defineProperty(exports, "A_Feature_Define", { enumerable: true, get: function () { return A_Feature_Define_decorator_1.A_Feature_Define; } });
+var A_Feature_Extend_decorator_1 = require("./src/decorators/A-Feature/A-Feature-Extend.decorator");
+Object.defineProperty(exports, "A_Feature_Extend", { enumerable: true, get: function () { return A_Feature_Extend_decorator_1.A_Feature_Extend; } });
+__exportStar(require("./src/decorators/A-Feature/A-Feature.decorator.types"), exports);
+var A_Stage_decorator_1 = require("./src/decorators/A-Stage/A-Stage.decorator");
+Object.defineProperty(exports, "A_Stage", { enumerable: true, get: function () { return A_Stage_decorator_1.A_Stage; } });
+__exportStar(require("./src/decorators/A-Stage/A-Stage.decorator.types"), exports);
 // =================================================================================================
 // =============================== Export Base Entities ============================================
 // =================================================================================================

@@ -1,7 +1,7 @@
 import { A_TYPES__ConceptStage, A_TYPES__ConceptStageParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
+// import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
 import { A_Stage } from "@adaas/a-concept/decorators/A-Stage/A-Stage.decorator";
@@ -102,7 +102,7 @@ export class A_Concept<
             fragments: props.fragments || [],
             // containers: props.containers
             components: [
-                A_Logger,
+                // A_Logger,
             ]
         });
 

@@ -14,8 +14,10 @@ const A_Inject_decorator_1 = require("../../decorators/A-Inject/A-Inject.decorat
 const a_utils_1 = require("@adaas/a-utils");
 const A_Config_context_1 = require("../A-Config/A-Config.context");
 const A_Scope_class_1 = require("../../global/A-Scope/A-Scope.class");
-let A_Logger = class A_Logger {
+const A_Component_class_1 = require("../../global/A-Component/A-Component.class");
+let A_Logger = class A_Logger extends A_Component_class_1.A_Component {
     constructor(scope, config) {
+        super();
         this.scope = scope;
         this.config = config;
         this.colors = {
@@ -60,10 +62,16 @@ let A_Logger = class A_Logger {
                 : '\x1b[0m')
         ];
     }
-    log(...args) {
+    log(param1, ...args) {
         if (!this.config.get('CONFIG_VERBOSE'))
             return;
-        console.log(...this.compile('blue', ...args));
+        if (typeof param1 === 'string' && this.colors[param1]) {
+            console.log(...this.compile(param1, ...args));
+            return;
+        }
+        else {
+            console.log(...this.compile('blue', param1, ...args));
+        }
     }
     warning(...args) {
         if (!this.config.get('CONFIG_VERBOSE'))

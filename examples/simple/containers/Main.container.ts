@@ -4,6 +4,8 @@ import { ContextFragmentA } from "../context/Fragment_A.context";
 import { ContextFragmentB } from "../context/Fragment_B.context";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
+import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 
 
 
@@ -22,8 +24,10 @@ export class MainContainer extends A_Container<
     ) {
         if (params) {
             console.log('Start');
-            
+
         }
+
+        A_Context.feature(this, 'method_A');
     }
 
 
@@ -32,16 +36,33 @@ export class MainContainer extends A_Container<
     @A_Feature.Define()
     async method_A() {
         console.log('Method A');
-        const feature = this.call('method_A', {
-            fragments: [new ContextFragmentA(), new ContextFragmentB()]
+        await this.call('method_A', {
+            fragments: [
+                new ContextFragmentA(),
+                new ContextFragmentB()
+            ]
         });
-
-        await feature.process();
     }
+
+
+
 
     @A_Feature.Define()
     async method_B() {
-        console.log('Method B');
-        return this.call('method_B');
+        console.log('Method B', A_Context.root);
+
+        const logger = this.Scope.resolve(A_Logger);
+
+        // or  you can manually call the feature
+
+        const feature = A_Context.feature(this, 'method_B', {
+            fragments: [new ContextFragmentA(), new ContextFragmentB()]
+        });
+
+        for (const step of feature) {
+            logger.log('Manual Loop Execution Step', feature.current);
+
+            await step();
+        }
     }
 }

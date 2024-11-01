@@ -1,10 +1,11 @@
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
-import { A_TYPES__A_InjectDecoratorReturn, A_TYPES__A_InjectDecoratorStorageInstruction } from "./A-Inject.decorator.types";
+import { A_TYPES__A_InjectDecoratorReturn } from "./A-Inject.decorator.types";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
+import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
+import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 
 
 
@@ -33,9 +34,9 @@ export function A_Inject(
 ): A_TYPES__A_InjectDecoratorReturn
 
 //  Allows to inject just one container
-export function A_Inject(
-    container: typeof A_Container
-): A_TYPES__A_InjectDecoratorReturn
+// export function A_Inject(
+//     container: typeof A_Container
+// ): A_TYPES__A_InjectDecoratorReturn
 
 // Allows to inject just one Context Fragment
 export function A_Inject(
@@ -50,10 +51,9 @@ export function A_Inject<
 ): A_TYPES__A_InjectDecoratorReturn
 
 // ====================== BASE FUNCTION ======================
-export function A_Inject<
-    T extends Array<typeof A_Fragment>
->(
-    param1: T | typeof A_Fragment | typeof A_Component | typeof A_Container | typeof A_Fragment,
+export function A_Inject(
+    param1: typeof A_Fragment | typeof A_Component | typeof A_Scope | typeof A_Feature,
+
 ): A_TYPES__A_InjectDecoratorReturn {
     return function (
         target: A_Component,
@@ -61,13 +61,15 @@ export function A_Inject<
         parameterIndex: number
     ) {
 
-        const method = methodName ? methodName : 'constructor';
+        const method = methodName ? String(methodName) : 'constructor';
 
+        console.log('target: ', target);
 
         const existedMeta = A_Context
             .meta(target)
             .get(A_TYPES__ComponentMetaKey.INJECTIONS)
-            || new Map();
+            || new A_Meta();
+
 
         const paramsArray = existedMeta.get(method) || [];
 

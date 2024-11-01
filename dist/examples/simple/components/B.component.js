@@ -23,25 +23,32 @@ const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.
 const Fragment_B_context_1 = require("../context/Fragment_B.context");
 const Fragment_A_context_1 = require("../context/Fragment_A.context");
 const A_Feature_class_1 = require("../../../src/global/A-Feature/A-Feature.class");
-class ComponentB {
+const A_Component_class_1 = require("../../../src/global/A-Component/A-Component.class");
+const A_Logger_component_1 = require("../../../src/base/A-Logger/A-Logger.component");
+let ComponentB = class ComponentB extends A_Component_class_1.A_Component {
+    constructor(logger) {
+        super();
+        this.logger = logger;
+    }
     load() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('Component B ->  load()');
         });
     }
-    method_B() {
+    method_B(logger) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Component B ->  method_B()');
+            logger.log('cyan', 'Component B ->  method_B()');
         });
     }
     someMethod() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Component B ->  method_B() -> someMethod()');
+            this.logger.log('pink', 'Component B ->  method_B() -> someMethod()');
+            this.logger.log('Component B ->  method_B() -> someMethod()');
         });
     }
     someMethod2() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Component B ->  method_B() -> someMethod2()');
+            this.logger.log('yellow', 'Component B ->  method_B() -> someMethod2()');
         });
     }
     someMethod3(context, context2) {
@@ -49,13 +56,14 @@ class ComponentB {
             console.log('Component B ->  method_A() -> someMethod3()');
         });
     }
-}
+};
 exports.ComponentB = ComponentB;
 __decorate([
     A_Feature_class_1.A_Feature.Extend()
 ], ComponentB.prototype, "load", null);
 __decorate([
-    A_Feature_class_1.A_Feature.Extend()
+    A_Feature_class_1.A_Feature.Extend(),
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Logger_component_1.A_Logger))
 ], ComponentB.prototype, "method_B", null);
 __decorate([
     A_Feature_class_1.A_Feature.Extend({
@@ -74,4 +82,7 @@ __decorate([
     __param(0, (0, A_Inject_decorator_1.A_Inject)(Fragment_B_context_1.ContextFragmentB)),
     __param(1, (0, A_Inject_decorator_1.A_Inject)(Fragment_A_context_1.ContextFragmentA))
 ], ComponentB.prototype, "someMethod3", null);
+exports.ComponentB = ComponentB = __decorate([
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Logger_component_1.A_Logger))
+], ComponentB);
 //# sourceMappingURL=B.component.js.map

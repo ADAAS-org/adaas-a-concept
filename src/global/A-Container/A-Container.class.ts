@@ -2,6 +2,7 @@ import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Context } from "../A-Context/A-Context.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 
 
@@ -36,6 +37,10 @@ export class A_Container<
         return this.config.name || this.constructor.name;
     }
 
+    get Scope(): A_Scope {
+        return A_Context.scope(this);
+    }
+
 
     constructor(
         /**
@@ -48,10 +53,7 @@ export class A_Container<
         const components = config.components || [];
         const fragments = config.fragments || [];
 
-        A_Context.allocate(this, {
-            components,
-            fragments
-        });
+        A_Context.allocate(this, config);
 
         /**
          * Run Async Initialization
@@ -100,20 +102,20 @@ export class A_Container<
      * @param lifecycleMethod 
      * @param args 
      */
-    call(
+    async call(
         /**
          * A-Feature method name to be called
          */
         feature: _FeatureNames[number],
-    ): A_Feature
-    call(
+    ): Promise<any>
+    async call(
         /**
          * A-Feature name to be called
          */
         params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
-    ): A_Feature
+    ): Promise<any>
 
-    call(
+    async call(
         /**
         * A-Feature method name to be called
         */
@@ -122,37 +124,23 @@ export class A_Container<
          * Parameters to provide additional data to the feature
          */
         params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>,
-    ): A_Feature
+    ): Promise<any>
 
-    call(
+    async call(
         param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
         param2?: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>
-    ): A_Feature {
+    ): Promise<any> {
 
-        let feature: string;
-        let params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>;
+        const feature: string = typeof param1 === 'string'
+            ? param1
+            : param1.name;
+        const params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
+            ? param2 || {}
+            : param1;
 
-        if (typeof param1 === 'string') {
-            feature = param1;
-            params = param2 || {};
-        } else {
-            feature = param1.name;
-            params = param1;
-        }
+        const newFeature = A_Context.feature(this, feature, params);
 
-        const meta = A_Context.meta(this);
-
-        const steps = meta.feature(this, feature);
-
-        const newFeature = new A_Feature({
-            name: `${this.constructor.name}.${feature}`,
-            fragments: param2?.fragments || [],
-            components: param2?.components || [],
-            steps,
-            parent: A_Context.scope(this)
-        });
-
-        return newFeature;
+        return await newFeature.process();
     }
 
 

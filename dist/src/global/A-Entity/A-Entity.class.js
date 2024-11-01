@@ -1,9 +1,18 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Entity = void 0;
 const a_utils_1 = require("@adaas/a-utils");
 const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
-const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
+const A_Context_class_1 = require("../A-Context/A-Context.class");
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -11,9 +20,8 @@ const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-class A_Entity extends A_Fragment_class_1.A_Fragment {
+class A_Entity {
     constructor(props) {
-        super();
         switch (true) {
             case (typeof props === 'string' && a_utils_1.ASEID.isASEID(props)):
                 this.aseid = new a_utils_1.ASEID(props);
@@ -75,6 +83,18 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
      */
     get shard() {
         return this.aseid.shard;
+    }
+    call(param1, param2) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const feature = typeof param1 === 'string'
+                ? param1
+                : param1.name;
+            const params = typeof param1 === 'string'
+                ? param2 || {}
+                : param1;
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, params);
+            return yield newFeature.process();
+        });
     }
     fromNewEntity(newEntity) {
         return;

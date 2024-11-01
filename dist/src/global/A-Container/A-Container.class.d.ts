@@ -1,6 +1,6 @@
 import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A-Container.types";
 import { A_TYPES__Required } from "@adaas/a-utils";
-import { A_Feature } from "../A-Feature/A-Feature.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 /**
  * This class should combine Components to achieve the goal withing Concept
  *
@@ -20,6 +20,7 @@ export declare class A_Container<_FeatureNames extends Array<string>> {
     ready: Promise<void>;
     get exports(): _FeatureNames;
     get name(): string;
+    get Scope(): A_Scope;
     constructor(
     /**
      * Configuration of the container that will be used to run it.
@@ -42,12 +43,12 @@ export declare class A_Container<_FeatureNames extends Array<string>> {
     /**
      * A-Feature method name to be called
      */
-    feature: _FeatureNames[number]): A_Feature;
+    feature: _FeatureNames[number]): Promise<any>;
     call(
     /**
      * A-Feature name to be called
      */
-    params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>): A_Feature;
+    params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>): Promise<any>;
     call(
     /**
     * A-Feature method name to be called
@@ -56,7 +57,7 @@ export declare class A_Container<_FeatureNames extends Array<string>> {
     /**
      * Parameters to provide additional data to the feature
      */
-    params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>): A_Feature;
+    params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>): Promise<any>;
     /**
      *  Before init hook to be used in inherited classes
      *

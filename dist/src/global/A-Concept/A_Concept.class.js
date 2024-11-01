@@ -12,7 +12,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Concept = void 0;
 const A_Concept_types_1 = require("./A_Concept.types");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
-const A_Logger_component_1 = require("../../base/A-Logger/A-Logger.component");
 const A_Container_types_1 = require("../A-Container/A-Container.types");
 const A_Stage_decorator_1 = require("../../decorators/A-Stage/A-Stage.decorator");
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
@@ -90,7 +89,7 @@ class A_Concept {
             fragments: props.fragments || [],
             // containers: props.containers
             components: [
-                A_Logger_component_1.A_Logger,
+            // A_Logger,
             ]
         });
         this.containers = props.containers || [];

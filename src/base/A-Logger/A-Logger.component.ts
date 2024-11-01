@@ -2,15 +2,17 @@ import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorato
 import { A_Error } from "@adaas/a-utils";
 import { A_Config } from "../A-Config/A-Config.context";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 
 
 
-export class A_Logger {
+export class A_Logger extends A_Component {
 
     constructor(
         @A_Inject(A_Scope) protected scope: A_Scope,
         @A_Inject(A_Config) protected config: A_Config
     ) {
+        super();
     }
 
     readonly colors = {
@@ -75,11 +77,27 @@ export class A_Logger {
     }
 
 
-    log(...args) {
+    log(
+        color: keyof typeof this.colors,
+        ...args: any[]
+    )
+    log(
+        ...args: any[]
+    )
+    log(
+        param1: any,
+        ...args: any[]
+    ) {
         if (!this.config.get('CONFIG_VERBOSE'))
             return;
 
-        console.log(...this.compile('blue', ...args));
+        if (typeof param1 === 'string' && this.colors[param1]) {
+            console.log(...this.compile(param1 as keyof typeof this.colors, ...args));
+            return;
+        }
+        else {
+            console.log(...this.compile('blue', param1, ...args));
+        }
     }
 
     warning(...args) {

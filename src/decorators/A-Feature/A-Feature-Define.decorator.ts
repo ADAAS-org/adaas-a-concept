@@ -36,7 +36,6 @@ export function A_Feature_Define(
             || new Map();
 
 
-
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
             handler: propertyKey,

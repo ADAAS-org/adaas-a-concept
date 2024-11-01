@@ -1,7 +1,9 @@
-import { A_TYPES__Dictionary } from "@adaas/a-utils";
-import { A_Component } from "../A-Component/A-Component.class";
-import { A_Container } from "../A-Container/A-Container.class";
-
+// 
+// 
+// 
+// 
+// 
+// 
 
 
 /**
@@ -12,11 +14,34 @@ import { A_Container } from "../A-Container/A-Container.class";
 export class A_Meta<
     _StorageItems extends Record<string, any>
 // _StorageItems extends Record<string, Map<string | Symbol, any> | Array<any> | A_TYPES__Dictionary<any>>
-> {
+> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
 
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]> = new Map();
 
 
+    /**
+     * Method to get the iterator for the meta object
+     * 
+     * @returns 
+     */
+    [Symbol.iterator](): Iterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+        const iterator = this.meta.entries();
+        return {
+            next: () => iterator.next()
+        };
+    }
+
+
+
+    // ===================================================================================================
+    // ================================ META OPERATIONS ==================================================
+    // ===================================================================================================
+    /**
+     * Allows to replicate received meta object by replacing internal meta to the received one
+     * 
+     * @param meta 
+     * @returns 
+     */
     from(
         meta: A_Meta<_StorageItems>
     ): A_Meta<_StorageItems> {
@@ -26,11 +51,12 @@ export class A_Meta<
     }
 
 
-    // ===================================================================================================
-    // ================================ META OPERATIONS ==================================================
-    // ===================================================================================================
-
-    // Method to set values in the map
+    /**
+     * Method to set values in the map
+     * 
+     * @param key 
+     * @param value 
+     */
     set<K extends keyof _StorageItems>(key: K, value: _StorageItems[K]) {
 
         const inheritedValue = this.meta.get(key)
@@ -51,18 +77,76 @@ export class A_Meta<
 
     }
 
-    // Method to get values from the map
+
+
+    /**
+     * Method to get values from the map
+     * 
+     * @param key 
+     * @returns 
+     */
     get<K extends keyof _StorageItems>(key: K): _StorageItems[K] | undefined {
         return this.meta.get(key) as _StorageItems[K];
     }
 
 
-    // Delete a key-value pair by key
+    /**
+     * Method to delete values from the map
+     * 
+     * @param key 
+     * @returns 
+     */
     delete(key: keyof _StorageItems): boolean {
         return this.meta.delete(key);
     }
 
-    // Search for keys by regex
+
+    /**
+     * This method is needed to convert the key to a regular expression and cover cases like: 
+     * 
+     * simple * e.g. "a*" instead of "a.*"
+     * 
+     * simple ? e.g. "a?" instead of "a."
+     * 
+     * etc. 
+     * 
+     * @param key 
+     * @returns 
+     */
+    private convertToRegExp(key: string | RegExp): RegExp {
+        return key instanceof RegExp
+            ? key
+            : new RegExp(key);
+    }
+
+
+    /**
+     * Method to find values in the map by name.
+     * 
+     * Converts the Key in Map to a regular expression and then compares to the name
+     * 
+     * @param name 
+     * @returns 
+     */
+    find(name: string) {
+        const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
+        for (const [key, value] of this.meta.entries()) {
+            if (this.convertToRegExp(name).test(key as string)) {
+                results.push([key, value]);
+            }
+        }
+        return results;
+    }
+
+
+    /**
+     * Method to find values in the map by regular expression
+     * 
+     * Compares Map Key to the input regular expression
+     * 
+     * @param regex 
+     * @returns 
+     */
     findByRegex(regex: RegExp): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
         const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
         for (const [key, value] of this.meta.entries()) {
@@ -73,24 +157,32 @@ export class A_Meta<
         return results;
     }
 
-    // Check if a key exists
+
+    /**
+     * Method to check if the map has a specific key
+     * 
+     * @param key 
+     * @returns 
+     */
     has(key: keyof _StorageItems): boolean {
         return this.meta.has(key);
     }
 
-    // Get all entries in the map
+
+    /**
+     * Method to get the size of the map
+     * 
+     * @returns 
+     */
     entries(): IterableIterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
         return this.meta.entries();
     }
 
 
-    // Clear all entries
+    /**
+     * Method to clear the map
+     */
     clear(): void {
         this.meta.clear();
     }
-
-
-
 }
-
-

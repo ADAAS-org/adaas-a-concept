@@ -3,13 +3,16 @@ import { HTTPRequest } from "../contexts/http-request.context";
 import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 import { HttpServer } from "../containers/http-server.container";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 
 
-export class HTTPErrorHandler {
+export class HTTPErrorHandler extends A_Component {
 
     constructor(
         @A_Inject(A_Logger) private logger: A_Logger
-    ) { }
+    ) { 
+        super();
+    }
 
 
 

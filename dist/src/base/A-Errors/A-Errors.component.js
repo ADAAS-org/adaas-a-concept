@@ -15,8 +15,10 @@ const A_Inject_decorator_1 = require("../../decorators/A-Inject/A-Inject.decorat
 const A_Errors_context_1 = require("./A-Errors.context");
 const a_utils_1 = require("@adaas/a-utils");
 const A_Context_class_1 = require("../../global/A-Context/A-Context.class");
-let A_ErrorsManager = class A_ErrorsManager {
+const A_Component_class_1 = require("../../global/A-Component/A-Component.class");
+let A_ErrorsManager = class A_ErrorsManager extends A_Component_class_1.A_Component {
     constructor(scope, errors) {
+        super();
         this.scope = scope;
         this.errors = errors;
     }

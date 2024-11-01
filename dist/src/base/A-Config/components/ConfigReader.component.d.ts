@@ -1,8 +1,9 @@
 import { A_Scope } from "../../../global/A-Scope/A-Scope.class";
+import { A_Component } from "../../../global/A-Component/A-Component.class";
 /**
  * Config Reader
  */
-export declare class ConfigReader {
+export declare class ConfigReader extends A_Component {
     protected scope: A_Scope;
     constructor(scope: A_Scope);
     /**

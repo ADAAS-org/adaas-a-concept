@@ -1,6 +1,5 @@
-import { ASEID } from "@adaas/a-utils";
-import { A_TYPES__Entity_JSON, A_TYPES__IEntity } from "./A-Entity.types";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_TYPES__Required, ASEID } from "@adaas/a-utils";
+import { A_TYPES__Entity_JSON, A_TYPES__EntityBaseMethods, A_TYPES__EntityCallParams, A_TYPES__IEntity } from "./A-Entity.types";
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -8,7 +7,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON> extends A_Fragment implements A_TYPES__IEntity {
+export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string> = A_TYPES__EntityBaseMethods> implements A_TYPES__IEntity {
     aseid: ASEID;
     constructor(aseid: string);
     constructor(aseid: ASEID);
@@ -44,6 +43,31 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * shard is the shard of the entity
      */
     get shard(): string | undefined;
+    /**
+     * Call a feature of the component
+     *
+     * @param lifecycleMethod
+     * @param args
+     */
+    call(
+    /**
+     * A-Feature method name to be called
+     */
+    feature: _FeatureNames[number]): Promise<any>;
+    call(
+    /**
+     * A-Feature name to be called
+     */
+    params: A_TYPES__Required<Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>, ['name']>): Promise<any>;
+    call(
+    /**
+    * A-Feature method name to be called
+    */
+    feature: string, 
+    /**
+     * Parameters to provide additional data to the feature
+     */
+    params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>): Promise<any>;
     protected fromNewEntity(newEntity: _ConstructorType): void;
     protected fromSerialized(serialized: _SerializedType): void;
     /**

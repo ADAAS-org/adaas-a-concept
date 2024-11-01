@@ -24,8 +24,10 @@ const http_request_context_1 = require("../contexts/http-request.context");
 const A_Logger_component_1 = require("../../../src/base/A-Logger/A-Logger.component");
 const http_server_container_1 = require("../containers/http-server.container");
 const A_Feature_class_1 = require("../../../src/global/A-Feature/A-Feature.class");
-let HTTPErrorHandler = class HTTPErrorHandler {
+const A_Component_class_1 = require("../../../src/global/A-Component/A-Component.class");
+let HTTPErrorHandler = class HTTPErrorHandler extends A_Component_class_1.A_Component {
     constructor(logger) {
+        super();
         this.logger = logger;
     }
     onErrorPage(request, feature) {

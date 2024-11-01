@@ -5,6 +5,8 @@ const a_utils_1 = require("@adaas/a-utils");
 const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Component_types_1 = require("../A-Component/A-Component.types");
+const A_Component_class_1 = require("../A-Component/A-Component.class");
+const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
 /**
  *
  *
@@ -23,6 +25,7 @@ class A_Scope {
         this.name = '';
         this._components = new WeakMap();
         this._fragments = new WeakMap();
+        this._entities = new Map();
         this.name = params.name || this.constructor.name;
         // TODO: move to defaults
         const defaultParams = {
@@ -98,24 +101,14 @@ class A_Scope {
             case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Fragment_class_1.A_Fragment): {
                 return this.resolveFragment(component);
             }
-            case this.components.includes(component) && this._components.has(component): {
-                return this._components.get(component);
+            case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Scope): {
+                return this.resolveScope(component);
             }
-            case this.components.includes(component) && !this._components.has(component): {
-                const componentMeta = A_Context_class_1.A_Context.meta(component);
-                const argsMeta = componentMeta.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
-                let resolvedArgs = [];
-                if (argsMeta)
-                    resolvedArgs = (argsMeta.get('constructor') || [])
-                        .map(arg => this.resolve(arg));
-                this._components.set(component, new component());
-                return this._components.get(component);
-            }
-            case !this.components.includes(component) && !!this.parent: {
-                return this.parent.resolve(component);
+            case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Component_class_1.A_Component): {
+                return this.resolveComponent(component);
             }
             default:
-                throw new Error(`Component ${component.name} not found in the scope`);
+                throw new Error(`Injected Component ${component} not found in the scope`);
         }
     }
     resolveFragment(fragment) {
@@ -127,8 +120,57 @@ class A_Scope {
         }
         throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
     }
-    register(fragment) {
-        this._fragments.set(fragment.constructor, fragment);
+    resolveScope(scope) {
+        if (a_utils_1.A_CommonHelper.isInheritedFrom(scope, this.constructor)) {
+            return this;
+        }
+        else if (this.parent) {
+            return this.parent.resolveScope(scope);
+        }
+        throw new Error(`Scope ${scope.name} not found in the scope ${this.name}`);
+    }
+    resolveComponent(component) {
+        if (this.components.includes(component) && this._components.has(component))
+            return this._components.get(component);
+        else if (this.components.includes(component) && !this._components.has(component)) {
+            const componentMeta = A_Context_class_1.A_Context.meta(component);
+            const argsMeta = componentMeta.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+            const resolvedArgs = ((argsMeta === null || argsMeta === void 0 ? void 0 : argsMeta.get('constructor')) || [])
+                .map(arg => this.resolve(arg));
+            const newComponent = new component(...resolvedArgs);
+            this.register(newComponent);
+            return this._components.get(component);
+        }
+        else if (!this.components.includes(component) && !!this.parent) {
+            return this.parent.resolveComponent(component);
+        }
+        else {
+            throw new Error(`Component ${component.name} not found in the scope`);
+        }
+    }
+    register(param1) {
+        switch (true) {
+            case param1 instanceof A_Fragment_class_1.A_Fragment && !this._fragments.has(param1.constructor): {
+                this._fragments.set(param1.constructor, param1);
+                // The same situation. Have not idea how to fix it
+                A_Context_class_1.A_Context.register(this, param1);
+                break;
+            }
+            case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
+                this._entities.set(param1.aseid.toString(), param1);
+                // The same situation. Have not idea how to fix it
+                A_Context_class_1.A_Context.register(this, param1);
+                break;
+            }
+            case param1 instanceof A_Component_class_1.A_Component: {
+                this._components.set(param1.constructor, param1);
+                // The same situation. Have not idea how to fix it
+                A_Context_class_1.A_Context.register(this, param1);
+                break;
+            }
+            default:
+                throw new Error('Invalid arguments provided');
+        }
     }
 }
 exports.A_Scope = A_Scope;

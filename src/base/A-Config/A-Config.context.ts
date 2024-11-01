@@ -28,10 +28,17 @@ export class A_Config<
 
         this.config = A_CommonHelper.deepCloneAndMerge<A_TYPES__ConfigContainerConstructor<T>>(config as any, {
             name: this.name,
-            defaults: {} as Record<T, any>
+            defaults: {} as Record<T, any>,
+            variables: [] as T[]
         });
 
         this.CONFIG_PROPERTIES = this.config.variables ? this.config.variables : [];
+    }
+
+    protected async onInit(): Promise<void> {
+        this.config.variables.forEach((variable) => {
+            this.VARIABLES.set(variable, this.config.defaults[variable]);
+        });
     }
 
 
@@ -44,7 +51,8 @@ export class A_Config<
     get<_OutType = any>(
         property: T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]
     ): _OutType {
-        if (this.CONFIG_PROPERTIES.includes(property as any))
+        if (this.CONFIG_PROPERTIES.includes(property as any)
+            || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property as any))
             return this.VARIABLES.get(property as string) as _OutType;
 
         throw new Error('Property not exists or not allowed to read') as never;

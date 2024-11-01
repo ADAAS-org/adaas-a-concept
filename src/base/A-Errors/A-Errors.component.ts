@@ -3,14 +3,15 @@ import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorato
 import { A_Errors } from "./A-Errors.context";
 import { A_CONSTANTS__ERROR_CODES, A_Error, A_ServerError, ASEID } from "@adaas/a-utils";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 
-export class A_ErrorsManager {
+export class A_ErrorsManager extends A_Component {
 
     constructor(
         @A_Inject(A_Scope) protected scope: A_Scope,
         @A_Inject(A_Errors) protected errors: A_Errors
     ) {
-
+        super();
     }
 
 

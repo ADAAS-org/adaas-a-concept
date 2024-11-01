@@ -5,6 +5,9 @@ import {
 } from "./A-Feature.decorator.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
+import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 
 
 
@@ -31,27 +34,29 @@ export function A_Feature_Extend(
         descriptor: A_TYPES__A_ExtendDecoratorDescriptor
     ) {
 
+        const extensionName = config.name || propertyKey
+
         // Get the existed metadata or create a new one
         const existedMeta = A_Context
             .meta(target)
             .get(A_TYPES__ComponentMetaKey.EXTENSIONS)
-            || new Map();
+            || new A_Meta();
+
+
+        const existedMetaValue = existedMeta.get(extensionName) || [];
+
+        // Add the new method to the metadata
+        existedMetaValue.push({
+            name: extensionName,
+            handler: propertyKey,
+        });
 
         // Set the metadata of the method to define a custom Feature with name
-        existedMeta.set(propertyKey, {
-            name: config.name || propertyKey,
-            handler: propertyKey,
-            container: config.container
-                ? typeof config.container === 'string'
-                    ? config.container
-                    : config.container.name
-                : '*',
-        });
+        existedMeta.set(extensionName, existedMetaValue);
 
         //  Update the metadata of the container with the new Feature definition
         A_Context
             .meta(target)
             .set(A_TYPES__ComponentMetaKey.EXTENSIONS, existedMeta);
-
     };
 }

@@ -23,13 +23,15 @@ const A_Feature_class_1 = require("../../../src/global/A-Feature/A-Feature.class
 const Fragment_A_context_1 = require("../context/Fragment_A.context");
 const Fragment_B_context_1 = require("../context/Fragment_B.context");
 const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.decorator");
-class ComponentA {
+const A_Component_class_1 = require("../../../src/global/A-Component/A-Component.class");
+const A_Logger_component_1 = require("../../../src/base/A-Logger/A-Logger.component");
+class ComponentA extends A_Component_class_1.A_Component {
     load() {
         return __awaiter(this, void 0, void 0, function* () { });
     }
-    method_A(fragmentA) {
+    method_A(fragmentA, logger) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Component A ->  method_A()');
+            logger.log('red', 'Component A ->  method_A()');
             fragmentA.decrement();
         });
     }
@@ -46,7 +48,8 @@ __decorate([
 ], ComponentA.prototype, "load", null);
 __decorate([
     A_Feature_class_1.A_Feature.Extend(),
-    __param(0, (0, A_Inject_decorator_1.A_Inject)(Fragment_A_context_1.ContextFragmentA))
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(Fragment_A_context_1.ContextFragmentA)),
+    __param(1, (0, A_Inject_decorator_1.A_Inject)(A_Logger_component_1.A_Logger))
 ], ComponentA.prototype, "method_A", null);
 __decorate([
     A_Feature_class_1.A_Feature.Extend({

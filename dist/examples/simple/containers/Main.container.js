@@ -25,6 +25,8 @@ const Fragment_A_context_1 = require("../context/Fragment_A.context");
 const Fragment_B_context_1 = require("../context/Fragment_B.context");
 const A_Concept_class_1 = require("../../../src/global/A-Concept/A_Concept.class");
 const A_Inject_decorator_1 = require("../../../src/decorators/A-Inject/A-Inject.decorator");
+const A_Context_class_1 = require("../../../src/global/A-Context/A-Context.class");
+const A_Logger_component_1 = require("../../../src/base/A-Logger/A-Logger.component");
 class MainContainer extends A_Container_class_1.A_Container {
     load() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -36,21 +38,32 @@ class MainContainer extends A_Container_class_1.A_Container {
             if (params) {
                 console.log('Start');
             }
+            A_Context_class_1.A_Context.feature(this, 'method_A');
         });
     }
     method_A() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('Method A');
-            const feature = this.call('method_A', {
-                fragments: [new Fragment_A_context_1.ContextFragmentA(), new Fragment_B_context_1.ContextFragmentB()]
+            yield this.call('method_A', {
+                fragments: [
+                    new Fragment_A_context_1.ContextFragmentA(),
+                    new Fragment_B_context_1.ContextFragmentB()
+                ]
             });
-            yield feature.process();
         });
     }
     method_B() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Method B');
-            return this.call('method_B');
+            console.log('Method B', A_Context_class_1.A_Context.root);
+            const logger = this.Scope.resolve(A_Logger_component_1.A_Logger);
+            // or  you can manually call the feature
+            const feature = A_Context_class_1.A_Context.feature(this, 'method_B', {
+                fragments: [new Fragment_A_context_1.ContextFragmentA(), new Fragment_B_context_1.ContextFragmentB()]
+            });
+            for (const step of feature) {
+                logger.log('Manual Loop Execution Step', feature.current);
+                yield step();
+            }
         });
     }
 }

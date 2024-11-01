@@ -39,10 +39,55 @@ class A_Feature {
     constructor(params) {
         // protected scope: A_Scope
         this.steps = [];
+        this._index = 0;
         this.state = A_Feature_types_1.A_TYPES__FeatureState.INITIALIZED;
         // this.scope = params.scope;
         this.steps = params.steps;
         A_Context_class_1.A_Context.allocate(this, params);
+    }
+    /**
+     * Custom iterator to iterate over the steps of the feature
+     *
+     * @returns
+     */
+    [Symbol.iterator]() {
+        return {
+            // Custom next method
+            next: () => {
+                if (this._index < this.steps.length) {
+                    if (this.state === A_Feature_types_1.A_TYPES__FeatureState.FAILED
+                        ||
+                            this.state === A_Feature_types_1.A_TYPES__FeatureState.COMPLETED) {
+                        throw new Error('FEATURE_PROCESSING_INTERRUPTED');
+                    }
+                    this._current = this.steps[this._index];
+                    const { component, handler, args } = this._current;
+                    const instance = A_Context_class_1.A_Context.scope(this).resolve(component);
+                    return {
+                        value: () => __awaiter(this, void 0, void 0, function* () {
+                            if (instance[handler]) {
+                                const callArgs = A_Context_class_1.A_Context.scope(this).resolve(args);
+                                yield instance[handler](...callArgs);
+                            }
+                            this._index++;
+                        }),
+                        done: false
+                    };
+                }
+                else {
+                    this._current = undefined; // Reset current on end
+                    return { value: undefined, done: true };
+                }
+            }
+        };
+    }
+    // Access the current element
+    get current() {
+        return this._current;
+    }
+    // Custom end strategy or stop condition (could be expanded if needed)
+    isDone() {
+        return this.current === null;
     }
     /**
      * This method marks the feature as completed and returns the result
@@ -75,22 +120,13 @@ class A_Feature {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 this.state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
-                for (const { component, handler, args } of this.steps) {
-                    if (this.state === A_Feature_types_1.A_TYPES__FeatureState.FAILED
-                        ||
-                            this.state === A_Feature_types_1.A_TYPES__FeatureState.COMPLETED) {
-                        throw new Error('FEATURE_PROCESSING_INTERRUPTED');
-                    }
-                    const instance = A_Context_class_1.A_Context.scope(this).resolve(component);
-                    if (instance[handler]) {
-                        const callArgs = A_Context_class_1.A_Context.scope(this).resolve(args);
-                        yield instance[handler](...callArgs);
-                    }
+                for (const step of this) {
+                    yield step();
                 }
                 yield this.completed();
             }
             catch (error) {
-                console.log('Feature processing error:', error);
+                console.log('[!] Feature processing error:', error);
                 yield this.failed(error);
             }
         });

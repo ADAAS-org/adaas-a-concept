@@ -1,8 +1,17 @@
-import { A_Error, ASEID } from "@adaas/a-utils";
-
+import {
+    A_Error, A_TYPES__Required,
+    ASEID
+} from "@adaas/a-utils";
+import {
+    A_TYPES__Entity_JSON,
+    A_TYPES__EntityBaseMethods,
+    A_TYPES__EntityCallParams,
+    A_TYPES__IEntity
+} from "./A-Entity.types";
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
-import { A_TYPES__Entity_JSON, A_TYPES__IEntity } from "./A-Entity.types";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Context } from "../A-Context/A-Context.class";
+
+
 
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
@@ -14,8 +23,8 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 export class A_Entity<
     _ConstructorType = any,
     _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON,
+    _FeatureNames extends Array<string> = A_TYPES__EntityBaseMethods
 >
-    extends A_Fragment
     implements A_TYPES__IEntity {
 
     aseid!: ASEID;
@@ -34,7 +43,6 @@ export class A_Entity<
         newEntity: _ConstructorType
     )
     constructor(props: string | ASEID | _SerializedType | _ConstructorType) {
-        super();
 
         switch (true) {
             case (typeof props === 'string' && ASEID.isASEID(props)):
@@ -54,7 +62,6 @@ export class A_Entity<
             default:
                 throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
         }
-
     }
 
     // ====================================================================
@@ -111,6 +118,55 @@ export class A_Entity<
     }
 
 
+    /**
+     * Call a feature of the component
+     * 
+     * @param lifecycleMethod 
+     * @param args 
+     */
+    async call(
+        /**
+         * A-Feature method name to be called
+         */
+        feature: _FeatureNames[number],
+    ): Promise<any>
+    async call(
+        /**
+         * A-Feature name to be called
+         */
+        params: A_TYPES__Required<Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>, ['name']>,
+    ): Promise<any>
+    async call(
+        /**
+        * A-Feature method name to be called
+        */
+        feature: string,
+        /**
+         * Parameters to provide additional data to the feature
+         */
+        params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>,
+    ): Promise<any>
+
+    async call(
+        param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>, ['name']>,
+        param2?: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>
+    ): Promise<any> {
+
+        const feature: string = typeof param1 === 'string'
+            ? param1
+            : param1.name;
+        const params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
+            ? param2 || {}
+            : param1;
+
+        const newFeature = A_Context.feature(this, feature, params);
+
+        return await newFeature.process();
+    }
+
+
+
+
     protected fromNewEntity(newEntity: _ConstructorType): void {
         return;
     }
@@ -119,6 +175,7 @@ export class A_Entity<
         this.aseid = new ASEID((serialized).aseid);
         return;
     }
+
 
 
     /**

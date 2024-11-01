@@ -1,7 +1,8 @@
 import { A_Error } from "@adaas/a-utils";
 import { A_Config } from "../A-Config/A-Config.context";
 import { A_Scope } from "../../global/A-Scope/A-Scope.class";
-export declare class A_Logger {
+import { A_Component } from "../../global/A-Component/A-Component.class";
+export declare class A_Logger extends A_Component {
     protected scope: A_Scope;
     protected config: A_Config;
     constructor(scope: A_Scope, config: A_Config);
@@ -18,7 +19,8 @@ export declare class A_Logger {
     };
     get scopeLength(): number;
     compile(color: keyof typeof this.colors, ...args: any[]): Array<string>;
-    log(...args: any[]): void;
+    log(color: keyof typeof this.colors, ...args: any[]): any;
+    log(...args: any[]): any;
     warning(...args: any[]): void;
     error(...args: any[]): void;
     protected log_A_Error(error: A_Error): void;
