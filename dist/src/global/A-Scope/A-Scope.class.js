@@ -121,13 +121,7 @@ class A_Scope {
         throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
     }
     resolveScope(scope) {
-        if (a_utils_1.A_CommonHelper.isInheritedFrom(scope, this.constructor)) {
-            return this;
-        }
-        else if (this.parent) {
-            return this.parent.resolveScope(scope);
-        }
-        throw new Error(`Scope ${scope.name} not found in the scope ${this.name}`);
+        return this;
     }
     resolveComponent(component) {
         if (this.components.includes(component) && this._components.has(component))

@@ -188,15 +188,8 @@ export class A_Scope {
         throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
     }
 
-    private resolveScope<T extends { new(...args: any[]): A_Scope }>(scope: T): InstanceType<T> {
-
-        if (A_CommonHelper.isInheritedFrom(scope, this.constructor)) {
-            return this as InstanceType<T>;
-        } else if (this.parent) {
-            return this.parent.resolveScope(scope);
-        }
-
-        throw new Error(`Scope ${scope.name} not found in the scope ${this.name}`);
+    private resolveScope(scope: typeof A_Scope): A_Scope {
+        return this;
     }
 
 

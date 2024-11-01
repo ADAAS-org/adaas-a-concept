@@ -268,10 +268,13 @@ export class A_Context {
         container: A_Container<any>
     ): A_Scope
     static scope(
+        feature: A_Fragment
+    ): A_Scope
+    static scope(
         feature: A_Feature
     ): A_Scope
     static scope(
-        param1: A_Feature | A_Container<any> | A_Concept | A_Component<any> | A_Entity
+        param1: A_Feature | A_Container<any> | A_Concept | A_Component<any> | A_Entity | A_Fragment
     ): A_Scope | undefined {
 
         const instance = this.getInstance();

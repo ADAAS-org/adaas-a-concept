@@ -72,6 +72,7 @@ export declare class A_Context {
     static scope(component: A_Component): A_Scope;
     static scope(concept: A_Concept): A_Scope;
     static scope(container: A_Container<any>): A_Scope;
+    static scope(feature: A_Fragment): A_Scope;
     static scope(feature: A_Feature): A_Scope;
     /**
      * This method returns a component by its meta.
