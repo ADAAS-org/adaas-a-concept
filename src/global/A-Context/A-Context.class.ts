@@ -168,6 +168,9 @@ export class A_Context {
         entity: A_Entity,
     ): A_ContainerMeta
     static meta(
+        entity: typeof A_Entity,
+    ): A_ContainerMeta
+    static meta(
         component: typeof A_Component,
     ): A_ComponentMeta
     static meta(
@@ -177,7 +180,13 @@ export class A_Context {
         component: { new(...args: any[]): any },
     ): A_Meta<T>
     static meta<T extends Record<string, any>>(
-        param1: typeof A_Container | A_Container<any> | { new(...args: any[]): any } | A_Component | typeof A_Component | typeof A_Entity | A_Entity
+        param1: A_Container<any>
+            | typeof A_Container
+            | A_Component
+            | typeof A_Component
+            | A_Entity
+            | typeof A_Entity
+            | { new(...args: any[]): any }
     ): A_ContainerMeta | A_ComponentMeta | A_Meta<T> {
         const instance = this.getInstance();
 

@@ -63,6 +63,7 @@ export declare class A_Context {
     static meta(container: typeof A_Container): A_ContainerMeta;
     static meta(container: A_Container<any>): A_ContainerMeta;
     static meta(entity: A_Entity): A_ContainerMeta;
+    static meta(entity: typeof A_Entity): A_ContainerMeta;
     static meta(component: typeof A_Component): A_ComponentMeta;
     static meta(component: A_Component): A_ComponentMeta;
     static meta<T extends Record<string, any>>(component: {

@@ -1,3 +1,4 @@
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import {
     A_TYPES__A_FeatureDecoratorConfig,
     A_TYPES__A_FeatureDecoratorDescriptor,
@@ -5,6 +6,12 @@ import {
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_Entity } from "@adaas/a-utils";
+import { A_EntityMeta } from "@adaas/a-concept/global/A-Entity/A-Entity.meta";
+import { A_ContainerMeta } from "@adaas/a-concept/global/A-Container/A-Container.meta";
+import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.meta";
+import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
+import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 
 
 /**
@@ -24,15 +31,33 @@ export function A_Feature_Define(
     config: Partial<A_TYPES__A_FeatureDecoratorConfig> = {}
 ) {
     return function (
-        target: A_Container<any>,
+        target: A_Container<any> | A_Entity | A_Component,
         propertyKey: string,
         descriptor: A_TYPES__A_FeatureDecoratorDescriptor
     ) {
 
+        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target as any);
+
+        let metaKey;
+
+
+        switch (true) {
+            case target instanceof A_Entity:
+                metaKey = A_TYPES__EntityMetaKey.FEATURES;
+                break;
+            case target instanceof A_Container:
+                metaKey = A_TYPES__ContainerMetaKey.FEATURES
+                break;
+            case target instanceof A_Component:
+                metaKey = A_TYPES__ComponentMetaKey.FEATURES
+                break;
+            default:
+                throw new Error(`A-Feature cannot be defined on the ${target} level`);
+        }
+
+
         // Get the existed metadata or create a new one
-        const existedMeta = A_Context
-            .meta(target)
-            .get(A_TYPES__ContainerMetaKey.FEATURES)
+        const existedMeta = meta.get(metaKey)
             || new Map();
 
 
@@ -47,9 +72,9 @@ export function A_Feature_Define(
 
         //  Update the metadata of the container with the new Feature definition
         A_Context
-            .meta(target)
+            .meta(target as any)
             .set(
-                A_TYPES__ContainerMetaKey.FEATURES,
+                metaKey,
                 existedMeta
             );
     };

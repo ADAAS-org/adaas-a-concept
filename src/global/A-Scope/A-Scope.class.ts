@@ -231,8 +231,8 @@ export class A_Scope {
      * 
      * @param fragment 
      */
-    register(fragment: A_Entity): void
-    register(fragment: A_Component): void
+    register(entity: A_Entity): void
+    register(component: A_Component): void
     register(fragment: A_Fragment): void
     register(
         param1: A_Fragment | A_Component | A_Entity
