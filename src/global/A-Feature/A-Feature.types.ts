@@ -1,5 +1,5 @@
 import { A_Component } from "../A-Component/A-Component.class"
-import { A_TYPES__ComponentMeta_InjectionParam } from "../A-Component/A-Component.types"
+import { A_TYPES__ComponentMeta_InjectionParam, A_TYPES__ComponentMeta_InjectionParams } from "../A-Component/A-Component.types"
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types"
 
 
@@ -22,5 +22,5 @@ export enum A_TYPES__FeatureState {
 export type A_TYPES__FeatureStep = {
     component: typeof A_Component,
     handler: string,
-    args: A_TYPES__ComponentMeta_InjectionParam[]
+    args: A_TYPES__ComponentMeta_InjectionParams
 }

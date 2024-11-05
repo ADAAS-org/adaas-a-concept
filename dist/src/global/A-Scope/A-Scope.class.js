@@ -96,7 +96,7 @@ class A_Scope {
             }
         }
     }
-    resolveOnce(component) {
+    resolveOnce(component, instructions) {
         switch (true) {
             case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Fragment_class_1.A_Fragment): {
                 return this.resolveFragment(component);
@@ -130,7 +130,13 @@ class A_Scope {
             const componentMeta = A_Context_class_1.A_Context.meta(component);
             const argsMeta = componentMeta.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
             const resolvedArgs = ((argsMeta === null || argsMeta === void 0 ? void 0 : argsMeta.get('constructor')) || [])
-                .map(arg => this.resolve(arg));
+                .map(arg => {
+                if ('instructions' in arg) {
+                    const { target, instructions } = arg;
+                    return this.resolve(target, instructions);
+                }
+                return this.resolve(arg.target);
+            });
             const newComponent = new component(...resolvedArgs);
             this.register(newComponent);
             return this._components.get(component);

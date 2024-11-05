@@ -7,6 +7,7 @@ var A_TYPES__ComponentMetaKey;
     A_TYPES__ComponentMetaKey["FEATURES"] = "a-component-features";
     A_TYPES__ComponentMetaKey["INJECTIONS"] = "a-component-injections";
 })(A_TYPES__ComponentMetaKey || (exports.A_TYPES__ComponentMetaKey = A_TYPES__ComponentMetaKey = {}));
+// | 
 // typeof A_Fragment
 // | typeof A_Component
 // // | { new(...args: any[]): any }

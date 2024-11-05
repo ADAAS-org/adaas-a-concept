@@ -1,6 +1,6 @@
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
-import { A_TYPES__ComponentMeta_InjectionParam } from "../A-Component/A-Component.types";
+import { A_TYPES__ComponentMeta_EntityInjectionInstructions, A_TYPES__ComponentMeta_InjectionParam } from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 /**
@@ -44,6 +44,9 @@ export declare class A_Scope {
      * @returns
      */
     resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: T): InstanceType<T>;
+    resolve<T extends {
+        new (...args: any[]): A_Entity;
+    }>(entity: T, instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>): InstanceType<T>;
     resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>): Array<InstanceType<T>>;
     private resolveOnce;
     private resolveFragment;

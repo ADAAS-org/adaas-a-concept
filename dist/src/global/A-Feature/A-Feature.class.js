@@ -66,7 +66,7 @@ class A_Feature {
                     return {
                         value: () => __awaiter(this, void 0, void 0, function* () {
                             if (instance[handler]) {
-                                const callArgs = A_Context_class_1.A_Context.scope(this).resolve(args);
+                                const callArgs = A_Context_class_1.A_Context.scope(this).resolve(args.map(arg => arg.target));
                                 yield instance[handler](...callArgs);
                             }
                             this._index++;

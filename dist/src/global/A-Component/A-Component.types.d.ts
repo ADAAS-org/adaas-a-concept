@@ -1,3 +1,4 @@
+import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Meta } from "../A-Meta/A-Meta.class";
@@ -28,7 +29,7 @@ export type A_TYPES__ComponentMeta = {
          *
          * Where value is the list of injections
          */
-        [Key: string]: Array<A_TYPES__ComponentMeta_InjectionParam>;
+        [Key: string]: A_TYPES__ComponentMeta_InjectionParams;
     }>;
 };
 export declare enum A_TYPES__ComponentMetaKey {
@@ -38,11 +39,23 @@ export declare enum A_TYPES__ComponentMetaKey {
 }
 export type A_TYPES__ComponentMetaExtension = {
     handler: string;
-    args: A_TYPES__ComponentMeta_InjectionParam[];
+    args: A_TYPES__ComponentMeta_InjectionParams;
 };
 export type A_TYPES__ComponentMeta_ExtensionItem = {
     name: string;
     handler: string;
+};
+export type A_TYPES__ComponentMeta_InjectionParams = Array<{
+    target: A_TYPES__ComponentMeta_InjectionParam;
+} | {
+    target: {
+        new (...args: any[]): A_Entity;
+    };
+    instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>;
+}>;
+export type A_TYPES__ComponentMeta_EntityInjectionInstructions = {
+    aseid: string;
+    id: string;
 };
 export type A_TYPES__ComponentMeta_InjectionParam = {
     new (...args: any[]): A_Fragment;

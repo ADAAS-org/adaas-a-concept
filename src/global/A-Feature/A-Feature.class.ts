@@ -84,7 +84,7 @@ export class A_Feature {
                         value: async () => {
 
                             if (instance[handler]) {
-                                const callArgs = A_Context.scope(this).resolve(args);
+                                const callArgs = A_Context.scope(this).resolve(args.map(arg => arg.target));
                                 await instance[handler](...callArgs);
                             }
 

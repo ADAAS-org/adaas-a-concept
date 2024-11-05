@@ -2,7 +2,7 @@ import { A_CommonHelper } from "@adaas/a-utils";
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_TYPES__ComponentMeta_InjectionParam, A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
+import { A_TYPES__ComponentMeta_EntityInjectionInstructions, A_TYPES__ComponentMeta_InjectionParam, A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 
@@ -129,12 +129,20 @@ export class A_Scope {
      * @param component 
      * @returns 
      */
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: T): InstanceType<T>
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>): Array<InstanceType<T>>
+    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
+        component: T
+    ): InstanceType<T>
+    resolve<T extends { new(...args: any[]): A_Entity }>(
+        entity: T,
+        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>): InstanceType<T>
+    resolve<
+        T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>
+
+        ): Array<InstanceType<T>>
     // base definition
     resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
         param1: Array<T> | T,
-        param2?: string
+        param2?: string | Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
     ): Array<InstanceType<T>> | InstanceType<T> {
 
         switch (true) {
@@ -154,7 +162,17 @@ export class A_Scope {
 
 
 
-    private resolveOnce<T extends A_TYPES__ComponentMeta_InjectionParam>(component: T): InstanceType<T> {
+    private resolveOnce<T extends { new(...args: any[]): A_Entity }>(
+        entity: T,
+        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+    ): InstanceType<T>
+    private resolveOnce<T extends A_TYPES__ComponentMeta_InjectionParam>(
+        component: T
+    ): InstanceType<T>
+    private resolveOnce<T extends { new(...args: any[]): A_Entity } | A_TYPES__ComponentMeta_InjectionParam>(
+        component: T,
+        instructions?: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+    ): InstanceType<T> {
         switch (true) {
             case A_CommonHelper.isInheritedFrom(component, A_Fragment): {
                 return this.resolveFragment(component as typeof A_Fragment) as InstanceType<T>;
@@ -206,7 +224,16 @@ export class A_Scope {
             const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
             const resolvedArgs = (argsMeta?.get('constructor') || [])
-                .map(arg => this.resolve(arg));
+                .map(arg => {
+                    if ('instructions' in arg) {
+                        const { target, instructions } = arg
+                        return this.resolve(
+                            target,
+                            instructions
+                        );
+                    }
+                    return this.resolve(arg.target)
+                });
 
             const newComponent = new component(...resolvedArgs)
 

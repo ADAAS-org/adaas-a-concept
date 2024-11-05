@@ -1,4 +1,10 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -11,8 +17,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Entity = void 0;
 const a_utils_1 = require("@adaas/a-utils");
+const A_Entity_types_1 = require("./A-Entity.types");
 const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
+const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
+const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -20,8 +29,9 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-class A_Entity {
+class A_Entity extends A_Fragment_class_1.A_Fragment {
     constructor(props) {
+        super();
         switch (true) {
             case (typeof props === 'string' && a_utils_1.ASEID.isASEID(props)):
                 this.aseid = new a_utils_1.ASEID(props);
@@ -96,6 +106,10 @@ class A_Entity {
             return yield newFeature.process();
         });
     }
+    load() { }
+    update() { }
+    destroy() { }
+    save() { }
     fromNewEntity(newEntity) {
         return;
     }
@@ -119,4 +133,24 @@ class A_Entity {
     }
 }
 exports.A_Entity = A_Entity;
+__decorate([
+    A_Feature_class_1.A_Feature.Define({
+        name: A_Entity_types_1.A_TYPES__EntityBaseMethod.LOAD
+    })
+], A_Entity.prototype, "load", null);
+__decorate([
+    A_Feature_class_1.A_Feature.Define({
+        name: A_Entity_types_1.A_TYPES__EntityBaseMethod.UPDATE
+    })
+], A_Entity.prototype, "update", null);
+__decorate([
+    A_Feature_class_1.A_Feature.Define({
+        name: A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY
+    })
+], A_Entity.prototype, "destroy", null);
+__decorate([
+    A_Feature_class_1.A_Feature.Define({
+        name: A_Entity_types_1.A_TYPES__EntityBaseMethod.SAVE
+    })
+], A_Entity.prototype, "save", null);
 //# sourceMappingURL=A-Entity.class.js.map

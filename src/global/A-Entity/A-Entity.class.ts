@@ -4,12 +4,15 @@ import {
 } from "@adaas/a-utils";
 import {
     A_TYPES__Entity_JSON,
+    A_TYPES__EntityBaseMethod,
     A_TYPES__EntityBaseMethods,
     A_TYPES__EntityCallParams,
     A_TYPES__IEntity
 } from "./A-Entity.types";
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
+import { A_Feature } from "../A-Feature/A-Feature.class";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 
 
 
@@ -23,8 +26,9 @@ import { A_Context } from "../A-Context/A-Context.class";
 export class A_Entity<
     _ConstructorType = any,
     _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON,
-    _FeatureNames extends Array<string> = A_TYPES__EntityBaseMethods
+    _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods
 >
+    extends A_Fragment
     implements A_TYPES__IEntity {
 
     aseid!: ASEID;
@@ -43,6 +47,7 @@ export class A_Entity<
         newEntity: _ConstructorType
     )
     constructor(props: string | ASEID | _SerializedType | _ConstructorType) {
+        super();
 
         switch (true) {
             case (typeof props === 'string' && ASEID.isASEID(props)):
@@ -140,7 +145,7 @@ export class A_Entity<
         /**
         * A-Feature method name to be called
         */
-        feature: string,
+        feature: _FeatureNames[number],
         /**
          * Parameters to provide additional data to the feature
          */
@@ -163,6 +168,29 @@ export class A_Entity<
 
         return await newFeature.process();
     }
+
+
+    @A_Feature.Define({
+        name: A_TYPES__EntityBaseMethod.LOAD
+    })
+    load() { }
+
+
+    @A_Feature.Define({
+        name: A_TYPES__EntityBaseMethod.UPDATE
+    })
+    update() { }
+
+    @A_Feature.Define({
+        name: A_TYPES__EntityBaseMethod.DESTROY
+    })
+    destroy() { }
+
+
+    @A_Feature.Define({
+        name: A_TYPES__EntityBaseMethod.SAVE
+    })
+    save() { }
 
 
 

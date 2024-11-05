@@ -1,5 +1,6 @@
 import { A_TYPES__Required, ASEID } from "@adaas/a-utils";
-import { A_TYPES__Entity_JSON, A_TYPES__EntityBaseMethods, A_TYPES__EntityCallParams, A_TYPES__IEntity } from "./A-Entity.types";
+import { A_TYPES__Entity_JSON, A_TYPES__EntityBaseMethod, A_TYPES__EntityBaseMethods, A_TYPES__EntityCallParams, A_TYPES__IEntity } from "./A-Entity.types";
+import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -7,7 +8,7 @@ import { A_TYPES__Entity_JSON, A_TYPES__EntityBaseMethods, A_TYPES__EntityCallPa
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string> = A_TYPES__EntityBaseMethods> implements A_TYPES__IEntity {
+export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods> extends A_Fragment implements A_TYPES__IEntity {
     aseid: ASEID;
     constructor(aseid: string);
     constructor(aseid: ASEID);
@@ -63,11 +64,15 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
     /**
     * A-Feature method name to be called
     */
-    feature: string, 
+    feature: _FeatureNames[number], 
     /**
      * Parameters to provide additional data to the feature
      */
     params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>): Promise<any>;
+    load(): void;
+    update(): void;
+    destroy(): void;
+    save(): void;
     protected fromNewEntity(newEntity: _ConstructorType): void;
     protected fromSerialized(serialized: _SerializedType): void;
     /**
