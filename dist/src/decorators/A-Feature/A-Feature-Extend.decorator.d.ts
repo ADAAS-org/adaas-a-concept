@@ -1,5 +1,4 @@
-import { A_Component } from "../../global/A-Component/A-Component.class";
-import { A_TYPES__A_ExtendDecoratorConfig, A_TYPES__A_ExtendDecoratorDescriptor } from "./A-Feature.decorator.types";
+import { A_TYPES__A_ExtendDecoratorConfig } from "./A-Feature.decorator.types";
 /**
  * A-Extend decorator
  *
@@ -13,4 +12,21 @@ import { A_TYPES__A_ExtendDecoratorConfig, A_TYPES__A_ExtendDecoratorDescriptor 
  * @param params
  * @returns
  */
-export declare function A_Feature_Extend(config?: Partial<A_TYPES__A_ExtendDecoratorConfig>): (target: A_Component, propertyKey: string, descriptor: A_TYPES__A_ExtendDecoratorDescriptor) => void;
+/**
+ * Use regexp in case if you need more flexibility and control over the name of the method
+ *
+ * @param regexp
+ */
+export declare function A_Feature_Extend(regexp: RegExp): any;
+/**
+ * In this case the name configurations will be used as an input to get scope and name of target function
+ * [!] Not that for all SCOPE will be used OR operator
+ *
+ * @param config
+ */
+export declare function A_Feature_Extend(config: Partial<A_TYPES__A_ExtendDecoratorConfig>): any;
+/**
+ * In this case the name of function will be used as a name of the Feature.
+ * [!] AND it will be applicable for ANY element where the name is the same as the name of the function
+ */
+export declare function A_Feature_Extend(): any;

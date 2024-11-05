@@ -3,6 +3,7 @@ import { A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Featur
 import { A_TYPES__FeatureConstructor, A_TYPES__FeatureIteratorReturn, A_TYPES__FeatureState, A_TYPES__FeatureStep } from "./A-Feature.types";
 import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
+import { A_TYPES__A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 
 
 
@@ -20,7 +21,7 @@ export class A_Feature {
     /**
      * Define a new A-Feature
      */
-    static get Define() {
+    static get Define(): typeof A_Feature_Define {
         return A_Feature_Define;
     }
 
@@ -28,7 +29,7 @@ export class A_Feature {
     /**
      * Extend an existing A-Feature
      */
-    static get Extend() {
+    static get Extend(): A_TYPES__A_Feature_Extend {
         return A_Feature_Extend;
     }
 

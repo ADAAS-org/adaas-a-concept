@@ -50,7 +50,7 @@ exports.HTTPErrorHandler = HTTPErrorHandler;
 __decorate([
     A_Feature_class_1.A_Feature.Extend({
         name: 'onRequest',
-        container: http_server_container_1.HttpServer
+        scope: [http_server_container_1.HttpServer]
     }),
     __param(0, (0, A_Inject_decorator_1.A_Inject)(http_request_context_1.HTTPRequest)),
     __param(1, (0, A_Inject_decorator_1.A_Inject)(A_Feature_class_1.A_Feature))

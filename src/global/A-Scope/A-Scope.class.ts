@@ -134,11 +134,11 @@ export class A_Scope {
     ): InstanceType<T>
     resolve<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
-        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>): InstanceType<T>
-    resolve<
-        T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>
-
-        ): Array<InstanceType<T>>
+        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+    ): InstanceType<T>
+    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
+        component: Array<T>
+    ): Array<InstanceType<T>>
     // base definition
     resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
         param1: Array<T> | T,

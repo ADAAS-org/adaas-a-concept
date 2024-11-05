@@ -131,7 +131,7 @@ export class A_Meta<
     find(name: string) {
         const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
         for (const [key, value] of this.meta.entries()) {
-            if (this.convertToRegExp(name).test(key as string)) {
+            if (this.convertToRegExp(String(key)).test(name)) {
                 results.push([key, value]);
             }
         }

@@ -108,7 +108,7 @@ class A_Meta {
     find(name) {
         const results = [];
         for (const [key, value] of this.meta.entries()) {
-            if (this.convertToRegExp(name).test(key)) {
+            if (this.convertToRegExp(String(key)).test(name)) {
                 results.push([key, value]);
             }
         }

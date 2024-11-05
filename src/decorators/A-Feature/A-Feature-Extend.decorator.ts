@@ -25,8 +25,30 @@ import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
  * @param params 
  * @returns 
  */
+/**
+ * Use regexp in case if you need more flexibility and control over the name of the method
+ * 
+ * @param regexp 
+ */
 export function A_Feature_Extend(
-    config: Partial<A_TYPES__A_ExtendDecoratorConfig> = {}
+    regexp: RegExp
+)
+/**
+ * In this case the name configurations will be used as an input to get scope and name of target function
+ * [!] Not that for all SCOPE will be used OR operator
+ * 
+ * @param config 
+ */
+export function A_Feature_Extend(
+    config: Partial<A_TYPES__A_ExtendDecoratorConfig>
+)
+/**
+ * In this case the name of function will be used as a name of the Feature.
+ * [!] AND it will be applicable for ANY element where the name is the same as the name of the function
+ */
+export function A_Feature_Extend()
+export function A_Feature_Extend(
+    param1?: Partial<A_TYPES__A_ExtendDecoratorConfig> | RegExp
 ) {
     return function (
         target: A_Component,
@@ -34,7 +56,19 @@ export function A_Feature_Extend(
         descriptor: A_TYPES__A_ExtendDecoratorDescriptor
     ) {
 
-        const extensionName = config.name || propertyKey
+        let targetRegexp: RegExp;
+
+
+        // Check if the config is a RegExp
+        if (param1 instanceof RegExp) {
+            targetRegexp = param1;
+        }
+        else if (!!param1) {
+            targetRegexp = new RegExp(`^(${(param1.scope || []).map(el => el.constructor.name).join('|')})\.${param1.name || propertyKey}$`);
+        }
+        else {
+            targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
+        }
 
         // Get the existed metadata or create a new one
         const existedMeta = A_Context
@@ -43,16 +77,16 @@ export function A_Feature_Extend(
             || new A_Meta();
 
 
-        const existedMetaValue = existedMeta.get(extensionName) || [];
+        const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
 
         // Add the new method to the metadata
         existedMetaValue.push({
-            name: extensionName,
+            name: targetRegexp.source,
             handler: propertyKey,
         });
 
         // Set the metadata of the method to define a custom Feature with name
-        existedMeta.set(extensionName, existedMetaValue);
+        existedMeta.set(targetRegexp.source, existedMetaValue);
 
         //  Update the metadata of the container with the new Feature definition
         A_Context
@@ -60,3 +94,4 @@ export function A_Feature_Extend(
             .set(A_TYPES__ComponentMetaKey.EXTENSIONS, existedMeta);
     };
 }
+

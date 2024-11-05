@@ -1,7 +1,7 @@
 import { A_Feature_Define } from "../../decorators/A-Feature/A-Feature-Define.decorator";
-import { A_Feature_Extend } from "../../decorators/A-Feature/A-Feature-Extend.decorator";
 import { A_TYPES__FeatureConstructor, A_TYPES__FeatureIteratorReturn, A_TYPES__FeatureState, A_TYPES__FeatureStep } from "./A-Feature.types";
 import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_TYPES__A_Feature_Extend } from "../../decorators/A-Feature/A-Feature.decorator.types";
 /**
  * A_Feature is representing a feature that can be executed across multiple components
  * This class stores the steps of the feature and executes them in order of appearance
@@ -18,7 +18,7 @@ export declare class A_Feature {
     /**
      * Extend an existing A-Feature
      */
-    static get Extend(): typeof A_Feature_Extend;
+    static get Extend(): A_TYPES__A_Feature_Extend;
     protected steps: A_TYPES__FeatureStep[];
     protected _current?: A_TYPES__FeatureStep;
     protected _index: number;

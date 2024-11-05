@@ -371,7 +371,7 @@ export class A_Context {
         const instance = this.getInstance();
 
         const component = param1;
-        const feature: string = param2;
+        const feature: string = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
         // TODO:  have no idea why it's not working because of that "any"
         const scope = this.scope(component as any);

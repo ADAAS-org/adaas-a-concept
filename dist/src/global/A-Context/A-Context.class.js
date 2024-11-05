@@ -183,7 +183,7 @@ class A_Context {
     static feature(param1, param2, param3) {
         const instance = this.getInstance();
         const component = param1;
-        const feature = param2;
+        const feature = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
         // TODO:  have no idea why it's not working because of that "any"
         const scope = this.scope(component);

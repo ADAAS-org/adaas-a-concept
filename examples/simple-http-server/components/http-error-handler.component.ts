@@ -10,7 +10,7 @@ export class HTTPErrorHandler extends A_Component {
 
     constructor(
         @A_Inject(A_Logger) private logger: A_Logger
-    ) { 
+    ) {
         super();
     }
 
@@ -18,7 +18,7 @@ export class HTTPErrorHandler extends A_Component {
 
     @A_Feature.Extend({
         name: 'onRequest',
-        container: HttpServer
+        scope: [HttpServer]
     })
     async onErrorPage(
         @A_Inject(HTTPRequest) request: HTTPRequest,
