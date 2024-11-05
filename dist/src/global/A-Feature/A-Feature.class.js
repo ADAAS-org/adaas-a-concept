@@ -66,7 +66,11 @@ class A_Feature {
                     return {
                         value: () => __awaiter(this, void 0, void 0, function* () {
                             if (instance[handler]) {
-                                const callArgs = A_Context_class_1.A_Context.scope(this).resolve(args.map(arg => arg.target));
+                                const callArgs = args.map(arg => 
+                                // In case if the target is a feature step then pass the current feature
+                                a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
+                                    ? this
+                                    : A_Context_class_1.A_Context.scope(this).resolve(arg.target));
                                 yield instance[handler](...callArgs);
                             }
                             this._index++;

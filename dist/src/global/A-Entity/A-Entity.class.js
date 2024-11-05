@@ -39,11 +39,11 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
             case (props instanceof a_utils_1.ASEID):
                 this.aseid = props;
                 break;
-            case (typeof props === 'object' && props.aseid):
-                this.fromSerialized(props);
+            case (!!props && typeof props === 'object' && 'aseid' in props):
+                this.fromJSON(props);
                 break;
             case (typeof props === 'object'):
-                this.fromNewEntity(props);
+                this.fromNew(props);
                 break;
             default:
                 throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
@@ -106,14 +106,43 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
             return yield newFeature.process();
         });
     }
-    load() { }
-    update() { }
-    destroy() { }
-    save() { }
-    fromNewEntity(newEntity) {
+    // ====================================================================
+    // ================== Entity Base Methods =============================
+    // ====================================================================
+    load() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
+                fragments: [
+                    this
+                ]
+            });
+        });
+    }
+    destroy() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
+                fragments: [
+                    this
+                ]
+            });
+        });
+    }
+    save() {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.SAVE, {
+                fragments: [
+                    this
+                ]
+            });
+        });
+    }
+    // ====================================================================
+    // ================== Entity Serialization ============================
+    // ====================================================================
+    fromNew(newEntity) {
         return;
     }
-    fromSerialized(serialized) {
+    fromJSON(serialized) {
         this.aseid = new a_utils_1.ASEID((serialized).aseid);
         return;
     }
@@ -138,11 +167,6 @@ __decorate([
         name: A_Entity_types_1.A_TYPES__EntityBaseMethod.LOAD
     })
 ], A_Entity.prototype, "load", null);
-__decorate([
-    A_Feature_class_1.A_Feature.Define({
-        name: A_Entity_types_1.A_TYPES__EntityBaseMethod.UPDATE
-    })
-], A_Entity.prototype, "update", null);
 __decorate([
     A_Feature_class_1.A_Feature.Define({
         name: A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY

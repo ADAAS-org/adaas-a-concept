@@ -98,6 +98,9 @@ class A_Scope {
     }
     resolveOnce(component, instructions) {
         switch (true) {
+            case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Entity_class_1.A_Entity): {
+                return this.resolveEntity(component, instructions);
+            }
             case a_utils_1.A_CommonHelper.isInheritedFrom(component, A_Fragment_class_1.A_Fragment): {
                 return this.resolveFragment(component);
             }
@@ -109,6 +112,27 @@ class A_Scope {
             }
             default:
                 throw new Error(`Injected Component ${component} not found in the scope`);
+        }
+    }
+    resolveEntity(entity, instructions) {
+        switch (true) {
+            case !instructions: {
+                //  in this case we have to find the entity by the class or common parent class
+                const entities = Array.from(this._entities.values());
+                const found = entities.find(e => e instanceof entity);
+                return found;
+            }
+            case !!instructions && !!instructions.aseid && this._entities.has(instructions.aseid): {
+                return this._entities.get(instructions.aseid);
+            }
+            case !!instructions && !!instructions.id && this._entities.has(instructions.id): {
+                // in this case we have to find the entity by the id
+                const entities = Array.from(this._entities.values());
+                const found = entities.find(e => e.id === instructions.id);
+                return found;
+            }
+            default:
+                throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
         }
     }
     resolveFragment(fragment) {
@@ -150,14 +174,14 @@ class A_Scope {
     }
     register(param1) {
         switch (true) {
-            case param1 instanceof A_Fragment_class_1.A_Fragment && !this._fragments.has(param1.constructor): {
-                this._fragments.set(param1.constructor, param1);
+            case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
+                this._entities.set(param1.aseid.toString(), param1);
                 // The same situation. Have not idea how to fix it
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
-            case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
-                this._entities.set(param1.aseid.toString(), param1);
+            case param1 instanceof A_Fragment_class_1.A_Fragment && !this._fragments.has(param1.constructor): {
+                this._fragments.set(param1.constructor, param1);
                 // The same situation. Have not idea how to fix it
                 A_Context_class_1.A_Context.register(this, param1);
                 break;

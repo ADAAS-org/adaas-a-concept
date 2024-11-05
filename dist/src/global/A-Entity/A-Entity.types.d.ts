@@ -10,13 +10,11 @@ export type A_TYPES__EntityCallParams<T extends string> = {
 };
 export type A_TYPES__EntityBaseMethods = [
     A_TYPES__EntityBaseMethod.SAVE,
-    A_TYPES__EntityBaseMethod.UPDATE,
     A_TYPES__EntityBaseMethod.DESTROY,
     A_TYPES__EntityBaseMethod.LOAD
 ];
 export declare enum A_TYPES__EntityBaseMethod {
     SAVE = "save",
-    UPDATE = "update",
     DESTROY = "destroy",
     LOAD = "load"
 }

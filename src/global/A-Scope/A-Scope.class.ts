@@ -165,7 +165,7 @@ export class A_Scope {
     private resolveOnce<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
         instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
-    ): InstanceType<T>
+    ): InstanceType<T> | undefined
     private resolveOnce<T extends A_TYPES__ComponentMeta_InjectionParam>(
         component: T
     ): InstanceType<T>
@@ -174,6 +174,10 @@ export class A_Scope {
         instructions?: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
     ): InstanceType<T> {
         switch (true) {
+            case A_CommonHelper.isInheritedFrom(component, A_Entity): {
+                return this.resolveEntity(component as typeof A_Entity, instructions) as InstanceType<T>;
+            }
+
             case A_CommonHelper.isInheritedFrom(component, A_Fragment): {
                 return this.resolveFragment(component as typeof A_Fragment) as InstanceType<T>;
             }
@@ -192,6 +196,40 @@ export class A_Scope {
     }
 
 
+    private resolveEntity<T extends { new(...args: any[]): A_Entity }>(
+        entity: T,
+        instructions?: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+    ): InstanceType<T> | undefined {
+
+        switch (true) {
+            case !instructions: {
+                //  in this case we have to find the entity by the class or common parent class
+                const entities = Array.from(this._entities.values());
+
+                const found = entities.find(e => e instanceof entity);
+
+                return found as InstanceType<T>;
+            }
+
+            case !!instructions && !!instructions.aseid && this._entities.has(instructions.aseid): {
+                return this._entities.get(instructions.aseid) as InstanceType<T>;
+            }
+
+            case !!instructions && !!instructions.id && this._entities.has(instructions.id): {
+                // in this case we have to find the entity by the id
+                const entities = Array.from(this._entities.values());
+
+                const found = entities.find(e => e.id === instructions.id);
+
+                return found as InstanceType<T>;
+            }
+
+            default:
+                throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
+        }
+    }
+
+
 
     private resolveFragment<T extends typeof A_Fragment>(fragment: T): InstanceType<T> {
 
@@ -205,6 +243,7 @@ export class A_Scope {
 
         throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
     }
+
 
     private resolveScope(scope: typeof A_Scope): A_Scope {
         return this;
@@ -267,15 +306,15 @@ export class A_Scope {
 
 
         switch (true) {
-            case param1 instanceof A_Fragment && !this._fragments.has(param1.constructor): {
-                this._fragments.set(param1.constructor, param1);
+            case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
+                this._entities.set(param1.aseid.toString(), param1);
                 // The same situation. Have not idea how to fix it
                 A_Context.register(this, param1 as any);
                 break;
             }
 
-            case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
-                this._entities.set(param1.aseid.toString(), param1);
+            case param1 instanceof A_Fragment && !this._fragments.has(param1.constructor): {
+                this._fragments.set(param1.constructor, param1);
                 // The same situation. Have not idea how to fix it
                 A_Context.register(this, param1 as any);
                 break;

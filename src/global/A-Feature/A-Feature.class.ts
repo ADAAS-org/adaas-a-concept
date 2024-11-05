@@ -1,7 +1,7 @@
 import { A_Feature_Define } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Define.decorator";
 import { A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Extend.decorator";
 import { A_TYPES__FeatureConstructor, A_TYPES__FeatureIteratorReturn, A_TYPES__FeatureState, A_TYPES__FeatureStep } from "./A-Feature.types";
-import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_CommonHelper, A_Error, A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_TYPES__A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 
@@ -83,9 +83,14 @@ export class A_Feature {
 
                     return {
                         value: async () => {
-
                             if (instance[handler]) {
-                                const callArgs = A_Context.scope(this).resolve(args.map(arg => arg.target));
+                                const callArgs = args.map(arg =>
+                                    // In case if the target is a feature step then pass the current feature
+                                    A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
+                                        ? this
+                                        : A_Context.scope(this).resolve(arg.target)
+                                );
+
                                 await instance[handler](...callArgs);
                             }
 

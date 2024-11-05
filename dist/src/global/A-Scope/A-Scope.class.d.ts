@@ -49,6 +49,7 @@ export declare class A_Scope {
     }>(entity: T, instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>): InstanceType<T>;
     resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>): Array<InstanceType<T>>;
     private resolveOnce;
+    private resolveEntity;
     private resolveFragment;
     private resolveScope;
     private resolveComponent;

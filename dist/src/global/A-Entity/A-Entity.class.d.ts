@@ -69,12 +69,11 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * Parameters to provide additional data to the feature
      */
     params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>): Promise<any>;
-    load(): void;
-    update(): void;
-    destroy(): void;
-    save(): void;
-    protected fromNewEntity(newEntity: _ConstructorType): void;
-    protected fromSerialized(serialized: _SerializedType): void;
+    load(): Promise<void>;
+    destroy(): Promise<void>;
+    save(): Promise<void>;
+    fromNew(newEntity: _ConstructorType): void;
+    fromJSON(serialized: _SerializedType): void;
     /**
      * Converts the entity to a JSON object
      *

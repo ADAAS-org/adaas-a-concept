@@ -56,12 +56,12 @@ export class A_Entity<
             case (props instanceof ASEID):
                 this.aseid = props;
                 break;
-            case (typeof props === 'object' && (props as any).aseid):
-                this.fromSerialized(props as _SerializedType);
+            case (!!props && typeof props === 'object' && 'aseid' in props):
+                this.fromJSON(props);
                 break;
 
             case (typeof props === 'object'):
-                this.fromNewEntity(props as _ConstructorType);
+                this.fromNew(props as _ConstructorType);
                 break
 
             default:
@@ -170,36 +170,56 @@ export class A_Entity<
     }
 
 
+    // ====================================================================
+    // ================== Entity Base Methods =============================
+    // ====================================================================
+
     @A_Feature.Define({
         name: A_TYPES__EntityBaseMethod.LOAD
     })
-    load() { }
+    async load() {
+        await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
+            fragments: [
+                this
+            ]
+        });
+    }
 
-
-    @A_Feature.Define({
-        name: A_TYPES__EntityBaseMethod.UPDATE
-    })
-    update() { }
 
     @A_Feature.Define({
         name: A_TYPES__EntityBaseMethod.DESTROY
     })
-    destroy() { }
+    async destroy() {
+        await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
+            fragments: [
+                this
+            ]
+        });
+    }
 
 
     @A_Feature.Define({
         name: A_TYPES__EntityBaseMethod.SAVE
     })
-    save() { }
+    async save() {
+        await this.call(A_TYPES__EntityBaseMethod.SAVE, {
+            fragments: [
+                this
+            ]
+        });
+    }
 
 
 
+    // ====================================================================
+    // ================== Entity Serialization ============================
+    // ====================================================================
 
-    protected fromNewEntity(newEntity: _ConstructorType): void {
+    fromNew(newEntity: _ConstructorType): void {
         return;
     }
 
-    protected fromSerialized(serialized: _SerializedType): void {
+    fromJSON(serialized: _SerializedType): void {
         this.aseid = new ASEID((serialized).aseid);
         return;
     }
@@ -217,7 +237,6 @@ export class A_Entity<
             aseid: this.aseid.toString()
         } as _SerializedType;
     }
-
 
 
     toString(): string {
