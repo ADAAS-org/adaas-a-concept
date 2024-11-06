@@ -35,7 +35,7 @@ class A_Scope {
             import: [],
             export: [],
         };
-        this.params = a_utils_1.A_CommonHelper.deepCloneAndMerge(params, defaultParams);
+        this.params = Object.assign(Object.assign({}, defaultParams), params);
         this.initComponents(params.components || []);
         this.initFragments(params.fragments || []);
         if (config.parent) {

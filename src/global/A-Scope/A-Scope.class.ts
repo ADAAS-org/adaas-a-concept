@@ -2,7 +2,11 @@ import { A_CommonHelper } from "@adaas/a-utils";
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_TYPES__ComponentMeta_EntityInjectionInstructions, A_TYPES__ComponentMeta_InjectionParam, A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
+import {
+    A_TYPES__ComponentMeta_EntityInjectionInstructions,
+    A_TYPES__ComponentMeta_InjectionParam,
+    A_TYPES__ComponentMetaKey
+} from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 
@@ -48,7 +52,10 @@ export class A_Scope {
         };
 
 
-        this.params = A_CommonHelper.deepCloneAndMerge<A_TYPES__ScopeConstructor>(params, defaultParams);
+        this.params = {
+            ...defaultParams,
+            ...params
+        }
 
         this.initComponents(params.components || []);
         this.initFragments(params.fragments || []);
