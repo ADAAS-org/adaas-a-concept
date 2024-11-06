@@ -404,7 +404,7 @@ export class A_Context {
 
 
         return {
-            name: `${component.constructor.name}.${feature}`,
+            name: feature,
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
