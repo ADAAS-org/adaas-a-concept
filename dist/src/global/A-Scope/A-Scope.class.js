@@ -55,28 +55,23 @@ class A_Scope {
     }
     has(entity) {
         switch (true) {
-            case entity instanceof A_Fragment_class_1.A_Fragment
-                && this._fragments.has(entity.constructor):
-                {
-                    return true;
-                }
-            case entity instanceof A_Fragment_class_1.A_Fragment
-                && !this._fragments.has(entity.constructor)
-                && !!this.parent:
-                {
+            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component): {
+                const found = this.params.components.includes(entity);
+                if (!found && !!this.parent)
                     return this.parent.has(entity);
-                }
-            case !(entity instanceof A_Fragment_class_1.A_Fragment)
-                && this._components.has(entity):
-                {
-                    return true;
-                }
-            case !(entity instanceof A_Fragment_class_1.A_Fragment)
-                && !this._components.has(entity)
-                && !!this.parent:
-                {
+                return found;
+            }
+            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Entity_class_1.A_Entity): {
+                const entities = Array.from(this._entities.values());
+                const found = entities.find(e => e instanceof entity);
+                return !!found;
+            }
+            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Fragment_class_1.A_Fragment): {
+                const found = this._fragments.has(entity);
+                if (!found && !!this.parent)
                     return this.parent.has(entity);
-                }
+                return found;
+            }
             default: {
                 return false;
             }

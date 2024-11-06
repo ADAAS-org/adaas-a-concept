@@ -33,10 +33,9 @@ export declare class A_Scope {
      * @param component
      * @returns
      */
-    has(component: {
-        new (...args: any[]): any;
-    }): boolean;
-    has(fragment: A_Fragment): boolean;
+    has(component: typeof A_Component): boolean;
+    has(entity: typeof A_Entity): boolean;
+    has(fragment: typeof A_Fragment): boolean;
     /**
      * This method is used to get the component by class
      *

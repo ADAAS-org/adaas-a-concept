@@ -373,7 +373,7 @@ export class A_Context {
         const feature: string = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
         // TODO:  have no idea why it's not working because of that "any"
-        const scope = this.scope(component as any);
+        const scope = this.scope(component);
         const steps: A_TYPES__FeatureStep[] = [];
 
         // Now we need to resolve the method from all registered components 
@@ -399,6 +399,7 @@ export class A_Context {
 
                 } catch (error) {
                     // do nothing
+                    console.log(error);
                 }
             });
 

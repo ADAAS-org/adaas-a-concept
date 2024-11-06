@@ -84,37 +84,46 @@ export class A_Scope {
      * @returns 
      */
     has(
-        component: { new(...args: any[]): any }
+        component: typeof A_Component
     ): boolean
     has(
-        fragment: A_Fragment
+        entity: typeof A_Entity
     ): boolean
     has(
-        entity: { new(...args: any[]): any } | A_Fragment
+        fragment: typeof A_Fragment
+    ): boolean
+    has(
+        entity: typeof A_Fragment | typeof A_Component | typeof A_Entity
     ): boolean {
 
+
         switch (true) {
-            case entity instanceof A_Fragment
-                && this._fragments.has(entity.constructor): {
-                    return true;
-                }
 
-            case entity instanceof A_Fragment
-                && !this._fragments.has(entity.constructor)
-                && !!this.parent: {
-                    return this.parent.has(entity);
-                }
+            case A_CommonHelper.isInheritedFrom(entity, A_Component): {
+                const found = this.params.components.includes(entity);
 
-            case !(entity instanceof A_Fragment)
-                && this._components.has(entity): {
-                    return true;
-                }
+                if (!found && !!this.parent)
+                    return this.parent.has(entity as any);
 
-            case !(entity instanceof A_Fragment)
-                && !this._components.has(entity)
-                && !!this.parent: {
-                    return this.parent.has(entity);
-                }
+                return found;
+            }
+
+            case A_CommonHelper.isInheritedFrom(entity, A_Entity): {
+                const entities = Array.from(this._entities.values());
+
+                const found = entities.find(e => e instanceof entity);
+
+                return !!found;
+            }
+
+            case A_CommonHelper.isInheritedFrom(entity, A_Fragment): {
+                const found = this._fragments.has(entity);
+
+                if (!found && !!this.parent)
+                    return this.parent.has(entity as any);
+
+                return found;
+            }
 
             default: {
                 return false;

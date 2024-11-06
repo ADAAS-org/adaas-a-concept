@@ -209,6 +209,7 @@ class A_Context {
             }
             catch (error) {
                 // do nothing
+                console.log(error);
             }
         });
         return {
