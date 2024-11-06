@@ -12,7 +12,6 @@ import {
 } from "./A-Entity.types";
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 
 
@@ -186,9 +185,7 @@ export class A_Entity<
     // ================== Entity Base Methods =============================
     // ====================================================================
 
-    @A_Feature.Define({
-        name: A_TYPES__EntityBaseMethod.LOAD
-    })
+   
     async load() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
             fragments: [
@@ -198,9 +195,7 @@ export class A_Entity<
     }
 
 
-    @A_Feature.Define({
-        name: A_TYPES__EntityBaseMethod.DESTROY
-    })
+   
     async destroy() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
             fragments: [
@@ -210,9 +205,7 @@ export class A_Entity<
     }
 
 
-    @A_Feature.Define({
-        name: A_TYPES__EntityBaseMethod.SAVE
-    })
+   
     async save() {
         await this.call(A_TYPES__EntityBaseMethod.SAVE, {
             fragments: [

@@ -1,6 +1,5 @@
 import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A-Container.types";
 import { A_TYPES__Required } from "@adaas/a-utils";
-import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
