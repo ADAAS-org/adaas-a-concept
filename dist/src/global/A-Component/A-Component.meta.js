@@ -22,6 +22,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
                 const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
                 steps.push({
                     // component: constructor,
+                    name: extension.name,
                     handler: extension.handler,
                     args
                 });

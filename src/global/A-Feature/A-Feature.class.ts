@@ -53,7 +53,6 @@ export class A_Feature {
         this.steps = params.steps;
 
         A_Context.allocate(this, params);
-
     }
 
 

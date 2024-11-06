@@ -1,4 +1,5 @@
 import {
+    A_CommonHelper,
     A_Error, A_TYPES__Required,
     ASEID
 } from "@adaas/a-utils";
@@ -33,6 +34,16 @@ export class A_Entity<
 
     aseid!: ASEID;
 
+
+    /**
+     * Entity Identifier that corresponds to the class name
+     */
+    static get entity(): string {
+        return A_CommonHelper
+            .toUpperSnakeCase(this.constructor.name)
+            .toLocaleLowerCase()
+            .replace(/_/g, '-');
+    }
 
     constructor(
         aseid: string
@@ -100,6 +111,7 @@ export class A_Entity<
     /**
      * Extracts the entity from the ASEID
      * entity is the name of the entity from Application Namespace
+     * 
      */
     get entity(): string {
         return this.aseid.entity;

@@ -10,6 +10,10 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
  */
 export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods> extends A_Fragment implements A_TYPES__IEntity {
     aseid: ASEID;
+    /**
+     * Entity Identifier that corresponds to the class name
+     */
+    static get entity(): string;
     constructor(aseid: string);
     constructor(aseid: ASEID);
     constructor(serialized: _SerializedType);
@@ -32,6 +36,7 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
     /**
      * Extracts the entity from the ASEID
      * entity is the name of the entity from Application Namespace
+     *
      */
     get entity(): string;
     /**

@@ -388,9 +388,10 @@ export class A_Context {
                     // Get all extensions for the feature
                     meta
                         .extensions(feature)
-                        .forEach(({ handler, args }) => {
+                        .forEach(({ handler, args, name }) => {
                             steps.push({
                                 component: constructor,
+                                name,
                                 handler,
                                 args
                             });
@@ -440,48 +441,9 @@ export class A_Context {
         param3?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature {
 
+        const featureConstructor = this.featureDefinition(param1, param2, param3);
 
-        const instance = this.getInstance();
-
-        const component = param1;
-        const feature: string = `${component.constructor.name}.${param2}`;
-        const config = param3 || {};
-        // TODO:  have no idea why it's not working because of that "any"
-        const scope = this.scope(component as any);
-        const steps: A_TYPES__FeatureStep[] = [];
-
-        // Now we need to resolve the method from all registered components 
-
-        // We need to get all components that has extensions for the feature in component
-        instance.componentsMeta
-            .forEach((meta, constructor) => {
-                try {
-                    // Just try to make sure that component not only Indexed but also presented in scope
-                    scope.resolve(constructor);
-
-                    // Get all extensions for the feature
-                    meta
-                        .extensions(feature)
-                        .forEach(({ handler, args }) => {
-                            steps.push({
-                                component: constructor,
-                                handler,
-                                args
-                            });
-                        });
-
-                } catch (error) {
-                    // do nothing
-                }
-            });
-
-        const newFeature = new A_Feature({
-            name: `${component.constructor.name}.${feature}`,
-            fragments: config.fragments,
-            components: config.components,
-            steps,
-            parent: component instanceof A_Container ? this.scope(component) : undefined
-        });
+        const newFeature = new A_Feature(featureConstructor);
 
         return newFeature;
     }

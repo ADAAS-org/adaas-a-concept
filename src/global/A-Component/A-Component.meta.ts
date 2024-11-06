@@ -29,11 +29,11 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
             ?.find(feature)
             .forEach(([handler, extensions]) => {
                 extensions.forEach(extension => {
-
                     const args = injections?.get(extension.handler) || [];
 
                     steps.push({
                         // component: constructor,
+                        name: extension.name,
                         handler: extension.handler,
                         args
                     });

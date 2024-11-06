@@ -38,7 +38,17 @@ export declare enum A_TYPES__ComponentMetaKey {
     INJECTIONS = "a-component-injections"
 }
 export type A_TYPES__ComponentMetaExtension = {
+    /**
+     * The name of original Extension Definition
+     */
+    name: string;
+    /**
+     * The name of the handler that will be used to apply the extension
+     */
     handler: string;
+    /**
+     * The arguments that will be passed to the handler
+     */
     args: A_TYPES__ComponentMeta_InjectionParams;
 };
 export type A_TYPES__ComponentMeta_ExtensionItem = {

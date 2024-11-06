@@ -30,6 +30,15 @@ const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
 class A_Entity extends A_Fragment_class_1.A_Fragment {
+    /**
+     * Entity Identifier that corresponds to the class name
+     */
+    static get entity() {
+        return a_utils_1.A_CommonHelper
+            .toUpperSnakeCase(this.constructor.name)
+            .toLocaleLowerCase()
+            .replace(/_/g, '-');
+    }
     constructor(props) {
         super();
         switch (true) {
@@ -76,6 +85,7 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
     /**
      * Extracts the entity from the ASEID
      * entity is the name of the entity from Application Namespace
+     *
      */
     get entity() {
         return this.aseid.entity;
