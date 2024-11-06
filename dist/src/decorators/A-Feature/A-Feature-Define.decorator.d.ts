@@ -1,7 +1,7 @@
 import { A_Component } from "../../global/A-Component/A-Component.class";
 import { A_TYPES__A_FeatureDecoratorConfig, A_TYPES__A_FeatureDecoratorDescriptor } from "./A-Feature.decorator.types";
 import { A_Container } from "../../global/A-Container/A-Container.class";
-import { A_Entity } from "@adaas/a-utils";
+import { A_Entity } from "../../global/A-Entity/A-Entity.class";
 /**
  * A-Feature decorator
  *

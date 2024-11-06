@@ -5,9 +5,9 @@ const A_Component_class_1 = require("../../global/A-Component/A-Component.class"
 const A_Container_class_1 = require("../../global/A-Container/A-Container.class");
 const A_Container_types_1 = require("../../global/A-Container/A-Container.types");
 const A_Context_class_1 = require("../../global/A-Context/A-Context.class");
-const a_utils_1 = require("@adaas/a-utils");
 const A_Entity_types_1 = require("../../global/A-Entity/A-Entity.types");
 const A_Component_types_1 = require("../../global/A-Component/A-Component.types");
+const A_Entity_class_1 = require("../../global/A-Entity/A-Entity.class");
 /**
  * A-Feature decorator
  *
@@ -26,7 +26,7 @@ function A_Feature_Define(config = {}) {
         const meta = A_Context_class_1.A_Context.meta(target);
         let metaKey;
         switch (true) {
-            case target instanceof a_utils_1.A_Entity:
+            case target instanceof A_Entity_class_1.A_Entity:
                 metaKey = A_Entity_types_1.A_TYPES__EntityMetaKey.FEATURES;
                 break;
             case target instanceof A_Container_class_1.A_Container:

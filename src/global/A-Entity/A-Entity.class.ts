@@ -245,6 +245,6 @@ export class A_Entity<
 
 
     toString(): string {
-        return this.aseid.toString();
+        return this.aseid? this.aseid.toString() : this.constructor.name;
     }
 }

@@ -161,7 +161,7 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
         };
     }
     toString() {
-        return this.aseid.toString();
+        return this.aseid ? this.aseid.toString() : this.constructor.name;
     }
 }
 exports.A_Entity = A_Entity;

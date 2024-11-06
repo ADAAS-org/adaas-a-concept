@@ -6,12 +6,12 @@ import {
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_Entity } from "@adaas/a-utils";
 import { A_EntityMeta } from "@adaas/a-concept/global/A-Entity/A-Entity.meta";
 import { A_ContainerMeta } from "@adaas/a-concept/global/A-Container/A-Container.meta";
 import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.meta";
 import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
+import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 
 
 /**
