@@ -180,6 +180,44 @@ class A_Context {
         }
         return component;
     }
+    static featureDefinition(param1, param2, param3) {
+        const instance = this.getInstance();
+        const component = param1;
+        const feature = `${component.constructor.name}.${param2}`;
+        const config = param3 || {};
+        // TODO:  have no idea why it's not working because of that "any"
+        const scope = this.scope(component);
+        const steps = [];
+        // Now we need to resolve the method from all registered components 
+        // We need to get all components that has extensions for the feature in component
+        instance.componentsMeta
+            .forEach((meta, constructor) => {
+            try {
+                // Just try to make sure that component not only Indexed but also presented in scope
+                scope.resolve(constructor);
+                // Get all extensions for the feature
+                meta
+                    .extensions(feature)
+                    .forEach(({ handler, args }) => {
+                    steps.push({
+                        component: constructor,
+                        handler,
+                        args
+                    });
+                });
+            }
+            catch (error) {
+                // do nothing
+            }
+        });
+        return {
+            name: `${component.constructor.name}.${feature}`,
+            fragments: config.fragments || [],
+            components: config.components || [],
+            steps,
+            parent: component instanceof A_Container_class_1.A_Container ? this.scope(component) : undefined
+        };
+    }
     static feature(param1, param2, param3) {
         const instance = this.getInstance();
         const component = param1;

@@ -1,3 +1,4 @@
+import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
@@ -11,6 +12,7 @@ import { A_Concept } from "../A-Concept/A_Concept.class";
 import { A_TYPES__EntityBaseMethod } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -82,6 +84,15 @@ export declare class A_Context {
      * @returns
      */
     static component(meta: A_ComponentMeta): typeof A_Component;
+    /**
+     * This method returns a constructor params to create a new feature
+     *
+     * @param scope
+     * @returns
+     */
+    static featureDefinition<T extends Array<string>>(entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition<T extends Array<string>>(container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition(component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
      *

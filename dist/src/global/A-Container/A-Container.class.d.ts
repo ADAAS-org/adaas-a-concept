@@ -1,6 +1,7 @@
 import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A-Container.types";
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 /**
  * This class should combine Components to achieve the goal withing Concept
  *
@@ -58,6 +59,30 @@ export declare class A_Container<_FeatureNames extends Array<string>> {
      * Parameters to provide additional data to the feature
      */
     params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>): Promise<any>;
+    /**
+     * This method allows to get a feature Definition for the future reuse with custom Feature classes
+     *
+     * @param feature
+     */
+    feature(
+    /**
+     * A-Feature method name to be called
+     */
+    feature: _FeatureNames[number]): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    feature(
+    /**
+     * A-Feature name to be called
+     */
+    params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    feature(
+    /**
+    * A-Feature method name to be called
+    */
+    feature: _FeatureNames[number], 
+    /**
+     * Parameters to provide additional data to the feature
+     */
+    params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
     /**
      *  Before init hook to be used in inherited classes
      *

@@ -84,6 +84,15 @@ class A_Container {
             return yield newFeature.process();
         });
     }
+    feature(param1, param2) {
+        const feature = typeof param1 === 'string'
+            ? param1
+            : param1.name;
+        const params = typeof param1 === 'string'
+            ? param2 || {}
+            : param1;
+        return A_Context_class_1.A_Context.featureDefinition(this, feature, params);
+    }
     // ==============================================================
     // ======================= HOOKS ================================
     // ==============================================================

@@ -3,6 +3,7 @@ import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 
 
 
@@ -141,6 +142,53 @@ export class A_Container<
         const newFeature = A_Context.feature(this, feature, params);
 
         return await newFeature.process();
+    }
+
+
+
+
+    /**
+     * This method allows to get a feature Definition for the future reuse with custom Feature classes
+     * 
+     * @param feature 
+     */
+    feature(
+        /**
+         * A-Feature method name to be called
+         */
+        feature: _FeatureNames[number],
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+    feature(
+        /**
+         * A-Feature name to be called
+         */
+        params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+
+    feature(
+        /**
+        * A-Feature method name to be called
+        */
+        feature: _FeatureNames[number],
+        /**
+         * Parameters to provide additional data to the feature
+         */
+        params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>,
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+
+    feature(
+        param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
+        param2?: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
+
+        const feature: string = typeof param1 === 'string'
+            ? param1
+            : param1.name;
+        const params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
+            ? param2 || {}
+            : param1;
+
+        return A_Context.featureDefinition(this, feature, params);
     }
 
 
