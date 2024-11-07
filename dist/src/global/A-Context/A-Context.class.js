@@ -185,16 +185,14 @@ class A_Context {
         const component = param1;
         const feature = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
-        // TODO:  have no idea why it's not working because of that "any"
         const scope = this.scope(component);
         const steps = [];
         // Now we need to resolve the method from all registered components 
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
             .forEach((meta, constructor) => {
-            try {
-                // Just try to make sure that component not only Indexed but also presented in scope
-                scope.resolve(constructor);
+            // Just try to make sure that component not only Indexed but also presented in scope
+            if (scope.has(constructor))
                 // Get all extensions for the feature
                 meta
                     .extensions(feature)
@@ -206,11 +204,6 @@ class A_Context {
                         args
                     });
                 });
-            }
-            catch (error) {
-                // do nothing
-                console.log(error);
-            }
         });
         return {
             name: feature,
@@ -227,6 +220,8 @@ class A_Context {
     }
     static register(scope, param1) {
         const instance = this.getInstance();
+        if (!instance._root)
+            instance._root = scope.name;
         switch (true) {
             case param1 instanceof A_Component_class_1.A_Component:
                 instance.registry.set(param1, scope);

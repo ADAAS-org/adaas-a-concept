@@ -27,6 +27,7 @@ export declare class A_Scope {
     private initComponents;
     private initFragments;
     get components(): (new (...args: any[]) => any)[];
+    get fragments(): A_Fragment[];
     /**
      * This method is used to check if the component is available in the scope
      *

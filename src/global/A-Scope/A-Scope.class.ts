@@ -82,6 +82,10 @@ export class A_Scope {
         return this.params.components || [];
     }
 
+    get fragments() {
+        return this.params.fragments || [];
+    }
+
 
 
     /**
@@ -249,15 +253,19 @@ export class A_Scope {
 
     private resolveFragment<T extends typeof A_Fragment>(fragment: T): InstanceType<T> {
 
-        if (this._fragments.has(fragment)) {
-            return this._fragments.get(fragment);
-        }
+        switch (true) {
+            case this._fragments.has(fragment):
+                return this._fragments.get(fragment);
 
-        if (this.parent) {
-            return this.parent.resolveFragment(fragment);
-        }
+            case !this._fragments.has(fragment) && this.fragments.some(fr => fr instanceof fragment):
+                return this.fragments.find(fr => fr instanceof fragment) as InstanceType<T>;
 
-        throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
+            case !this._fragments.has(fragment) && !!this.parent:
+                return this.parent.resolveFragment(fragment);
+
+            default:
+                throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
+        }
     }
 
 
@@ -270,39 +278,57 @@ export class A_Scope {
         new(...args: any[]): T
     }): T {
 
-        if (this.components.includes(component) && this._components.has(component))
-            return this._components.get(component);
+        //  The idea here that in case when Scope has no exact component we have to resolve it from the parent
+        //  BUT: if it's not presented in parent  we have to check for inheritance
+        //  That means that we should ensure that there's no components that are children of the required component
 
-        else if (this.components.includes(component) && !this._components.has(component)) {
-            const componentMeta = A_Context.meta(component)
 
-            const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
+        switch (true) {
+            // In case when the component is available and exists in the scope
+            case this.components.includes(component) && this._components.has(component): {
+                return this._components.get(component);
+            }
 
-            const resolvedArgs = (argsMeta?.get('constructor') || [])
-                .map(arg => {
-                    if ('instructions' in arg) {
-                        const { target, instructions } = arg
-                        return this.resolve(
-                            target,
-                            instructions
-                        );
-                    }
-                    return this.resolve(arg.target)
-                });
+            // In case the component available but does NOT exist in the scope
+            case this.components.includes(component) && !this._components.has(component): {
+                const componentMeta = A_Context.meta(component)
 
-            const newComponent = new component(...resolvedArgs)
+                const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
-            this.register(newComponent);
+                const resolvedArgs = (argsMeta?.get('constructor') || [])
+                    .map(arg => {
+                        if ('instructions' in arg) {
+                            const { target, instructions } = arg
+                            return this.resolve(
+                                target,
+                                instructions
+                            );
+                        }
+                        return this.resolve(arg.target)
+                    });
 
-            return this._components.get(component);
-        }
+                const newComponent = new component(...resolvedArgs)
 
-        else if (!this.components.includes(component) && !!this.parent) {
-            return this.parent.resolveComponent(component);
-        }
+                this.register(newComponent);
 
-        else {
-            throw new Error(`Component ${component.name} not found in the scope`);
+                return this._components.get(component);
+            }
+
+            // In case when there's a component that is inherited from the required component
+            case !this.components.includes(component) && this.components.some(el => A_CommonHelper.isInheritedFrom(el, component)): {
+
+                const found = this.components.find(el => A_CommonHelper.isInheritedFrom(el, component));
+
+                return this.resolveComponent(found!);
+            }
+
+            // In case when the component is not available in the scope but the parent is available
+            case !this.components.includes(component) && !!this.parent: {
+                return this.parent.resolveComponent(component);
+            }
+
+            default:
+                throw new Error(`Component ${component.name} not found in the scope ${this.name}`);
         }
     }
 

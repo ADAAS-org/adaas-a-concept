@@ -372,7 +372,6 @@ export class A_Context {
         const component = param1;
         const feature: string = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
-        // TODO:  have no idea why it's not working because of that "any"
         const scope = this.scope(component);
         const steps: A_TYPES__FeatureStep[] = [];
 
@@ -381,10 +380,8 @@ export class A_Context {
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
             .forEach((meta, constructor) => {
-                try {
-                    // Just try to make sure that component not only Indexed but also presented in scope
-                    scope.resolve(constructor);
-
+                // Just try to make sure that component not only Indexed but also presented in scope
+                if (scope.has(constructor))
                     // Get all extensions for the feature
                     meta
                         .extensions(feature)
@@ -396,11 +393,6 @@ export class A_Context {
                                 args
                             });
                         });
-
-                } catch (error) {
-                    // do nothing
-                    console.log(error);
-                }
             });
 
 
@@ -473,10 +465,13 @@ export class A_Context {
     )
     static register(
         scope: A_Scope,
-        param1: A_Fragment | A_Container<any> | A_Entity | A_Component,
+        param1: A_Fragment | A_Container<any> | A_Entity | A_Component
     ) {
 
         const instance = this.getInstance();
+
+        if (!instance._root)
+            instance._root = scope.name;
 
         switch (true) {
             case param1 instanceof A_Component:
