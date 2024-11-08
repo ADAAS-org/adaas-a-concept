@@ -64,10 +64,12 @@ export function A_Feature_Extend(
             targetRegexp = param1;
         }
         else if (!!param1) {
-            targetRegexp = new RegExp(`^(${(param1.scope || [])
+            targetRegexp = new RegExp(`^${param1.scope
+                ? `(${param1.scope
                     .map(el => el.name)
-                    .join('|')
-                })\.${param1.name || propertyKey}$`);
+                    .join('|')})`
+                : '.*'
+                }\\.${param1.name || propertyKey}$`);
         }
         else {
             targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);

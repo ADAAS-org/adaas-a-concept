@@ -140,12 +140,13 @@ class A_Scope {
         }
     }
     resolveFragment(fragment) {
+        const fragmentInstancePresented = this.fragments.some(fr => fr instanceof fragment);
         switch (true) {
-            case this._fragments.has(fragment):
+            case fragmentInstancePresented && this._fragments.has(fragment):
                 return this._fragments.get(fragment);
-            case !this._fragments.has(fragment) && this.fragments.some(fr => fr instanceof fragment):
+            case fragmentInstancePresented && !this._fragments.has(fragment):
                 return this.fragments.find(fr => fr instanceof fragment);
-            case !this._fragments.has(fragment) && !!this.parent:
+            case !fragmentInstancePresented && !!this.parent:
                 return this.parent.resolveFragment(fragment);
             default:
                 throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
@@ -196,19 +197,16 @@ class A_Scope {
         switch (true) {
             case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);
-                // The same situation. Have not idea how to fix it
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
             case param1 instanceof A_Fragment_class_1.A_Fragment && !this._fragments.has(param1.constructor): {
                 this._fragments.set(param1.constructor, param1);
-                // The same situation. Have not idea how to fix it
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
             case param1 instanceof A_Component_class_1.A_Component: {
                 this._components.set(param1.constructor, param1);
-                // The same situation. Have not idea how to fix it
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
