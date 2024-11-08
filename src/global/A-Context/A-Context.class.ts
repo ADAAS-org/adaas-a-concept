@@ -1,4 +1,4 @@
-import { A_CommonHelper, A_Polyfills, A_TYPES__Required } from "@adaas/a-utils";
+import { A_CommonHelper, A_Polyfills, A_TYPES__Required, ASEID } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
@@ -346,21 +346,25 @@ export class A_Context {
      * @returns 
      */
     static featureDefinition<T extends Array<string>>(
+        scope: A_Scope,
         entity: A_Entity<any, any, T>,
         feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
     static featureDefinition<T extends Array<string>>(
+        scope: A_Scope,
         container: A_Container<T>,
         feature: T[number],
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
     static featureDefinition(
+        scope: A_Scope,
         component: A_Component,
         feature: string,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
     static featureDefinition<T extends Array<string>>(
+        scope: A_Scope,
         param1: A_Component<T> | A_Container<T> | A_Entity<any, any, T>,
         param2: string | T[number],
         param3?: Partial<A_TYPES__ScopeConstructor>
@@ -370,10 +374,46 @@ export class A_Context {
         const instance = this.getInstance();
 
         const component = param1;
-        const feature: string = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
-        const scope = this.scope(component);
+
+        /**
+         * Important NOTE::: Component Scope and Parent Scope are different things.
+         * 
+         * Component Scope is a scope where Component Registered. 
+         * Parent Scope is a scope From Where Feature Requested. 
+         * 
+         * 
+         * Example: ComponentA registered in ScopeA of ContainerA. 
+         * When FeatureA Requested from ContainerA, then Parent Scope is ScopeA For the FeatureA [!]
+         * BUT In FeatureA may be used ComponentB with FeatureB. 
+         * 
+         * 
+         * ------------------------------Execution-----------------------------------------------------------
+         * ContainerA      ->      FeatureA       ->    ComponentA     ->     FeatureB       ->     ComponentB
+         * - Scope:ScopeA  ->  - Scope:  FeatA    -> - Scope: ScopeA   -> - Scope:  FeatB    -> - Scope: ScopeA
+         *                     - Parent: ScopeA   -> - Parent: ROOT    -> - Parent: FeatA    -> - Parent: ROOT
+         * --------------------------------------------------------------------------------------------------
+         * 
+         * So ComponentA and ComponentB  are registered in the SAME scope of ContainerA.
+         * But Each Feature has its own Scope and Parent Scope.
+         * 
+         * 
+         * Component AND Entity DO [!] NOT HAVE THEIR OWN SCOPE.
+         * 
+         * Feature AND Container HAVE OWN SCOPE.
+         * 
+         * 
+         * So Parent can come from the Container or from the Feature.
+         * While Scope we use just to store the scope where the component registered.
+         *  
+         */
         const steps: A_TYPES__FeatureStep[] = [];
+        const feature: string = new ASEID({
+            id: `${param2}-${Math.random()}`,
+            entity: 'a-feature',
+            namespace: component.constructor.name,
+            scope: scope.name
+        }).toString();
 
         // Now we need to resolve the method from all registered components 
 
@@ -401,7 +441,7 @@ export class A_Context {
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
-            parent: this.scope(component)
+            parent: component instanceof A_Container ? this.scope(component) : undefined
         };
     }
 
@@ -414,27 +454,31 @@ export class A_Context {
      * @returns 
      */
     static feature<T extends Array<string>>(
+        scope: A_Scope,
         entity: A_Entity<any, any, T>,
         feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature
     static feature<T extends Array<string>>(
+        scope: A_Scope,
         container: A_Container<T>,
         feature: T[number],
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature
     static feature(
+        scope: A_Scope,
         component: A_Component,
         feature: string,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature
     static feature<T extends Array<string>>(
+        scope: A_Scope,
         param1: A_Component<T> | A_Container<T> | A_Entity<any, any, T>,
         param2: string | T[number],
         param3?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature {
 
-        const featureConstructor = this.featureDefinition(param1, param2, param3);
+        const featureConstructor = this.featureDefinition(scope, param1, param2, param3);
 
         const newFeature = new A_Feature(featureConstructor);
 

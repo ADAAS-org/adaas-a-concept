@@ -138,7 +138,7 @@ export class A_Container<
             ? param2 || {}
             : param1;
 
-        const newFeature = A_Context.feature(this, feature, params);
+        const newFeature = A_Context.feature(this.Scope, this, feature, params);
 
         return await newFeature.process();
     }
@@ -187,7 +187,7 @@ export class A_Container<
             ? param2 || {}
             : param1;
 
-        return A_Context.featureDefinition(this, feature, params);
+        return A_Context.featureDefinition(this.Scope, this, feature, params);
     }
 
 

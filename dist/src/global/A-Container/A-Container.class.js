@@ -80,7 +80,7 @@ class A_Container {
             const params = typeof param1 === 'string'
                 ? param2 || {}
                 : param1;
-            const newFeature = A_Context_class_1.A_Context.feature(this, feature, params);
+            const newFeature = A_Context_class_1.A_Context.feature(this.Scope, this, feature, params);
             return yield newFeature.process();
         });
     }
@@ -91,7 +91,7 @@ class A_Container {
         const params = typeof param1 === 'string'
             ? param2 || {}
             : param1;
-        return A_Context_class_1.A_Context.featureDefinition(this, feature, params);
+        return A_Context_class_1.A_Context.featureDefinition(this.Scope, this, feature, params);
     }
     // ==============================================================
     // ======================= HOOKS ================================

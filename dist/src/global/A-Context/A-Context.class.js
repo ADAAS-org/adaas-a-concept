@@ -180,13 +180,48 @@ class A_Context {
         }
         return component;
     }
-    static featureDefinition(param1, param2, param3) {
+    static featureDefinition(scope, param1, param2, param3) {
         const instance = this.getInstance();
         const component = param1;
-        const feature = `${component.constructor.name}.${param2}`;
         const config = param3 || {};
-        const scope = this.scope(component);
+        /**
+         * Important NOTE::: Component Scope and Parent Scope are different things.
+         *
+         * Component Scope is a scope where Component Registered.
+         * Parent Scope is a scope From Where Feature Requested.
+         *
+         *
+         * Example: ComponentA registered in ScopeA of ContainerA.
+         * When FeatureA Requested from ContainerA, then Parent Scope is ScopeA For the FeatureA [!]
+         * BUT In FeatureA may be used ComponentB with FeatureB.
+         *
+         *
+         * ------------------------------Execution-----------------------------------------------------------
+         * ContainerA      ->      FeatureA       ->    ComponentA     ->     FeatureB       ->     ComponentB
+         * - Scope:ScopeA  ->  - Scope:  FeatA    -> - Scope: ScopeA   -> - Scope:  FeatB    -> - Scope: ScopeA
+         *                     - Parent: ScopeA   -> - Parent: ROOT    -> - Parent: FeatA    -> - Parent: ROOT
+         * --------------------------------------------------------------------------------------------------
+         *
+         * So ComponentA and ComponentB  are registered in the SAME scope of ContainerA.
+         * But Each Feature has its own Scope and Parent Scope.
+         *
+         *
+         * Component AND Entity DO [!] NOT HAVE THEIR OWN SCOPE.
+         *
+         * Feature AND Container HAVE OWN SCOPE.
+         *
+         *
+         * So Parent can come from the Container or from the Feature.
+         * While Scope we use just to store the scope where the component registered.
+         *
+         */
         const steps = [];
+        const feature = new a_utils_1.ASEID({
+            id: `${param2}-${Math.random()}`,
+            entity: 'a-feature',
+            namespace: component.constructor.name,
+            scope: scope.name
+        }).toString();
         // Now we need to resolve the method from all registered components 
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
@@ -210,11 +245,11 @@ class A_Context {
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
-            parent: this.scope(component)
+            parent: component instanceof A_Container_class_1.A_Container ? this.scope(component) : undefined
         };
     }
-    static feature(param1, param2, param3) {
-        const featureConstructor = this.featureDefinition(param1, param2, param3);
+    static feature(scope, param1, param2, param3) {
+        const featureConstructor = this.featureDefinition(scope, param1, param2, param3);
         const newFeature = new A_Feature_class_1.A_Feature(featureConstructor);
         return newFeature;
     }

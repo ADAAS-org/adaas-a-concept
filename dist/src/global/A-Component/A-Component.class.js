@@ -16,7 +16,7 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  *
  */
 class A_Component {
-    call(param1, param2) {
+    call(scope, param1, param2) {
         return __awaiter(this, void 0, void 0, function* () {
             const feature = typeof param1 === 'string'
                 ? param1
@@ -24,7 +24,7 @@ class A_Component {
             const params = typeof param1 === 'string'
                 ? param2 || {}
                 : param1;
-            const newFeature = A_Context_class_1.A_Context.feature(this, feature, params);
+            const newFeature = A_Context_class_1.A_Context.feature(scope, this, feature, params);
             return yield newFeature.process();
         });
     }

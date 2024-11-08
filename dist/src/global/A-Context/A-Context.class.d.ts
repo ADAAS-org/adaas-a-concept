@@ -90,18 +90,18 @@ export declare class A_Context {
      * @param scope
      * @returns
      */
-    static featureDefinition<T extends Array<string>>(entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static featureDefinition<T extends Array<string>>(container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static featureDefinition(component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition<T extends Array<string>>(scope: A_Scope, entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition<T extends Array<string>>(scope: A_Scope, container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition(scope: A_Scope, component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
      *
      * @param scope
      * @returns
      */
-    static feature<T extends Array<string>>(entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
-    static feature<T extends Array<string>>(container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
-    static feature(component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature<T extends Array<string>>(scope: A_Scope, entity: A_Entity<any, any, T>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature<T extends Array<string>>(scope: A_Scope, container: A_Container<T>, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature(scope: A_Scope, component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
     /**
      * Register a Namespace in the provider.
      * @param Namespace

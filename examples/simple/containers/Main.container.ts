@@ -6,6 +6,7 @@ import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
+import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 
 
 
@@ -20,14 +21,10 @@ export class MainContainer extends A_Container<
 
     @A_Concept.Start()
     async start(
-        @A_Inject(MainContainer) params?: any
+        @A_Inject(A_Scope) scope: A_Scope
     ) {
-        if (params) {
-            console.log('Start');
 
-        }
-
-        A_Context.feature(this, 'method_A');
+        A_Context.feature(scope, this, 'method_A');
     }
 
 
@@ -48,14 +45,15 @@ export class MainContainer extends A_Container<
 
 
     @A_Feature.Define()
-    async method_B() {
+    async method_B(
+    ) {
         console.log('Method B', A_Context.root);
 
         const logger = this.Scope.resolve(A_Logger);
 
         // or  you can manually call the feature
 
-        const feature = A_Context.feature(this, 'method_B', {
+        const feature = A_Context.feature(this.Scope, this, 'method_B', {
             fragments: [new ContextFragmentA(), new ContextFragmentB()]
         });
 

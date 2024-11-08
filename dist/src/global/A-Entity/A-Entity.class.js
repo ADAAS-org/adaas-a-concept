@@ -105,7 +105,7 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
             const params = typeof param1 === 'string'
                 ? param2 || {}
                 : param1;
-            const newFeature = A_Context_class_1.A_Context.feature(this, feature, params);
+            const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
             return yield newFeature.process();
         });
     }

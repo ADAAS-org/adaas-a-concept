@@ -1,5 +1,6 @@
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_TYPES__ComponentCallParams } from "./A-Component.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 /**
  * This element only contains the specific code
  *
@@ -11,17 +12,17 @@ export declare class A_Component<_FeatureNames extends Array<string> = any> {
      * @param lifecycleMethod
      * @param args
      */
-    call(
+    call(scope: A_Scope, 
     /**
      * A-Feature method name to be called
      */
     feature: _FeatureNames[number]): Promise<any>;
-    call(
+    call(scope: A_Scope, 
     /**
      * A-Feature name to be called
      */
     params: A_TYPES__Required<Partial<A_TYPES__ComponentCallParams<_FeatureNames[number]>>, ['name']>): Promise<any>;
-    call(
+    call(scope: A_Scope, 
     /**
     * A-Feature method name to be called
     */

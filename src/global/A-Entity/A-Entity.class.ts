@@ -175,7 +175,7 @@ export class A_Entity<
             ? param2 || {}
             : param1;
 
-        const newFeature = A_Context.feature(this, feature, params);
+        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
 
         return await newFeature.process();
     }
@@ -185,7 +185,7 @@ export class A_Entity<
     // ================== Entity Base Methods =============================
     // ====================================================================
 
-   
+
     async load() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
             fragments: [
@@ -195,7 +195,7 @@ export class A_Entity<
     }
 
 
-   
+
     async destroy() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
             fragments: [
@@ -205,7 +205,7 @@ export class A_Entity<
     }
 
 
-   
+
     async save() {
         await this.call(A_TYPES__EntityBaseMethod.SAVE, {
             fragments: [
@@ -245,6 +245,6 @@ export class A_Entity<
 
 
     toString(): string {
-        return this.aseid? this.aseid.toString() : this.constructor.name;
+        return this.aseid ? this.aseid.toString() : this.constructor.name;
     }
 }

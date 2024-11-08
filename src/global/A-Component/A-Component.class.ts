@@ -1,6 +1,7 @@
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_TYPES__ComponentCallParams } from "./A-Component.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 /**
  * This element only contains the specific code
@@ -18,12 +19,14 @@ export class A_Component<
      * @param args 
      */
     async call(
+        scope: A_Scope,
         /**
          * A-Feature method name to be called
          */
         feature: _FeatureNames[number],
     ): Promise<any>
     async call(
+        scope: A_Scope,
         /**
          * A-Feature name to be called
          */
@@ -31,6 +34,7 @@ export class A_Component<
     ): Promise<any>
 
     async call(
+        scope: A_Scope,
         /**
         * A-Feature method name to be called
         */
@@ -42,6 +46,7 @@ export class A_Component<
     ): Promise<any>
 
     async call(
+        scope: A_Scope,
         param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__ComponentCallParams<_FeatureNames[number]>>, ['name']>,
         param2?: Partial<A_TYPES__ComponentCallParams<_FeatureNames[number]>>
     ): Promise<any> {
@@ -53,7 +58,7 @@ export class A_Component<
             ? param2 || {}
             : param1;
 
-        const newFeature = A_Context.feature(this, feature, params);
+        const newFeature = A_Context.feature(scope, this, feature, params);
 
         return await newFeature.process();
     }
