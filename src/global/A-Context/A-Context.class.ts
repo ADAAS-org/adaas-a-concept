@@ -414,7 +414,7 @@ export class A_Context {
         //     namespace: component.constructor.name,
         //     scope: scope.name
         // }).toString();
-        
+
         const feature = `${component.constructor.name}.${param2}`;
 
         // Now we need to resolve the method from all registered components 
@@ -443,7 +443,7 @@ export class A_Context {
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
-            parent: component instanceof A_Container ? this.scope(component) : undefined
+            parent: scope
         };
     }
 
