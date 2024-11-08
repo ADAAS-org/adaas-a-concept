@@ -21,8 +21,9 @@ export declare class ConfigReader extends A_Component {
     read<T extends string>(variables?: Array<T>): Promise<Record<T, any>>;
     /**
      * Finds the root directory of the project by locating the folder containing package.json
+     *
      * @param {string} startPath - The initial directory to start searching from (default is __dirname)
      * @returns {string|null} - The path to the root directory or null if package.json is not found
      */
-    protected getProjectRoot(startPath?: string): Promise<string | null>;
+    protected getProjectRoot(startPath?: string): Promise<string>;
 }

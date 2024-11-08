@@ -55,23 +55,24 @@ export class ConfigReader extends A_Component {
 
     /**
      * Finds the root directory of the project by locating the folder containing package.json
+     * 
      * @param {string} startPath - The initial directory to start searching from (default is __dirname)
      * @returns {string|null} - The path to the root directory or null if package.json is not found
      */
     protected async getProjectRoot(startPath = __dirname) {
-        let currentPath = startPath;
+        // let currentPath = startPath;
 
-        const fs = await A_Polyfills.fs();
+        // const fs = await A_Polyfills.fs();
 
-        while (!fs.existsSync(`${currentPath}/package.json`)) {
-            const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-            if (parentPath === currentPath || parentPath === '') {
-                // Reached the root of the filesystem without finding package.json
-                return null;
-            }
-            currentPath = parentPath;
-        }
+        // while (!fs.existsSync(`${currentPath}/package.json`)) {
+        //     const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+        //     if (parentPath === currentPath || parentPath === '') {
+        //         // Reached the root of the filesystem without finding package.json
+        //         return null;
+        //     }
+        //     currentPath = parentPath;
+        // }
 
-        return currentPath;
+        return process.cwd();
     }
 }

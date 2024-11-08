@@ -22,7 +22,6 @@ exports.ConfigReader = void 0;
 const A_Scope_class_1 = require("../../../global/A-Scope/A-Scope.class");
 const A_Inject_decorator_1 = require("../../../decorators/A-Inject/A-Inject.decorator");
 const A_Component_class_1 = require("../../../global/A-Component/A-Component.class");
-const a_utils_1 = require("@adaas/a-utils");
 const A_Concept_class_1 = require("../../../global/A-Concept/A_Concept.class");
 const A_Config_context_1 = require("../A-Config.context");
 /**
@@ -60,22 +59,23 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
     }
     /**
      * Finds the root directory of the project by locating the folder containing package.json
+     *
      * @param {string} startPath - The initial directory to start searching from (default is __dirname)
      * @returns {string|null} - The path to the root directory or null if package.json is not found
      */
     getProjectRoot() {
         return __awaiter(this, arguments, void 0, function* (startPath = __dirname) {
-            let currentPath = startPath;
-            const fs = yield a_utils_1.A_Polyfills.fs();
-            while (!fs.existsSync(`${currentPath}/package.json`)) {
-                const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-                if (parentPath === currentPath || parentPath === '') {
-                    // Reached the root of the filesystem without finding package.json
-                    return null;
-                }
-                currentPath = parentPath;
-            }
-            return currentPath;
+            // let currentPath = startPath;
+            // const fs = await A_Polyfills.fs();
+            // while (!fs.existsSync(`${currentPath}/package.json`)) {
+            //     const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+            //     if (parentPath === currentPath || parentPath === '') {
+            //         // Reached the root of the filesystem without finding package.json
+            //         return null;
+            //     }
+            //     currentPath = parentPath;
+            // }
+            return process.cwd();
         });
     }
 };
