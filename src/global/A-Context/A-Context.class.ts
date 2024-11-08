@@ -408,12 +408,14 @@ export class A_Context {
          *  
          */
         const steps: A_TYPES__FeatureStep[] = [];
-        const feature: string = new ASEID({
-            id: `${param2}-${Math.random()}`,
-            entity: 'a-feature',
-            namespace: component.constructor.name,
-            scope: scope.name
-        }).toString();
+        // const feature: string = new ASEID({
+        //     id: `${param2}-${Math.random()}`,
+        //     entity: 'a-feature',
+        //     namespace: component.constructor.name,
+        //     scope: scope.name
+        // }).toString();
+        
+        const feature = `${component.constructor.name}.${param2}`;
 
         // Now we need to resolve the method from all registered components 
 

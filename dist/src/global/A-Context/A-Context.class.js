@@ -216,12 +216,13 @@ class A_Context {
          *
          */
         const steps = [];
-        const feature = new a_utils_1.ASEID({
-            id: `${param2}-${Math.random()}`,
-            entity: 'a-feature',
-            namespace: component.constructor.name,
-            scope: scope.name
-        }).toString();
+        // const feature: string = new ASEID({
+        //     id: `${param2}-${Math.random()}`,
+        //     entity: 'a-feature',
+        //     namespace: component.constructor.name,
+        //     scope: scope.name
+        // }).toString();
+        const feature = `${component.constructor.name}.${param2}`;
         // Now we need to resolve the method from all registered components 
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
