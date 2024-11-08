@@ -401,7 +401,7 @@ export class A_Context {
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
-            parent: component instanceof A_Container ? this.scope(component) : undefined
+            parent: this.scope(component)
         };
     }
 

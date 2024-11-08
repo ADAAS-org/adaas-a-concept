@@ -210,7 +210,7 @@ class A_Context {
             fragments: config.fragments || [],
             components: config.components || [],
             steps,
-            parent: component instanceof A_Container_class_1.A_Container ? this.scope(component) : undefined
+            parent: this.scope(component)
         };
     }
     static feature(param1, param2, param3) {
