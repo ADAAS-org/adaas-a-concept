@@ -5,7 +5,7 @@ export declare class A_Config<T extends string = any> extends A_Fragment {
     config: A_TYPES__ConfigContainerConstructor<T>;
     private VARIABLES;
     CONFIG_PROPERTIES: T[];
-    protected DEFAULT_ALLOWED_TO_READ_PROPERTIES: readonly ["CONFIG_SDK_VALIDATION", "CONFIG_VERBOSE", "CONFIG_IGNORE_ERRORS"];
+    protected DEFAULT_ALLOWED_TO_READ_PROPERTIES: readonly ["CONFIG_SDK_VALIDATION", "CONFIG_VERBOSE", "CONFIG_IGNORE_ERRORS", "CONCEPT_ROOT_FOLDER"];
     constructor(config: A_TYPES__Required<Partial<A_TYPES__ConfigContainerConstructor<T>>, ['variables']>);
     protected onInit(): Promise<void>;
     /**

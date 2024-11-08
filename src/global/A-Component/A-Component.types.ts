@@ -44,6 +44,7 @@ export enum A_TYPES__ComponentMetaKey {
     EXTENSIONS = 'a-component-extensions',
     FEATURES = 'a-component-features',
     INJECTIONS = 'a-component-injections',
+    STAGES = 'a-component-stages',
 }
 
 export type A_TYPES__ComponentMetaExtension = {

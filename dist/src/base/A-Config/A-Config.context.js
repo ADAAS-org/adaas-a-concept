@@ -22,6 +22,7 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
             'CONFIG_SDK_VALIDATION',
             'CONFIG_VERBOSE',
             'CONFIG_IGNORE_ERRORS',
+            'CONCEPT_ROOT_FOLDER',
         ];
         this.config = a_utils_1.A_CommonHelper.deepCloneAndMerge(config, {
             name: this.name,

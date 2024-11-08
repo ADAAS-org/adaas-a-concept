@@ -18,6 +18,7 @@ export class A_Config<
         'CONFIG_SDK_VALIDATION',
         'CONFIG_VERBOSE',
         'CONFIG_IGNORE_ERRORS',
+        'CONCEPT_ROOT_FOLDER',
     ] as const;
 
 

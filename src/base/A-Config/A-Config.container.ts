@@ -7,6 +7,8 @@ import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { FileConfigReader } from "./components/FileConfigReader.component";
 import { ENVConfigReader } from "./components/ENVConfigReader.component";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
+import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
+import { A_Config } from "./A-Config.context";
 
 
 
@@ -17,12 +19,10 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
     private reader!: ConfigReader
 
 
-
-    async identifyReader(
+    @A_Concept.Load()
+    async prepare(
+        @A_Inject(A_Config) config: A_Config,
     ) {
-        // OR Inject the logger by calling Context Provider
-        // const logger2 = await this.CP.resolve(A_LoggerContext);
-
         const fs = await A_Polyfills.fs();
 
         switch (true) {
@@ -30,7 +30,6 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
             case A_Context.environment === 'server' && !!fs.existsSync(`${this.Scope.name}.conf.json`):
                 this.reader = this.Scope.resolve(FileConfigReader);
                 break;
-
 
             case A_Context.environment === 'server': !fs.existsSync(`${this.Scope.name}.conf.json`)
                 this.reader = this.Scope.resolve(ENVConfigReader);
@@ -43,12 +42,16 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
             default:
                 throw new Error(`Environment ${A_Context.environment} is not supported`);
         }
+
     }
 
-    async readVariables() {
-        // const config = await this.reader.read(this.namespace.CONFIG_PROPERTIES);
 
 
+    @A_Concept.Load()
+    async readVariables(
+        @A_Inject(A_Config) config: A_Config,
+    ) {
+        await this.reader.inject(config);
     }
 
 }

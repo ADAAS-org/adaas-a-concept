@@ -76,6 +76,12 @@ export class A_Logger extends A_Component {
         ]
     }
 
+    protected get allowedToLog() {
+        return this.config.get('CONFIG_VERBOSE') !== undefined
+            && this.config.get('CONFIG_VERBOSE') !== 'false'
+            && this.config.get('CONFIG_VERBOSE') !== false
+    }
+
 
     log(
         color: keyof typeof this.colors,
@@ -88,7 +94,7 @@ export class A_Logger extends A_Component {
         param1: any,
         ...args: any[]
     ) {
-        if (!this.config.get('CONFIG_VERBOSE'))
+        if (!this.allowedToLog)
             return;
 
         if (typeof param1 === 'string' && this.colors[param1]) {
@@ -101,7 +107,7 @@ export class A_Logger extends A_Component {
     }
 
     warning(...args) {
-        if (!this.config.get('CONFIG_VERBOSE'))
+        if (!this.allowedToLog)
             return;
 
         console.log(...this.compile('yellow', ...args));

@@ -22,6 +22,9 @@ exports.ConfigReader = void 0;
 const A_Scope_class_1 = require("../../../global/A-Scope/A-Scope.class");
 const A_Inject_decorator_1 = require("../../../decorators/A-Inject/A-Inject.decorator");
 const A_Component_class_1 = require("../../../global/A-Component/A-Component.class");
+const a_utils_1 = require("@adaas/a-utils");
+const A_Concept_class_1 = require("../../../global/A-Concept/A_Concept.class");
+const A_Config_context_1 = require("../A-Config.context");
 /**
  * Config Reader
  */
@@ -29,6 +32,14 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
     constructor(scope) {
         super();
         this.scope = scope;
+    }
+    inject(config) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const data = this.read(config.CONFIG_PROPERTIES);
+            config.set(data);
+            const rootDir = yield this.getProjectRoot();
+            config.set('CONCEPT_ROOT_FOLDER', rootDir);
+        });
     }
     /**
      * Get the configuration property by Name
@@ -47,8 +58,32 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
             return {};
         });
     }
+    /**
+     * Finds the root directory of the project by locating the folder containing package.json
+     * @param {string} startPath - The initial directory to start searching from (default is __dirname)
+     * @returns {string|null} - The path to the root directory or null if package.json is not found
+     */
+    getProjectRoot() {
+        return __awaiter(this, arguments, void 0, function* (startPath = __dirname) {
+            let currentPath = startPath;
+            const fs = yield a_utils_1.A_Polyfills.fs();
+            while (!fs.existsSync(`${currentPath}/package.json`)) {
+                const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
+                if (parentPath === currentPath || parentPath === '') {
+                    // Reached the root of the filesystem without finding package.json
+                    return null;
+                }
+                currentPath = parentPath;
+            }
+            return currentPath;
+        });
+    }
 };
 exports.ConfigReader = ConfigReader;
+__decorate([
+    A_Concept_class_1.A_Concept.Load(),
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config))
+], ConfigReader.prototype, "inject", null);
 exports.ConfigReader = ConfigReader = __decorate([
     __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Scope_class_1.A_Scope))
 ], ConfigReader);

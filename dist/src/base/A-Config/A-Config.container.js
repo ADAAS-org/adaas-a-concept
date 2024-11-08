@@ -1,4 +1,13 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -11,15 +20,16 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_ConfigLoader = void 0;
 const A_Container_class_1 = require("../../global/A-Container/A-Container.class");
+const A_Inject_decorator_1 = require("../../decorators/A-Inject/A-Inject.decorator");
 const a_utils_1 = require("@adaas/a-utils");
 const A_Context_class_1 = require("../../global/A-Context/A-Context.class");
 const FileConfigReader_component_1 = require("./components/FileConfigReader.component");
 const ENVConfigReader_component_1 = require("./components/ENVConfigReader.component");
+const A_Concept_class_1 = require("../../global/A-Concept/A_Concept.class");
+const A_Config_context_1 = require("./A-Config.context");
 class A_ConfigLoader extends A_Container_class_1.A_Container {
-    identifyReader() {
+    prepare(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            // OR Inject the logger by calling Context Provider
-            // const logger2 = await this.CP.resolve(A_LoggerContext);
             const fs = yield a_utils_1.A_Polyfills.fs();
             switch (true) {
                 case A_Context_class_1.A_Context.environment === 'server' && !!fs.existsSync(`${this.Scope.name}.conf.json`):
@@ -37,12 +47,20 @@ class A_ConfigLoader extends A_Container_class_1.A_Container {
             }
         });
     }
-    readVariables() {
+    readVariables(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            // const config = await this.reader.read(this.namespace.CONFIG_PROPERTIES);
+            yield this.reader.inject(config);
         });
     }
 }
 exports.A_ConfigLoader = A_ConfigLoader;
+__decorate([
+    A_Concept_class_1.A_Concept.Load(),
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config))
+], A_ConfigLoader.prototype, "prepare", null);
+__decorate([
+    A_Concept_class_1.A_Concept.Load(),
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config))
+], A_ConfigLoader.prototype, "readVariables", null);
 const foo = new A_ConfigLoader({});
 //# sourceMappingURL=A-Config.container.js.map

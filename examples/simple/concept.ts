@@ -62,8 +62,8 @@ import { ENVConfigReader } from "@adaas/a-concept/base/A-Config/components/ENVCo
         ]
     });
 
-    await configLoader.identifyReader();
-    await configLoader.readVariables();
+    await configLoader.prepare(configContext);
+    await configLoader.readVariables(configContext);
 
 
     const container = new MainContainer({

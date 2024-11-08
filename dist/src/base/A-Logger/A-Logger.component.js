@@ -62,8 +62,13 @@ let A_Logger = class A_Logger extends A_Component_class_1.A_Component {
                 : '\x1b[0m')
         ];
     }
+    get allowedToLog() {
+        return this.config.get('CONFIG_VERBOSE') !== undefined
+            && this.config.get('CONFIG_VERBOSE') !== 'false'
+            && this.config.get('CONFIG_VERBOSE') !== false;
+    }
     log(param1, ...args) {
-        if (!this.config.get('CONFIG_VERBOSE'))
+        if (!this.allowedToLog)
             return;
         if (typeof param1 === 'string' && this.colors[param1]) {
             console.log(...this.compile(param1, ...args));
@@ -74,7 +79,7 @@ let A_Logger = class A_Logger extends A_Component_class_1.A_Component {
         }
     }
     warning(...args) {
-        if (!this.config.get('CONFIG_VERBOSE'))
+        if (!this.allowedToLog)
             return;
         console.log(...this.compile('yellow', ...args));
     }

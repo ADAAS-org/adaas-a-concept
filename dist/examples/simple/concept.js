@@ -61,8 +61,8 @@ const ENVConfigReader_component_1 = require("../../src/base/A-Config/components/
             ENVConfigReader_component_1.ENVConfigReader
         ]
     });
-    yield configLoader.identifyReader();
-    yield configLoader.readVariables();
+    yield configLoader.prepare(configContext);
+    yield configLoader.readVariables(configContext);
     const container = new Main_container_1.MainContainer({
         name: 'MainContainer',
         components: [

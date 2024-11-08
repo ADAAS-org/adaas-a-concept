@@ -19,6 +19,7 @@ export declare class A_Logger extends A_Component {
     };
     get scopeLength(): number;
     compile(color: keyof typeof this.colors, ...args: any[]): Array<string>;
+    protected get allowedToLog(): boolean;
     log(color: keyof typeof this.colors, ...args: any[]): any;
     log(...args: any[]): any;
     warning(...args: any[]): void;
