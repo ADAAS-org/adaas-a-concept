@@ -201,12 +201,20 @@ class A_Scope {
                 break;
             }
             case param1 instanceof A_Fragment_class_1.A_Fragment && !this._fragments.has(param1.constructor): {
+                const allowedFragment = this.fragments.find(fr => fr instanceof param1.constructor);
+                if (!allowedFragment) {
+                    this.fragments.push(param1);
+                }
                 this._fragments.set(param1.constructor, param1);
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
             case param1 instanceof A_Component_class_1.A_Component: {
                 this._components.set(param1.constructor, param1);
+                const allowedComponent = this.components.find(c => c === param1.constructor);
+                if (!allowedComponent) {
+                    this.components.push(param1.constructor);
+                }
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
