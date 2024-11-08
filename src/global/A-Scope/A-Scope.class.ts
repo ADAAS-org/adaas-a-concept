@@ -223,12 +223,21 @@ export class A_Scope {
 
         switch (true) {
             case !instructions: {
-                //  in this case we have to find the entity by the class or common parent class
+
                 const entities = Array.from(this._entities.values());
 
                 const found = entities.find(e => e instanceof entity);
 
-                return found as InstanceType<T>;
+                switch (true) {
+                    case !!found:
+                        return found as InstanceType<T>;
+
+                    case !found && !!this.parent:
+                        return this.parent.resolveFragment(entity);
+
+                    default:
+                        throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
+                }
             }
 
             case !!instructions && !!instructions.aseid && this._entities.has(instructions.aseid): {
