@@ -3,6 +3,10 @@ export declare enum A_TYPES__ConfigFeature {
 }
 export type A_TYPES__ConfigContainerConstructor<T extends string> = {
     /**
+     * If set to true, the SDK will throw an error if the variable is not defined OR not presented in the defaults
+     */
+    strict: boolean;
+    /**
      * Allows to define the names of variable to be loaded
      */
     variables: Array<T>;

@@ -25,6 +25,7 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
         ];
         this.config = a_utils_1.A_CommonHelper.deepCloneAndMerge(config, {
             name: this.name,
+            strict: false,
             defaults: {},
             variables: []
         });
@@ -45,7 +46,8 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
      */
     get(property) {
         if (this.CONFIG_PROPERTIES.includes(property)
-            || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property))
+            || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property)
+            || !(this.config.strict))
             return this.VARIABLES.get(property);
         throw new Error('Property not exists or not allowed to read');
         // return this.concept.Errors.throw(A_SDK_CONSTANTS__ERROR_CODES.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ) as never;

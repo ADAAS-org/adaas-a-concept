@@ -28,6 +28,7 @@ export class A_Config<
 
         this.config = A_CommonHelper.deepCloneAndMerge<A_TYPES__ConfigContainerConstructor<T>>(config as any, {
             name: this.name,
+            strict: false,
             defaults: {} as Record<T, any>,
             variables: [] as T[]
         });
@@ -52,7 +53,9 @@ export class A_Config<
         property: T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]
     ): _OutType {
         if (this.CONFIG_PROPERTIES.includes(property as any)
-            || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property as any))
+            || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property as any)
+            || !(this.config.strict)
+        )
             return this.VARIABLES.get(property as string) as _OutType;
 
         throw new Error('Property not exists or not allowed to read') as never;
