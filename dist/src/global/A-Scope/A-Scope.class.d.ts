@@ -1,8 +1,8 @@
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
-import { A_TYPES__ComponentMeta_EntityInjectionInstructions, A_TYPES__ComponentMeta_InjectionParam } from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecorator_Injectable } from "../../decorators/A-Inject/A-Inject.decorator.types";
 /**
  *
  *
@@ -25,8 +25,9 @@ export declare class A_Scope {
     protected params: A_TYPES__ScopeConstructor;
     constructor(params: Partial<A_TYPES__ScopeConstructor>, config?: Partial<A_TYPES__ScopeConfig>);
     private initComponents;
+    private initEntities;
     private initFragments;
-    get components(): (new (...args: any[]) => any)[];
+    get components(): (new (...args: any[]) => A_Component)[];
     get fragments(): A_Fragment[];
     /**
      * This method is used to check if the component is available in the scope
@@ -43,11 +44,11 @@ export declare class A_Scope {
      * @param component
      * @returns
      */
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: T): InstanceType<T>;
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: T): InstanceType<T>;
     resolve<T extends {
         new (...args: any[]): A_Entity;
-    }>(entity: T, instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>): InstanceType<T>;
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(component: Array<T>): Array<InstanceType<T>>;
+    }>(entity: T, instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>): InstanceType<T>;
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: Array<T>): Array<InstanceType<T>>;
     private resolveOnce;
     private resolveEntity;
     private resolveFragment;
@@ -61,4 +62,5 @@ export declare class A_Scope {
     register(entity: A_Entity): void;
     register(component: A_Component): void;
     register(fragment: A_Fragment): void;
+    toJSON(): Record<string, any>;
 }

@@ -1,3 +1,6 @@
+import { A_Component } from "../A-Component/A-Component.class"
+import { A_TYPES__ContainerCallParams } from "../A-Container/A-Container.types"
+import { A_Fragment } from "../A-Fragment/A-Fragment.class"
 
 
 export type A_TYPES__A_DependencyReferenceConstructor = {
@@ -57,4 +60,54 @@ export type A_TYPES__A_DependencyReferenceConstructorConfig = {
          */
         timeout: number
     }
+}
+
+
+export type A_TYPES__A_ChannelCallParams = {
+    fragments: Array<A_Fragment>,
+    components: Array<typeof A_Component>
+}
+
+
+/**
+ * Returns a string set of possible methods that could be called on a provided A-Component
+ */
+export type A_TYPES__A_ExecutableMethods<T> = {
+    [K in keyof T]: T[K] extends (...arg: Partial<A_TYPES__A_ChannelCallParams>[]) => Promise<any> ? K : never
+}[keyof T];
+
+
+/**
+ * Returns a string set of possible methods that could be called on a set of provided set of A-Components
+ */
+export type A_TYPES__A_ChannelAggregateMethods<TClasses extends A_Component[]> = {
+    [K in keyof TClasses]: TClasses[K] extends infer Instance
+    ? A_TYPES__A_ExecutableMethods<Instance>
+    : never;
+}[number];
+
+
+/**
+ * Describes a type of proxy object and consists of all callable methods from a set opf provided components 
+ */
+export type A_TYPES__A_ChannelAggregated<TClasses extends any[]> = {
+    [Method in A_TYPES__A_ChannelAggregateMethods<TClasses>]: {
+        [Class in keyof TClasses]: TClasses[Class] extends infer Instance
+        ? Method extends keyof Instance
+        // Just put it here for possible cases with detailed params
+        // ? Instance[Method]
+        ? (params: Partial<A_TYPES__A_ChannelCallParams>) => Promise<any>
+        : never
+        : never;
+    }[number]; // Select the method signature from any matching class
+};
+
+
+
+
+/**
+ * A set of parameters are required to construct a new A-Channel
+ */
+export type A_TYPES__A_ChannelConstructor = {
+    id: string,
 }

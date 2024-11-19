@@ -4,7 +4,9 @@ import { A_Container } from "../A-Container/A-Container.class";
 // import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
-import { A_Stage } from "@adaas/a-concept/decorators/A-Stage/A-Stage.decorator";
+import { A_Abstraction } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction.decorator";
+import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
+import { A_Channel } from "../A-Channel/A-Channel.class";
 
 
 
@@ -35,8 +37,8 @@ export class A_Concept<
     /**
      * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    static get Load() {
-        return A_Stage(A_TYPES__ConceptStage.Load);
+    static Load() {
+        return A_Abstraction(A_TYPES__ConceptStage.Load);
     }
 
     /**
@@ -44,15 +46,15 @@ export class A_Concept<
      *
      * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    static get Publish() {
-        return A_Stage(A_TYPES__ConceptStage.Publish);
+    static Publish() {
+        return A_Abstraction(A_TYPES__ConceptStage.Publish);
     }
 
     /**
      * Deploy the concept to the environment.
      */
-    static get Deploy() {
-        return A_Stage(A_TYPES__ConceptStage.Deploy);
+    static Deploy() {
+        return A_Abstraction(A_TYPES__ConceptStage.Deploy);
     }
 
     /**
@@ -61,29 +63,29 @@ export class A_Concept<
      * Can be used for static websites or any other concept that requires a build step.
      * 
      */
-    static get Build() {
-        return A_Stage(A_TYPES__ConceptStage.Build);
+    static Build() {
+        return A_Abstraction(A_TYPES__ConceptStage.Build);
     }
 
     /**
      *  Main execution of the concept.
      */
-    static get Run() {
-        return A_Stage(A_TYPES__ConceptStage.Run);
+    static Run() {
+        return A_Abstraction(A_TYPES__ConceptStage.Run);
     }
 
     /**
      *  Start the concept. Uses for servers or any other background services.
      */
-    static get Start() {
-        return A_Stage(A_TYPES__ConceptStage.Start);
+    static Start() {
+        return A_Abstraction(A_TYPES__ConceptStage.Start);
     }
 
     /**
      * Stop the concept. Uses for servers or any other background services.
      */
-    static get Stop() {
-        return A_Stage(A_TYPES__ConceptStage.Stop);
+    static Stop() {
+        return A_Abstraction(A_TYPES__ConceptStage.Stop);
     }
 
 
@@ -182,26 +184,46 @@ export class A_Concept<
         params: Partial<A_TYPES__ConceptStageParams>
     ) {
 
-        const stages: any[] = [];
+        const abstractions: {
+            container: A_Container<any>,
+            runners: Array<A_TYPES__A_StageStep>
+        }[] = [];
+
 
         this.containers.map(container => {
             const meta = A_Context.meta(container);
 
-            const containerStages = meta.get(A_TYPES__ContainerMetaKey.STAGES)
+            const containerAbstractions: Array<A_TYPES__A_StageStep> = meta
+                .abstractions(method)
+                .map(step => ({
+                    component: container,
+                    ...step
+                }));
 
+            const containerScope = A_Context.scope(container);
 
-            if (containerStages) {
-                for (const [name, stage] of containerStages) {
-                    if (stage.name === method) {
-                        stages.push({
-                            name,
-                            container,
-                        });
-                    }
-                }
+            const componentsAbstractions = containerScope.components
+                .map(component => A_Context.meta(component).abstractions(method).map(step => ({
+                    component,
+                    ...step
+                })))
+                .flat();
 
-            }
+            abstractions.push({
+                container,
+                runners: [
+                    ...containerAbstractions.map(step => ({
+                        ...step,
+                        component: container,
+                    })),
+
+                    ...componentsAbstractions
+                ]
+            });
         });
+
+
+
 
         const scope = A_Context.allocate(this, {
             components: params.components,
@@ -209,9 +231,6 @@ export class A_Concept<
             parent: A_Context.scope(this)
         });
 
-        for (const stage of stages) {
-            await stage.container[stage.name](params);
-        }
 
     }
 
@@ -234,4 +253,6 @@ export class A_Concept<
     }
 
 }
+
+
 

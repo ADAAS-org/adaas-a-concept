@@ -1,54 +1,102 @@
-// import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-concept/constants/errors.constants";
-// import { A_Context } from "@adaas/a-concept/global/A-Namespace/A_Namespace.class"
-// import { A_Error } from "@adaas/a-concept/global/A_Error.class";
-// import rl from 'readline';
+// import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+// import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
+// import EventEmitter from "events";
+
+// type MethodsOfComponent<T> = T extends typeof BaseComponent<infer M extends Array<string>> ? M : never;
 
 
-// (async () => {
 
-//     await A_Context.ready;
+// class BaseComponent<_Methods extends string[] = []> {
 
-//     A_Context.configure({
-//         verbose: true
-//     })
+//     constructor(
+//         private params?: Partial<{
+//             exports: _Methods
+//         }>) {
 
-//     A_Context.Logger.log('Test Log', {
-//         test: 'test',
-//         test2: 'test2',
-//         foo: {
-//             bar: 'bar',
-//             baz: {
-//                 qux: 'qux'
+//     }
+// }
+
+// class BaseContainer<_AllComponents extends typeof BaseComponent<string[]>[]> {
+
+//     constructor(public components: _AllComponents) {
+//         // this.allMethods = components
+//         //     .map((component) => component.methods)
+//         //     .flat(); // Extract methods at runtime
+//     }
+
+
+//     callMethod(method: MethodsOfComponent<_AllComponents[number]>[number]) {
+//         // if (!this.allMethods.includes(method)) {
+//         //     throw new Error(`Method ${method} is not available.`);
+//         // }
+//         console.log(`Calling method: ${method}`);
+//     }
+// }
+
+
+
+// // Define your components
+// class ComponentA extends BaseComponent<['doSomething']> {
+//     // constructor() {
+//     //     super(['doSomething']);
+//     // }
+// }
+
+
+// type ProxyTypeWithMethods<T> = T extends BaseContainer<infer M extends typeof BaseComponent<string[]>[]> ? MethodsOfComponent<M[number]> : never;
+
+
+// class channel<T extends BaseContainer<typeof BaseComponent<string[]>[]>> {
+
+
+//     getProvider()
+//         : {
+//             [K in ProxyTypeWithMethods<T>[number]]: () => void
+//         } {
+//         return new Proxy({} as any, {
+//             get(target, prop, receiver) {
+//                 return target[prop];
 //             }
-//         }
-//     }, 'Maybe its a hige update');
+//         });
+//     }
+// }
 
-//     A_Context.Logger.error(new Error('Test Error'), new A_Error(A_CONSTANTS__DEFAULT_ERRORS.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ));
-//     A_Context.Logger.error(new A_Error(A_CONSTANTS__DEFAULT_ERRORS.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ));
-//     A_Context.Logger.log(new A_Error(A_CONSTANTS__DEFAULT_ERRORS.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ));
-
-//     const rlInterface = rl.createInterface({
-//         input: process.stdin,
-//         output: process.stdout
-//     });
-
-//     const answer = await new Promise<string>(resolve => rlInterface
-//         .question(
-//             A_Context.Logger.compile('pink', 'What is your name?', '(1,2,3,4)').join(' ') + '\n' +
-//             A_Context.Logger.compile('pink', 'Answer (1,2,3,4)').join(' '),
-//             resolve));
-
-//     rl.moveCursor(process.stdout, 0, -1); // Move cursor to the beginning of the previous line
-//     rl.clearLine(process.stdout, 0); // Clear the current line
-
-//     const answer2 = await new Promise<string>(resolve => rlInterface
-//         .question(
-//             A_Context.Logger.compile('pink', 'Answer (1,2,3,4)').join(' '),
-//             resolve));
-
-//     rl.moveCursor(process.stdout, 0, -1); // Move cursor to the beginning of the previous line
-//     rl.clearLine(process.stdout, 0); // Clear the current line
-//     // console.log('Asnwer: ', answer);
+// class ComponentB extends BaseComponent<['doAnotherThing']> {
+//     // constructor() {
+//     //     super(['doAnotherThing']);
+//     // }
 
 
-// })()
+
+//     method3() {
+
+
+//     }
+// }
+
+// // Instantiate the container
+// const container = new BaseContainer([
+//     ComponentA,
+//     ComponentB
+// ]);
+
+
+
+
+
+// // Correct usage
+// container.callMethod('doSomething'); // Calling method: doSomething
+// container.callMethod('doAnotherThing'); // Calling method: doAnotherThing
+
+
+
+// const channelInstance = new channel<typeof container>();
+
+// const provider = channelInstance.getProvider();
+
+// provider.doAnotherThing();
+
+
+// // Incorrect usage
+// // container.callMethod('nonExistentMethod'); // Throws error: Method nonExistentMethod is not available
+

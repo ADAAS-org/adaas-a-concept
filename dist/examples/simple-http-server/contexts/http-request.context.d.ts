@@ -7,7 +7,6 @@ export declare class HTTPRequest extends A_Fragment {
     state: 'open' | 'end';
     constructor(request: IncomingMessage, response: ServerResponse);
     protected onInit(): Promise<void>;
-    toJSON<T extends any>(): Promise<T>;
     private parseBody;
     end(body: string): Promise<void>;
 }

@@ -18,36 +18,36 @@ export declare class A_Concept<_Features extends A_Container<any>[] = any> {
     /**
      * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    static get Load(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Load(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
      *
      * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    static get Publish(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Publish(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Deploy the concept to the environment.
      */
-    static get Deploy(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Deploy(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Compiles the Concept in case there are some containers that require that.
      *
      * Can be used for static websites or any other concept that requires a build step.
      *
      */
-    static get Build(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Build(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      *  Main execution of the concept.
      */
-    static get Run(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Run(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      *  Start the concept. Uses for servers or any other background services.
      */
-    static get Start(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Start(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Stop the concept. Uses for servers or any other background services.
      */
-    static get Stop(): (config?: Partial<import("../../..").A_TYPES__A_StageDecoratorConfig>) => (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_StageDecoratorDescriptor) => void;
+    static Stop(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     protected containers: A_Container<any>[];
     constructor(props: A_TYPES__IConceptConstructor<_Features>);
     get namespace(): string;

@@ -57,6 +57,9 @@ export function A_Feature_Extend(
     ) {
 
         let targetRegexp: RegExp;
+        let behavior: 'sync' | 'async' = 'sync';
+        let before: string[] = [];
+        let after: string[] = [];
 
 
         // Check if the config is a RegExp
@@ -70,6 +73,10 @@ export function A_Feature_Extend(
                     .join('|')})`
                 : '.*'
                 }\\.${param1.name || propertyKey}$`);
+
+            behavior = param1.behavior || behavior;
+            before = param1.before || before;
+            after = param1.after || after;
         }
         else {
             targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
@@ -88,6 +95,9 @@ export function A_Feature_Extend(
         existedMetaValue.push({
             name: targetRegexp.source,
             handler: propertyKey,
+            behavior,
+            before,
+            after
         });
 
         // Set the metadata of the method to define a custom Feature with name

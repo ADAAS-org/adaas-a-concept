@@ -12,7 +12,8 @@ import { A_Concept } from "../A-Concept/A_Concept.class";
 import { A_TYPES__EntityBaseMethod } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
-import { A_TYPES__FeatureConstructor, A_TYPES__FeatureStep } from "../A-Feature/A-Feature.types";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
+import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
 
 
 /**
@@ -61,8 +62,6 @@ export class A_Context {
     /**
      * A set of allocated scopes per every element in the program.
      */
-    // protected scopes: WeakMap<A_Container<any> | A_Feature | A_Component | any, A_Scope> = new WeakMap();
-
     protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>> = new Map();
     protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta> = new Map();
     protected componentsMeta: Map<typeof A_Component, A_ComponentMeta> = new Map();
@@ -369,8 +368,6 @@ export class A_Context {
         param2: string | T[number],
         param3?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
-
-
         const instance = this.getInstance();
 
         const component = param1;
@@ -407,7 +404,7 @@ export class A_Context {
          * While Scope we use just to store the scope where the component registered.
          *  
          */
-        const steps: A_TYPES__FeatureStep[] = [];
+        const steps: A_TYPES__A_StageStep[] = [];
         // const feature: string = new ASEID({
         //     id: `${param2}-${Math.random()}`,
         //     entity: 'a-feature',
@@ -427,12 +424,10 @@ export class A_Context {
                     // Get all extensions for the feature
                     meta
                         .extensions(feature)
-                        .forEach(({ handler, args, name }) => {
+                        .forEach((declaration) => {
                             steps.push({
                                 component: constructor,
-                                name,
-                                handler,
-                                args
+                                ...declaration
                             });
                         });
             });
@@ -513,7 +508,6 @@ export class A_Context {
         scope: A_Scope,
         param1: A_Fragment | A_Container<any> | A_Entity | A_Component
     ) {
-
         const instance = this.getInstance();
 
         if (!instance._root)
@@ -532,49 +526,15 @@ export class A_Context {
                 instance.registry.set(param1, scope);
                 break;
 
-            case param1 instanceof A_Fragment:
+            case param1 instanceof A_Fragment && !instance.registry.has(param1):
                 instance.registry.set(param1, scope);
                 break;
 
             default:
-                instance.registry.set(param1, scope);
+                if (!instance.registry.has(param1))
+                    instance.registry.set(param1, scope);
 
+                break;
         }
-
-
-        // if (param1 instanceof A_Fragment) {
-
-        //     const instance = this.getInstance();
-
-        //     let fragment: A_Fragment;
-        //     let name: string;
-
-        //     if (typeof param2 === 'string') {
-        //         name = param2;
-        //         fragment = param1;
-        //     } else {
-        //         fragment = param1 as A_Fragment;
-        //         name = fragment.name;
-        //     }
-
-        //     /**
-        //      * If the namespace is not provided, then use the root namespace.
-        //      * If the root namespace is not provided, then use the default namespace.
-        //      */
-        //     if (!name)
-        //         name = this.root
-        //             || process.env.ADAAS_NAMESPACE
-        //             || process.env.A_NAMESPACE
-        //             || process.env.ADAAS_APP_NAMESPACE
-        //             || 'a-concept'
-
-
-        //     if (!this.root)
-        //         instance._root = name;
-
-        //     // instance.namedFragments.set(namespace, Namespace);
-
-        //     return name;
-
     }
 }

@@ -16,6 +16,7 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  *
  */
 class A_Component {
+    constructor(params) { }
     call(scope, param1, param2) {
         return __awaiter(this, void 0, void 0, function* () {
             const feature = typeof param1 === 'string'

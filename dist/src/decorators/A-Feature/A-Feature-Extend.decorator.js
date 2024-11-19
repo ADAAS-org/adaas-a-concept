@@ -7,6 +7,9 @@ const A_Meta_class_1 = require("../../global/A-Meta/A-Meta.class");
 function A_Feature_Extend(param1) {
     return function (target, propertyKey, descriptor) {
         let targetRegexp;
+        let behavior = 'sync';
+        let before = [];
+        let after = [];
         // Check if the config is a RegExp
         if (param1 instanceof RegExp) {
             targetRegexp = param1;
@@ -17,6 +20,9 @@ function A_Feature_Extend(param1) {
                     .map(el => el.name)
                     .join('|')})`
                 : '.*'}\\.${param1.name || propertyKey}$`);
+            behavior = param1.behavior || behavior;
+            before = param1.before || before;
+            after = param1.after || after;
         }
         else {
             targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
@@ -31,6 +37,9 @@ function A_Feature_Extend(param1) {
         existedMetaValue.push({
             name: targetRegexp.source,
             handler: propertyKey,
+            behavior,
+            before,
+            after
         });
         // Set the metadata of the method to define a custom Feature with name
         existedMeta.set(targetRegexp.source, existedMetaValue);

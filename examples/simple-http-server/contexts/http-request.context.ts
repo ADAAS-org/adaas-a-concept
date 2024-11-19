@@ -33,13 +33,13 @@ export class HTTPRequest extends A_Fragment {
     }
 
 
-    async toJSON<T extends any>(): Promise<T> {
-        if (!this._body) {
-            this._body = await this.parseBody();
-        }
+    // async toJSON<T extends any>(): Promise<T> {
+    //     if (!this._body) {
+    //         this._body = await this.parseBody();
+    //     }
 
-        return this._body;
-    }
+    //     return this._body;
+    // }
 
     private parseBody(): Promise<any> {
         return new Promise((resolve, reject) => {

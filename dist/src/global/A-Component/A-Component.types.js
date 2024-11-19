@@ -6,12 +6,6 @@ var A_TYPES__ComponentMetaKey;
     A_TYPES__ComponentMetaKey["EXTENSIONS"] = "a-component-extensions";
     A_TYPES__ComponentMetaKey["FEATURES"] = "a-component-features";
     A_TYPES__ComponentMetaKey["INJECTIONS"] = "a-component-injections";
-    A_TYPES__ComponentMetaKey["STAGES"] = "a-component-stages";
+    A_TYPES__ComponentMetaKey["ABSTRACTIONS"] = "a-component-abstractions";
 })(A_TYPES__ComponentMetaKey || (exports.A_TYPES__ComponentMetaKey = A_TYPES__ComponentMetaKey = {}));
-// | 
-// typeof A_Fragment
-// | typeof A_Component
-// // | { new(...args: any[]): any }
-// | typeof A_Scope
-// | typeof A_Feature;
 //# sourceMappingURL=A-Component.types.js.map

@@ -14,7 +14,6 @@ const a_utils_1 = require("@adaas/a-utils");
 const A_Entity_types_1 = require("./A-Entity.types");
 const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
-const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -22,7 +21,7 @@ const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-class A_Entity extends A_Fragment_class_1.A_Fragment {
+class A_Entity {
     /**
      * Entity Identifier that corresponds to the class name
      */
@@ -33,7 +32,6 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
             .replace(/_/g, '-');
     }
     constructor(props) {
-        super();
         switch (true) {
             case (typeof props === 'string' && a_utils_1.ASEID.isASEID(props)):
                 this.aseid = new a_utils_1.ASEID(props);
@@ -105,6 +103,7 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
             const params = typeof param1 === 'string'
                 ? param2 || {}
                 : param1;
+            console.log('WTF???? ', A_Context_class_1.A_Context.scope(this));
             const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
             return yield newFeature.process();
         });
@@ -115,7 +114,7 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
     load() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
-                fragments: [
+                entities: [
                     this
                 ]
             });
@@ -124,16 +123,16 @@ class A_Entity extends A_Fragment_class_1.A_Fragment {
     destroy() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
-                fragments: [
+                entities: [
                     this
-                ]
+                ],
             });
         });
     }
     save() {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.SAVE, {
-                fragments: [
+                entities: [
                     this
                 ]
             });

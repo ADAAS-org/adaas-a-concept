@@ -7,6 +7,7 @@ import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorato
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
+import { EntityA } from "../entities/EntityA.entity";
 
 
 
@@ -49,6 +50,13 @@ export class MainContainer extends A_Container<
     ) {
         console.log('Method B', A_Context.root);
 
+        const entity = new EntityA('test@test:test:0000000001');
+
+        this.Scope.register(entity);
+
+        await entity.doSomething();
+
+
         const logger = this.Scope.resolve(A_Logger);
 
         // or  you can manually call the feature
@@ -57,10 +65,10 @@ export class MainContainer extends A_Container<
             fragments: [new ContextFragmentA(), new ContextFragmentB()]
         });
 
-        for (const step of feature) {
-            logger.log('Manual Loop Execution Step', feature.current);
+        for (const stage of feature) {
+            logger.log('Manual Loop Execution Step', feature.stage);
 
-            await step();
+            await stage.process();
         }
     }
 }

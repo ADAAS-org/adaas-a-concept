@@ -1,7 +1,7 @@
-
 // =================================================================================================
 // ============================= Export Framework Components =======================================
 // =================================================================================================
+
 // ---------------------- Major Components ----------------------
 export { A_Context } from './src/global/A-Context/A-Context.class';
 // export * from './src/global/A-Context/A-Context.types';
@@ -23,8 +23,14 @@ export * from './src/global/A-Entity/A-Entity.types';
 
 
 // ---------------------- Common Components ----------------------
+export { A_Channel } from './src/global/A-Channel/A-Channel.class';
+export * from './src/global/A-Channel/A-Channel.types';
+
 export { A_Feature } from './src/global/A-Feature/A-Feature.class';
 export * from './src/global/A-Feature/A-Feature.types';
+
+export { A_Stage } from './src/global/A-Stage/A-Stage.class';
+export * from './src/global/A-Stage/A-Stage.types';
 
 export { A_Scope } from './src/global/A-Scope/A-Scope.class';
 export * from './src/global/A-Scope/A-Scope.types';
@@ -47,8 +53,11 @@ export { A_Feature_Define } from './src/decorators/A-Feature/A-Feature-Define.de
 export { A_Feature_Extend } from './src/decorators/A-Feature/A-Feature-Extend.decorator';
 export * from './src/decorators/A-Feature/A-Feature.decorator.types';
 
-export { A_Stage } from './src/decorators/A-Stage/A-Stage.decorator';
-export * from './src/decorators/A-Stage/A-Stage.decorator.types';
+export { A_Abstraction } from './src/decorators/A-Abstraction/A-Abstraction.decorator';
+export * from './src/decorators/A-Abstraction/A-Abstraction.decorator.types';
+
+export { A_Connect } from './src/decorators/A-Connect/A-Connect.decorator';
+export * from './src/decorators/A-Connect/A-Connect.decorator.types';
 
 
 // =================================================================================================

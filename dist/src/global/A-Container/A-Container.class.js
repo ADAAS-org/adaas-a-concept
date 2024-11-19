@@ -41,36 +41,6 @@ class A_Container {
         const components = config.components || [];
         const fragments = config.fragments || [];
         A_Context_class_1.A_Context.allocate(this, config);
-        /**
-         * Run Async Initialization
-         */
-        this.init();
-    }
-    hasInherited(cl) {
-        return this.constructor === cl
-            ? false
-            : true;
-    }
-    /**
-     * Initializes the Namespace or can be used to reinitialize the Namespace
-     */
-    init() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.ready)
-                this.ready = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
-                    try {
-                        yield this.onBeforeInit();
-                        yield this.onInit();
-                        yield this.onAfterInit();
-                        return resolve();
-                    }
-                    catch (error) {
-                        return reject(error);
-                    }
-                }));
-            else
-                yield this.ready;
-        });
     }
     call(param1, param2) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -80,7 +50,7 @@ class A_Container {
             const params = typeof param1 === 'string'
                 ? param2 || {}
                 : param1;
-            const newFeature = A_Context_class_1.A_Context.feature(this.Scope, this, feature, params);
+            const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
             return yield newFeature.process();
         });
     }

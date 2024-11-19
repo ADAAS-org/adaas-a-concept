@@ -24,8 +24,34 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
                     // component: constructor,
                     name: extension.name,
                     handler: extension.handler,
-                    args
+                    args,
+                    behavior: extension.behavior,
+                    before: extension.before || [],
+                    after: extension.after || []
                 });
+            });
+        });
+        return steps;
+    }
+    /**
+     * Returns a set of instructions to run proper methods in Component during A-Concept Stage
+     *
+     * @param stage
+     * @returns
+     */
+    abstractions(abstraction) {
+        const steps = [];
+        const abstractions = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS);
+        const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+        // const constructor = A_Context.component(this);
+        abstractions === null || abstractions === void 0 ? void 0 : abstractions
+        // returns all extensions that match the feature
+        .find(`CONCEPT_ABSTRACTION::${abstraction}`).forEach(([handler, extensions]) => {
+            extensions.forEach(extension => {
+                const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
+                steps.push(Object.assign(Object.assign({}, extension), { 
+                    // component: constructor,
+                    args }));
             });
         });
         return steps;

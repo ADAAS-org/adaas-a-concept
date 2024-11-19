@@ -1,3 +1,6 @@
+import { A_Component } from "../A-Component/A-Component.class";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_TYPES__A_ChannelAggregated, A_TYPES__A_ChannelAggregateMethods, A_TYPES__A_ChannelCallParams, A_TYPES__A_ChannelConstructor } from "./A-Channel.types";
 
 
 /**
@@ -7,42 +10,36 @@
  * When One container needs to communicate with another container, it uses A_Channel.
  * 
  */
-export class A_Channel<T> {
-    private proxyInstance: T | null = null;
-    private realInstance: T | null = null;
+export class A_Channel<
+    T extends Array<A_Component | A_Container> = any[],
+    _Constructor extends A_TYPES__A_ChannelConstructor = A_TYPES__A_ChannelConstructor
+> {
 
-    constructor(
-        private realClass: { new(...args: any[]): T },
-        private args: any[]
-    ) {
+    id: string;
 
-    }
-
-    protected async loadInstance(): Promise<T> {
-        if (!this.realInstance)
-            this.realInstance = new this.realClass(...this.args);
-
-        return this.realInstance;
-    }
+    protected channel: A_TYPES__A_ChannelAggregated<T>;
 
 
-    public async resolve(): Promise<T> {
-        if (!this.proxyInstance) {
-            const realInstance = await this.loadInstance();
+    constructor(params: A_TYPES__A_ChannelConstructor) {
+        this.id = params.id;
 
-            this.proxyInstance = new Proxy({}, {
+        this.channel = new Proxy(
+            {} as A_TYPES__A_ChannelAggregated<T>,
+            {
                 get: (target, prop) => {
-                    const value = (realInstance as any)[prop];
-
-                    // If the property is a method, return a bound function
-                    if (typeof value === 'function') {
-                        return value.bind(realInstance);
-                    }
-                    return value;
+                    return async (...args: any[]) => {
+                        this.call(prop as A_TYPES__A_ChannelAggregateMethods<T>);
+                    };
                 }
-            }) as T;
-        }
+            });
+    }
 
-        return this.proxyInstance;
+
+    async call<_Resp extends any>(prop: A_TYPES__A_ChannelAggregateMethods<T>, params?: Partial<A_TYPES__A_ChannelCallParams>): Promise<_Resp> {
+        // do HTTP Call or just inject class or whatever you want
+
+        console.log('Calling method', prop);
+
+        return {} as _Resp;
     }
 }

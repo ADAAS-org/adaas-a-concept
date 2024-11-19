@@ -1,7 +1,9 @@
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_TYPES__ComponentCallParams } from "./A-Component.types";
+import { A_TYPES__ComponentCallParams, A_TYPES__ComponentConstructor } from "./A-Component.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+
+
 
 /**
  * This element only contains the specific code
@@ -10,6 +12,9 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
 export class A_Component<
     _FeatureNames extends Array<string> = any,
 > {
+    constructor(
+        params?: Partial<A_TYPES__ComponentConstructor<_FeatureNames>>
+    ) { }
 
 
     /**
@@ -63,3 +68,6 @@ export class A_Component<
         return await newFeature.process();
     }
 }
+
+
+

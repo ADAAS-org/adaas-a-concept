@@ -18,35 +18,21 @@ exports.A_Channel = void 0;
  *
  */
 class A_Channel {
-    constructor(realClass, args) {
-        this.realClass = realClass;
-        this.args = args;
-        this.proxyInstance = null;
-        this.realInstance = null;
-    }
-    loadInstance() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.realInstance)
-                this.realInstance = new this.realClass(...this.args);
-            return this.realInstance;
-        });
-    }
-    resolve() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.proxyInstance) {
-                const realInstance = yield this.loadInstance();
-                this.proxyInstance = new Proxy({}, {
-                    get: (target, prop) => {
-                        const value = realInstance[prop];
-                        // If the property is a method, return a bound function
-                        if (typeof value === 'function') {
-                            return value.bind(realInstance);
-                        }
-                        return value;
-                    }
+    constructor(params) {
+        this.id = params.id;
+        this.channel = new Proxy({}, {
+            get: (target, prop) => {
+                return (...args) => __awaiter(this, void 0, void 0, function* () {
+                    this.call(prop);
                 });
             }
-            return this.proxyInstance;
+        });
+    }
+    call(prop, params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            // do HTTP Call or just inject class or whatever you want
+            console.log('Calling method', prop);
+            return {};
         });
     }
 }

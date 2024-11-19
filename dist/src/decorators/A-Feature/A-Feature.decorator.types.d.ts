@@ -32,4 +32,32 @@ export type A_TYPES__A_ExtendDecoratorConfig = {
     } | {
         new (...args: any[]): A_Component;
     }>;
+} & A_TYPES__A_ExtendDecorator_BehaviorConfig;
+export type A_TYPES__A_ExtendDecorator_BehaviorConfig = {
+    /**
+     * The behavior of the method.
+     * In case its async it will be executed independently from the main thread.
+     *
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
+     *
+     */
+    behavior: 'async' | 'sync';
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    before: string[];
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    after: string[];
 };
+export type A_TYPES__A_ExtendDecorator_Meta = {
+    name: string;
+    handler: string;
+} & A_TYPES__A_ExtendDecorator_BehaviorConfig;

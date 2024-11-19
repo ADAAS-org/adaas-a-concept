@@ -16,7 +16,8 @@ export class ComponentA extends A_Component {
     @A_Feature.Extend()
     async method_A(
         @A_Inject(ContextFragmentA) fragmentA: ContextFragmentA,
-        @A_Inject(A_Logger) logger: A_Logger
+        @A_Inject(A_Logger) logger: A_Logger,
+
     ) {
         logger.log('red', 'Component A ->  method_A()');
         fragmentA.decrement();

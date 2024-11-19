@@ -1,7 +1,5 @@
-import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class"
-import { A_TYPES__ConceptStage } from "@adaas/a-concept/global/A-Concept/A_Concept.types"
 
-export type A_TYPES__A_StageDecoratorDescriptor =
+export type A_TYPES__A_AbstractionDecoratorDescriptor =
 
     TypedPropertyDescriptor<() => any>
     |

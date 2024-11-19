@@ -41,7 +41,6 @@ class A_Context {
         /**
          * A set of allocated scopes per every element in the program.
          */
-        // protected scopes: WeakMap<A_Container<any> | A_Feature | A_Component | any, A_Scope> = new WeakMap();
         this.conceptsMeta = new Map();
         this.containersMeta = new Map();
         this.componentsMeta = new Map();
@@ -232,13 +231,8 @@ class A_Context {
                 // Get all extensions for the feature
                 meta
                     .extensions(feature)
-                    .forEach(({ handler, args, name }) => {
-                    steps.push({
-                        component: constructor,
-                        name,
-                        handler,
-                        args
-                    });
+                    .forEach((declaration) => {
+                    steps.push(Object.assign({ component: constructor }, declaration));
                 });
         });
         return {
@@ -268,37 +262,14 @@ class A_Context {
             case param1 instanceof A_Entity_class_1.A_Entity:
                 instance.registry.set(param1, scope);
                 break;
-            case param1 instanceof A_Fragment_class_1.A_Fragment:
+            case param1 instanceof A_Fragment_class_1.A_Fragment && !instance.registry.has(param1):
                 instance.registry.set(param1, scope);
                 break;
             default:
-                instance.registry.set(param1, scope);
+                if (!instance.registry.has(param1))
+                    instance.registry.set(param1, scope);
+                break;
         }
-        // if (param1 instanceof A_Fragment) {
-        //     const instance = this.getInstance();
-        //     let fragment: A_Fragment;
-        //     let name: string;
-        //     if (typeof param2 === 'string') {
-        //         name = param2;
-        //         fragment = param1;
-        //     } else {
-        //         fragment = param1 as A_Fragment;
-        //         name = fragment.name;
-        //     }
-        //     /**
-        //      * If the namespace is not provided, then use the root namespace.
-        //      * If the root namespace is not provided, then use the default namespace.
-        //      */
-        //     if (!name)
-        //         name = this.root
-        //             || process.env.ADAAS_NAMESPACE
-        //             || process.env.A_NAMESPACE
-        //             || process.env.ADAAS_APP_NAMESPACE
-        //             || 'a-concept'
-        //     if (!this.root)
-        //         instance._root = name;
-        //     // instance.namedFragments.set(namespace, Namespace);
-        //     return name;
     }
 }
 exports.A_Context = A_Context;

@@ -1,14 +1,13 @@
-import { A_CommonHelper } from "@adaas/a-utils";
+import { A_CommonHelper, ASEID } from "@adaas/a-utils";
 import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "./A-Scope.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
 import {
-    A_TYPES__ComponentMeta_EntityInjectionInstructions,
-    A_TYPES__ComponentMeta_InjectionParam,
     A_TYPES__ComponentMetaKey
 } from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecorator_EntityInjectionQuery, A_TYPES__A_InjectDecorator_Injectable } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
 
 /**
  * 
@@ -72,6 +71,10 @@ export class A_Scope {
         // })
     }
 
+    private initEntities(_entities: Array<A_Entity>) {
+        _entities.forEach(this.register.bind(this));
+    }
+
 
     private initFragments(_fragments: Array<A_Fragment>) {
         _fragments.forEach(this.register.bind(this));
@@ -111,7 +114,7 @@ export class A_Scope {
         switch (true) {
 
             case A_CommonHelper.isInheritedFrom(entity, A_Component): {
-                const found = this.params.components.includes(entity);
+                const found = this.params.components.includes(entity as { new(...args: any[]): A_Component });
 
                 if (!found && !!this.parent)
                     return this.parent.has(entity as any);
@@ -149,20 +152,20 @@ export class A_Scope {
      * @param component 
      * @returns 
      */
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: T
     ): InstanceType<T>
     resolve<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
-        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): InstanceType<T>
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: Array<T>
     ): Array<InstanceType<T>>
     // base definition
-    resolve<T extends A_TYPES__ComponentMeta_InjectionParam>(
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         param1: Array<T> | T,
-        param2?: string | Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+        param2?: string | Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): Array<InstanceType<T>> | InstanceType<T> {
 
         switch (true) {
@@ -182,16 +185,18 @@ export class A_Scope {
 
 
 
+
+
     private resolveOnce<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
-        instructions: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): InstanceType<T> | undefined
-    private resolveOnce<T extends A_TYPES__ComponentMeta_InjectionParam>(
+    private resolveOnce<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: T
     ): InstanceType<T>
-    private resolveOnce<T extends { new(...args: any[]): A_Entity } | A_TYPES__ComponentMeta_InjectionParam>(
+    private resolveOnce<T extends { new(...args: any[]): A_Entity } | A_TYPES__A_InjectDecorator_Injectable>(
         component: T,
-        instructions?: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): InstanceType<T> {
         switch (true) {
             case A_CommonHelper.isInheritedFrom(component, A_Entity): {
@@ -218,8 +223,12 @@ export class A_Scope {
 
     private resolveEntity<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
-        instructions?: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): InstanceType<T> | undefined {
+
+        const query = instructions?.query || {};
+        const count = instructions?.pagination?.count || 1;
+
 
         switch (true) {
             case !instructions: {
@@ -233,25 +242,34 @@ export class A_Scope {
                         return found as InstanceType<T>;
 
                     case !found && !!this.parent:
-                        return this.parent.resolveFragment(entity);
+                        return this.parent.resolveEntity(entity, instructions);
 
                     default:
                         throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
                 }
             }
 
-            case !!instructions && !!instructions.aseid && this._entities.has(instructions.aseid): {
-                return this._entities.get(instructions.aseid) as InstanceType<T>;
-            }
+            case !!query.aseid
+                && typeof query.aseid === 'string'
+                && this._entities.has(query.aseid): {
+                    return this._entities.get(query.aseid) as InstanceType<T>;
+                }
 
-            case !!instructions && !!instructions.id && this._entities.has(instructions.id): {
-                // in this case we have to find the entity by the id
-                const entities = Array.from(this._entities.values());
+            case !!query.aseid
+                && query.aseid instanceof ASEID
+                && this._entities.has(query.aseid.toString()): {
+                    return this._entities.get(query.aseid.toString()) as InstanceType<T>;
+                }
 
-                const found = entities.find(e => e.id === instructions.id);
+            case !!query.id
+                && this._entities.has(query.id): {
+                    // in this case we have to find the entity by the id
+                    const entities = Array.from(this._entities.values());
 
-                return found as InstanceType<T>;
-            }
+                    const found = entities.find(e => e.id === query.id);
+
+                    return found as InstanceType<T>;
+                }
 
             default:
                 throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
@@ -331,7 +349,7 @@ export class A_Scope {
 
                 const found = this.components.find(el => A_CommonHelper.isInheritedFrom(el, component));
 
-                return this.resolveComponent(found!);
+                return this.resolveComponent<T>(found as any);
             }
 
             // In case when the component is not available in the scope but the parent is available
@@ -397,5 +415,20 @@ export class A_Scope {
 
 
 
+    }
+
+
+
+
+    toJSON(): Record<string, any> {
+        return this.fragments.reduce((acc, fragment) => {
+
+            const serialized = fragment.toJSON()
+
+            return {
+                ...acc,
+                [serialized.name]: serialized
+            }
+        }, {});
     }
 }

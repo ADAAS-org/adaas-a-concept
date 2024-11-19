@@ -1,3 +1,4 @@
+import { A_Component } from "../A-Component/A-Component.class"
 import { A_Fragment } from "../A-Fragment/A-Fragment.class"
 import { A_Scope } from "./A-Scope.class"
 
@@ -15,7 +16,7 @@ export type A_TYPES__ScopeConstructor = {
     /**
      * A set of Components available in the Scope
      */
-    components: Array<{ new(...args: any[]): any }>
+    components: Array<{ new(...args: any[]): A_Component }>
 
 
     /**

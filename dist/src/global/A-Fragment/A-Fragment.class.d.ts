@@ -35,4 +35,12 @@ export declare class A_Fragment {
      * @returns
      */
     protected onAfterInit(): Promise<void>;
+    /**
+     * Returns the JSON representation of the Fragment
+     *
+     * @returns
+     */
+    toJSON(): {
+        name: string;
+    };
 }

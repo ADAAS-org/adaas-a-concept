@@ -115,4 +115,19 @@ export class A_Fragment {
         return;
     }
 
+
+
+
+
+    /**
+     * Returns the JSON representation of the Fragment
+     * 
+     * @returns 
+     */
+    toJSON() {
+        return {
+            name: this.name,
+        };
+    }
+
 }

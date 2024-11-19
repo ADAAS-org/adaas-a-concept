@@ -18,7 +18,7 @@ import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
  * - etc.
  */
 export class A_Container<
-    _FeatureNames extends Array<string>
+    _FeatureNames extends Array<string> = any
 > {
     // scope!: A_Scope
 
@@ -55,46 +55,10 @@ export class A_Container<
 
         A_Context.allocate(this, config);
 
-        /**
-         * Run Async Initialization
-         */
-        this.init();
+
     }
 
-
-    protected hasInherited(cl: { new(...args: any[]) }): boolean {
-        return this.constructor === cl
-            ? false
-            : true
-    }
-
-
-    /**
-     * Initializes the Namespace or can be used to reinitialize the Namespace
-     */
-    private async init() {
-        if (!this.ready)
-            this.ready = new Promise(async (resolve, reject) => {
-                try {
-                    await this.onBeforeInit();
-
-                    await this.onInit();
-
-                    await this.onAfterInit();
-
-
-                    return resolve();
-                } catch (error) {
-                    return reject(error);
-                }
-            });
-        else
-            await this.ready;
-    }
-
-
-
-
+    
 
     /**
      * This method allows to call the lifecycle method of the container as well as any other Feature defined for it
@@ -138,7 +102,7 @@ export class A_Container<
             ? param2 || {}
             : param1;
 
-        const newFeature = A_Context.feature(this.Scope, this, feature, params);
+        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
 
         return await newFeature.process();
     }

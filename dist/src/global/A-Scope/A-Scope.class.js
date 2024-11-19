@@ -47,6 +47,9 @@ class A_Scope {
         //     this._components.set(component, new component());
         // })
     }
+    initEntities(_entities) {
+        _entities.forEach(this.register.bind(this));
+    }
     initFragments(_fragments) {
         _fragments.forEach(this.register.bind(this));
     }
@@ -113,6 +116,9 @@ class A_Scope {
         }
     }
     resolveEntity(entity, instructions) {
+        var _a;
+        const query = (instructions === null || instructions === void 0 ? void 0 : instructions.query) || {};
+        const count = ((_a = instructions === null || instructions === void 0 ? void 0 : instructions.pagination) === null || _a === void 0 ? void 0 : _a.count) || 1;
         switch (true) {
             case !instructions: {
                 const entities = Array.from(this._entities.values());
@@ -121,20 +127,31 @@ class A_Scope {
                     case !!found:
                         return found;
                     case !found && !!this.parent:
-                        return this.parent.resolveFragment(entity);
+                        return this.parent.resolveEntity(entity, instructions);
                     default:
                         throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
                 }
             }
-            case !!instructions && !!instructions.aseid && this._entities.has(instructions.aseid): {
-                return this._entities.get(instructions.aseid);
-            }
-            case !!instructions && !!instructions.id && this._entities.has(instructions.id): {
-                // in this case we have to find the entity by the id
-                const entities = Array.from(this._entities.values());
-                const found = entities.find(e => e.id === instructions.id);
-                return found;
-            }
+            case !!query.aseid
+                && typeof query.aseid === 'string'
+                && this._entities.has(query.aseid):
+                {
+                    return this._entities.get(query.aseid);
+                }
+            case !!query.aseid
+                && query.aseid instanceof a_utils_1.ASEID
+                && this._entities.has(query.aseid.toString()):
+                {
+                    return this._entities.get(query.aseid.toString());
+                }
+            case !!query.id
+                && this._entities.has(query.id):
+                {
+                    // in this case we have to find the entity by the id
+                    const entities = Array.from(this._entities.values());
+                    const found = entities.find(e => e.id === query.id);
+                    return found;
+                }
             default:
                 throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
         }
@@ -221,6 +238,12 @@ class A_Scope {
             default:
                 throw new Error('Invalid arguments provided');
         }
+    }
+    toJSON() {
+        return this.fragments.reduce((acc, fragment) => {
+            const serialized = fragment.toJSON();
+            return Object.assign(Object.assign({}, acc), { [serialized.name]: serialized });
+        }, {});
     }
 }
 exports.A_Scope = A_Scope;

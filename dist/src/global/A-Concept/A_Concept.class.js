@@ -13,7 +13,7 @@ exports.A_Concept = void 0;
 const A_Concept_types_1 = require("./A_Concept.types");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Container_types_1 = require("../A-Container/A-Container.types");
-const A_Stage_decorator_1 = require("../../decorators/A-Stage/A-Stage.decorator");
+const A_Abstraction_decorator_1 = require("../../decorators/A-Abstraction/A-Abstraction.decorator");
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
 /**
  * A_Concept is a placeholder for the concept of the ani program.
@@ -34,22 +34,22 @@ class A_Concept {
     /**
      * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    static get Load() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Load);
+    static Load() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Load);
     }
     /**
      * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
      *
      * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    static get Publish() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Publish);
+    static Publish() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Publish);
     }
     /**
      * Deploy the concept to the environment.
      */
-    static get Deploy() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Deploy);
+    static Deploy() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Deploy);
     }
     /**
      * Compiles the Concept in case there are some containers that require that.
@@ -57,26 +57,26 @@ class A_Concept {
      * Can be used for static websites or any other concept that requires a build step.
      *
      */
-    static get Build() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Build);
+    static Build() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Build);
     }
     /**
      *  Main execution of the concept.
      */
-    static get Run() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Run);
+    static Run() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Run);
     }
     /**
      *  Start the concept. Uses for servers or any other background services.
      */
-    static get Start() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Start);
+    static Start() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Start);
     }
     /**
      * Stop the concept. Uses for servers or any other background services.
      */
-    static get Stop() {
-        return (0, A_Stage_decorator_1.A_Stage)(A_Concept_types_1.A_TYPES__ConceptStage.Stop);
+    static Stop() {
+        return (0, A_Abstraction_decorator_1.A_Abstraction)(A_Concept_types_1.A_TYPES__ConceptStage.Stop);
     }
     constructor(props) {
         this.props = props;
@@ -142,29 +142,29 @@ class A_Concept {
     }
     runStage(method, params) {
         return __awaiter(this, void 0, void 0, function* () {
-            const stages = [];
+            const abstractions = [];
             this.containers.map(container => {
                 const meta = A_Context_class_1.A_Context.meta(container);
-                const containerStages = meta.get(A_Container_types_1.A_TYPES__ContainerMetaKey.STAGES);
-                if (containerStages) {
-                    for (const [name, stage] of containerStages) {
-                        if (stage.name === method) {
-                            stages.push({
-                                name,
-                                container,
-                            });
-                        }
-                    }
-                }
+                const containerAbstractions = meta
+                    .abstractions(method)
+                    .map(step => (Object.assign({ component: container }, step)));
+                const containerScope = A_Context_class_1.A_Context.scope(container);
+                const componentsAbstractions = containerScope.components
+                    .map(component => A_Context_class_1.A_Context.meta(component).abstractions(method).map(step => (Object.assign({ component }, step))))
+                    .flat();
+                abstractions.push({
+                    container,
+                    runners: [
+                        ...containerAbstractions.map(step => (Object.assign(Object.assign({}, step), { component: container }))),
+                        ...componentsAbstractions
+                    ]
+                });
             });
             const scope = A_Context_class_1.A_Context.allocate(this, {
                 components: params.components,
                 fragments: params.fragments,
                 parent: A_Context_class_1.A_Context.scope(this)
             });
-            for (const stage of stages) {
-                yield stage.container[stage.name](params);
-            }
         });
     }
     execute(params) {

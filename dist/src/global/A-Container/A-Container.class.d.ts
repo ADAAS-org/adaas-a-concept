@@ -13,7 +13,7 @@ import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
  * - Microservice
  * - etc.
  */
-export declare class A_Container<_FeatureNames extends Array<string>> {
+export declare class A_Container<_FeatureNames extends Array<string> = any> {
     protected readonly config: Partial<A_TYPES__ContainerConstructor<_FeatureNames>>;
     /**
      * Promise that will be resolved when the container is ready to be used.
@@ -27,13 +27,6 @@ export declare class A_Container<_FeatureNames extends Array<string>> {
      * Configuration of the container that will be used to run it.
      */
     config: Partial<A_TYPES__ContainerConstructor<_FeatureNames>>);
-    protected hasInherited(cl: {
-        new (...args: any[]): any;
-    }): boolean;
-    /**
-     * Initializes the Namespace or can be used to reinitialize the Namespace
-     */
-    private init;
     /**
      * This method allows to call the lifecycle method of the container as well as any other Feature defined for it
      *

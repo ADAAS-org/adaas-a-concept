@@ -1,9 +1,12 @@
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_TYPES__A_InjectDecoratorReturn } from "./A-Inject.decorator.types";
+import {
+    A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
+    A_TYPES__A_InjectDecoratorReturn
+} from "./A-Inject.decorator.types";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_TYPES__ComponentMeta_EntityInjectionInstructions, A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
+import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
@@ -42,7 +45,7 @@ export function A_Inject(
 
 export function A_Inject(
     entity: { new(...args: any[]): A_Entity },
-    config: Partial<A_TYPES__ComponentMeta_EntityInjectionInstructions>
+    config: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
 ): A_TYPES__A_InjectDecoratorReturn
 
 // ====================== BASE FUNCTION ======================
@@ -52,10 +55,7 @@ export function A_Inject(
         | { new(...args: any[]): A_Component }
         | { new(...args: any[]): A_Fragment }
         | { new(...args: any[]): A_Entity },
-    param2?: {
-        aseid?: string,
-        id?: string,
-    }
+    param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
 ): A_TYPES__A_InjectDecoratorReturn {
     return function (
         target: A_Component,

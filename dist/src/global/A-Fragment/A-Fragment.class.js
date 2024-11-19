@@ -101,6 +101,16 @@ class A_Fragment {
             return;
         });
     }
+    /**
+     * Returns the JSON representation of the Fragment
+     *
+     * @returns
+     */
+    toJSON() {
+        return {
+            name: this.name,
+        };
+    }
 }
 exports.A_Fragment = A_Fragment;
 //# sourceMappingURL=A-Fragment.class.js.map

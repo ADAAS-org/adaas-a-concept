@@ -1,6 +1,5 @@
 import { A_TYPES__Required, ASEID } from "@adaas/a-utils";
 import { A_TYPES__Entity_JSON, A_TYPES__EntityBaseMethod, A_TYPES__EntityBaseMethods, A_TYPES__EntityCallParams, A_TYPES__IEntity } from "./A-Entity.types";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -8,7 +7,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods> extends A_Fragment implements A_TYPES__IEntity {
+export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON, _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods> implements A_TYPES__IEntity {
     aseid: ASEID;
     /**
      * Entity Identifier that corresponds to the class name

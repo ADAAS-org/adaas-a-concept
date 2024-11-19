@@ -24,14 +24,12 @@ class HTTPRequest extends A_Fragment_class_1.A_Fragment {
             this.response.setHeader('Content-Type', 'text/plain');
         });
     }
-    toJSON() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this._body) {
-                this._body = yield this.parseBody();
-            }
-            return this._body;
-        });
-    }
+    // async toJSON<T extends any>(): Promise<T> {
+    //     if (!this._body) {
+    //         this._body = await this.parseBody();
+    //     }
+    //     return this._body;
+    // }
     parseBody() {
         return new Promise((resolve, reject) => {
             let body = '';

@@ -28,7 +28,6 @@ export class A_Entity<
     _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON,
     _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods
 >
-    extends A_Fragment
     implements A_TYPES__IEntity {
 
     aseid!: ASEID;
@@ -57,8 +56,8 @@ export class A_Entity<
         newEntity: _ConstructorType
     )
     constructor(props: string | ASEID | _SerializedType | _ConstructorType) {
-        super();
 
+        
         switch (true) {
             case (typeof props === 'string' && ASEID.isASEID(props)):
                 this.aseid = new ASEID(props);
@@ -175,6 +174,9 @@ export class A_Entity<
             ? param2 || {}
             : param1;
 
+
+        console.log('WTF???? ', A_Context.scope(this))
+
         const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
 
         return await newFeature.process();
@@ -188,7 +190,7 @@ export class A_Entity<
 
     async load() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
-            fragments: [
+            entities: [
                 this
             ]
         });
@@ -198,9 +200,9 @@ export class A_Entity<
 
     async destroy() {
         await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
-            fragments: [
+            entities: [
                 this
-            ]
+            ],
         });
     }
 
@@ -208,7 +210,7 @@ export class A_Entity<
 
     async save() {
         await this.call(A_TYPES__EntityBaseMethod.SAVE, {
-            fragments: [
+            entities: [
                 this
             ]
         });
