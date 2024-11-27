@@ -43,9 +43,9 @@ function A_Feature_Define(config = {}) {
         const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
-            handler: propertyKey,
             name: `${target.constructor.name}.${propertyKey || config.name}`,
-            template: config.template || [],
+            handler: propertyKey,
+            template: config.template && config.template.length ? config.template.map(item => (Object.assign(Object.assign({}, item), { before: item.before || [], after: item.after || [], behavior: item.behavior || 'sync' }))) : [],
             channel: config.channel || []
         });
         //  Update the metadata of the container with the new Feature definition

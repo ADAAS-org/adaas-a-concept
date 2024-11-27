@@ -40,7 +40,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepInstance(step: A_TYPES__A_StageStep): A_Container<any> | import("../A-Component/A-Component.class").A_Component<string[]>;
+    protected getStepInstance(step: A_TYPES__A_StageStep): import("../A-Component/A-Component.class").A_Component<any> | A_Container<any>;
     /**
      * Calls the handler of the step
      *

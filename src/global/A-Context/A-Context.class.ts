@@ -14,7 +14,7 @@ import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
-import { A_TYPES__A_FeatureDecoratorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_FeatureDecoratorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 
@@ -423,7 +423,7 @@ export class A_Context {
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
 
-        const featureDefinition: A_TYPES__A_FeatureDecoratorConfig = this.meta(component).get(metaKey);
+        const featureDefinition: A_TYPES__A_DefineDecorator_Meta = this.meta(component).get(metaKey);
 
         if (!featureDefinition)
             throw new Error(`[!] A-Concept Context: Feature not found.`);

@@ -71,9 +71,16 @@ export function A_Feature_Define(
 
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
-            handler: propertyKey,
             name: `${target.constructor.name}.${propertyKey || config.name}`,
-            template: config.template || [],
+            handler: propertyKey,
+            template: config.template && config.template.length ? config.template.map(
+                item => ({
+                    ...item,
+                    before: item.before || [],
+                    after: item.after || [],
+                    behavior: item.behavior || 'sync',
+                })
+            ) : [],
             channel: config.channel || []
         });
 
