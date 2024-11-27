@@ -1,6 +1,8 @@
+import { A_Channel } from "@adaas/a-concept/global/A-Channel/A-Channel.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class"
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class"
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class"
+import { A_TYPES__A_StageStep } from "@adaas/a-concept/global/A-Stage/A-Stage.types";
 
 
 export type A_TYPES__A_Feature_Extend = {
@@ -26,8 +28,16 @@ export type A_TYPES__A_FeatureDecoratorDescriptor =
 
 export type A_TYPES__A_FeatureDecoratorConfig = {
     name: string,
+    channel: Array<typeof A_Channel>
+    template: Array<A_TYPES__A_StageStep>
 }
 
+export type A_TYPES__A_FeatureTemplateItem = A_TYPES__A_StageStep
+
+
+export type A_TYPES__A_DefineDecorator_Meta = {
+    handler: string
+} & A_TYPES__A_FeatureDecoratorConfig
 
 
 export type A_TYPES__A_ExtendDecoratorDescriptor =

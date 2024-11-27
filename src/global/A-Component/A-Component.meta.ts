@@ -1,3 +1,4 @@
+import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
 import { A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey } from "./A-Component.types";
@@ -5,6 +6,23 @@ import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension, A_TYPES__Compo
 
 export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
 
+
+
+    /**
+     * Allows to get all the injections for a given handler
+     * 
+     * @param handler 
+     * @returns 
+     */
+    injections(
+        handler: string
+    ): A_TYPES__A_InjectDecorator_Meta {
+        const injections = this.get(A_TYPES__ComponentMetaKey.INJECTIONS);
+
+        const args = injections?.get(handler) || [];
+
+        return args;
+    }
 
 
 
@@ -22,21 +40,15 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
         const extensions = this.get(A_TYPES__ComponentMetaKey.EXTENSIONS);
         const injections = this.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
-        // const constructor = A_Context.component(this);
-
-
         extensions
             // returns all extensions that match the feature
             ?.find(feature)
             .forEach(([handler, extensions]) => {
                 extensions.forEach(extension => {
-                    const args = injections?.get(extension.handler) || [];
-
                     steps.push({
                         // component: constructor,
                         name: extension.name,
                         handler: extension.handler,
-                        args,
                         behavior: extension.behavior,
                         before: extension.before || [],
                         after: extension.after || []

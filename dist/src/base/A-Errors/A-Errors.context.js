@@ -8,10 +8,10 @@ class A_Errors extends A_Fragment_class_1.A_Fragment {
     constructor(params) {
         super(Object.assign(Object.assign({}, params), { name: params.name || 'a-errors' }));
         this.registeredErrors = new Map();
+        this.addRegistry(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS);
         if (params.errors) {
             this.addRegistry(params.errors);
         }
-        this.addRegistry(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS);
     }
     /**
      * This method adds a dictionary of errors to the registry.

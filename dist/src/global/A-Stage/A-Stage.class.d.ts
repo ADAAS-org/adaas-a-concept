@@ -26,7 +26,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(step: A_TYPES__A_StageStep): Promise<Promise<import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Entity/A-Entity.class").A_Entity<any, any, any> | import("../A-Component/A-Component.class").A_Component<any> | import("../A-Scope/A-Scope.class").A_Scope | A_Container<any> | A_Feature | this>[]>;
+    protected getStepArgs(step: A_TYPES__A_StageStep): Promise<Promise<import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component<any> | import("../A-Scope/A-Scope.class").A_Scope | A_Container<any> | import("../A-Entity/A-Entity.class").A_Entity<any, any, any> | A_Feature | this>[]>;
     /**
      * Adds a step to the stage
      *

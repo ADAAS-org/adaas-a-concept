@@ -48,7 +48,12 @@ class A_Stage {
      */
     getStepArgs(step) {
         return __awaiter(this, void 0, void 0, function* () {
-            return step.args.map((arg) => __awaiter(this, void 0, void 0, function* () {
+            const target = step.component instanceof A_Container_class_1.A_Container ?
+                step.component.constructor : step.component;
+            return A_Context_class_1.A_Context
+                .meta(target)
+                .injections(step.handler)
+                .map((arg) => __awaiter(this, void 0, void 0, function* () {
                 // In case if the target is a feature step then pass the current feature
                 return a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature)
                     ? this

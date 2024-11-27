@@ -5,8 +5,6 @@ import {
 } from "./A-Feature.decorator.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
-import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 
 

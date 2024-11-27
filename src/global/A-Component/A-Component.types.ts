@@ -1,10 +1,11 @@
 import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types"
 import { A_Fragment } from "../A-Fragment/A-Fragment.class"
 import { A_Meta } from "../A-Meta/A-Meta.class"
-import { A_TYPES__A_ExtendDecorator_BehaviorConfig, A_TYPES__A_ExtendDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
+import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_ExtendDecorator_BehaviorConfig, A_TYPES__A_ExtendDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
 import { A_TYPES__ConceptAbstraction, A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A_Concept.types"
+import { A_TYPES__ContainerMeta_FeatureItem } from "../A-Container/A-Container.types"
 
-export type A_TYPES__ComponentConstructor<_Exports extends Array<String>> = {
+export type A_TYPES__ComponentConstructor<_Exports extends Array<String> = any> = {
     exports: _Exports,
 }
 
@@ -29,7 +30,14 @@ export type A_TYPES__ComponentMeta = {
     }>,
 
 
-    [A_TYPES__ComponentMetaKey.FEATURES]: any[],
+    [A_TYPES__ComponentMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         * 
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__A_DefineDecorator_Meta
+    }>
 
 
     [A_TYPES__ComponentMetaKey.INJECTIONS]: A_Meta<{
@@ -67,11 +75,6 @@ export type A_TYPES__ComponentMetaExtension = {
      * The name of the handler that will be used to apply the extension
      */
     handler: string,
-    /**
-     * The arguments that will be passed to the handler
-     */
-    args: A_TYPES__A_InjectDecorator_Meta
-
 } & A_TYPES__A_ExtendDecorator_BehaviorConfig
 
 

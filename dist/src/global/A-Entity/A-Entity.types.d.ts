@@ -1,7 +1,7 @@
 import { ASEID } from "@adaas/a-utils";
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
-import { A_TYPES__A_ExtendDecorator_Meta } from "../../decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_ExtendDecorator_Meta } from "../../decorators/A-Feature/A-Feature.decorator.types";
 import { A_Entity } from "./A-Entity.class";
 export type A_TYPES__EntityCallParams<T extends string> = {
     name: T;
@@ -45,7 +45,14 @@ export type A_TYPES__EntityMeta = {
         [Key: string]: A_TYPES__A_ExtendDecorator_Meta[];
     }>;
     case: any;
-    [A_TYPES__EntityMetaKey.FEATURES]: any[];
+    [A_TYPES__EntityMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         *
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__A_DefineDecorator_Meta;
+    }>;
 };
 export declare enum A_TYPES__EntityMetaKey {
     EXTENSIONS = "a-component-extensions",

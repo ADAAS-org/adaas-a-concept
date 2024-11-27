@@ -17,11 +17,11 @@ export class A_Errors extends A_Fragment {
             name: params.name || 'a-errors'
         });
 
+        this.addRegistry(A_CONSTANTS__DEFAULT_ERRORS);
+
         if (params.errors) {
             this.addRegistry(params.errors);
         }
-
-        this.addRegistry(A_CONSTANTS__DEFAULT_ERRORS);
     }
 
 

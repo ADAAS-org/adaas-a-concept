@@ -1,4 +1,3 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "../../decorators/A-Inject/A-Inject.decorator.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "../../decorators/A-Feature/A-Feature.decorator.types";
@@ -65,10 +64,6 @@ export type A_TYPES__A_StageStep = {
      *
      */
     name: string;
-    /**
-     * Arguments to be passed to the method
-     */
-    args: A_TYPES__A_InjectDecorator_Meta;
 } & A_TYPES__A_ExtendDecorator_BehaviorConfig;
 export type A_TYPES__A_Stage_JSON = {
     /**

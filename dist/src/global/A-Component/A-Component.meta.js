@@ -5,6 +5,17 @@ const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
 const A_Component_types_1 = require("./A-Component.types");
 class A_ComponentMeta extends A_Meta_class_1.A_Meta {
     /**
+     * Allows to get all the injections for a given handler
+     *
+     * @param handler
+     * @returns
+     */
+    injections(handler) {
+        const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+        const args = (injections === null || injections === void 0 ? void 0 : injections.get(handler)) || [];
+        return args;
+    }
+    /**
      * Allows to get all the extensions for a given feature
      *
      * @param feature
@@ -14,17 +25,14 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
         const steps = [];
         const extensions = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.EXTENSIONS);
         const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
-        // const constructor = A_Context.component(this);
         extensions === null || extensions === void 0 ? void 0 : extensions
         // returns all extensions that match the feature
         .find(feature).forEach(([handler, extensions]) => {
             extensions.forEach(extension => {
-                const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
                 steps.push({
                     // component: constructor,
                     name: extension.name,
                     handler: extension.handler,
-                    args,
                     behavior: extension.behavior,
                     before: extension.before || [],
                     after: extension.after || []

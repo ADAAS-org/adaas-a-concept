@@ -53,12 +53,21 @@ export class A_Stage {
      * @returns 
      */
     protected async getStepArgs(step: A_TYPES__A_StageStep) {
-        return step.args.map(async arg =>
-            // In case if the target is a feature step then pass the current feature
-            A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
-                ? this
-                : A_Context.scope(this.feature).resolve(arg.target)
-        );
+
+        const target = step.component instanceof A_Container ?
+            step.component.constructor : step.component;
+
+        return A_Context
+            .meta(target)
+            .injections(
+                step.handler
+            )
+            .map(async arg =>
+                // In case if the target is a feature step then pass the current feature
+                A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
+                    ? this
+                    : A_Context.scope(this.feature).resolve(arg.target)
+            );
     }
 
 

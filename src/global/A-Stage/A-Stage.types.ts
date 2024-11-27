@@ -81,11 +81,6 @@ export type A_TYPES__A_StageStep = {
      */
     name: string,
 
-    /**
-     * Arguments to be passed to the method
-     */
-    args: A_TYPES__A_InjectDecorator_Meta
-
 } & A_TYPES__A_ExtendDecorator_BehaviorConfig
 
 

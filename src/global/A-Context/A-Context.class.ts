@@ -9,11 +9,14 @@ import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_ComponentMeta } from "../A-Component/A-Component.meta";
 import { A_ContainerMeta } from "../A-Container/A-Container.meta";
 import { A_Concept } from "../A-Concept/A_Concept.class";
-import { A_TYPES__EntityBaseMethod } from "../A-Entity/A-Entity.types";
+import { A_TYPES__EntityBaseMethod, A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
+import { A_TYPES__A_FeatureDecoratorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
+import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 
 
 /**
@@ -404,7 +407,31 @@ export class A_Context {
          * While Scope we use just to store the scope where the component registered.
          *  
          */
-        const steps: A_TYPES__A_StageStep[] = [];
+        let metaKey;
+
+        switch (true) {
+            case component instanceof A_Entity:
+                metaKey = A_TYPES__EntityMetaKey.FEATURES;
+                break;
+            case component instanceof A_Container:
+                metaKey = A_TYPES__ContainerMetaKey.FEATURES
+                break;
+            case component instanceof A_Component:
+                metaKey = A_TYPES__ComponentMetaKey.FEATURES
+                break;
+            default:
+                throw new Error(`A-Feature cannot be defined on the ${component} level`);
+        }
+
+        const featureDefinition: A_TYPES__A_FeatureDecoratorConfig = this.meta(component).get(metaKey);
+
+        if (!featureDefinition)
+            throw new Error(`[!] A-Concept Context: Feature not found.`);
+
+
+        const steps: A_TYPES__A_StageStep[] = [
+            ...featureDefinition.template
+        ];
         // const feature: string = new ASEID({
         //     id: `${param2}-${Math.random()}`,
         //     entity: 'a-feature',

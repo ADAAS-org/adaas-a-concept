@@ -1,10 +1,11 @@
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import {
+    A_TYPES__A_DefineDecorator_Meta,
     A_TYPES__A_FeatureDecoratorConfig,
     A_TYPES__A_FeatureDecoratorDescriptor,
 } from "./A-Feature.decorator.types";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
-import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
+import { A_TYPES__ContainerMeta_FeatureItem, A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_EntityMeta } from "@adaas/a-concept/global/A-Entity/A-Entity.meta";
 import { A_ContainerMeta } from "@adaas/a-concept/global/A-Container/A-Container.meta";
@@ -12,6 +13,7 @@ import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component
 import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
+import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 
 
 /**
@@ -36,7 +38,7 @@ export function A_Feature_Define(
         descriptor: A_TYPES__A_FeatureDecoratorDescriptor
     ) {
 
-        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target as any);
+        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target.constructor);
 
         let metaKey;
 
@@ -57,22 +59,27 @@ export function A_Feature_Define(
 
 
         // Get the existed metadata or create a new one
-        const existedMeta = meta.get(metaKey)
-            || new Map();
+        const existedMeta: A_Meta<{
+            /**
+             * Where Key is the name of the feature
+             * 
+             * Where value is the list of features
+             */
+            [Key: string]: A_TYPES__A_DefineDecorator_Meta
+        }> = meta.get(metaKey) || new A_Meta();
 
 
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
             handler: propertyKey,
-            config: {
-                ...config,
-                name: `${target.constructor.name}.${propertyKey || config.name}`,
-            }
+            name: `${target.constructor.name}.${propertyKey || config.name}`,
+            template: config.template || [],
+            channel: config.channel || []
         });
 
         //  Update the metadata of the container with the new Feature definition
         A_Context
-            .meta(target as any)
+            .meta(target.constructor)
             .set(
                 metaKey,
                 existedMeta

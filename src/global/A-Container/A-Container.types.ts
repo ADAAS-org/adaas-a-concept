@@ -3,7 +3,7 @@ import { A_TYPES__ConceptAbstraction, A_TYPES__ConceptAbstractionMeta, A_TYPES__
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
-import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_ExtendDecorator_BehaviorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 
 
 
@@ -20,7 +20,14 @@ export type A_TYPES__ContainerCallParams<T extends string> = {
 }
 
 export type A_TYPES__ContainerMeta = {
-    [A_TYPES__ContainerMetaKey.FEATURES]: Map<string, A_TYPES__ContainerMeta_FeatureItem>
+    [A_TYPES__ContainerMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         * 
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__A_DefineDecorator_Meta
+    }>
     [A_TYPES__ContainerMetaKey.ABSTRACTIONS]: A_Meta<{
 
         /**

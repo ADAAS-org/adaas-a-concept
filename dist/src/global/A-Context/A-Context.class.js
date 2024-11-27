@@ -11,8 +11,11 @@ const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
 const A_Component_meta_1 = require("../A-Component/A-Component.meta");
 const A_Container_meta_1 = require("../A-Container/A-Container.meta");
 const A_Concept_class_1 = require("../A-Concept/A_Concept.class");
+const A_Entity_types_1 = require("../A-Entity/A-Entity.types");
 const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
 const A_Entity_meta_1 = require("../A-Entity/A-Entity.meta");
+const A_Container_types_1 = require("../A-Container/A-Container.types");
+const A_Component_types_1 = require("../A-Component/A-Component.types");
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -214,7 +217,26 @@ class A_Context {
          * While Scope we use just to store the scope where the component registered.
          *
          */
-        const steps = [];
+        let metaKey;
+        switch (true) {
+            case component instanceof A_Entity_class_1.A_Entity:
+                metaKey = A_Entity_types_1.A_TYPES__EntityMetaKey.FEATURES;
+                break;
+            case component instanceof A_Container_class_1.A_Container:
+                metaKey = A_Container_types_1.A_TYPES__ContainerMetaKey.FEATURES;
+                break;
+            case component instanceof A_Component_class_1.A_Component:
+                metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
+                break;
+            default:
+                throw new Error(`A-Feature cannot be defined on the ${component} level`);
+        }
+        const featureDefinition = this.meta(component).get(metaKey);
+        if (!featureDefinition)
+            throw new Error(`[!] A-Concept Context: Feature not found.`);
+        const steps = [
+            ...featureDefinition.template
+        ];
         // const feature: string = new ASEID({
         //     id: `${param2}-${Math.random()}`,
         //     entity: 'a-feature',
