@@ -29,6 +29,11 @@ export interface A_TYPES__IConceptConstructor<T extends Array<A_Container<any>>>
      * These containers will create a new Container for the concept.
      */
     containers?: T;
+    /**
+     * A set of Entities that the concept can use.
+     * These components will be used in the concept.
+     */
+    entities?: Array<A_Entity>;
 }
 /**
  * Uses as a transfer object to pass configurations to Feature constructor
@@ -60,14 +65,12 @@ export type A_TYPES__ConceptAbstraction = {
      */
     handler: string;
 } & A_TYPES__A_ExtendDecorator_BehaviorConfig;
-export type A_TYPES__ConceptStageParams = {
+export type A_TYPES__ConceptAbstractionCallParams = {
     fragments: Array<A_Fragment>;
     components: Array<{
         new (...args: any[]): A_Component;
     }>;
-    entities: Array<{
-        new (...args: any[]): A_Entity;
-    }>;
+    entities: Array<A_Entity>;
 };
 export type A_TYPES__ConceptCallParams<T extends string> = {
     name: T;

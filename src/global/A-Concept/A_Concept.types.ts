@@ -55,6 +55,13 @@ export interface A_TYPES__IConceptConstructor<
 
 
     /**
+     * A set of Entities that the concept can use. 
+     * These components will be used in the concept.
+     */
+    entities?: Array<A_Entity>
+
+
+    /**
      * A set of external Concepts that can be used in the current Concept. 
      * To provide additional functionality or extend the current Concept.
      */
@@ -106,10 +113,10 @@ export type A_TYPES__ConceptAbstraction = {
 // =======================================================================
 // =======================================================================
 
-export type A_TYPES__ConceptStageParams = {
+export type A_TYPES__ConceptAbstractionCallParams = {
     fragments: Array<A_Fragment>,
     components: Array<{ new(...args: any[]): A_Component }>,
-    entities: Array<{ new(...args: any[]): A_Entity }>
+    entities: Array<A_Entity>
 }
 
 

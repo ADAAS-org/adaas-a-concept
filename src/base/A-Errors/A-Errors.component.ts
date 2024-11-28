@@ -33,7 +33,7 @@ export class A_ErrorsManager extends A_Component {
             // In case of error code
             case typeof param === 'string':
                 const template = this.errors.get(param);
-                const namedCode = `${A_Context.root}@${this.scope.name}:error:${template.code}`
+                const namedCode = `${A_Context.root.name}@${this.scope.name}:error:${template.code}`
 
                 if ('serverCode' in template)
                     throw new A_ServerError({
@@ -67,13 +67,13 @@ export class A_ErrorsManager extends A_Component {
 
         switch (true) {
             case error instanceof A_Error:
-                let newCode = `${A_Context.root}@${this.scope.name}:error:${error.code}`;
+                let newCode = `${A_Context.root.name}@${this.scope.name}:error:${error.code}`;
 
                 if (ASEID.isASEID(error.code)) {
                     const aseid = new ASEID(error.code);
 
                     if (aseid.scope !== this.scope.name)
-                        newCode = `${A_Context.root}@${this.scope.name}:error:${aseid.id}`;
+                        newCode = `${A_Context.root.name}@${this.scope.name}:error:${aseid.id}`;
                 }
 
                 if ('serverCode' in error)

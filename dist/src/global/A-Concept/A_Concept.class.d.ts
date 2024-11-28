@@ -1,6 +1,7 @@
-import { A_TYPES__ConceptStageParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
+import { A_TYPES__ConceptStage, A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
+import { A_TYPES__Required } from "@adaas/a-utils";
 /**
  * A_Concept is a placeholder for the concept of the ani program.
  *
@@ -51,20 +52,43 @@ export declare class A_Concept<_Features extends A_Container<any>[] = any> {
     protected containers: A_Container<any>[];
     constructor(props: A_TYPES__IConceptConstructor<_Features>);
     get namespace(): string;
+    get Scope(): import("../A-Scope/A-Scope.class").A_Scope;
+    /**
+     * Load the concept.
+     */
+    load(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
     /**
      * Run the concept.
      */
-    run(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
+    run(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    /**
+     * Start the concept.
+     *
+     * @param params
+     */
+    start(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    /**
+     * Stop the concept.
+     *
+     * @param params
+     */
+    stop(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
     /**
      * Build the concept.
      */
-    build(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
-    deploy(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
-    publish(params?: Partial<A_TYPES__ConceptStageParams>): Promise<void>;
+    build(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    /**
+     * Deploy the concept.
+     */
+    deploy(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    /**
+     * Publish the concept.
+     */
+    publish(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
     /**
      * Call the specific method of the concept or included modules.
      */
-    call<K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>>(container: K[keyof K], params?: A_Fragment[]): Promise<void>;
-    private runStage;
+    call<K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>>(container: K[keyof K], params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    abstractionDefinition(method: A_TYPES__ConceptStage, params?: Partial<A_TYPES__ConceptAbstractionCallParams>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
     private execute;
 }

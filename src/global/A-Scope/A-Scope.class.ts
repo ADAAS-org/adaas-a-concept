@@ -46,6 +46,7 @@ export class A_Scope {
             name: '',
             components: [],
             fragments: [],
+            entities: [],
             import: [],
             export: [],
         };
@@ -58,6 +59,7 @@ export class A_Scope {
 
         this.initComponents(params.components || []);
         this.initFragments(params.fragments || []);
+        this.initEntities(params.entities || []);
 
         if (config.parent) {
             this.parent = config.parent;

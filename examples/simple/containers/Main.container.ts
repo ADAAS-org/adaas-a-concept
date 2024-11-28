@@ -48,7 +48,7 @@ export class MainContainer extends A_Container<
     @A_Feature.Define()
     async method_B(
     ) {
-        console.log('Method B', A_Context.root);
+        console.log('Method B', A_Context.root.name);
 
         const entity = new EntityA('test@test:test:0000000001');
 

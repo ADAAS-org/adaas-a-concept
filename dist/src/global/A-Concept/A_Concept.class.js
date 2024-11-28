@@ -14,6 +14,7 @@ const A_Concept_types_1 = require("./A_Concept.types");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Container_types_1 = require("../A-Container/A-Container.types");
 const A_Abstraction_decorator_1 = require("../../decorators/A-Abstraction/A-Abstraction.decorator");
+const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
 /**
  * A_Concept is a placeholder for the concept of the ani program.
@@ -81,12 +82,13 @@ class A_Concept {
     constructor(props) {
         this.props = props;
         // ==============================================================================
-        // ==========================  MAIN Class  ======================================
+        // ==========================  MAIN Methods  ======================================
         // ==============================================================================
         this.containers = [];
         A_Context_class_1.A_Context.allocate(this, {
             name: props.name,
             fragments: props.fragments || [],
+            entities: props.entities || [],
             // containers: props.containers
             components: [
             // A_Logger,
@@ -97,14 +99,56 @@ class A_Concept {
     get namespace() {
         return A_Context_class_1.A_Context.scope(this).name;
     }
+    get Scope() {
+        return A_Context_class_1.A_Context.scope(this);
+    }
     // =======================================================================
     // ==========================  LIFECYCLE  ================================
     // =======================================================================
+    /**
+     * Load the concept.
+     */
+    load(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Load, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
+        });
+    }
     /**
      * Run the concept.
      */
     run(params) {
         return __awaiter(this, void 0, void 0, function* () {
+            yield this.load(params);
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Run, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
+        });
+    }
+    /**
+     * Start the concept.
+     *
+     * @param params
+     */
+    start(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.load(params);
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Start, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
+        });
+    }
+    /**
+     * Stop the concept.
+     *
+     * @param params
+     */
+    stop(params) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Stop, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
         });
     }
     /**
@@ -112,60 +156,62 @@ class A_Concept {
      */
     build(params) {
         return __awaiter(this, void 0, void 0, function* () {
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Build, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
         });
     }
-    // /**
-    //  * Deploy the concept.
-    //  */
+    /**
+     * Deploy the concept.
+     */
     deploy(params) {
         return __awaiter(this, void 0, void 0, function* () {
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Deploy, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
         });
     }
-    // /**
-    //  * Publish the concept.
-    //  */
+    /**
+     * Publish the concept.
+     */
     publish(params) {
         return __awaiter(this, void 0, void 0, function* () {
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Publish, params);
+            const abstraction = new A_Feature_class_1.A_Feature(definition);
+            yield abstraction.process();
         });
     }
+    // =======================================================================
+    // ==========================  CALL  =====================================
+    // =======================================================================
     /**
      * Call the specific method of the concept or included modules.
      */
     call(container, params) {
         return __awaiter(this, void 0, void 0, function* () {
-            // for (const feature of this.features) {
-            //     if (methodName in feature) {
-            //         (feature as any)[methodName](...args);
-            //     }
-            // }
+            const definition = this.abstractionDefinition(A_Concept_types_1.A_TYPES__ConceptStage.Run, {
+                components: params === null || params === void 0 ? void 0 : params.components,
+                fragments: params === null || params === void 0 ? void 0 : params.fragments,
+            });
+            const feature = new A_Feature_class_1.A_Feature(definition);
+            yield feature.process();
         });
     }
-    runStage(method, params) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const abstractions = [];
-            this.containers.map(container => {
-                const meta = A_Context_class_1.A_Context.meta(container);
-                const containerAbstractions = meta
-                    .abstractions(method)
-                    .map(step => (Object.assign({ component: container }, step)));
-                const containerScope = A_Context_class_1.A_Context.scope(container);
-                const componentsAbstractions = containerScope.components
-                    .map(component => A_Context_class_1.A_Context.meta(component).abstractions(method).map(step => (Object.assign({ component }, step))))
-                    .flat();
-                abstractions.push({
-                    container,
-                    runners: [
-                        ...containerAbstractions.map(step => (Object.assign(Object.assign({}, step), { component: container }))),
-                        ...componentsAbstractions
-                    ]
-                });
-            });
-            const scope = A_Context_class_1.A_Context.allocate(this, {
-                components: params.components,
-                fragments: params.fragments,
-                parent: A_Context_class_1.A_Context.scope(this)
-            });
+    abstractionDefinition(method, params) {
+        const abstractionSteps = [];
+        this.containers.map(container => {
+            const meta = A_Context_class_1.A_Context.meta(container);
+            const containerAbstractions = meta
+                .abstractions(method)
+                .map(step => (Object.assign({ component: container }, step)));
+            const containerScope = A_Context_class_1.A_Context.scope(container);
+            const componentsAbstractions = containerScope
+                .components
+                .map(component => A_Context_class_1.A_Context.meta(component).abstractions(method).map(step => (Object.assign({ component }, step))))
+                .flat();
+            abstractionSteps.push(...containerAbstractions.map(step => (Object.assign(Object.assign({}, step), { component: container }))), ...componentsAbstractions);
         });
+        return Object.assign(Object.assign({}, params), { name: `${this.namespace}.${method}`, steps: abstractionSteps, parent: this.Scope, components: (params === null || params === void 0 ? void 0 : params.components) || [], fragments: (params === null || params === void 0 ? void 0 : params.fragments) || [] });
     }
     execute(params) {
         return __awaiter(this, void 0, void 0, function* () {

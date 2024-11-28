@@ -57,7 +57,7 @@ export declare class A_Context {
      * @returns
      */
     static getInstance(): A_Context;
-    static get root(): string;
+    static get root(): A_Scope;
     static get environment(): 'server' | 'browser';
     static allocate(component: any, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
     static allocate(feature: A_Feature, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;

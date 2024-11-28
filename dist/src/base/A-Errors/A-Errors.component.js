@@ -27,7 +27,7 @@ let A_ErrorsManager = class A_ErrorsManager extends A_Component_class_1.A_Compon
             // In case of error code
             case typeof param === 'string':
                 const template = this.errors.get(param);
-                const namedCode = `${A_Context_class_1.A_Context.root}@${this.scope.name}:error:${template.code}`;
+                const namedCode = `${A_Context_class_1.A_Context.root.name}@${this.scope.name}:error:${template.code}`;
                 if ('serverCode' in template)
                     throw new a_utils_1.A_ServerError(Object.assign(Object.assign({}, template), { code: namedCode }));
                 else
@@ -49,11 +49,11 @@ let A_ErrorsManager = class A_ErrorsManager extends A_Component_class_1.A_Compon
     wrap(error) {
         switch (true) {
             case error instanceof a_utils_1.A_Error:
-                let newCode = `${A_Context_class_1.A_Context.root}@${this.scope.name}:error:${error.code}`;
+                let newCode = `${A_Context_class_1.A_Context.root.name}@${this.scope.name}:error:${error.code}`;
                 if (a_utils_1.ASEID.isASEID(error.code)) {
                     const aseid = new a_utils_1.ASEID(error.code);
                     if (aseid.scope !== this.scope.name)
-                        newCode = `${A_Context_class_1.A_Context.root}@${this.scope.name}:error:${aseid.id}`;
+                        newCode = `${A_Context_class_1.A_Context.root.name}@${this.scope.name}:error:${aseid.id}`;
                 }
                 if ('serverCode' in error)
                     return new a_utils_1.A_ServerError({

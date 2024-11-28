@@ -1,4 +1,5 @@
 import { A_Component } from "../A-Component/A-Component.class";
+import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Scope } from "./A-Scope.class";
 export type A_TYPES__ScopeConstructor = {
@@ -16,6 +17,11 @@ export type A_TYPES__ScopeConstructor = {
     components: Array<{
         new (...args: any[]): A_Component;
     }>;
+    /**
+     * A set of Entities available in the Scope
+     *
+     */
+    entities: Array<A_Entity>;
     /**
      * A list of Features/Lifecycle Hooks available in the Scope
      */

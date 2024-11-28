@@ -74,6 +74,8 @@ class A_Context {
     static allocate(param1, param2) {
         const instance = this.getInstance();
         const newScope = new A_Scope_class_1.A_Scope(param2, param2);
+        if (!instance._root)
+            instance._root = newScope;
         switch (true) {
             case param1 instanceof A_Container_class_1.A_Container:
                 instance.containers.set(param1, newScope);
@@ -261,6 +263,7 @@ class A_Context {
             name: feature,
             fragments: config.fragments || [],
             components: config.components || [],
+            entities: config.entities || [],
             steps,
             parent: scope
         };
@@ -272,8 +275,8 @@ class A_Context {
     }
     static register(scope, param1) {
         const instance = this.getInstance();
-        if (!instance._root)
-            instance._root = scope.name;
+        // if (!instance._root)
+        //     instance._root = scope.name;
         switch (true) {
             case param1 instanceof A_Component_class_1.A_Component:
                 instance.registry.set(param1, scope);

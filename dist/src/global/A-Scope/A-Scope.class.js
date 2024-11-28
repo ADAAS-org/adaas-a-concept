@@ -32,12 +32,14 @@ class A_Scope {
             name: '',
             components: [],
             fragments: [],
+            entities: [],
             import: [],
             export: [],
         };
         this.params = Object.assign(Object.assign({}, defaultParams), params);
         this.initComponents(params.components || []);
         this.initFragments(params.fragments || []);
+        this.initEntities(params.entities || []);
         if (config.parent) {
             this.parent = config.parent;
         }

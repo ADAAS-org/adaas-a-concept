@@ -77,7 +77,7 @@ export class A_Context {
     /**
      * Root Namespace is a Namespace that is used to run the program.
      */
-    private _root!: string
+    private _root!: A_Scope
 
 
     private constructor() { }
@@ -103,7 +103,7 @@ export class A_Context {
         return A_Context.instance;
     }
 
-    static get root(): string {
+    static get root(): A_Scope {
         return this.getInstance()._root;
     }
 
@@ -135,6 +135,9 @@ export class A_Context {
 
         const newScope = new A_Scope(param2, param2);
 
+        if (!instance._root)
+            instance._root = newScope;
+
         switch (true) {
             case param1 instanceof A_Container:
                 instance.containers.set(param1, newScope);
@@ -146,6 +149,7 @@ export class A_Context {
 
             case param1 instanceof A_Concept:
                 instance.concepts.set(param1, newScope);
+
                 break;
 
 
@@ -464,6 +468,7 @@ export class A_Context {
             name: feature,
             fragments: config.fragments || [],
             components: config.components || [],
+            entities: config.entities || [],
             steps,
             parent: scope
         };
@@ -537,8 +542,8 @@ export class A_Context {
     ) {
         const instance = this.getInstance();
 
-        if (!instance._root)
-            instance._root = scope.name;
+        // if (!instance._root)
+        //     instance._root = scope.name;
 
         switch (true) {
             case param1 instanceof A_Component:

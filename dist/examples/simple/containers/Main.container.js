@@ -53,7 +53,7 @@ class MainContainer extends A_Container_class_1.A_Container {
     }
     method_B() {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Method B', A_Context_class_1.A_Context.root);
+            console.log('Method B', A_Context_class_1.A_Context.root.name);
             const entity = new EntityA_entity_1.EntityA('test@test:test:0000000001');
             this.Scope.register(entity);
             yield entity.doSomething();
