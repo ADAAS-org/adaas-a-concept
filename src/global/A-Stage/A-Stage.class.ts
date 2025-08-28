@@ -53,21 +53,16 @@ export class A_Stage {
      * @returns 
      */
     protected async getStepArgs(step: A_TYPES__A_StageStep) {
-
-        const target = step.component instanceof A_Container ?
-            step.component.constructor : step.component;
-
-        return A_Context
-            .meta(target)
-            .injections(
-                step.handler
-            )
-            .map(async arg =>
-                // In case if the target is a feature step then pass the current feature
-                A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
-                    ? this
-                    : A_Context.scope(this.feature).resolve(arg.target)
-            );
+        return Promise
+            .all(A_Context
+                .meta(step.component)
+                .injections(step.handler)
+                .map(async arg =>
+                    // In case if the target is a feature step then pass the current feature
+                    A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
+                        ? this
+                        : A_Context.scope(this.feature).resolve(arg.target)
+                ));
     }
 
 
@@ -119,8 +114,11 @@ export class A_Stage {
      */
     protected async getStepHandler(step: A_TYPES__A_StageStep) {
 
-        const instance = this.getStepInstance(step);
+        const instance = await this.getStepInstance(step);
         const callArgs = await this.getStepArgs(step);
+
+        console.log('getStepHandler step', step);
+        console.log('getStepHandler callArgs', callArgs);
 
         return instance[step.handler](...callArgs);
 

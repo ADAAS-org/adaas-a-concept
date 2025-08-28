@@ -2,7 +2,7 @@ import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
-import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
+import { A_TYPES__FeatureCallParams, A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 
 
 
@@ -58,7 +58,7 @@ export class A_Container<
 
     }
 
-    
+
 
     /**
      * This method allows to call the lifecycle method of the container as well as any other Feature defined for it
@@ -107,6 +107,16 @@ export class A_Container<
         return await newFeature.process();
     }
 
+
+
+    private async __exec__(
+        feature: _FeatureNames[number],
+        params: Partial<A_TYPES__FeatureCallParams<_FeatureNames[number]>> = {}
+    ) {
+        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
+
+        return await newFeature.process();
+    }
 
 
 

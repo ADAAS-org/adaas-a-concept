@@ -43,7 +43,7 @@ export class A_Context {
     /**
      * A set of globally registered concepts.
      */
-    protected concepts: WeakMap<A_Concept<any>, A_Scope> = new WeakMap();
+    protected concepts: Map<A_Concept<any>, A_Scope> = new Map();
 
 
     /**
@@ -80,7 +80,12 @@ export class A_Context {
     private _root!: A_Scope
 
 
-    private constructor() { }
+    private constructor() {
+
+        this._root = new A_Scope({
+            name: 'root'
+        });
+    }
 
 
 
@@ -112,6 +117,11 @@ export class A_Context {
     }
 
 
+    static concepts(): Array<A_Concept> {
+        return Array.from(this.getInstance().concepts.keys());
+    }
+
+
 
 
     static allocate(
@@ -135,23 +145,21 @@ export class A_Context {
 
         const newScope = new A_Scope(param2, param2);
 
-        if (!instance._root)
-            instance._root = newScope;
-
         switch (true) {
             case param1 instanceof A_Container:
                 instance.containers.set(param1, newScope);
+
                 break;
 
             case param1 instanceof A_Feature:
                 instance.features.set(param1, newScope);
+
                 break;
 
             case param1 instanceof A_Concept:
                 instance.concepts.set(param1, newScope);
 
                 break;
-
 
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
@@ -165,7 +173,7 @@ export class A_Context {
 
 
     static meta(
-        container: typeof A_Container,
+        container: typeof A_Container<any>,
     ): A_ContainerMeta
     static meta(
         container: A_Container<any>,
@@ -177,23 +185,20 @@ export class A_Context {
         entity: typeof A_Entity,
     ): A_ContainerMeta
     static meta(
-        component: typeof A_Component,
+        component: typeof A_Component<any>,
     ): A_ComponentMeta
     static meta(
         component: A_Component,
     ): A_ComponentMeta
     static meta<T extends Record<string, any>>(
-        component: { new(...args: any[]): any },
-    ): A_Meta<T>
-    static meta<T extends Record<string, any>>(
-        param1: A_Container<any>
-            | typeof A_Container
-            | A_Component
-            | typeof A_Component
-            | A_Entity
-            | typeof A_Entity
+        param1: typeof A_Component<any> | typeof A_Container<any> | A_Container<any>
+            | A_Component<any>
+            | A_Entity<any>
+            | typeof A_Entity<any>
             | { new(...args: any[]): any }
     ): A_ContainerMeta | A_ComponentMeta | A_Meta<T> {
+
+
         const instance = this.getInstance();
 
         let metaStorage: WeakMap<typeof A_Container.constructor, A_Meta<any>>;
@@ -427,7 +432,9 @@ export class A_Context {
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
 
-        const featureDefinition: A_TYPES__A_DefineDecorator_Meta = this.meta(component).get(metaKey);
+        const featureDefinition: A_TYPES__A_DefineDecorator_Meta = this.meta(component)
+            .get(metaKey)
+            .get(param2);
 
         if (!featureDefinition)
             throw new Error(`[!] A-Concept Context: Feature not found.`);

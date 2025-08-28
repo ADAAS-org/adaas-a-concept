@@ -6,18 +6,21 @@ export class TestChannel extends A_Channel<any> {
 
     getVersion(
         params
-    ) {
+    ){
 
     }
 
 
-    getUser() {
+    getUser(){
 
     }
 
 
-    getPage() {
+    getPage(){
+        this.call('');
     }
+
+
 
 
 

@@ -35,7 +35,7 @@ export function A_Abstraction(
 
         let metaKey;
 
-        const StageKey = `CONCEPT_ABSTRACTION::${method}`;
+        const abstractionKey = `CONCEPT_ABSTRACTION::${method}`;
 
         switch (true) {
             case target instanceof A_Container:
@@ -54,7 +54,7 @@ export function A_Abstraction(
         }> = meta.get(metaKey) || new A_Meta();
 
         // Set the metadata of the method to define a custom Stage with name
-        const existedMetaValue = existedMeta.get(StageKey) || [];
+        const existedMetaValue = existedMeta.get(abstractionKey) || [];
 
 
         // Add the new method to the metadata
@@ -67,7 +67,7 @@ export function A_Abstraction(
         });
 
         // Set the metadata of the method to define a custom Feature with name
-        existedMeta.set(StageKey, existedMetaValue);
+        existedMeta.set(abstractionKey, existedMetaValue);
 
 
         //  Update the metadata of the container with the new Stage definition

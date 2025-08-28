@@ -16,18 +16,22 @@ export class MainContainer extends A_Container<
 > {
 
     @A_Concept.Load()
-    async load() {
-        console.log('Main container loaded');
+    async load(
+        @A_Inject(A_Logger) logger: A_Logger
+
+    ) {
+        logger.log('Main container loaded');
     }
 
     @A_Concept.Start()
     async start(
-        @A_Inject(A_Scope) scope: A_Scope
+        @A_Inject(A_Scope) scope: A_Scope,
+        @A_Inject(A_Logger) logger: A_Logger
     ) {
+        await this.call('method_A');
 
-        A_Context.feature(scope, this, 'method_A');
+        // A_Context.feature(scope, this, 'method_A');
     }
-
 
 
 
@@ -41,8 +45,6 @@ export class MainContainer extends A_Container<
             ]
         });
     }
-
-
 
 
     @A_Feature.Define()

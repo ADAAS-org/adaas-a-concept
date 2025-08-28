@@ -11,6 +11,7 @@ import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
+import { A_TYPES__AbstractionDefinition } from "../A-Abstraction/A-Abstraction.types";
 
 
 
@@ -32,7 +33,7 @@ import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
  * 
  */
 export class A_Concept<
-    _Features extends A_Container<any>[] = any
+    _Imports extends A_Container<any>[] = any
 > {
 
     // ==============================================================================
@@ -98,10 +99,10 @@ export class A_Concept<
     // ==========================  MAIN Methods  ======================================
     // ==============================================================================
 
-    protected containers: A_Container<any>[] = [];
+    protected containers!: A_Container<any>[];
 
     constructor(
-        protected props: A_TYPES__IConceptConstructor<_Features>
+        protected props: A_TYPES__IConceptConstructor<_Imports>
     ) {
 
         A_Context.allocate(this, {
@@ -114,7 +115,9 @@ export class A_Concept<
             ]
         });
 
-        this.containers = props.containers || [];
+        this.initContainers(
+            props.containers
+        );
     }
 
 
@@ -124,6 +127,16 @@ export class A_Concept<
 
     get Scope() {
         return A_Context.scope(this);
+    }
+
+
+    private initContainers(containers: _Imports = [] as any) {
+
+        this.containers = containers.map(container => {
+            container.Scope.parent(this.Scope);
+
+            return container;
+        });
     }
 
 
@@ -249,7 +262,7 @@ export class A_Concept<
      * Call the specific method of the concept or included modules.
      */
     async call<
-        K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>
+        K extends Record<_Imports[number]['name'], _Imports[number]['exports'][number]>
     >(
         container: K[keyof K],
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
@@ -270,7 +283,10 @@ export class A_Concept<
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
 
-        const abstractionSteps: Array<A_TYPES__A_StageStep> = [];
+
+        // console.log('abstractionDefinition', method, params, this.containers);
+
+        const abstractionSteps: A_TYPES__AbstractionDefinition = [];
 
         this.containers.map(container => {
             const meta = A_Context.meta(container);
@@ -303,7 +319,7 @@ export class A_Concept<
         });
 
 
-        return {
+        const definition = {
             ...params,
             name: `${this.namespace}.${method}`,
             steps: abstractionSteps,
@@ -311,7 +327,11 @@ export class A_Concept<
             components: params?.components || [],
             fragments: params?.fragments || [],
         };
+
+        return definition;
     }
+
+
 
 
     private async execute(
@@ -327,8 +347,6 @@ export class A_Concept<
             meta.get(A_TYPES__ContainerMetaKey.FEATURES)
 
         });
-
-
     }
 
 }

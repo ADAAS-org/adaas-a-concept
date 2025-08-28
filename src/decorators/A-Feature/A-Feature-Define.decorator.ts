@@ -69,10 +69,14 @@ export function A_Feature_Define(
         }> = meta.get(metaKey) || new A_Meta();
 
 
+
+        const handlerName = config.name || propertyKey;
+
+
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
-            name: `${target.constructor.name}.${propertyKey || config.name}`,
-            handler: propertyKey,
+            name: `${target.constructor.name}.${handlerName}`,
+            handler: handlerName,
             template: config.template && config.template.length ? config.template.map(
                 item => ({
                     ...item,
@@ -91,5 +95,25 @@ export function A_Feature_Define(
                 metaKey,
                 existedMeta
             );
+
+
+        const originalMethod = descriptor.value!;
+
+
+
+        // Wrap the original method to add the call to `call`
+        // this helps to automatically call the container/entity/component method when it's called
+        descriptor.value = function (...args: any[]) {
+
+            // Call the original method
+            originalMethod.apply(this, args);
+
+            // Call your `call` with the function name
+            if (typeof (this as any).call === "function") {
+                (this as any).call(propertyKey);
+            }
+        };
+
+        return descriptor;
     };
 }

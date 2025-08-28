@@ -8,6 +8,8 @@ export class A_Errors extends A_Fragment {
 
     protected registeredErrors: Map<string, A_TYPES__Error | A_TYPES__ServerError> = new Map();
 
+
+    
     constructor(
         params: Partial<A_TYPES__A_ErrorsConstructor>
     ) {
@@ -76,7 +78,6 @@ export class A_Errors extends A_Fragment {
      * 
      * This method throws an error by its code.
      * 
-     * @param code 
      */
     // throw(code: A_CONSTANTS__ERROR_CODES | string): never {
     //     const template = this.get(code);

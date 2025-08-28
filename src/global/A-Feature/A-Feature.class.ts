@@ -176,6 +176,7 @@ export class A_Feature {
      */
     async process() {
         this.state = A_TYPES__FeatureState.PROCESSING;
+        
 
         for (const stage of this) {
             await stage.process();

@@ -28,11 +28,11 @@ export type A_TYPES__ScopeConstructor = {
     /**
      * A list of Features/Lifecycle Hooks available in the Scope
      */
-    import: Array<string>,
+    // import: Array<string>,
     /**
      * A list of Features/Lifecycle Hooks available to be exported from the Scope
      */
-    export: Array<string>
+    // export: Array<string>
 }
 
 

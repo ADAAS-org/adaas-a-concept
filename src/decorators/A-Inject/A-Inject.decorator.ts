@@ -10,6 +10,10 @@ import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
+import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
+import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
+import { A_CommonHelper } from "@adaas/a-utils";
 
 
 
@@ -65,9 +69,35 @@ export function A_Inject(
 
         const method = methodName ? String(methodName) : 'constructor';
 
+        let metaKey;
+
+        switch (true) {
+
+            case target instanceof A_Component:
+                metaKey = A_TYPES__ComponentMetaKey.INJECTIONS;
+                break;
+
+            case A_CommonHelper.isInheritedFrom(target, A_Component):
+                metaKey = A_TYPES__ComponentMetaKey.INJECTIONS;
+                break;
+
+            case A_CommonHelper.isInheritedFrom(target, A_Container):
+                metaKey = A_TYPES__ContainerMetaKey.INJECTIONS;
+                break;
+
+            case target instanceof A_Container:
+                metaKey = A_TYPES__ContainerMetaKey.INJECTIONS;
+                break;
+
+
+            default:
+                throw new Error(`A-Inject cannot be defined on the ${target} level`);
+        }
+
+
         const existedMeta = A_Context
             .meta(target)
-            .get(A_TYPES__ComponentMetaKey.INJECTIONS)
+            .get(metaKey)
             || new A_Meta();
 
 
@@ -83,7 +113,7 @@ export function A_Inject(
         A_Context
             .meta(target)
             .set(
-                A_TYPES__ComponentMetaKey.INJECTIONS,
+                metaKey,
                 existedMeta
             );
     }

@@ -13,6 +13,7 @@ import {
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Feature, A_TYPES__FeatureCallParams } from "index";
 
 
 
@@ -57,7 +58,7 @@ export class A_Entity<
     )
     constructor(props: string | ASEID | _SerializedType | _ConstructorType) {
 
-        
+
         switch (true) {
             case (typeof props === 'string' && ASEID.isASEID(props)):
                 this.aseid = new ASEID(props);
@@ -167,17 +168,16 @@ export class A_Entity<
         param2?: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>
     ): Promise<any> {
 
-        const feature: string = typeof param1 === 'string'
+        const featureName: string = typeof param1 === 'string'
             ? param1
             : param1.name;
         const params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
             ? param2 || {}
             : param1;
 
+        params.entities = params.entities || [this];
 
-        console.log('WTF???? ', A_Context.scope(this))
-
-        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
+        const newFeature = A_Context.feature(A_Context.scope(this), this, featureName, params);
 
         return await newFeature.process();
     }
@@ -188,33 +188,14 @@ export class A_Entity<
     // ====================================================================
 
 
-    async load() {
-        await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
-            entities: [
-                this
-            ]
-        });
-    }
+    @A_Feature.Define()
+    async load() { }
 
+    @A_Feature.Define()
+    async destroy() {}
 
-
-    async destroy() {
-        await this.call(A_TYPES__EntityBaseMethod.DESTROY, {
-            entities: [
-                this
-            ],
-        });
-    }
-
-
-
-    async save() {
-        await this.call(A_TYPES__EntityBaseMethod.SAVE, {
-            entities: [
-                this
-            ]
-        });
-    }
+    @A_Feature.Define()
+    async save() {}
 
 
 

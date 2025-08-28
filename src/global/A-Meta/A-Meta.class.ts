@@ -185,4 +185,9 @@ export class A_Meta<
     clear(): void {
         this.meta.clear();
     }
+
+
+    toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+        return Array.from(this.meta.entries());
+    }
 }

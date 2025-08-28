@@ -2,6 +2,7 @@ import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_TYPES__ComponentCallParams, A_TYPES__ComponentConstructor } from "./A-Component.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__FeatureCallParams } from "../A-Feature/A-Feature.types";
 
 
 
@@ -67,6 +68,19 @@ export class A_Component<
 
         return await newFeature.process();
     }
+
+
+
+    private async __exec__(
+        feature: _FeatureNames[number],
+        params: Partial<A_TYPES__FeatureCallParams<_FeatureNames[number]>> = {}
+    ) {
+        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
+
+        return await newFeature.process();
+    }
+
+
 }
 
 

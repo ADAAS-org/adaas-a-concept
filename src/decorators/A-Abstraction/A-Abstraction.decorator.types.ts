@@ -14,7 +14,7 @@ export type A_TYPES__A_AbstractionDecoratorDescriptor =
     TypedPropertyDescriptor<() => Promise<any>>
 
 
-export type A_TYPES__A_StageDecoratorConfig = {
+export type A_TYPES__A_AbstractionDecoratorConfig = {
 }
 
 

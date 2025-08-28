@@ -9,6 +9,7 @@ import { ENVConfigReader } from "./components/ENVConfigReader.component";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Config } from "./A-Config.context";
+import { A_TYPES__ContainerConstructor } from "@adaas/a-concept/global/A-Container/A-Container.types";
 
 
 
@@ -17,6 +18,14 @@ import { A_Config } from "./A-Config.context";
 export class A_ConfigLoader extends A_Container<['load', 'read']> {
 
     private reader!: ConfigReader
+
+
+    constructor(params:Partial<A_TYPES__ContainerConstructor<['load', 'read']>>) {
+        super({
+            ...params,
+            name:params.name || 'a-config-loader'
+        });
+    }
 
 
     @A_Concept.Load()
@@ -50,11 +59,17 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
     @A_Concept.Load()
     async readVariables(
         @A_Inject(A_Config) config: A_Config,
+        @A_Inject(A_Scope) scope: A_Scope,
     ) {
+
+        console.log('Read variables', scope);
+
         await this.reader.inject(config);
     }
 
 }
+
+
 
 
 

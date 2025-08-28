@@ -21,8 +21,9 @@ export class ConfigReader extends A_Component {
 
     @A_Concept.Load()
     async inject(
-        @A_Inject(A_Config) config: A_Config
+        @A_Inject(A_Config) config: A_Config,
     ) {
+
         const data = this.read(config.CONFIG_PROPERTIES);
 
         config.set(data);

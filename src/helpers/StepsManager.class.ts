@@ -17,11 +17,17 @@ export class StepsManager {
         this.visited = new Set();
         this.tempMark = new Set();
         this.sortedEntities = [];
+
+        console.log('StepsManager', entities);
+    }
+
+    private ID(step: A_TYPES__A_StageStep) {
+        return `${step.component.name}.${step.handler}`;
     }
 
     private buildGraph() {
         // Initialize graph nodes
-        this.entities.forEach(entity => this.graph.set(entity.name, new Set()));
+        this.entities.forEach(entity => this.graph.set(this.ID(entity), new Set()));
 
         // Add directed edges based on 'before' and 'after'
         this.entities.forEach(entity => {
@@ -51,8 +57,8 @@ export class StepsManager {
     private matchEntities(pattern) {
         const regex = new RegExp(`^${pattern}$`);
         return this.entities
-            .filter(entity => regex.test(entity.name))
-            .map(entity => entity.name);
+            .filter(entity => regex.test(this.ID(entity)))
+            .map(entity => this.ID(entity));
     }
 
     // Topological sort with cycle detection
@@ -74,16 +80,18 @@ export class StepsManager {
 
         // Start topological sort
         this.entities.forEach(entity => {
-            if (!this.visited.has(entity.name)) this.visit(entity.name);
+            if (!this.visited.has(this.ID(entity))) this.visit(this.ID(entity));
         });
 
         const stages: A_Stage[] = [];
 
         // Map sorted names back to entity objects
         this.sortedEntities
-            .map(name => {
+            .map(id => {
 
-                const step = this.entities.find(entity => entity.name === name)!;
+                console.log('id', id);
+
+                const step = this.entities.find(entity => this.ID(entity) === id)!;
 
                 let stage = stages.find(stage => {
                     return stage.after.every(after => step.after.includes(after))
