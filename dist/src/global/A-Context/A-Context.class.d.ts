@@ -63,6 +63,9 @@ export declare class A_Context {
     static meta(entity: typeof A_Entity): A_ContainerMeta;
     static meta(component: typeof A_Component): A_ComponentMeta;
     static meta(component: A_Component): A_ComponentMeta;
+    static meta<T extends Record<string, any>>(constructor: typeof A_Component | typeof A_Container | A_Container | A_Component | A_Entity | typeof A_Entity | {
+        new (...args: any[]): any;
+    }): A_Meta<T>;
     static scope(entity: A_Entity): A_Scope;
     static scope(component: A_Component): A_Scope;
     static scope(container: A_Container): A_Scope;

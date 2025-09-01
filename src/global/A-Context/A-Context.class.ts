@@ -176,6 +176,13 @@ export class A_Context {
         component: A_Component,
     ): A_ComponentMeta
     static meta<T extends Record<string, any>>(
+        constructor: typeof A_Component | typeof A_Container | A_Container
+            | A_Component
+            | A_Entity
+            | typeof A_Entity
+            | { new(...args: any[]): any }
+    ): A_Meta<T>
+    static meta<T extends Record<string, any>>(
         param1: typeof A_Component | typeof A_Container | A_Container
             | A_Component
             | A_Entity
@@ -498,7 +505,7 @@ export class A_Context {
 
         const component = param1;
         const config = param3 || {};
-     
+
         let metaKey;
 
         switch (true) {
