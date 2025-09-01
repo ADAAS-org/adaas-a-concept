@@ -124,7 +124,7 @@ export class A_Fragment {
      * 
      * @returns 
      */
-    toJSON() {
+    toJSON(): Record<string, any> {
         return {
             name: this.name,
         };

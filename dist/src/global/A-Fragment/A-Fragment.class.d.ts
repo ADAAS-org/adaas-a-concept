@@ -40,7 +40,5 @@ export declare class A_Fragment {
      *
      * @returns
      */
-    toJSON(): {
-        name: string;
-    };
+    toJSON(): Record<string, any>;
 }

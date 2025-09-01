@@ -7,12 +7,7 @@ import { CommandContainer } from "./Command.container";
 import { A_TYPES__A_ExecutableMethods } from "@adaas/a-concept/global/A-Channel/A-Channel.types";
 
 
-export class ScheduleContainer extends A_Container<[
-    'schedule',
-    'start',
-    'stop',
-    'pause',
-]> {
+export class ScheduleContainer extends A_Container{
 
     private tasks = [];
 
