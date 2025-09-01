@@ -23,9 +23,6 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  * - etc.
  */
 class A_Container {
-    get exports() {
-        return this.config.exports || [];
-    }
     get name() {
         return this.config.name || this.constructor.name;
     }
@@ -42,25 +39,18 @@ class A_Container {
         const fragments = config.fragments || [];
         A_Context_class_1.A_Context.allocate(this, config);
     }
-    call(param1, param2) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const feature = typeof param1 === 'string'
-                ? param1
-                : param1.name;
-            const params = typeof param1 === 'string'
-                ? param2 || {}
-                : param1;
-            const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
+    call(feature_1) {
+        return __awaiter(this, arguments, void 0, function* (feature, params = {}) {
+            const newFeature = A_Context_class_1.A_Context.feature(this.Scope, this, feature, params);
             return yield newFeature.process();
         });
     }
-    feature(param1, param2) {
-        const feature = typeof param1 === 'string'
-            ? param1
-            : param1.name;
-        const params = typeof param1 === 'string'
-            ? param2 || {}
-            : param1;
+    /**
+     * This method allows to get a feature Definition for the future reuse with custom Feature classes
+     *
+     * @param feature
+     */
+    feature(feature, params = {}) {
         return A_Context_class_1.A_Context.featureDefinition(this.Scope, this, feature, params);
     }
     // ==============================================================

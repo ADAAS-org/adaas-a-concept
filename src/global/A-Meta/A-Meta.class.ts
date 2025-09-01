@@ -1,11 +1,3 @@
-// 
-// 
-// 
-// 
-// 
-// 
-
-
 /**
  * A Meta is an entity that stores all the metadata for the specific entity like container, component, feature, etc. 
  * 

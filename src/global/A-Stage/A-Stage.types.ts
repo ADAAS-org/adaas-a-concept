@@ -1,7 +1,6 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types"
 import { A_Component } from "../A-Component/A-Component.class"
 import { A_Container } from "../A-Container/A-Container.class"
-import { A_TYPES__A_ExtendDecorator_BehaviorConfig, A_TYPES__A_ExtendDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
+import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
 
 
 
@@ -66,7 +65,7 @@ export type A_TYPES__A_StageStep = {
     /**
      * The component to be called
      */
-    component: typeof A_Component<any> | typeof A_Container<any> 
+    component: typeof A_Component |  A_Container 
 
     /**
      * The method to be called on the component

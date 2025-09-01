@@ -12,5 +12,6 @@ var A_TYPES__EntityMetaKey;
 (function (A_TYPES__EntityMetaKey) {
     A_TYPES__EntityMetaKey["EXTENSIONS"] = "a-component-extensions";
     A_TYPES__EntityMetaKey["FEATURES"] = "a-component-features";
+    A_TYPES__EntityMetaKey["ABSTRACTIONS"] = "a-component-abstractions";
 })(A_TYPES__EntityMetaKey || (exports.A_TYPES__EntityMetaKey = A_TYPES__EntityMetaKey = {}));
 //# sourceMappingURL=A-Entity.types.js.map

@@ -48,17 +48,18 @@ class A_Stage {
      */
     getStepArgs(step) {
         return __awaiter(this, void 0, void 0, function* () {
-            const target = step.component instanceof A_Container_class_1.A_Container ?
-                step.component.constructor : step.component;
-            return A_Context_class_1.A_Context
-                .meta(target)
+            return Promise
+                .all(A_Context_class_1.A_Context
+                .meta(step.component instanceof A_Container_class_1.A_Container
+                ? step.component.constructor
+                : step.component)
                 .injections(step.handler)
                 .map((arg) => __awaiter(this, void 0, void 0, function* () {
                 // In case if the target is a feature step then pass the current feature
                 return a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature)
-                    ? this
+                    ? this.feature
                     : A_Context_class_1.A_Context.scope(this.feature).resolve(arg.target);
-            }));
+            })));
         });
     }
     /**
@@ -95,9 +96,9 @@ class A_Stage {
      * @param step
      * @returns
      */
-    getStepHandler(step) {
+    callStepHandler(step) {
         return __awaiter(this, void 0, void 0, function* () {
-            const instance = this.getStepInstance(step);
+            const instance = yield this.getStepInstance(step);
             const callArgs = yield this.getStepArgs(step);
             return instance[step.handler](...callArgs);
         });
@@ -119,12 +120,12 @@ class A_Stage {
                         yield Promise
                             .all([
                             // Run async steps that are independent of each other
-                            ...asyncSteps.map(step => this.getStepHandler(step)),
+                            ...asyncSteps.map(step => this.callStepHandler(step)),
                             // Run sync steps that are dependent on each other
                             new Promise((r, j) => __awaiter(this, void 0, void 0, function* () {
                                 try {
                                     for (const step of syncSteps) {
-                                        yield this.getStepHandler(step);
+                                        yield this.callStepHandler(step);
                                     }
                                     return r();
                                 }

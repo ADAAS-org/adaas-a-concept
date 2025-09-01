@@ -5,6 +5,26 @@ const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
 const A_Container_types_1 = require("./A-Container.types");
 class A_ContainerMeta extends A_Meta_class_1.A_Meta {
     /**
+     * Allows to get all the injections for a given handler
+     *
+     * @param handler
+     * @returns
+     */
+    injections(handler) {
+        const injections = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.INJECTIONS);
+        const args = (injections === null || injections === void 0 ? void 0 : injections.get(handler)) || [];
+        return args;
+    }
+    /**
+     * Returns all features defined in the Container
+     *
+     * @returns
+     */
+    features() {
+        const features = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.FEATURES);
+        return (features === null || features === void 0 ? void 0 : features.toArray().map(([, feature]) => feature)) || [];
+    }
+    /**
      * Returns a set of instructions to run proper methods in Container during A-Concept Stage
      *
      * @param stage

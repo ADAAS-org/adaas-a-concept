@@ -1,19 +1,15 @@
 import {
     A_CommonHelper,
-    A_Error, A_TYPES__Required,
+    A_Error,
     ASEID
 } from "@adaas/a-utils";
 import {
     A_TYPES__Entity_JSON,
-    A_TYPES__EntityBaseMethod,
-    A_TYPES__EntityBaseMethods,
-    A_TYPES__EntityCallParams,
     A_TYPES__IEntity
 } from "./A-Entity.types";
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
-import { A_Feature, A_TYPES__FeatureCallParams } from "index";
+import { A_TYPES__FeatureCallParams } from "../A-Feature/A-Feature.types";
 
 
 
@@ -26,8 +22,7 @@ import { A_Feature, A_TYPES__FeatureCallParams } from "index";
  */
 export class A_Entity<
     _ConstructorType = any,
-    _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON,
-    _FeatureNames extends Array<string | A_TYPES__EntityBaseMethod> = A_TYPES__EntityBaseMethods
+    _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON
 >
     implements A_TYPES__IEntity {
 
@@ -140,44 +135,14 @@ export class A_Entity<
      * @param lifecycleMethod 
      * @param args 
      */
-    async call(
-        /**
-         * A-Feature method name to be called
-         */
-        feature: _FeatureNames[number],
-    ): Promise<any>
-    async call(
-        /**
-         * A-Feature name to be called
-         */
-        params: A_TYPES__Required<Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>, ['name']>,
-    ): Promise<any>
-    async call(
-        /**
-        * A-Feature method name to be called
-        */
-        feature: _FeatureNames[number],
-        /**
-         * Parameters to provide additional data to the feature
-         */
-        params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>,
-    ): Promise<any>
-
-    async call(
-        param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>, ['name']>,
-        param2?: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>>
-    ): Promise<any> {
-
-        const featureName: string = typeof param1 === 'string'
-            ? param1
-            : param1.name;
-        const params: Partial<A_TYPES__EntityCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
-            ? param2 || {}
-            : param1;
-
+     async call(
+        feature: string,
+        params: Partial<A_TYPES__FeatureCallParams> = {}
+    ) {
         params.entities = params.entities || [this];
 
-        const newFeature = A_Context.feature(A_Context.scope(this), this, featureName, params);
+
+        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
 
         return await newFeature.process();
     }
@@ -188,14 +153,21 @@ export class A_Entity<
     // ====================================================================
 
 
-    @A_Feature.Define()
+
+    /**
+     * The default method that can be called and extended to load entity data.
+     */
     async load() { }
 
-    @A_Feature.Define()
-    async destroy() {}
+    /**
+     * The default method that can be called and extended to destroy entity data.
+     */
+    async destroy() { }
 
-    @A_Feature.Define()
-    async save() {}
+    /**
+     * The default method that can be called and extended to save entity data.
+     */
+    async save() { }
 
 
 

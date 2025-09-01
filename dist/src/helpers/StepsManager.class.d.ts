@@ -8,6 +8,7 @@ export declare class StepsManager {
     tempMark: Set<string>;
     sortedEntities: string[];
     constructor(entities: A_TYPES__A_StageStep[]);
+    private ID;
     private buildGraph;
     private matchEntities;
     private visit;

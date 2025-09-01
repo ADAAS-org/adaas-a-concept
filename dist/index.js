@@ -17,11 +17,14 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Connect = exports.A_Abstraction = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Stage = exports.A_Feature = exports.A_Channel = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
+exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Connect = exports.A_Abstraction_Extend = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Stage = exports.A_Feature = exports.A_Channel = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Abstraction = exports.A_Context = void 0;
 // ---------------------- Major Components ----------------------
 var A_Context_class_1 = require("./src/global/A-Context/A-Context.class");
 Object.defineProperty(exports, "A_Context", { enumerable: true, get: function () { return A_Context_class_1.A_Context; } });
 // export * from './src/global/A-Context/A-Context.types';
+var A_Abstraction_class_1 = require("./src/global/A-Abstraction/A-Abstraction.class");
+Object.defineProperty(exports, "A_Abstraction", { enumerable: true, get: function () { return A_Abstraction_class_1.A_Abstraction; } });
+__exportStar(require("./src/global/A-Abstraction/A-Abstraction.types"), exports);
 var A_Concept_class_1 = require("./src/global/A-Concept/A_Concept.class");
 Object.defineProperty(exports, "A_Concept", { enumerable: true, get: function () { return A_Concept_class_1.A_Concept; } });
 var A_Concept_meta_1 = require("./src/global/A-Concept/A_Concept.meta");
@@ -70,8 +73,8 @@ Object.defineProperty(exports, "A_Feature_Define", { enumerable: true, get: func
 var A_Feature_Extend_decorator_1 = require("./src/decorators/A-Feature/A-Feature-Extend.decorator");
 Object.defineProperty(exports, "A_Feature_Extend", { enumerable: true, get: function () { return A_Feature_Extend_decorator_1.A_Feature_Extend; } });
 __exportStar(require("./src/decorators/A-Feature/A-Feature.decorator.types"), exports);
-var A_Abstraction_decorator_1 = require("./src/decorators/A-Abstraction/A-Abstraction.decorator");
-Object.defineProperty(exports, "A_Abstraction", { enumerable: true, get: function () { return A_Abstraction_decorator_1.A_Abstraction; } });
+var A_Abstraction_Extend_decorator_1 = require("./src/decorators/A-Abstraction/A-Abstraction-Extend.decorator");
+Object.defineProperty(exports, "A_Abstraction_Extend", { enumerable: true, get: function () { return A_Abstraction_Extend_decorator_1.A_Abstraction_Extend; } });
 __exportStar(require("./src/decorators/A-Abstraction/A-Abstraction.decorator.types"), exports);
 var A_Connect_decorator_1 = require("./src/decorators/A-Connect/A-Connect.decorator");
 Object.defineProperty(exports, "A_Connect", { enumerable: true, get: function () { return A_Connect_decorator_1.A_Connect; } });

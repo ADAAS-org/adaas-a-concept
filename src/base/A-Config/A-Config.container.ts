@@ -1,6 +1,5 @@
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { ConfigReader } from "./components/ConfigReader.component";
-import { A_Logger } from "../A-Logger/A-Logger.component";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
 import { A_Polyfills } from "@adaas/a-utils";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
@@ -12,10 +11,7 @@ import { A_Config } from "./A-Config.context";
 import { A_TYPES__ContainerConstructor } from "@adaas/a-concept/global/A-Container/A-Container.types";
 
 
-
-
-
-export class A_ConfigLoader extends A_Container<['load', 'read']> {
+export class A_ConfigLoader extends A_Container {
 
     private reader!: ConfigReader
 
@@ -61,9 +57,6 @@ export class A_ConfigLoader extends A_Container<['load', 'read']> {
         @A_Inject(A_Config) config: A_Config,
         @A_Inject(A_Scope) scope: A_Scope,
     ) {
-
-        console.log('Read variables', scope);
-
         await this.reader.inject(config);
     }
 

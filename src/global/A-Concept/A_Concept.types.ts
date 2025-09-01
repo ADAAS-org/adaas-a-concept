@@ -35,7 +35,7 @@ export enum A_TYPES__ConceptMetaKey {
 
 
 export interface A_TYPES__IConceptConstructor<
-    T extends Array<A_Container<any>>
+    T extends Array<A_Container>
 > {
     name: string,
 
@@ -124,7 +124,7 @@ export type A_TYPES__ConceptCallParams<T extends string> = {
     name: T,
     fragments: Array<A_Fragment>,
     components: Array<{ new(...args: any[]): A_Component }>,
-    entities: Array<{ new(...args: any[]): A_Entity<any, any, any> }>
+    entities: Array<{ new(...args: any[]): A_Entity }>
 }
 
 

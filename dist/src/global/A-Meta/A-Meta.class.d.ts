@@ -87,4 +87,5 @@ export declare class A_Meta<_StorageItems extends Record<string, any>> implement
      * Method to clear the map
      */
     clear(): void;
+    toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
 }

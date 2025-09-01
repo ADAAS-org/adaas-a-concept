@@ -22,14 +22,6 @@ export type A_TYPES__ScopeConstructor = {
      *
      */
     entities: Array<A_Entity>;
-    /**
-     * A list of Features/Lifecycle Hooks available in the Scope
-     */
-    import: Array<string>;
-    /**
-     * A list of Features/Lifecycle Hooks available to be exported from the Scope
-     */
-    export: Array<string>;
 };
 export type A_TYPES__ScopeConfig = {
     /**

@@ -1,10 +1,4 @@
 "use strict";
-// 
-// 
-// 
-// 
-// 
-// 
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Meta = void 0;
 /**
@@ -153,6 +147,9 @@ class A_Meta {
      */
     clear() {
         this.meta.clear();
+    }
+    toArray() {
+        return Array.from(this.meta.entries());
     }
 }
 exports.A_Meta = A_Meta;

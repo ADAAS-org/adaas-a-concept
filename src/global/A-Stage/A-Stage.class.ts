@@ -5,7 +5,6 @@ import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep } 
 import { A_Container } from "../A-Container/A-Container.class";
 
 
-
 /**
  * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
  * Each stage may contain one or more functions. 
@@ -55,12 +54,16 @@ export class A_Stage {
     protected async getStepArgs(step: A_TYPES__A_StageStep) {
         return Promise
             .all(A_Context
-                .meta(step.component)
+                .meta(
+                    step.component instanceof A_Container
+                        ? step.component.constructor
+                        : step.component
+                )
                 .injections(step.handler)
                 .map(async arg =>
                     // In case if the target is a feature step then pass the current feature
                     A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
-                        ? this
+                        ? this.feature
                         : A_Context.scope(this.feature).resolve(arg.target)
                 ));
     }
@@ -90,6 +93,7 @@ export class A_Stage {
     protected getStepInstance(step: A_TYPES__A_StageStep) {
         const { component, handler } = step;
 
+
         // TODO: probably would be better to do it another way. let's think about it
         const instance = component instanceof A_Container
             ? component
@@ -112,13 +116,11 @@ export class A_Stage {
      * @param step 
      * @returns 
      */
-    protected async getStepHandler(step: A_TYPES__A_StageStep) {
+    protected async callStepHandler(step: A_TYPES__A_StageStep) {
 
         const instance = await this.getStepInstance(step);
         const callArgs = await this.getStepArgs(step);
 
-        console.log('getStepHandler step', step);
-        console.log('getStepHandler callArgs', callArgs);
 
         return instance[step.handler](...callArgs);
 
@@ -146,14 +148,14 @@ export class A_Stage {
                             .all([
 
                                 // Run async steps that are independent of each other
-                                ...asyncSteps.map(step => this.getStepHandler(step)),
+                                ...asyncSteps.map(step => this.callStepHandler(step)),
 
                                 // Run sync steps that are dependent on each other
                                 new Promise<void>(
                                     async (r, j) => {
                                         try {
                                             for (const step of syncSteps) {
-                                                await this.getStepHandler(step);
+                                                await this.callStepHandler(step);
                                             }
 
                                             return r();

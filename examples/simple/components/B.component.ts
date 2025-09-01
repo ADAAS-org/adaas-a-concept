@@ -4,6 +4,7 @@ import { ContextFragmentA } from "../context/Fragment_A.context";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
+import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 
 
 export class ComponentB extends A_Component {
@@ -15,9 +16,17 @@ export class ComponentB extends A_Component {
     }
 
 
+    @A_Concept.Load()
     @A_Feature.Extend()
     async load() {
         console.log('Component B ->  load()');
+    }
+
+    @A_Concept.Load()
+    async test(
+        @A_Inject(A_Logger) logger: A_Logger
+    ) {
+        console.log('Component B ->  test() TEST!!!!!!!!!!!!!!!');
     }
 
 

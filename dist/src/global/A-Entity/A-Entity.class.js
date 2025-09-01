@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Entity = void 0;
 const a_utils_1 = require("@adaas/a-utils");
-const A_Entity_types_1 = require("./A-Entity.types");
 const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 /**
@@ -95,15 +94,15 @@ class A_Entity {
     get shard() {
         return this.aseid.shard;
     }
-    call(param1, param2) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const feature = typeof param1 === 'string'
-                ? param1
-                : param1.name;
-            const params = typeof param1 === 'string'
-                ? param2 || {}
-                : param1;
-            console.log('WTF???? ', A_Context_class_1.A_Context.scope(this));
+    /**
+     * Call a feature of the component
+     *
+     * @param lifecycleMethod
+     * @param args
+     */
+    call(feature_1) {
+        return __awaiter(this, arguments, void 0, function* (feature, params = {}) {
+            params.entities = params.entities || [this];
             const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
             return yield newFeature.process();
         });
@@ -111,32 +110,23 @@ class A_Entity {
     // ====================================================================
     // ================== Entity Base Methods =============================
     // ====================================================================
+    /**
+     * The default method that can be called and extended to load entity data.
+     */
     load() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
-                entities: [
-                    this
-                ]
-            });
-        });
+        return __awaiter(this, void 0, void 0, function* () { });
     }
+    /**
+     * The default method that can be called and extended to destroy entity data.
+     */
     destroy() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.DESTROY, {
-                entities: [
-                    this
-                ],
-            });
-        });
+        return __awaiter(this, void 0, void 0, function* () { });
     }
+    /**
+     * The default method that can be called and extended to save entity data.
+     */
     save() {
-        return __awaiter(this, void 0, void 0, function* () {
-            yield this.call(A_Entity_types_1.A_TYPES__EntityBaseMethod.SAVE, {
-                entities: [
-                    this
-                ]
-            });
-        });
+        return __awaiter(this, void 0, void 0, function* () { });
     }
     // ====================================================================
     // ================== Entity Serialization ============================

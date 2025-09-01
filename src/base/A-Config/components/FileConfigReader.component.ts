@@ -1,8 +1,6 @@
 import { A_CommonHelper, A_Polyfills } from "@adaas/a-utils";
 import { ConfigReader } from "./ConfigReader.component";
 
-
-
 export class FileConfigReader extends ConfigReader {
 
     private FileData: Map<string, any> = new Map<string, any>();

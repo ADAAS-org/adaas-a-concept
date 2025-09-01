@@ -11,9 +11,7 @@ import { EntityA } from "../entities/EntityA.entity";
 
 
 
-export class MainContainer extends A_Container<
-    ['method_A', 'method_B']
-> {
+export class MainContainer extends A_Container {
 
     @A_Concept.Load()
     async load(
@@ -47,7 +45,9 @@ export class MainContainer extends A_Container<
     }
 
 
-    @A_Feature.Define()
+    @A_Feature.Define({
+        invoke:false
+    })
     async method_B(
     ) {
         console.log('Method B', A_Context.root.name);
@@ -72,5 +72,16 @@ export class MainContainer extends A_Container<
 
             await stage.process();
         }
+    }
+
+
+
+     @A_Feature.Define()
+    async method_C() {
+
+        const logger = this.Scope.resolve(A_Logger);
+
+        logger.log('Method C');
+
     }
 }

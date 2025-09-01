@@ -1,8 +1,8 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
     A_TYPES__A_InjectDecoratorReturn
 } from "./A-Inject.decorator.types";
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
@@ -12,9 +12,7 @@ import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
-import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_CommonHelper } from "@adaas/a-utils";
-
 
 
 
@@ -93,7 +91,6 @@ export function A_Inject(
             default:
                 throw new Error(`A-Inject cannot be defined on the ${target} level`);
         }
-
 
         const existedMeta = A_Context
             .meta(target)

@@ -28,6 +28,7 @@ export declare class A_Feature {
     state: A_TYPES__FeatureState;
     result?: any;
     error?: A_Error;
+    readonly name: string;
     constructor(params: A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps']>);
     /**
      * Custom iterator to iterate over the steps of the feature
@@ -73,6 +74,6 @@ export declare class A_Feature {
      * This method processes the feature by executing all the stages
      *
      */
-    process(): Promise<void>;
+    process(): Promise<any>;
     protected errorHandler(error: Error | A_Error | unknown): Promise<void>;
 }

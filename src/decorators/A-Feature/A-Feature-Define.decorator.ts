@@ -1,20 +1,19 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import {
     A_TYPES__A_DefineDecorator_Meta,
     A_TYPES__A_FeatureDecoratorConfig,
     A_TYPES__A_FeatureDecoratorDescriptor,
 } from "./A-Feature.decorator.types";
-import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
-import { A_TYPES__ContainerMeta_FeatureItem, A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
+import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
+import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
+import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_EntityMeta } from "@adaas/a-concept/global/A-Entity/A-Entity.meta";
 import { A_ContainerMeta } from "@adaas/a-concept/global/A-Container/A-Container.meta";
 import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.meta";
 import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
-import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
-
 
 /**
  * A-Feature decorator
@@ -33,12 +32,12 @@ export function A_Feature_Define(
     config: Partial<A_TYPES__A_FeatureDecoratorConfig> = {}
 ) {
     return function (
-        target: A_Container<any> | A_Entity | A_Component,
+        target: A_Container | A_Entity | A_Component,
         propertyKey: string,
         descriptor: A_TYPES__A_FeatureDecoratorDescriptor
     ) {
 
-        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target.constructor);
+        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target.constructor as any);
 
         let metaKey;
 
@@ -71,6 +70,7 @@ export function A_Feature_Define(
 
 
         const handlerName = config.name || propertyKey;
+        const invoke = config.invoke !== false;
 
 
         // Set the metadata of the method to define a custom Feature with name 
@@ -90,7 +90,7 @@ export function A_Feature_Define(
 
         //  Update the metadata of the container with the new Feature definition
         A_Context
-            .meta(target.constructor)
+            .meta(target.constructor as any)
             .set(
                 metaKey,
                 existedMeta
@@ -106,12 +106,15 @@ export function A_Feature_Define(
         descriptor.value = function (...args: any[]) {
 
             // Call the original method
-            originalMethod.apply(this, args);
+            if (!invoke)
+                return originalMethod.apply(this, args);
+            else
+                originalMethod.apply(this, args);
 
             // Call your `call` with the function name
-            if (typeof (this as any).call === "function") {
-                (this as any).call(propertyKey);
-            }
+            if (typeof (this as any).call === "function" && invoke)
+                return (this as any).call(propertyKey);
+
         };
 
         return descriptor;

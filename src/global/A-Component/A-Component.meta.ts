@@ -2,7 +2,7 @@ import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-I
 import { A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey } from "./A-Component.types";
-import { A_TYPES__A_DefineDecorator_Meta } from "index";
+import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 
 
 export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
@@ -86,7 +86,7 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
      * @returns 
      */
     abstractions(
-        abstraction: A_TYPES__ConceptStage
+        abstraction: any
     ): A_TYPES__ConceptAbstractionMeta[] {
         const steps: A_TYPES__ConceptAbstractionMeta[] = [];
 
@@ -98,7 +98,7 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
 
         abstractions
             // returns all extensions that match the feature
-            ?.find(`CONCEPT_ABSTRACTION::${abstraction}`)
+            ?.find(abstraction)
             .forEach(([handler, extensions]) => {
                 extensions.forEach(extension => {
                     const args = injections?.get(extension.handler) || [];

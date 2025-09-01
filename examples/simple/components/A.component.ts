@@ -36,4 +36,11 @@ export class ComponentA extends A_Component {
         fragmentB.increment();
     }
 
+
+    @A_Feature.Extend()
+    async method_C(
+        @A_Inject(A_Logger) logger: A_Logger
+    ) {
+        logger.log('red', 'Component A ->  method_C()');
+    }
 }

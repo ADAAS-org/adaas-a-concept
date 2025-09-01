@@ -1,4 +1,6 @@
 export { A_Context } from './src/global/A-Context/A-Context.class';
+export { A_Abstraction } from './src/global/A-Abstraction/A-Abstraction.class';
+export * from './src/global/A-Abstraction/A-Abstraction.types';
 export { A_Concept } from './src/global/A-Concept/A_Concept.class';
 export { A_ConceptMeta } from './src/global/A-Concept/A_Concept.meta';
 export * from './src/global/A-Concept/A_Concept.types';
@@ -26,7 +28,7 @@ export * from './src/decorators/A-Inject/A-Inject.decorator.types';
 export { A_Feature_Define } from './src/decorators/A-Feature/A-Feature-Define.decorator';
 export { A_Feature_Extend } from './src/decorators/A-Feature/A-Feature-Extend.decorator';
 export * from './src/decorators/A-Feature/A-Feature.decorator.types';
-export { A_Abstraction } from './src/decorators/A-Abstraction/A-Abstraction.decorator';
+export { A_Abstraction_Extend } from './src/decorators/A-Abstraction/A-Abstraction-Extend.decorator';
 export * from './src/decorators/A-Abstraction/A-Abstraction.decorator.types';
 export { A_Connect } from './src/decorators/A-Connect/A-Connect.decorator';
 export * from './src/decorators/A-Connect/A-Connect.decorator.types';

@@ -6,6 +6,7 @@ import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class"
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { ASEID } from "@adaas/a-utils";
 
+
 export type A_TYPES__A_InjectDecoratorDescriptor = TypedPropertyDescriptor<(
     ...args: any[]
 ) => Promise<void>>
@@ -56,10 +57,10 @@ export type A_TYPES__A_InjectDecorator_Meta = Array<{
 export type A_TYPES__A_InjectDecorator_Injectable =
     { new(...args: any[]): A_Fragment }
     | { new(...args: any[]): A_Component }
-    | { new(...args: any[]): A_Container<any> }
+    | { new(...args: any[]): A_Container }
     | { new(...args: any[]): A_Scope }
     | { new(...args: any[]): A_Feature }
-    | { new(...args: any[]): A_Entity<any, any, any> };
+    | { new(...args: any[]): A_Entity };
 
 
 export type A_TYPES__A_InjectDecorator_EntityInjectionInstructions = {
@@ -71,7 +72,7 @@ export type A_TYPES__A_InjectDecorator_EntityInjectionInstructions = {
 export type A_TYPES__A_InjectDecorator_EntityInjectionQuery = {
     aseid: string | ASEID,
     id: string,
-    type: { new(...args: any[]): A_Entity<any, any, any> },
+    type: { new(...args: any[]): A_Entity },
     entity: string
 }
 

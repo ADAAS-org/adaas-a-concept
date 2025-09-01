@@ -1,11 +1,9 @@
+import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Polyfills } from "@adaas/a-utils";
-import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Config } from "../A-Config.context";
-
-
+import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 
 /**
  * Config Reader

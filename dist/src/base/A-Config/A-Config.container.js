@@ -25,9 +25,13 @@ const a_utils_1 = require("@adaas/a-utils");
 const A_Context_class_1 = require("../../global/A-Context/A-Context.class");
 const FileConfigReader_component_1 = require("./components/FileConfigReader.component");
 const ENVConfigReader_component_1 = require("./components/ENVConfigReader.component");
+const A_Scope_class_1 = require("../../global/A-Scope/A-Scope.class");
 const A_Concept_class_1 = require("../../global/A-Concept/A_Concept.class");
 const A_Config_context_1 = require("./A-Config.context");
 class A_ConfigLoader extends A_Container_class_1.A_Container {
+    constructor(params) {
+        super(Object.assign(Object.assign({}, params), { name: params.name || 'a-config-loader' }));
+    }
     prepare(config) {
         return __awaiter(this, void 0, void 0, function* () {
             const fs = yield a_utils_1.A_Polyfills.fs();
@@ -47,7 +51,7 @@ class A_ConfigLoader extends A_Container_class_1.A_Container {
             }
         });
     }
-    readVariables(config) {
+    readVariables(config, scope) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.reader.inject(config);
         });
@@ -60,7 +64,8 @@ __decorate([
 ], A_ConfigLoader.prototype, "prepare", null);
 __decorate([
     A_Concept_class_1.A_Concept.Load(),
-    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config))
+    __param(0, (0, A_Inject_decorator_1.A_Inject)(A_Config_context_1.A_Config)),
+    __param(1, (0, A_Inject_decorator_1.A_Inject)(A_Scope_class_1.A_Scope))
 ], A_ConfigLoader.prototype, "readVariables", null);
 const foo = new A_ConfigLoader({});
 //# sourceMappingURL=A-Config.container.js.map

@@ -13,22 +13,22 @@ export type A_TYPES__A_Feature_Extend = {
 };
 
 export type A_TYPES__A_FeatureDecoratorDescriptor =
+    TypedPropertyDescriptor<
+        ((...args: any[]) => any)
+        |
+        ((...args: any[]) => Promise<any>)
+        |
+        (() => any)
+        |
+        (() => Promise<any>)
+    >
 
-    TypedPropertyDescriptor<() => any>
-    |
-    TypedPropertyDescriptor<(
-        ...args: any[]
-    ) => any>
-    |
-    TypedPropertyDescriptor<(
-        ...args: any[]
-    ) => Promise<any>>
-    |
-    TypedPropertyDescriptor<() => Promise<any>>
+
 
 
 export type A_TYPES__A_FeatureDecoratorConfig = {
     name: string,
+    invoke: boolean,
     channel: Array<typeof A_Channel>
     template: Array<A_TYPES__A_FeatureTemplateItem>
 }
@@ -74,7 +74,7 @@ export type A_TYPES__A_ExtendDecoratorConfig = {
      * [!!] By default uses OR to join all provided items. If you need more complex Logic, please use Regexp instead
      */
     scope: Array<
-        { new(...args: any[]): A_Container<any> }
+        { new(...args: any[]): A_Container }
         | { new(...args: any[]): A_Entity }
         | { new(...args: any[]): A_Component }
     >

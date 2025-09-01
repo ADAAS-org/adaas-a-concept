@@ -1,7 +1,6 @@
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { createServer, IncomingMessage, Server, ServerResponse } from "http";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
-// import { A_Feature } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Config } from "@adaas/a-concept/base/A-Config/A-Config.context";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
@@ -11,7 +10,7 @@ import { HTTPRequest } from "../contexts/http-request.context";
 
 
 
-export class HttpServer extends A_Container<['start', 'stop', 'onRequest']> {
+export class HttpServer extends A_Container {
 
     server!: Server
     port!: number
@@ -36,7 +35,9 @@ export class HttpServer extends A_Container<['start', 'stop', 'onRequest']> {
     }
 
 
-    @A_Feature.Define()
+    @A_Feature.Define({
+       invoke: false
+    })
     async onRequest(
         req: IncomingMessage,
         res: ServerResponse

@@ -1,7 +1,7 @@
-import { A_Component } from "../../global/A-Component/A-Component.class";
 import { A_TYPES__A_FeatureDecoratorConfig, A_TYPES__A_FeatureDecoratorDescriptor } from "./A-Feature.decorator.types";
-import { A_Container } from "../../global/A-Container/A-Container.class";
 import { A_Entity } from "../../global/A-Entity/A-Entity.class";
+import { A_Component } from "../../global/A-Component/A-Component.class";
+import { A_Container } from "../../global/A-Container/A-Container.class";
 /**
  * A-Feature decorator
  *
@@ -15,4 +15,4 @@ import { A_Entity } from "../../global/A-Entity/A-Entity.class";
  * @param params
  * @returns
  */
-export declare function A_Feature_Define(config?: Partial<A_TYPES__A_FeatureDecoratorConfig>): (target: A_Container<any> | A_Entity | A_Component, propertyKey: string, descriptor: A_TYPES__A_FeatureDecoratorDescriptor) => void;
+export declare function A_Feature_Define(config?: Partial<A_TYPES__A_FeatureDecoratorConfig>): (target: A_Container | A_Entity | A_Component, propertyKey: string, descriptor: A_TYPES__A_FeatureDecoratorDescriptor) => A_TYPES__A_FeatureDecoratorDescriptor;

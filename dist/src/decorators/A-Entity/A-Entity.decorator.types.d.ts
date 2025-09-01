@@ -4,7 +4,7 @@ export type A_TYPES__EntityListDecoratorQuery = {
     aseid: string | ASEID;
     id: string;
     type: {
-        new (...args: any[]): A_Entity<any, any, any>;
+        new (...args: any[]): A_Entity;
     };
     entity: string;
 };

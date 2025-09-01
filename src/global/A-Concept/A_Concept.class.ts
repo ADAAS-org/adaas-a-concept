@@ -1,19 +1,8 @@
-import { A_TYPES__ConceptStage, A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
-import { A_Context } from "../A-Context/A-Context.class";
+import { A_TYPES__ConceptStage, A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor, A_TYPES__ConceptAbstractionMeta } from "./A_Concept.types";
 import { A_Container } from "../A-Container/A-Container.class";
-// import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
-import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
-import { A_Abstraction } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction.decorator";
-import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
-import { A_Channel } from "../A-Channel/A-Channel.class";
-import { A_Feature } from "../A-Feature/A-Feature.class";
-import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
-import { A_TYPES__Required } from "@adaas/a-utils";
-import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
-import { A_TYPES__AbstractionDefinition } from "../A-Abstraction/A-Abstraction.types";
-
-
+import { A_Abstraction } from "../A-Abstraction/A-Abstraction.class";
+import { A_ConceptMeta } from "./A_Concept.meta";
+import { A_Abstraction_Extend } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction-Extend.decorator";
 
 
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
@@ -33,7 +22,7 @@ import { A_TYPES__AbstractionDefinition } from "../A-Abstraction/A-Abstraction.t
  * 
  */
 export class A_Concept<
-    _Imports extends A_Container<any>[] = any
+    _Imports extends A_Container[] = any
 > {
 
     // ==============================================================================
@@ -42,8 +31,8 @@ export class A_Concept<
     /**
      * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    static Load() {
-        return A_Abstraction(A_TYPES__ConceptStage.Load);
+    static Load(): ReturnType<typeof A_Abstraction_Extend> {
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Load);
     }
 
     /**
@@ -51,15 +40,15 @@ export class A_Concept<
      *
      * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    static Publish() {
-        return A_Abstraction(A_TYPES__ConceptStage.Publish);
+    static Publish(): ReturnType<typeof A_Abstraction_Extend> {
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Publish);
     }
 
     /**
      * Deploy the concept to the environment.
      */
     static Deploy() {
-        return A_Abstraction(A_TYPES__ConceptStage.Deploy);
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Deploy);
     }
 
     /**
@@ -69,29 +58,33 @@ export class A_Concept<
      * 
      */
     static Build() {
-        return A_Abstraction(A_TYPES__ConceptStage.Build);
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Build);
     }
 
     /**
      *  Main execution of the concept.
      */
     static Run() {
-        return A_Abstraction(A_TYPES__ConceptStage.Run);
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Run);
     }
 
     /**
      *  Start the concept. Uses for servers or any other background services.
      */
     static Start() {
-        return A_Abstraction(A_TYPES__ConceptStage.Start);
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Start);
     }
 
     /**
      * Stop the concept. Uses for servers or any other background services.
      */
     static Stop() {
-        return A_Abstraction(A_TYPES__ConceptStage.Stop);
+        return A_Abstraction.Extend(A_TYPES__ConceptStage.Stop);
     }
+
+
+    private sharedBase!: A_Container;
+    private meta!: A_ConceptMeta
 
 
 
@@ -99,13 +92,12 @@ export class A_Concept<
     // ==========================  MAIN Methods  ======================================
     // ==============================================================================
 
-    protected containers!: A_Container<any>[];
+    protected containers!: A_Container[];
 
     constructor(
         protected props: A_TYPES__IConceptConstructor<_Imports>
     ) {
-
-        A_Context.allocate(this, {
+        this.sharedBase = new A_Container({
             name: props.name,
             fragments: props.fragments || [],
             entities: props.entities || [],
@@ -115,29 +107,24 @@ export class A_Concept<
             ]
         });
 
-        this.initContainers(
-            props.containers
-        );
-    }
-
-
-    get namespace() {
-        return A_Context.scope(this).name;
-    }
-
-    get Scope() {
-        return A_Context.scope(this);
-    }
-
-
-    private initContainers(containers: _Imports = [] as any) {
-
-        this.containers = containers.map(container => {
+        this.containers = (props.containers || []).map(container => {
             container.Scope.parent(this.Scope);
 
             return container;
         });
+
+        this.meta = new A_ConceptMeta(this.containers, this.sharedBase);
     }
+
+
+    get namespace() {
+        return this.sharedBase.name;
+    }
+
+    get Scope() {
+        return this.sharedBase.Scope;
+    }
+
 
 
     // =======================================================================
@@ -151,9 +138,7 @@ export class A_Concept<
     async load(
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Load, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Load, params);
 
         await abstraction.process();
     }
@@ -168,9 +153,7 @@ export class A_Concept<
     ) {
         await this.load(params);
 
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Run, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Run, params);
 
         await abstraction.process();
     }
@@ -186,9 +169,7 @@ export class A_Concept<
     ) {
         await this.load(params);
 
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Start, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Start, params);
 
         await abstraction.process();
     }
@@ -202,9 +183,7 @@ export class A_Concept<
     async stop(
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Stop, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Stop, params);
 
         await abstraction.process();
     }
@@ -216,9 +195,7 @@ export class A_Concept<
     async build(
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Build, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Build, params);
 
         await abstraction.process();
     }
@@ -230,9 +207,7 @@ export class A_Concept<
     async deploy(
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Deploy, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Deploy, params);
 
         await abstraction.process();
 
@@ -245,9 +220,7 @@ export class A_Concept<
     async publish(
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Publish, params);
-
-        const abstraction = new A_Feature(definition);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Publish, params);
 
         await abstraction.process();
     }
@@ -262,91 +235,19 @@ export class A_Concept<
      * Call the specific method of the concept or included modules.
      */
     async call<
-        K extends Record<_Imports[number]['name'], _Imports[number]['exports'][number]>
+        K extends Record<_Imports[number]['name'], string>
     >(
         container: K[keyof K],
         params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
-        const definition = this.abstractionDefinition(A_TYPES__ConceptStage.Run, {
-            components: params?.components,
-            fragments: params?.fragments,
-        });
+        // const definition = this.meta.abstractionDefinition(A_TYPES__ConceptStage.Run, {
+        //     components: params?.components,
+        //     fragments: params?.fragments,
+        // });
 
-        const feature = new A_Feature(definition);
+        // const feature = new A_Feature(definition);
 
-        await feature.process();
-    }
-
-
-    abstractionDefinition(
-        method: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
-
-
-        // console.log('abstractionDefinition', method, params, this.containers);
-
-        const abstractionSteps: A_TYPES__AbstractionDefinition = [];
-
-        this.containers.map(container => {
-            const meta = A_Context.meta(container);
-
-            const containerAbstractions: Array<A_TYPES__A_StageStep> = meta
-                .abstractions(method)
-                .map(step => ({
-                    component: container,
-                    ...step
-                }));
-
-            const containerScope = A_Context.scope(container);
-
-            const componentsAbstractions = containerScope
-                .components
-                .map(component => A_Context.meta(component).abstractions(method).map(step => ({
-                    component,
-                    ...step
-                })))
-                .flat();
-
-            abstractionSteps.push(
-                ...containerAbstractions.map(step => ({
-                    ...step,
-                    component: container,
-                })),
-
-                ...componentsAbstractions
-            );
-        });
-
-
-        const definition = {
-            ...params,
-            name: `${this.namespace}.${method}`,
-            steps: abstractionSteps,
-            parent: this.Scope,
-            components: params?.components || [],
-            fragments: params?.fragments || [],
-        };
-
-        return definition;
-    }
-
-
-
-
-    private async execute(
-        params: Partial<A_TYPES__ConceptAbstractionCallParams>
-    ) {
-        const fragments = params.fragments || [];
-        const component = params.components || [];
-
-
-        this.containers.map(container => {
-            const meta = A_Context.meta(container);
-
-            meta.get(A_TYPES__ContainerMetaKey.FEATURES)
-
-        });
+        // await feature.process();
     }
 
 }

@@ -33,15 +33,15 @@ class A_Scope {
             components: [],
             fragments: [],
             entities: [],
-            import: [],
-            export: [],
+            // import: [],
+            // export: [],
         };
         this.params = Object.assign(Object.assign({}, defaultParams), params);
         this.initComponents(params.components || []);
         this.initFragments(params.fragments || []);
         this.initEntities(params.entities || []);
         if (config.parent) {
-            this.parent = config.parent;
+            this._parent = config.parent;
         }
     }
     initComponents(_components) {
@@ -61,12 +61,19 @@ class A_Scope {
     get fragments() {
         return this.params.fragments || [];
     }
+    parent(setValue) {
+        if (setValue) {
+            this._parent = setValue;
+            return;
+        }
+        return this._parent;
+    }
     has(entity) {
         switch (true) {
             case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component): {
                 const found = this.params.components.includes(entity);
-                if (!found && !!this.parent)
-                    return this.parent.has(entity);
+                if (!found && !!this._parent)
+                    return this._parent.has(entity);
                 return found;
             }
             case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Entity_class_1.A_Entity): {
@@ -76,8 +83,8 @@ class A_Scope {
             }
             case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Fragment_class_1.A_Fragment): {
                 const found = this._fragments.has(entity);
-                if (!found && !!this.parent)
-                    return this.parent.has(entity);
+                if (!found && !!this._parent)
+                    return this._parent.has(entity);
                 return found;
             }
             default: {
@@ -128,8 +135,8 @@ class A_Scope {
                 switch (true) {
                     case !!found:
                         return found;
-                    case !found && !!this.parent:
-                        return this.parent.resolveEntity(entity, instructions);
+                    case !found && !!this._parent:
+                        return this._parent.resolveEntity(entity, instructions);
                     default:
                         throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
                 }
@@ -165,8 +172,8 @@ class A_Scope {
                 return this._fragments.get(fragment);
             case fragmentInstancePresented && !this._fragments.has(fragment):
                 return this.fragments.find(fr => fr instanceof fragment);
-            case !fragmentInstancePresented && !!this.parent:
-                return this.parent.resolveFragment(fragment);
+            case !fragmentInstancePresented && !!this._parent:
+                return this._parent.resolveFragment(fragment);
             default:
                 throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
         }
@@ -175,8 +182,8 @@ class A_Scope {
         return this;
     }
     resolveComponent(component) {
-        //  The idea here that in case when Scope has no exact component we have to resolve it from the parent
-        //  BUT: if it's not presented in parent  we have to check for inheritance
+        //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
+        //  BUT: if it's not presented in _parent  we have to check for inheritance
         //  That means that we should ensure that there's no components that are children of the required component
         switch (true) {
             // In case when the component is available and exists in the scope
@@ -204,9 +211,9 @@ class A_Scope {
                 const found = this.components.find(el => a_utils_1.A_CommonHelper.isInheritedFrom(el, component));
                 return this.resolveComponent(found);
             }
-            // In case when the component is not available in the scope but the parent is available
-            case !this.components.includes(component) && !!this.parent: {
-                return this.parent.resolveComponent(component);
+            // In case when the component is not available in the scope but the _parent is available
+            case !this.components.includes(component) && !!this._parent: {
+                return this._parent.resolveComponent(component);
             }
             default:
                 throw new Error(`Component ${component.name} not found in the scope ${this.name}`);

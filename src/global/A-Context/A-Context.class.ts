@@ -1,4 +1,8 @@
-import { A_CommonHelper, A_Polyfills, A_TYPES__Required, ASEID } from "@adaas/a-utils";
+import {
+    A_CommonHelper,
+    A_Polyfills,
+    A_TYPES__Required,
+} from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
@@ -8,15 +12,15 @@ import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Sc
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_ComponentMeta } from "../A-Component/A-Component.meta";
 import { A_ContainerMeta } from "../A-Container/A-Container.meta";
-import { A_Concept } from "../A-Concept/A_Concept.class";
 import { A_TYPES__EntityBaseMethod, A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
-import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_FeatureDecoratorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
+import { A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
+
 
 
 /**
@@ -33,25 +37,19 @@ export class A_Context {
     /**
      * A set of globally registered containers.
      */
-    protected containers: WeakMap<A_Container<any>, A_Scope> = new WeakMap();
+    protected containers: WeakMap<A_Container, A_Scope> = new WeakMap();
 
     /**
      * A set of globally registered features.
      */
     protected features: WeakMap<A_Feature, A_Scope> = new WeakMap();
 
-    /**
-     * A set of globally registered concepts.
-     */
-    protected concepts: Map<A_Concept<any>, A_Scope> = new Map();
-
 
     /**
      * Uses to store the scope of every element in the program. 
      */
     protected registry: WeakMap<
-        A_Concept<any> |
-        A_Container<any> |
+        A_Container |
         A_Feature |
         A_Component |
         A_Fragment |
@@ -65,7 +63,6 @@ export class A_Context {
     /**
      * A set of allocated scopes per every element in the program.
      */
-    protected conceptsMeta: Map<typeof A_Concept.constructor, A_Meta<any>> = new Map();
     protected containersMeta: Map<typeof A_Container.constructor, A_ContainerMeta> = new Map();
     protected componentsMeta: Map<typeof A_Component, A_ComponentMeta> = new Map();
     protected entitiesMeta: Map<typeof A_Entity.constructor, A_EntityMeta> = new Map();
@@ -81,7 +78,6 @@ export class A_Context {
 
 
     private constructor() {
-
         this._root = new A_Scope({
             name: 'root'
         });
@@ -117,12 +113,6 @@ export class A_Context {
     }
 
 
-    static concepts(): Array<A_Concept> {
-        return Array.from(this.getInstance().concepts.keys());
-    }
-
-
-
 
     static allocate(
         component: any,
@@ -133,11 +123,11 @@ export class A_Context {
         importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
     ): A_Scope
     static allocate(
-        container: A_Container<any>,
+        container: A_Container,
         importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
     ): A_Scope
     static allocate(
-        param1: A_Container<any> | A_Feature | A_Component | any,
+        param1: A_Container | A_Feature | A_Component | any,
         param2: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
     ): A_Scope {
 
@@ -156,11 +146,6 @@ export class A_Context {
 
                 break;
 
-            case param1 instanceof A_Concept:
-                instance.concepts.set(param1, newScope);
-
-                break;
-
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
         }
@@ -173,10 +158,10 @@ export class A_Context {
 
 
     static meta(
-        container: typeof A_Container<any>,
+        container: typeof A_Container,
     ): A_ContainerMeta
     static meta(
-        container: A_Container<any>,
+        container: A_Container,
     ): A_ContainerMeta
     static meta(
         entity: A_Entity,
@@ -185,16 +170,16 @@ export class A_Context {
         entity: typeof A_Entity,
     ): A_ContainerMeta
     static meta(
-        component: typeof A_Component<any>,
+        component: typeof A_Component,
     ): A_ComponentMeta
     static meta(
         component: A_Component,
     ): A_ComponentMeta
     static meta<T extends Record<string, any>>(
-        param1: typeof A_Component<any> | typeof A_Container<any> | A_Container<any>
-            | A_Component<any>
-            | A_Entity<any>
-            | typeof A_Entity<any>
+        param1: typeof A_Component | typeof A_Container | A_Container
+            | A_Component
+            | A_Entity
+            | typeof A_Entity
             | { new(...args: any[]): any }
     ): A_ContainerMeta | A_ComponentMeta | A_Meta<T> {
 
@@ -218,7 +203,7 @@ export class A_Context {
 
             case A_CommonHelper.isInheritedFrom(param1, A_Container): {
                 metaStorage = instance.containersMeta;
-                property = param1 as typeof A_Container<any>;
+                property = param1 as typeof A_Container;
                 metaType = A_ContainerMeta;
 
                 break;
@@ -265,10 +250,12 @@ export class A_Context {
             }
         }
 
+
         if (!metaStorage.has(property)) {
             const inheritMeta = metaStorage.get(Object.getPrototypeOf(property)) || new metaType();
             metaStorage.set(property, new metaType().from(inheritMeta as any));
         }
+
 
         return metaStorage.get(property)!;
     }
@@ -282,10 +269,7 @@ export class A_Context {
         component: A_Component
     ): A_Scope
     static scope(
-        concept: A_Concept
-    ): A_Scope
-    static scope(
-        container: A_Container<any>
+        container: A_Container
     ): A_Scope
     static scope(
         feature: A_Fragment
@@ -294,7 +278,7 @@ export class A_Context {
         feature: A_Feature
     ): A_Scope
     static scope(
-        param1: A_Feature | A_Container<any> | A_Concept | A_Component<any> | A_Entity | A_Fragment
+        param1: A_Feature | A_Container | A_Component | A_Entity | A_Fragment
     ): A_Scope | undefined {
 
         const instance = this.getInstance();
@@ -305,9 +289,6 @@ export class A_Context {
 
             case param1 instanceof A_Feature:
                 return instance.features.get(param1);
-
-            case param1 instanceof A_Concept:
-                return instance.concepts.get(param1);
 
             case param1 instanceof A_Entity:
                 return instance.registry.get(param1);
@@ -356,16 +337,16 @@ export class A_Context {
      * @param scope 
      * @returns 
      */
-    static featureDefinition<T extends Array<string>>(
+    static featureDefinition(
         scope: A_Scope,
-        entity: A_Entity<any, any, T>,
-        feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
+        entity: A_Entity,
+        feature: A_TYPES__EntityBaseMethod | string | RegExp,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static featureDefinition<T extends Array<string>>(
+    static featureDefinition(
         scope: A_Scope,
-        container: A_Container<T>,
-        feature: T[number],
+        container: A_Container,
+        feature: string,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
     static featureDefinition(
@@ -374,10 +355,10 @@ export class A_Context {
         feature: string,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static featureDefinition<T extends Array<string>>(
+    static featureDefinition(
         scope: A_Scope,
-        param1: A_Component<T> | A_Container<T> | A_Entity<any, any, T>,
-        param2: string | T[number],
+        param1: A_Component | A_Container | A_Entity,
+        param2: string,
         param3?: Partial<A_TYPES__ScopeConstructor>
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
         const instance = this.getInstance();
@@ -425,14 +406,16 @@ export class A_Context {
             case component instanceof A_Container:
                 metaKey = A_TYPES__ContainerMetaKey.FEATURES
                 break;
-            case component instanceof A_Component:
+            case component instanceof A_Component: {
                 metaKey = A_TYPES__ComponentMetaKey.FEATURES
+            }
                 break;
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
 
-        const featureDefinition: A_TYPES__A_DefineDecorator_Meta = this.meta(component)
+
+        const featureDefinition = this.meta(component)
             .get(metaKey)
             .get(param2);
 
@@ -481,7 +464,95 @@ export class A_Context {
         };
     }
 
+    /**
+     * This method returns a constructor params to create a new feature
+     * 
+     * @param scope 
+     * @returns 
+     */
+    static abstractionDefinition(
+        scope: A_Scope,
+        entity: A_Entity,
+        feature: A_TYPES__ConceptStage,
+        params?: Partial<A_TYPES__ScopeConstructor>
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+    static abstractionDefinition(
+        scope: A_Scope,
+        container: A_Container,
+        feature: A_TYPES__ConceptStage,
+        params?: Partial<A_TYPES__ScopeConstructor>
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+    static abstractionDefinition(
+        scope: A_Scope,
+        component: A_Component,
+        feature: A_TYPES__ConceptStage,
+        params?: Partial<A_TYPES__ScopeConstructor>
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
+    static abstractionDefinition(
+        scope: A_Scope,
+        param1: A_Component | A_Container | A_Entity,
+        param2: A_TYPES__ConceptStage,
+        param3?: Partial<A_TYPES__ScopeConstructor>
+    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
+        const instance = this.getInstance();
 
+        const component = param1;
+        const config = param3 || {};
+     
+        let metaKey;
+
+        switch (true) {
+            case component instanceof A_Entity:
+                metaKey = A_TYPES__EntityMetaKey.FEATURES;
+                break;
+            case component instanceof A_Container:
+                metaKey = A_TYPES__ContainerMetaKey.ABSTRACTIONS
+                break;
+            case component instanceof A_Component: {
+                metaKey = A_TYPES__ComponentMetaKey.ABSTRACTIONS
+            }
+                break;
+            default:
+                throw new Error(`A-Feature cannot be defined on the ${component} level`);
+        }
+
+        const featureDefinition = this.meta(component)
+            .get(metaKey)
+            .get(param2) || []
+
+
+        const steps: A_TYPES__A_StageStep[] = [
+            ...featureDefinition
+        ];
+
+        const feature = `${component.constructor.name}.${param2}`;
+
+        // We need to get all components that has extensions for the feature in component
+        instance.componentsMeta
+            .forEach((meta, constructor) => {
+                // Just try to make sure that component not only Indexed but also presented in scope
+                if (scope.has(constructor))
+                    // Get all extensions for the feature
+                    meta
+                        .abstractions(feature)
+                        .forEach((declaration) => {
+                            steps.push({
+                                component: constructor,
+                                ...declaration
+                            });
+                        });
+            });
+
+
+        return {
+            name: feature,
+            fragments: config.fragments || [],
+            components: config.components || [],
+            entities: config.entities || [],
+            steps,
+            parent: scope
+        };
+    }
 
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
@@ -491,13 +562,13 @@ export class A_Context {
      */
     static feature<T extends Array<string>>(
         scope: A_Scope,
-        entity: A_Entity<any, any, T>,
+        entity: A_Entity<any, any>,
         feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature
     static feature<T extends Array<string>>(
         scope: A_Scope,
-        container: A_Container<T>,
+        container: A_Container,
         feature: T[number],
         params?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature
@@ -509,7 +580,7 @@ export class A_Context {
     ): A_Feature
     static feature<T extends Array<string>>(
         scope: A_Scope,
-        param1: A_Component<T> | A_Container<T> | A_Entity<any, any, T>,
+        param1: A_Component | A_Container | A_Entity<any, any>,
         param2: string | T[number],
         param3?: Partial<A_TYPES__ScopeConstructor>
     ): A_Feature {
@@ -529,7 +600,7 @@ export class A_Context {
      */
     static register(
         scope: A_Scope,
-        container: A_Container<any>
+        container: A_Container
     )
     static register(
         scope: A_Scope,
@@ -545,7 +616,7 @@ export class A_Context {
     )
     static register(
         scope: A_Scope,
-        param1: A_Fragment | A_Container<any> | A_Entity | A_Component
+        param1: A_Fragment | A_Container | A_Entity | A_Component
     ) {
         const instance = this.getInstance();
 

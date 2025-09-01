@@ -1,0 +1,57 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "outDir": "dist",
+    "strict": true,
+    "noImplicitAny": false,
+    "noFallthroughCasesInSwitch": true,
+    "downlevelIteration": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": true,
+    "strictPropertyInitialization": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "noErrorTruncation": true,
+    "jsx": "react",
+    "target": "es2015",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "removeComments": false,
+    "preserveConstEnums": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "typeRoots": [
+      "node_modules/@types"
+    ],
+    "paths": {
+      "@adaas/a-concept/constants/*": ["src/constants/*"],
+      "@adaas/a-concept/global/*": ["src/global/*"],
+      "@adaas/a-concept/types/*": ["src/types/*"],
+      "@adaas/a-concept/helpers/*": ["src/helpers/*"],
+      "@adaas/a-concept/decorators/*": ["src/decorators/*"],
+      "@adaas/a-concept/base/*": ["src/base/*"]
+    },
+    "lib": [
+      "dom",
+      "esnext.asynciterable",
+      "es2015",
+      "es2016",
+      "es2017.object"
+    ]
+  },
+  "include": [
+    "src/**/*",
+    "index.ts"  
+  ],
+  "exclude": [
+    "node_modules/**/*",
+    "dist/**/*",
+    "node_modules/@types/mocha/index.d.ts"
+  ]
+}

@@ -1,5 +1,5 @@
-import { A_Component } from "../../global/A-Component/A-Component.class";
 import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecoratorReturn } from "./A-Inject.decorator.types";
+import { A_Component } from "../../global/A-Component/A-Component.class";
 import { A_Fragment } from "../../global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "../../global/A-Scope/A-Scope.class";
 import { A_Feature } from "../../global/A-Feature/A-Feature.class";

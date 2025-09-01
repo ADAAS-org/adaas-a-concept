@@ -10,11 +10,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Feature = void 0;
+const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Feature_Define_decorator_1 = require("../../decorators/A-Feature/A-Feature-Define.decorator");
 const A_Feature_Extend_decorator_1 = require("../../decorators/A-Feature/A-Feature-Extend.decorator");
 const A_Feature_types_1 = require("./A-Feature.types");
 const a_utils_1 = require("@adaas/a-utils");
-const A_Context_class_1 = require("../A-Context/A-Context.class");
 const StepsManager_class_1 = require("../../helpers/StepsManager.class");
 /**
  * A_Feature is representing a feature that can be executed across multiple components
@@ -42,6 +42,7 @@ class A_Feature {
         this.stages = [];
         this._index = 0;
         this.state = A_Feature_types_1.A_TYPES__FeatureState.INITIALIZED;
+        this.name = params.name || this.constructor.name;
         this.SM = new StepsManager_class_1.StepsManager(params.steps);
         this.stages = this.SM.toStages(this);
         this._current = this.stages[0];
@@ -138,9 +139,18 @@ class A_Feature {
      */
     process() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
-            for (const stage of this) {
-                yield stage.process();
+            if (this.isDone()) {
+                return this.result;
+            }
+            try {
+                this.state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
+                for (const stage of this.stages) {
+                    yield stage.process();
+                }
+                yield this.completed();
+            }
+            catch (error) {
+                yield this.failed(error);
             }
         });
     }

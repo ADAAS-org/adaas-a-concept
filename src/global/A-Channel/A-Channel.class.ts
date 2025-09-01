@@ -38,8 +38,6 @@ export class A_Channel<
     async call<_Resp extends any>(prop: A_TYPES__A_ChannelAggregateMethods<T>, params?: Partial<A_TYPES__A_ChannelCallParams>): Promise<_Resp> {
         // do HTTP Call or just inject class or whatever you want
 
-        console.log('Calling method', prop);
-
         return {} as _Resp;
     }
 }

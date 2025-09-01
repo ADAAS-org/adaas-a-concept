@@ -31,7 +31,7 @@ export function A_Connect(
     config?: any | string
 ) {
     return function (
-        target: A_Container<any> | A_Component,
+        target: A_Container | A_Component,
         methodName: string | symbol | undefined,
         parameterIndex: number
     ) {

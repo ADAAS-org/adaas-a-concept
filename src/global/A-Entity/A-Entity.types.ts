@@ -5,6 +5,15 @@ import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_ExtendDecorator_Meta } from
 import { A_Entity } from "./A-Entity.class";
 import { A_TYPES__ContainerMeta_FeatureItem } from "../A-Container/A-Container.types";
 
+
+export type A_TYPES__EntityCallParams<T extends string> = {
+    name: T,
+    fragments: Array<A_Fragment>,
+    entities: Array<A_Entity<any, any>>,
+    components: Array<{ new(...args: any[]): any }>
+}
+
+
 export type A_TYPES__EntityBaseMethods = [
     A_TYPES__EntityBaseMethod.SAVE,
     A_TYPES__EntityBaseMethod.DESTROY,
@@ -64,6 +73,7 @@ export type A_TYPES__EntityMeta = {
 export enum A_TYPES__EntityMetaKey {
     EXTENSIONS = 'a-component-extensions',
     FEATURES = 'a-component-features',
+    ABSTRACTIONS = 'a-component-abstractions',
 }
 
 

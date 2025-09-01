@@ -1,4 +1,4 @@
-import { A_TYPES__ContainerCallParams, A_TYPES__ContainerConstructor } from "./A-Container.types";
+import { A_TYPES__ContainerConstructor } from "./A-Container.types";
 import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
@@ -17,21 +17,15 @@ import { A_TYPES__FeatureCallParams, A_TYPES__FeatureConstructor } from "../A-Fe
  * - Microservice
  * - etc.
  */
-export class A_Container<
-    _FeatureNames extends Array<string> = any
-> {
+export class A_Container {
     // scope!: A_Scope
 
-    protected readonly config!: Partial<A_TYPES__ContainerConstructor<_FeatureNames>>;
+    protected readonly config!: Partial<A_TYPES__ContainerConstructor<any>>;
 
     /**
      * Promise that will be resolved when the container is ready to be used.
      */
     ready!: Promise<void>;
-
-    get exports(): _FeatureNames {
-        return this.config.exports || [] as any;
-    }
 
     get name() {
         return this.config.name || this.constructor.name;
@@ -46,7 +40,7 @@ export class A_Container<
         /**
          * Configuration of the container that will be used to run it.
          */
-        config: Partial<A_TYPES__ContainerConstructor<_FeatureNames>>
+        config: Partial<A_TYPES__ContainerConstructor<any>>
     ) {
         this.config = config;
 
@@ -59,65 +53,14 @@ export class A_Container<
     }
 
 
-
-    /**
-     * This method allows to call the lifecycle method of the container as well as any other Feature defined for it
-     * 
-     * @param lifecycleMethod 
-     * @param args 
-     */
     async call(
-        /**
-         * A-Feature method name to be called
-         */
-        feature: _FeatureNames[number],
-    ): Promise<any>
-    async call(
-        /**
-         * A-Feature name to be called
-         */
-        params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
-    ): Promise<any>
-
-    async call(
-        /**
-        * A-Feature method name to be called
-        */
-        feature: _FeatureNames[number],
-        /**
-         * Parameters to provide additional data to the feature
-         */
-        params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>,
-    ): Promise<any>
-
-    async call(
-        param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
-        param2?: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>
-    ): Promise<any> {
-
-        const feature: string = typeof param1 === 'string'
-            ? param1
-            : param1.name;
-        const params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
-            ? param2 || {}
-            : param1;
-
-        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
-
-        return await newFeature.process();
-    }
-
-
-
-    private async __exec__(
-        feature: _FeatureNames[number],
-        params: Partial<A_TYPES__FeatureCallParams<_FeatureNames[number]>> = {}
+        feature: string,
+        params: Partial<A_TYPES__FeatureCallParams> = {}
     ) {
-        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
+        const newFeature = A_Context.feature(this.Scope, this, feature, params);
 
         return await newFeature.process();
     }
-
 
 
     /**
@@ -126,44 +69,12 @@ export class A_Container<
      * @param feature 
      */
     feature(
-        /**
-         * A-Feature method name to be called
-         */
-        feature: _FeatureNames[number],
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    feature(
-        /**
-         * A-Feature name to be called
-         */
-        params: A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-
-    feature(
-        /**
-        * A-Feature method name to be called
-        */
-        feature: _FeatureNames[number],
-        /**
-         * Parameters to provide additional data to the feature
-         */
-        params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>,
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-
-    feature(
-        param1: _FeatureNames[number] | A_TYPES__Required<Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>, ['name']>,
-        param2?: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>>
+        feature: string,
+        params: Partial<A_TYPES__FeatureCallParams> = {}
     ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
-
-        const feature: string = typeof param1 === 'string'
-            ? param1
-            : param1.name;
-        const params: Partial<A_TYPES__ContainerCallParams<_FeatureNames[number]>> = typeof param1 === 'string'
-            ? param2 || {}
-            : param1;
 
         return A_Context.featureDefinition(this.Scope, this, feature, params);
     }
-
 
 
     // ==============================================================

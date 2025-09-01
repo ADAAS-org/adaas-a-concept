@@ -16,7 +16,7 @@ export declare enum A_TYPES__ConceptStage {
 export declare enum A_TYPES__ConceptMetaKey {
     LIFECYCLE = "a-component-extensions"
 }
-export interface A_TYPES__IConceptConstructor<T extends Array<A_Container<any>>> {
+export interface A_TYPES__IConceptConstructor<T extends Array<A_Container>> {
     name: string;
     /**
      * A set of Context Fragments to register globally for the concept.
@@ -79,6 +79,6 @@ export type A_TYPES__ConceptCallParams<T extends string> = {
         new (...args: any[]): A_Component;
     }>;
     entities: Array<{
-        new (...args: any[]): A_Entity<any, any, any>;
+        new (...args: any[]): A_Entity;
     }>;
 };

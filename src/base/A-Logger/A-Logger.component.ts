@@ -5,7 +5,6 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 
 
-
 export class A_Logger extends A_Component {
 
     constructor(

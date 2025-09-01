@@ -1,7 +1,6 @@
-import { A_TYPES__ConceptStage, A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
+import { A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
-import { A_TYPES__Required } from "@adaas/a-utils";
+import { A_Abstraction_Extend } from "../../decorators/A-Abstraction/A-Abstraction-Extend.decorator";
 /**
  * A_Concept is a placeholder for the concept of the ani program.
  *
@@ -14,43 +13,45 @@ import { A_TYPES__Required } from "@adaas/a-utils";
  *
  *
  */
-export declare class A_Concept<_Features extends A_Container<any>[] = any> {
-    protected props: A_TYPES__IConceptConstructor<_Features>;
+export declare class A_Concept<_Imports extends A_Container[] = any> {
+    protected props: A_TYPES__IConceptConstructor<_Imports>;
     /**
      * Load the concept. This step runs before any other steps to ensure that all components are loaded.
      */
-    static Load(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Load(): ReturnType<typeof A_Abstraction_Extend>;
     /**
      * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
      *
      * [!] To extend the logic just create a custom containers and override the default behavior.
      */
-    static Publish(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Publish(): ReturnType<typeof A_Abstraction_Extend>;
     /**
      * Deploy the concept to the environment.
      */
-    static Deploy(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Deploy(): (target: A_Container | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Compiles the Concept in case there are some containers that require that.
      *
      * Can be used for static websites or any other concept that requires a build step.
      *
      */
-    static Build(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Build(): (target: A_Container | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      *  Main execution of the concept.
      */
-    static Run(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Run(): (target: A_Container | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      *  Start the concept. Uses for servers or any other background services.
      */
-    static Start(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    static Start(): (target: A_Container | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
     /**
      * Stop the concept. Uses for servers or any other background services.
      */
-    static Stop(): (target: A_Container<any> | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
-    protected containers: A_Container<any>[];
-    constructor(props: A_TYPES__IConceptConstructor<_Features>);
+    static Stop(): (target: A_Container | import("../A-Component/A-Component.class").A_Component, propertyKey: string, descriptor: import("../../..").A_TYPES__A_AbstractionDecoratorDescriptor) => void;
+    private sharedBase;
+    private meta;
+    protected containers: A_Container[];
+    constructor(props: A_TYPES__IConceptConstructor<_Imports>);
     get namespace(): string;
     get Scope(): import("../A-Scope/A-Scope.class").A_Scope;
     /**
@@ -88,7 +89,5 @@ export declare class A_Concept<_Features extends A_Container<any>[] = any> {
     /**
      * Call the specific method of the concept or included modules.
      */
-    call<K extends Record<_Features[number]['name'], _Features[number]['exports'][number]>>(container: K[keyof K], params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
-    abstractionDefinition(method: A_TYPES__ConceptStage, params?: Partial<A_TYPES__ConceptAbstractionCallParams>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    private execute;
+    call<K extends Record<_Imports[number]['name'], string>>(container: K[keyof K], params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
 }

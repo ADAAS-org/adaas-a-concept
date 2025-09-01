@@ -18,7 +18,6 @@ export class StepsManager {
         this.tempMark = new Set();
         this.sortedEntities = [];
 
-        console.log('StepsManager', entities);
     }
 
     private ID(step: A_TYPES__A_StageStep) {
@@ -88,9 +87,6 @@ export class StepsManager {
         // Map sorted names back to entity objects
         this.sortedEntities
             .map(id => {
-
-                console.log('id', id);
-
                 const step = this.entities.find(entity => this.ID(entity) === id)!;
 
                 let stage = stages.find(stage => {

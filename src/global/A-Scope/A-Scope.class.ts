@@ -7,7 +7,11 @@ import {
 } from "../A-Component/A-Component.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
-import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecorator_EntityInjectionQuery, A_TYPES__A_InjectDecorator_Injectable } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
+import {
+    A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
+    A_TYPES__A_InjectDecorator_Injectable
+} from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
+
 
 /**
  * 
@@ -24,7 +28,7 @@ import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_Inje
  */
 export class A_Scope {
 
-    name: string = '';
+    readonly name: string = '';
 
     private _components: WeakMap<typeof A_Component.constructor, any> = new WeakMap();
     private _fragments: WeakMap<typeof A_Fragment.constructor, any> = new WeakMap();
@@ -213,6 +217,8 @@ export class A_Scope {
         component: T,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): InstanceType<T> {
+
+
         switch (true) {
             case A_CommonHelper.isInheritedFrom(component, A_Entity): {
                 return this.resolveEntity(component as typeof A_Entity, instructions) as InstanceType<T>;
@@ -326,8 +332,6 @@ export class A_Scope {
         //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
         //  BUT: if it's not presented in _parent  we have to check for inheritance
         //  That means that we should ensure that there's no components that are children of the required component
-
-
         switch (true) {
             // In case when the component is available and exists in the scope
             case this.components.includes(component) && this._components.has(component): {

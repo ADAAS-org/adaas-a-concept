@@ -6,7 +6,7 @@ import { A_Entity } from "./A-Entity.class";
 export type A_TYPES__EntityCallParams<T extends string> = {
     name: T;
     fragments: Array<A_Fragment>;
-    entities: Array<A_Entity<any, any, any>>;
+    entities: Array<A_Entity<any, any>>;
     components: Array<{
         new (...args: any[]): any;
     }>;
@@ -56,5 +56,6 @@ export type A_TYPES__EntityMeta = {
 };
 export declare enum A_TYPES__EntityMetaKey {
     EXTENSIONS = "a-component-extensions",
-    FEATURES = "a-component-features"
+    FEATURES = "a-component-features",
+    ABSTRACTIONS = "a-component-abstractions"
 }

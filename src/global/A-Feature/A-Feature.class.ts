@@ -1,14 +1,11 @@
+import { A_Context } from "../A-Context/A-Context.class";
 import { A_Feature_Define } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Define.decorator";
 import { A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Extend.decorator";
 import { A_TYPES__FeatureConstructor, A_TYPES__FeatureState, } from "./A-Feature.types";
 import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
-import { A_Context } from "../A-Context/A-Context.class";
 import { A_TYPES__A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_Stage } from "../A-Stage/A-Stage.class";
-import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
 import { StepsManager } from "@adaas/a-concept/helpers/StepsManager.class";
-
-
 
 /**
  * A_Feature is representing a feature that can be executed across multiple components
@@ -48,10 +45,12 @@ export class A_Feature {
     result?: any
     error?: A_Error
 
+    readonly name: string;
 
     constructor(
         params: A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps']>
     ) {
+        this.name = params.name || this.constructor.name;
 
         this.SM = new StepsManager(params.steps);
 
@@ -175,12 +174,23 @@ export class A_Feature {
      * 
      */
     async process() {
-        this.state = A_TYPES__FeatureState.PROCESSING;
-        
-
-        for (const stage of this) {
-            await stage.process();
+        if (this.isDone()) {
+            return this.result;
         }
+
+        try {
+            this.state = A_TYPES__FeatureState.PROCESSING;
+
+            for (const stage of this.stages) {
+                await stage.process();
+            }
+
+            await this.completed();
+
+        } catch (error) {
+            await this.failed(error);
+        }
+      
     }
 
 

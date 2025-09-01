@@ -42,6 +42,15 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
         return steps;
     }
     /**
+     * Returns all features defined in the Component
+     *
+     * @returns
+     */
+    features() {
+        const features = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES);
+        return (features === null || features === void 0 ? void 0 : features.toArray().map(([, feature]) => feature)) || [];
+    }
+    /**
      * Returns a set of instructions to run proper methods in Component during A-Concept Stage
      *
      * @param stage
@@ -54,7 +63,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
         // const constructor = A_Context.component(this);
         abstractions === null || abstractions === void 0 ? void 0 : abstractions
         // returns all extensions that match the feature
-        .find(`CONCEPT_ABSTRACTION::${abstraction}`).forEach(([handler, extensions]) => {
+        .find(abstraction).forEach(([handler, extensions]) => {
             extensions.forEach(extension => {
                 const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
                 steps.push(Object.assign(Object.assign({}, extension), { 

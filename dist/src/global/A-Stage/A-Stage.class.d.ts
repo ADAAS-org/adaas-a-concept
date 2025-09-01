@@ -26,7 +26,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(step: A_TYPES__A_StageStep): Promise<Promise<import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component<any> | import("../A-Scope/A-Scope.class").A_Scope | A_Container<any> | import("../A-Entity/A-Entity.class").A_Entity<any, any, any> | A_Feature | this>[]>;
+    protected getStepArgs(step: A_TYPES__A_StageStep): Promise<(import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component | A_Container | import("../A-Entity/A-Entity.class").A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | import("../A-Scope/A-Scope.class").A_Scope | A_Feature)[]>;
     /**
      * Adds a step to the stage
      *
@@ -40,14 +40,14 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepInstance(step: A_TYPES__A_StageStep): import("../A-Component/A-Component.class").A_Component<any> | A_Container<any>;
+    protected getStepInstance(step: A_TYPES__A_StageStep): import("../A-Component/A-Component.class").A_Component | A_Container;
     /**
      * Calls the handler of the step
      *
      * @param step
      * @returns
      */
-    protected getStepHandler(step: A_TYPES__A_StageStep): Promise<any>;
+    protected callStepHandler(step: A_TYPES__A_StageStep): Promise<any>;
     /**
      * Runs async all the steps of the stage
      *

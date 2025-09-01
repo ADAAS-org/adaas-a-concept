@@ -10,7 +10,6 @@ const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
 const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
 const A_Component_meta_1 = require("../A-Component/A-Component.meta");
 const A_Container_meta_1 = require("../A-Container/A-Container.meta");
-const A_Concept_class_1 = require("../A-Concept/A_Concept.class");
 const A_Entity_types_1 = require("../A-Entity/A-Entity.types");
 const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
 const A_Entity_meta_1 = require("../A-Entity/A-Entity.meta");
@@ -34,22 +33,20 @@ class A_Context {
          */
         this.features = new WeakMap();
         /**
-         * A set of globally registered concepts.
-         */
-        this.concepts = new WeakMap();
-        /**
          * Uses to store the scope of every element in the program.
          */
         this.registry = new WeakMap();
         /**
          * A set of allocated scopes per every element in the program.
          */
-        this.conceptsMeta = new Map();
         this.containersMeta = new Map();
         this.componentsMeta = new Map();
         this.entitiesMeta = new Map();
         // uses to allow to store custom meta data
         this.customMeta = new Map();
+        this._root = new A_Scope_class_1.A_Scope({
+            name: 'root'
+        });
     }
     // ===================================================================================================
     // ================================ META OPERATIONS ==================================================
@@ -74,17 +71,12 @@ class A_Context {
     static allocate(param1, param2) {
         const instance = this.getInstance();
         const newScope = new A_Scope_class_1.A_Scope(param2, param2);
-        if (!instance._root)
-            instance._root = newScope;
         switch (true) {
             case param1 instanceof A_Container_class_1.A_Container:
                 instance.containers.set(param1, newScope);
                 break;
             case param1 instanceof A_Feature_class_1.A_Feature:
                 instance.features.set(param1, newScope);
-                break;
-            case param1 instanceof A_Concept_class_1.A_Concept:
-                instance.concepts.set(param1, newScope);
                 break;
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
@@ -153,8 +145,6 @@ class A_Context {
                 return instance.containers.get(param1);
             case param1 instanceof A_Feature_class_1.A_Feature:
                 return instance.features.get(param1);
-            case param1 instanceof A_Concept_class_1.A_Concept:
-                return instance.concepts.get(param1);
             case param1 instanceof A_Entity_class_1.A_Entity:
                 return instance.registry.get(param1);
             case param1 instanceof A_Component_class_1.A_Component:
@@ -228,12 +218,16 @@ class A_Context {
                 metaKey = A_Container_types_1.A_TYPES__ContainerMetaKey.FEATURES;
                 break;
             case component instanceof A_Component_class_1.A_Component:
-                metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
+                {
+                    metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
+                }
                 break;
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
-        const featureDefinition = this.meta(component).get(metaKey);
+        const featureDefinition = this.meta(component)
+            .get(metaKey)
+            .get(param2);
         if (!featureDefinition)
             throw new Error(`[!] A-Concept Context: Feature not found.`);
         const steps = [
@@ -255,6 +249,54 @@ class A_Context {
                 // Get all extensions for the feature
                 meta
                     .extensions(feature)
+                    .forEach((declaration) => {
+                    steps.push(Object.assign({ component: constructor }, declaration));
+                });
+        });
+        return {
+            name: feature,
+            fragments: config.fragments || [],
+            components: config.components || [],
+            entities: config.entities || [],
+            steps,
+            parent: scope
+        };
+    }
+    static abstractionDefinition(scope, param1, param2, param3) {
+        const instance = this.getInstance();
+        const component = param1;
+        const config = param3 || {};
+        let metaKey;
+        switch (true) {
+            case component instanceof A_Entity_class_1.A_Entity:
+                metaKey = A_Entity_types_1.A_TYPES__EntityMetaKey.FEATURES;
+                break;
+            case component instanceof A_Container_class_1.A_Container:
+                metaKey = A_Container_types_1.A_TYPES__ContainerMetaKey.ABSTRACTIONS;
+                break;
+            case component instanceof A_Component_class_1.A_Component:
+                {
+                    metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS;
+                }
+                break;
+            default:
+                throw new Error(`A-Feature cannot be defined on the ${component} level`);
+        }
+        const featureDefinition = this.meta(component)
+            .get(metaKey)
+            .get(param2) || [];
+        const steps = [
+            ...featureDefinition
+        ];
+        const feature = `${component.constructor.name}.${param2}`;
+        // We need to get all components that has extensions for the feature in component
+        instance.componentsMeta
+            .forEach((meta, constructor) => {
+            // Just try to make sure that component not only Indexed but also presented in scope
+            if (scope.has(constructor))
+                // Get all extensions for the feature
+                meta
+                    .abstractions(feature)
                     .forEach((declaration) => {
                     steps.push(Object.assign({ component: constructor }, declaration));
                 });

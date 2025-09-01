@@ -1,3 +1,4 @@
+import { A_Container } from "../A-Container/A-Container.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 export type A_TYPES__A_DependencyReferenceConstructor = {
@@ -48,7 +49,7 @@ export type A_TYPES__A_ExecutableMethods<T> = {
 /**
  * Returns a string set of possible methods that could be called on a set of provided set of A-Components
  */
-export type A_TYPES__A_ChannelAggregateMethods<TClasses extends A_Component[]> = {
+export type A_TYPES__A_ChannelAggregateMethods<TClasses extends (A_Component | A_Container)[]> = {
     [K in keyof TClasses]: TClasses[K] extends infer Instance ? A_TYPES__A_ExecutableMethods<Instance> : never;
 }[number];
 /**

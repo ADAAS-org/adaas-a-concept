@@ -31,7 +31,6 @@ class A_Channel {
     call(prop, params) {
         return __awaiter(this, void 0, void 0, function* () {
             // do HTTP Call or just inject class or whatever you want
-            console.log('Calling method', prop);
             return {};
         });
     }

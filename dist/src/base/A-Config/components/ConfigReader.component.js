@@ -22,8 +22,8 @@ exports.ConfigReader = void 0;
 const A_Scope_class_1 = require("../../../global/A-Scope/A-Scope.class");
 const A_Inject_decorator_1 = require("../../../decorators/A-Inject/A-Inject.decorator");
 const A_Component_class_1 = require("../../../global/A-Component/A-Component.class");
-const A_Concept_class_1 = require("../../../global/A-Concept/A_Concept.class");
 const A_Config_context_1 = require("../A-Config.context");
+const A_Concept_class_1 = require("../../../global/A-Concept/A_Concept.class");
 /**
  * Config Reader
  */

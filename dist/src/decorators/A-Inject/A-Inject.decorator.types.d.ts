@@ -23,13 +23,13 @@ export type A_TYPES__A_InjectDecorator_Injectable = {
 } | {
     new (...args: any[]): A_Component;
 } | {
-    new (...args: any[]): A_Container<any>;
+    new (...args: any[]): A_Container;
 } | {
     new (...args: any[]): A_Scope;
 } | {
     new (...args: any[]): A_Feature;
 } | {
-    new (...args: any[]): A_Entity<any, any, any>;
+    new (...args: any[]): A_Entity;
 };
 export type A_TYPES__A_InjectDecorator_EntityInjectionInstructions = {
     query: Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery>;
@@ -39,7 +39,7 @@ export type A_TYPES__A_InjectDecorator_EntityInjectionQuery = {
     aseid: string | ASEID;
     id: string;
     type: {
-        new (...args: any[]): A_Entity<any, any, any>;
+        new (...args: any[]): A_Entity;
     };
     entity: string;
 };

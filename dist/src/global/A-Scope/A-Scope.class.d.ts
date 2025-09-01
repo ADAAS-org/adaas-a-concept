@@ -17,11 +17,11 @@ import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_Inje
  *
  */
 export declare class A_Scope {
-    name: string;
+    readonly name: string;
     private _components;
     private _fragments;
     private _entities;
-    private parent?;
+    private _parent?;
     protected params: A_TYPES__ScopeConstructor;
     constructor(params: Partial<A_TYPES__ScopeConstructor>, config?: Partial<A_TYPES__ScopeConfig>);
     private initComponents;
@@ -29,6 +29,8 @@ export declare class A_Scope {
     private initFragments;
     get components(): (new (...args: any[]) => A_Component)[];
     get fragments(): A_Fragment[];
+    parent(setValue: A_Scope): void;
+    parent(): A_Scope;
     /**
      * This method is used to check if the component is available in the scope
      *
