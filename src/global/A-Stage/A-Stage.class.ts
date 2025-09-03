@@ -20,7 +20,7 @@ export class A_Stage {
 
     constructor(
         private feature: A_Feature,
-        private steps: A_TYPES__A_StageStep[] = []
+        private _steps: A_TYPES__A_StageStep[] = []
     ) {
 
     }
@@ -33,18 +33,31 @@ export class A_Stage {
 
 
     get before(): string[] {
-        return this.steps.reduce((acc, step) => ([
+        return this._steps.reduce((acc, step) => ([
             ...acc,
             ...step.before
         ]), [] as string[]);
     }
 
     get after(): string[] {
-        return this.steps.reduce((acc, step) => ([
+        return this._steps.reduce((acc, step) => ([
             ...acc,
             ...step.after
         ]), [] as string[]);
     }
+
+    get steps(): A_TYPES__A_StageStep[] {
+        return this._steps;
+    }
+
+
+    get asyncSteps(): A_TYPES__A_StageStep[] {
+        return this._steps.filter(step => step.behavior === 'async');
+    }
+    
+    get syncSteps(): A_TYPES__A_StageStep[] {
+        return this._steps.filter(step => step.behavior === 'sync');
+    }   
 
 
     /**
@@ -55,7 +68,7 @@ export class A_Stage {
      */
     protected async getStepArgs(
         step: A_TYPES__A_StageStep,
-        scope: A_Scope = new A_Scope({}, {})
+        scope: A_Scope
     ) {
 
         return Promise
@@ -87,7 +100,7 @@ export class A_Stage {
     add(
         step: A_TYPES__A_StageStep
     ): this {
-        this.steps.push(step);
+        this._steps.push(step);
 
         return this;
     }
@@ -127,7 +140,7 @@ export class A_Stage {
      */
     protected async callStepHandler(
         step: A_TYPES__A_StageStep,
-        scope?: A_Scope
+        scope: A_Scope 
     ) {
         const instance = await this.getStepInstance(step);
         const callArgs = await this.getStepArgs(step, scope);
@@ -137,11 +150,15 @@ export class A_Stage {
 
 
     /**
-     * Runs async all the steps of the stage
+     * Runs async all the _steps of the stage
      * 
      * @returns 
      */
     async process(
+        /**
+         * Scope to be used to resolve the steps dependencies
+         */
+        scope: A_Scope = new A_Scope({}, {}),
         params?: Partial<A_TYPES__A_StageStepProcessingExtraParams>
     ): Promise<void> {
         if (!this.processed)
@@ -154,22 +171,22 @@ export class A_Stage {
                             params.steps.forEach(step => this.add(step));
                         }
 
-                        const syncSteps = this.steps.filter(step => step.behavior === 'sync');
-                        const asyncSteps = this.steps.filter(step => step.behavior === 'async');
+                        const syncSteps = this.syncSteps.filter(params?.filter || (() => true));
+                        const asyncSteps = this.asyncSteps.filter(params?.filter || (() => true));
 
-                        // Run sync steps
-                        await Promise
+                        // Run sync _steps
+                        await Promise 
                             .all([
 
-                                // Run async steps that are independent of each other
-                                ...asyncSteps.map(step => this.callStepHandler(step, params?.scope)),
+                                // Run async _steps that are independent of each other
+                                ...asyncSteps.map(step => this.callStepHandler(step, scope)),
 
-                                // Run sync steps that are dependent on each other
+                                // Run sync _steps that are dependent on each other
                                 new Promise<void>(
                                     async (r, j) => {
                                         try {
                                             for (const step of syncSteps) {
-                                                await this.callStepHandler(step, params?.scope);
+                                                await this.callStepHandler(step, scope);
                                             }
 
                                             return r();

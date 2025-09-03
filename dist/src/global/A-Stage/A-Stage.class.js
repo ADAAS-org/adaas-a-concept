@@ -24,22 +24,31 @@ const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
  * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
  */
 class A_Stage {
-    constructor(feature, steps = []) {
+    constructor(feature, _steps = []) {
         this.feature = feature;
-        this.steps = steps;
+        this._steps = _steps;
         this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
     }
     get before() {
-        return this.steps.reduce((acc, step) => ([
+        return this._steps.reduce((acc, step) => ([
             ...acc,
             ...step.before
         ]), []);
     }
     get after() {
-        return this.steps.reduce((acc, step) => ([
+        return this._steps.reduce((acc, step) => ([
             ...acc,
             ...step.after
         ]), []);
+    }
+    get steps() {
+        return this._steps;
+    }
+    get asyncSteps() {
+        return this._steps.filter(step => step.behavior === 'async');
+    }
+    get syncSteps() {
+        return this._steps.filter(step => step.behavior === 'sync');
     }
     /**
      * Resolves the arguments of the step
@@ -47,8 +56,8 @@ class A_Stage {
      * @param step
      * @returns
      */
-    getStepArgs(step_1) {
-        return __awaiter(this, arguments, void 0, function* (step, scope = new A_Scope_class_1.A_Scope({}, {})) {
+    getStepArgs(step, scope) {
+        return __awaiter(this, void 0, void 0, function* () {
             return Promise
                 .all(A_Context_class_1.A_Context
                 .meta(step.component instanceof A_Container_class_1.A_Container
@@ -71,7 +80,7 @@ class A_Stage {
      * @returns
      */
     add(step) {
-        this.steps.push(step);
+        this._steps.push(step);
         return this;
     }
     /**
@@ -106,12 +115,16 @@ class A_Stage {
         });
     }
     /**
-     * Runs async all the steps of the stage
+     * Runs async all the _steps of the stage
      *
      * @returns
      */
-    process(params) {
-        return __awaiter(this, void 0, void 0, function* () {
+    process() {
+        return __awaiter(this, arguments, void 0, function* (
+        /**
+         * Scope to be used to resolve the steps dependencies
+         */
+        scope = new A_Scope_class_1.A_Scope({}, {}), params) {
             if (!this.processed)
                 this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {
@@ -119,18 +132,18 @@ class A_Stage {
                         if ((params === null || params === void 0 ? void 0 : params.steps) && params.steps.length) {
                             params.steps.forEach(step => this.add(step));
                         }
-                        const syncSteps = this.steps.filter(step => step.behavior === 'sync');
-                        const asyncSteps = this.steps.filter(step => step.behavior === 'async');
-                        // Run sync steps
+                        const syncSteps = this.syncSteps.filter((params === null || params === void 0 ? void 0 : params.filter) || (() => true));
+                        const asyncSteps = this.asyncSteps.filter((params === null || params === void 0 ? void 0 : params.filter) || (() => true));
+                        // Run sync _steps
                         yield Promise
                             .all([
-                            // Run async steps that are independent of each other
-                            ...asyncSteps.map(step => this.callStepHandler(step, params === null || params === void 0 ? void 0 : params.scope)),
-                            // Run sync steps that are dependent on each other
+                            // Run async _steps that are independent of each other
+                            ...asyncSteps.map(step => this.callStepHandler(step, scope)),
+                            // Run sync _steps that are dependent on each other
                             new Promise((r, j) => __awaiter(this, void 0, void 0, function* () {
                                 try {
                                     for (const step of syncSteps) {
-                                        yield this.callStepHandler(step, params === null || params === void 0 ? void 0 : params.scope);
+                                        yield this.callStepHandler(step, scope);
                                     }
                                     return r();
                                 }

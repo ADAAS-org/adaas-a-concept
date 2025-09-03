@@ -105,6 +105,6 @@ export type A_TYPES__A_Stage_JSON = {
 
 
 export type A_TYPES__A_StageStepProcessingExtraParams = {
-    steps: A_TYPES__A_StageStep[],
-    scope: A_Scope
+    steps: A_TYPES__A_StageStep[]
+    filter: (step: A_TYPES__A_StageStep) => boolean
 }

@@ -12,8 +12,8 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
  */
 export declare class A_Stage {
     private feature;
-    private steps;
-    constructor(feature: A_Feature, steps?: A_TYPES__A_StageStep[]);
+    private _steps;
+    constructor(feature: A_Feature, _steps?: A_TYPES__A_StageStep[]);
     status: A_TYPES__A_Stage_Status;
     /**
      * Promise that will be resolved when the stage is Processed
@@ -21,13 +21,16 @@ export declare class A_Stage {
     processed: Promise<void> | undefined;
     get before(): string[];
     get after(): string[];
+    get steps(): A_TYPES__A_StageStep[];
+    get asyncSteps(): A_TYPES__A_StageStep[];
+    get syncSteps(): A_TYPES__A_StageStep[];
     /**
      * Resolves the arguments of the step
      *
      * @param step
      * @returns
      */
-    protected getStepArgs(step: A_TYPES__A_StageStep, scope?: A_Scope): Promise<(import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component | A_Container | import("../A-Entity/A-Entity.class").A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Scope | A_Feature)[]>;
+    protected getStepArgs(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<(import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component | A_Container | import("../A-Entity/A-Entity.class").A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Scope | A_Feature)[]>;
     /**
      * Adds a step to the stage
      *
@@ -48,13 +51,17 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected callStepHandler(step: A_TYPES__A_StageStep, scope?: A_Scope): Promise<any>;
+    protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<any>;
     /**
-     * Runs async all the steps of the stage
+     * Runs async all the _steps of the stage
      *
      * @returns
      */
-    process(params?: Partial<A_TYPES__A_StageStepProcessingExtraParams>): Promise<void>;
+    process(
+    /**
+     * Scope to be used to resolve the steps dependencies
+     */
+    scope?: A_Scope, params?: Partial<A_TYPES__A_StageStepProcessingExtraParams>): Promise<void>;
     /**
      * Skips the stage
      *
