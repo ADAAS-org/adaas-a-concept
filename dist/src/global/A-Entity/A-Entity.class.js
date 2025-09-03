@@ -100,10 +100,10 @@ class A_Entity {
      * @param lifecycleMethod
      * @param args
      */
-    call(feature_1) {
-        return __awaiter(this, arguments, void 0, function* (feature, params = {}) {
-            params.entities = params.entities || [this];
-            const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
+    call(feature, scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            scope = scope ? scope.inherit(A_Context_class_1.A_Context.scope(this)) : A_Context_class_1.A_Context.scope(this);
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
             return yield newFeature.process();
         });
     }

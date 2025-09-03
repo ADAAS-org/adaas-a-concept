@@ -44,20 +44,20 @@ export class A_Container {
     ) {
         this.config = config;
 
-        const components = config.components || [];
-        const fragments = config.fragments || [];
-
-        A_Context.allocate(this, config);
-
-
+        A_Context.allocate(this, {
+            name: this.name,
+            ...config
+        });
     }
 
 
     async call(
         feature: string,
-        params: Partial<A_TYPES__FeatureCallParams> = {}
+        scope?: A_Scope,
     ) {
-        const newFeature = A_Context.feature(this.Scope, this, feature, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const newFeature = A_Context.feature(this, feature, scope);
 
         return await newFeature.process();
     }
@@ -70,10 +70,12 @@ export class A_Container {
      */
     feature(
         feature: string,
-        params: Partial<A_TYPES__FeatureCallParams> = {}
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
+        scope?: A_Scope,
+    ): A_TYPES__FeatureConstructor {
 
-        return A_Context.featureDefinition(this.Scope, this, feature, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        return A_Context.featureDefinition(this, feature, scope);
     }
 
 

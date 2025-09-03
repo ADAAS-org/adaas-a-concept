@@ -81,13 +81,12 @@ class A_Concept {
     constructor(props) {
         this.props = props;
         this.sharedBase = new A_Container_class_1.A_Container({
-            name: props.name,
+            name: `${props.name}::base`,
             fragments: props.fragments || [],
             entities: props.entities || [],
-            // containers: props.containers
             components: [
             // A_Logger,
-            ]
+            ],
         });
         this.containers = (props.containers || []).map(container => {
             container.Scope.parent(this.Scope);
@@ -107,19 +106,20 @@ class A_Concept {
     /**
      * Load the concept.
      */
-    load(params) {
+    load(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Load, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Load, scope);
             yield abstraction.process();
         });
     }
     /**
      * Run the concept.
      */
-    run(params) {
+    run(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.load(params);
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Run, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Run, scope);
             yield abstraction.process();
         });
     }
@@ -128,10 +128,10 @@ class A_Concept {
      *
      * @param params
      */
-    start(params) {
+    start(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            yield this.load(params);
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Start, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Start, scope);
             yield abstraction.process();
         });
     }
@@ -140,36 +140,40 @@ class A_Concept {
      *
      * @param params
      */
-    stop(params) {
+    stop(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Stop, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Stop, scope);
             yield abstraction.process();
         });
     }
     /**
      * Build the concept.
      */
-    build(params) {
+    build(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Build, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Build, scope);
             yield abstraction.process();
         });
     }
     /**
      * Deploy the concept.
      */
-    deploy(params) {
+    deploy(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Deploy, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Deploy, scope);
             yield abstraction.process();
         });
     }
     /**
      * Publish the concept.
      */
-    publish(params) {
+    publish(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Publish, params);
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Publish, scope);
             yield abstraction.process();
         });
     }
@@ -179,7 +183,7 @@ class A_Concept {
     /**
      * Call the specific method of the concept or included modules.
      */
-    call(container, params) {
+    call(container) {
         return __awaiter(this, void 0, void 0, function* () {
             // const definition = this.meta.abstractionDefinition(A_TYPES__ConceptStage.Run, {
             //     components: params?.components,

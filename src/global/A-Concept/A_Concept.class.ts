@@ -3,6 +3,7 @@ import { A_Container } from "../A-Container/A-Container.class";
 import { A_Abstraction } from "../A-Abstraction/A-Abstraction.class";
 import { A_ConceptMeta } from "./A_Concept.meta";
 import { A_Abstraction_Extend } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction-Extend.decorator";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
@@ -98,18 +99,16 @@ export class A_Concept<
         protected props: A_TYPES__IConceptConstructor<_Imports>
     ) {
         this.sharedBase = new A_Container({
-            name: props.name,
+            name: `${props.name}::base`,
             fragments: props.fragments || [],
             entities: props.entities || [],
-            // containers: props.containers
             components: [
                 // A_Logger,
-            ]
+            ],
         });
 
         this.containers = (props.containers || []).map(container => {
             container.Scope.parent(this.Scope);
-
             return container;
         });
 
@@ -136,9 +135,11 @@ export class A_Concept<
      * Load the concept.
      */
     async load(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Load, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Load, scope);
 
         await abstraction.process();
     }
@@ -149,11 +150,11 @@ export class A_Concept<
      * Run the concept.
      */
     async run(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        await this.load(params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
 
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Run, params);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Run, scope);
 
         await abstraction.process();
     }
@@ -165,11 +166,11 @@ export class A_Concept<
      * @param params 
      */
     async start(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        await this.load(params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
 
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Start, params);
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Start, scope);
 
         await abstraction.process();
     }
@@ -181,9 +182,11 @@ export class A_Concept<
      * @param params 
      */
     async stop(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Stop, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Stop, scope);
 
         await abstraction.process();
     }
@@ -193,9 +196,11 @@ export class A_Concept<
      * Build the concept.
      */
     async build(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Build, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Build, scope);
 
         await abstraction.process();
     }
@@ -205,9 +210,11 @@ export class A_Concept<
      * Deploy the concept.
      */
     async deploy(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Deploy, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Deploy, scope);
 
         await abstraction.process();
 
@@ -218,9 +225,11 @@ export class A_Concept<
      * Publish the concept.
      */
     async publish(
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope?: A_Scope,
     ) {
-        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Publish, params);
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        const abstraction = this.meta.abstraction(A_TYPES__ConceptStage.Publish, scope);
 
         await abstraction.process();
     }
@@ -238,7 +247,6 @@ export class A_Concept<
         K extends Record<_Imports[number]['name'], string>
     >(
         container: K[keyof K],
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
     ) {
         // const definition = this.meta.abstractionDefinition(A_TYPES__ConceptStage.Run, {
         //     components: params?.components,

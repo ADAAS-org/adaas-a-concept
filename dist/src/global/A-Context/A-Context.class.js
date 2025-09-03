@@ -70,7 +70,7 @@ class A_Context {
     }
     static allocate(param1, param2) {
         const instance = this.getInstance();
-        const newScope = new A_Scope_class_1.A_Scope(param2, param2);
+        const newScope = param2 instanceof A_Scope_class_1.A_Scope ? param2 : new A_Scope_class_1.A_Scope(param2, param2);
         switch (true) {
             case param1 instanceof A_Container_class_1.A_Container:
                 instance.containers.set(param1, newScope);
@@ -174,10 +174,15 @@ class A_Context {
         }
         return component;
     }
-    static featureDefinition(scope, param1, param2, param3) {
+    /**
+     * This method returns a constructor params to create a new feature
+     *
+     * @param scope
+     * @returns
+     */
+    static featureDefinition(component, feature, scope) {
         const instance = this.getInstance();
-        const component = param1;
-        const config = param3 || {};
+        const name = `${component.constructor.name}.${feature}`;
         /**
          * Important NOTE::: Component Scope and Parent Scope are different things.
          *
@@ -231,9 +236,9 @@ class A_Context {
         const allFeatures = meta.get(metaKey);
         if (!allFeatures)
             throw new Error(`[!] A-Concept Context: Features not found. for Component ${component.constructor.name}`);
-        const featureDefinition = allFeatures.get(param2);
+        const featureDefinition = allFeatures.get(feature);
         if (!featureDefinition)
-            throw new Error(`[!] A-Concept Context: Feature ${param2} not found. for Component ${component.constructor.name}`);
+            throw new Error(`[!] A-Concept Context: Feature ${feature} not found. for Component ${component.constructor.name}`);
         const steps = [
             ...featureDefinition.template
         ];
@@ -243,7 +248,6 @@ class A_Context {
         //     namespace: component.constructor.name,
         //     scope: scope.name
         // }).toString();
-        const feature = `${component.constructor.name}.${param2}`;
         // Now we need to resolve the method from all registered components 
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
@@ -252,24 +256,22 @@ class A_Context {
             if (scope.has(constructor))
                 // Get all extensions for the feature
                 meta
-                    .extensions(feature)
+                    .extensions(name)
                     .forEach((declaration) => {
                     steps.push(Object.assign({ component: constructor }, declaration));
                 });
         });
-        return {
-            name: feature,
-            fragments: config.fragments || [],
-            components: config.components || [],
-            entities: config.entities || [],
-            steps,
-            parent: scope
-        };
+        return { name, steps, scope };
     }
-    static abstractionDefinition(scope, param1, param2, param3) {
+    /**
+     * This method returns a constructor params to create a new feature
+     *
+     * @param scope
+     * @returns
+     */
+    static abstractionDefinition(component, abstraction, scope) {
         const instance = this.getInstance();
-        const component = param1;
-        const config = param3 || {};
+        const name = `${component.constructor.name}.${abstraction}`;
         let metaKey;
         switch (true) {
             case component instanceof A_Entity_class_1.A_Entity:
@@ -288,11 +290,10 @@ class A_Context {
         }
         const featureDefinition = this.meta(component)
             .get(metaKey)
-            .get(param2) || [];
+            .get(abstraction) || [];
         const steps = [
             ...featureDefinition
         ];
-        const feature = `${component.constructor.name}.${param2}`;
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
             .forEach((meta, constructor) => {
@@ -300,22 +301,15 @@ class A_Context {
             if (scope.has(constructor))
                 // Get all extensions for the feature
                 meta
-                    .abstractions(feature)
+                    .abstractions(name)
                     .forEach((declaration) => {
                     steps.push(Object.assign({ component: constructor }, declaration));
                 });
         });
-        return {
-            name: feature,
-            fragments: config.fragments || [],
-            components: config.components || [],
-            entities: config.entities || [],
-            steps,
-            parent: scope
-        };
+        return { name, steps, scope };
     }
-    static feature(scope, param1, param2, param3) {
-        const featureConstructor = this.featureDefinition(scope, param1, param2, param3);
+    static feature(param1, param2, param3) {
+        const featureConstructor = this.featureDefinition(param1, param2, param3);
         const newFeature = new A_Feature_class_1.A_Feature(featureConstructor);
         return newFeature;
     }

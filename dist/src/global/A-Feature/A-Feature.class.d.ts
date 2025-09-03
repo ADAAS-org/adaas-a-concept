@@ -1,9 +1,10 @@
 import { A_Feature_Define } from "../../decorators/A-Feature/A-Feature-Define.decorator";
 import { A_TYPES__FeatureConstructor, A_TYPES__FeatureState } from "./A-Feature.types";
-import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_Error } from "@adaas/a-utils";
 import { A_TYPES__A_Feature_Extend } from "../../decorators/A-Feature/A-Feature.decorator.types";
 import { A_Stage } from "../A-Stage/A-Stage.class";
 import { StepsManager } from "../../helpers/StepsManager.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 /**
  * A_Feature is representing a feature that can be executed across multiple components
  * This class stores the steps of the feature and executes them in order of appearance
@@ -29,18 +30,19 @@ export declare class A_Feature {
     result?: any;
     error?: A_Error;
     readonly name: string;
-    constructor(params: A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps']>);
+    readonly Scope: A_Scope;
+    constructor(params: A_TYPES__FeatureConstructor);
+    /**
+     * Returns the current A-Feature Stage
+     *
+     */
+    get stage(): A_Stage | undefined;
     /**
      * Custom iterator to iterate over the steps of the feature
      *
      * @returns
      */
     [Symbol.iterator](): Iterator<A_Stage, any>;
-    /**
-     * Returns the current A-Feature Stage
-     *
-     */
-    get stage(): A_Stage | undefined;
     /**
      * This method checks if the A-Feature is done
      *
@@ -74,6 +76,6 @@ export declare class A_Feature {
      * This method processes the feature by executing all the stages
      *
      */
-    process(): Promise<any>;
+    process(scope?: A_Scope): Promise<any>;
     protected errorHandler(error: Error | A_Error | unknown): Promise<void>;
 }

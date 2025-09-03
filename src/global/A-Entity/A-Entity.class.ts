@@ -10,6 +10,7 @@ import {
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_TYPES__FeatureCallParams } from "../A-Feature/A-Feature.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 
 
@@ -135,14 +136,14 @@ export class A_Entity<
      * @param lifecycleMethod 
      * @param args 
      */
-     async call(
+    async call(
         feature: string,
-        params: Partial<A_TYPES__FeatureCallParams> = {}
+        scope?: A_Scope,
     ) {
-        params.entities = params.entities || [this];
 
+        scope = scope ? scope.inherit(A_Context.scope(this)) : A_Context.scope(this);
 
-        const newFeature = A_Context.feature(A_Context.scope(this), this, feature, params);
+        const newFeature = A_Context.feature(this, feature, scope);
 
         return await newFeature.process();
     }

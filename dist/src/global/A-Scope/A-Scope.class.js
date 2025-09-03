@@ -33,8 +33,6 @@ class A_Scope {
             components: [],
             fragments: [],
             entities: [],
-            // import: [],
-            // export: [],
         };
         this.params = Object.assign(Object.assign({}, defaultParams), params);
         this.initComponents(params.components || []);
@@ -63,10 +61,46 @@ class A_Scope {
     }
     parent(setValue) {
         if (setValue) {
-            this._parent = setValue;
-            return;
+            return this.inherit(setValue);
         }
         return this._parent;
+    }
+    inherit(parent) {
+        // Prevent circular inheritance
+        const circularCheck = this.checkCircularInheritance(parent);
+        if (circularCheck) {
+            throw new Error(`Circular inheritance detected: ${[...circularCheck, parent.name].join(' -> ')}`);
+        }
+        this._parent = parent;
+        return this;
+    }
+    /**
+     * Helper method to check circular inheritance
+     * Should return a full sequence of inheritance for logging purposes
+     *
+     * @param scope
+     * @returns
+     */
+    checkCircularInheritance(scope) {
+        const inheritanceChain = [];
+        let current = this._parent;
+        while (current) {
+            inheritanceChain.push(current.name);
+            if (current === scope) {
+                return inheritanceChain;
+            }
+            current = current._parent;
+        }
+        return false;
+    }
+    printInheritanceChain() {
+        const chain = [];
+        let current = this;
+        while (current) {
+            chain.push(current.name);
+            current = current._parent;
+        }
+        console.log(chain.join(' -> '));
     }
     has(entity) {
         switch (true) {
@@ -94,6 +128,10 @@ class A_Scope {
     }
     /**
      * Merges two scopes into a new one
+     *
+     * [!] Notes:
+     *  - this method does NOT modify the existing scopes
+     *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
      *
      * @param anotherScope
      * @returns
@@ -271,7 +309,12 @@ class A_Scope {
                 break;
             }
             default:
-                throw new Error('Invalid arguments provided');
+                if (param1 instanceof A_Entity_class_1.A_Entity)
+                    throw new Error(`Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);
+                else if (param1 instanceof A_Fragment_class_1.A_Fragment)
+                    throw new Error(`Fragment ${param1.constructor.name} is already registered in the scope ${this.name}`);
+                else
+                    throw new Error(`Cannot register ${param1} in the scope ${this.name}`);
         }
     }
     toJSON() {

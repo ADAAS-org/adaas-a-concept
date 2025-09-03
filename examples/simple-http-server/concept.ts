@@ -28,6 +28,7 @@ import { HTTPRequestHandler } from "./components/http-request-handler.component"
     })
 
 
+    await simpleConcept.load();
 
     await simpleConcept.start();
 

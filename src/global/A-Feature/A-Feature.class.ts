@@ -6,6 +6,7 @@ import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
 import { A_TYPES__A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_Stage } from "../A-Stage/A-Stage.class";
 import { StepsManager } from "@adaas/a-concept/helpers/StepsManager.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 /**
  * A_Feature is representing a feature that can be executed across multiple components
@@ -46,11 +47,14 @@ export class A_Feature {
     error?: A_Error
 
     readonly name: string;
+    readonly Scope!: A_Scope;
+
 
     constructor(
-        params: A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps']>
+        params: A_TYPES__FeatureConstructor
     ) {
         this.name = params.name || this.constructor.name;
+        this.Scope = params.scope
 
         this.SM = new StepsManager(params.steps);
 
@@ -58,7 +62,17 @@ export class A_Feature {
 
         this._current = this.stages[0];
 
-        A_Context.allocate(this, params);
+
+        this.Scope.printInheritanceChain();
+    }
+
+
+    /**
+     * Returns the current A-Feature Stage
+     * 
+     */
+    get stage(): A_Stage | undefined {
+        return this._current;
     }
 
 
@@ -92,14 +106,6 @@ export class A_Feature {
         };
     }
 
-
-    /**
-     * Returns the current A-Feature Stage
-     * 
-     */
-    get stage(): A_Stage | undefined {
-        return this._current;
-    }
 
 
 
@@ -144,7 +150,7 @@ export class A_Feature {
      */
     async completed<T extends any>(): Promise<T> {
 
-        this.result = A_Context.scope(this).toJSON();
+        this.result = this.Scope.toJSON();
 
         this.state = A_TYPES__FeatureState.COMPLETED;
 
@@ -173,7 +179,10 @@ export class A_Feature {
      * This method processes the feature by executing all the stages
      * 
      */
-    async process() {
+    async process(
+        scope?: A_Scope
+    ) {
+
         if (this.isDone()) {
             return this.result;
         }
@@ -190,7 +199,7 @@ export class A_Feature {
         } catch (error) {
             await this.failed(error);
         }
-      
+
     }
 
 

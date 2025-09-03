@@ -20,7 +20,11 @@ class A_Abstraction {
     static get Extend() {
         return A_Abstraction_Extend_decorator_1.A_Abstraction_Extend;
     }
-    constructor(params) {
+    constructor(
+    /**
+     * Parameters to define the A-Abstraction
+     */
+    params) {
         this.features = [];
         this._index = 0;
         this.state = A_Abstraction_types_1.A_TYPES__AbstractionState.INITIALIZED;

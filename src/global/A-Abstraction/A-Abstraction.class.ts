@@ -2,6 +2,7 @@ import { A_Abstraction_Extend } from "@adaas/a-concept/decorators/A-Abstraction/
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__A_AbstractionConstructor, A_TYPES__AbstractionState } from "./A-Abstraction.types";
 import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 
 export class A_Abstraction {
@@ -15,6 +16,7 @@ export class A_Abstraction {
     error?: A_Error
 
 
+    readonly Scope!: A_Scope;
 
     /**
      * Define a new A-Abstraction
@@ -24,9 +26,14 @@ export class A_Abstraction {
     }
 
 
-
-    constructor(params: A_TYPES__Required<Partial<A_TYPES__A_AbstractionConstructor>, ['name', 'features']>) {
+    constructor(
+        /**
+         * Parameters to define the A-Abstraction
+         */
+        params: A_TYPES__A_AbstractionConstructor
+    ) {
         this.name = params.name;
+        
         this.features = params.features.map(def => new A_Feature(def));
 
         this._current = this.features[0];
@@ -36,6 +43,7 @@ export class A_Abstraction {
     get feature(): A_Feature | undefined {
         return this._current;
     }
+
 
     [Symbol.iterator](): Iterator<A_Feature, any> {
         return {
@@ -110,7 +118,7 @@ export class A_Abstraction {
 
 
     async process() {
-        if (this.isDone()) 
+        if (this.isDone())
             return;
         try {
             this.state = A_TYPES__AbstractionState.PROCESSING;

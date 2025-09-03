@@ -31,6 +31,16 @@ export declare class A_Scope {
     get fragments(): A_Fragment[];
     parent(setValue: A_Scope): void;
     parent(): A_Scope;
+    inherit(parent: A_Scope): A_Scope;
+    /**
+     * Helper method to check circular inheritance
+     * Should return a full sequence of inheritance for logging purposes
+     *
+     * @param scope
+     * @returns
+     */
+    checkCircularInheritance(scope: A_Scope): Array<string> | false;
+    printInheritanceChain(): void;
     /**
      * This method is used to check if the component is available in the scope
      *
@@ -42,6 +52,10 @@ export declare class A_Scope {
     has(fragment: typeof A_Fragment): boolean;
     /**
      * Merges two scopes into a new one
+     *
+     * [!] Notes:
+     *  - this method does NOT modify the existing scopes
+     *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
      *
      * @param anotherScope
      * @returns

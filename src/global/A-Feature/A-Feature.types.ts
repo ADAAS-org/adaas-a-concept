@@ -2,6 +2,7 @@ import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Sc
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types"
 import { A_Fragment } from "../A-Fragment/A-Fragment.class"
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class"
+import { A_Scope } from "../A-Scope/A-Scope.class"
 
 
 export type A_TYPES__FeatureIteratorReturn<T extends any = any> = () => Promise<T>
@@ -16,8 +17,19 @@ export type A_TYPES__FeatureCallParams = {
 
 
 export type A_TYPES__FeatureConstructor = {
-    steps: A_TYPES__A_StageStep[]
-} & A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig
+    /**
+     * Name of the A-Feature
+     */
+    name:string,
+    /**
+     * Steps that compose the A-Feature
+     */
+    steps: A_TYPES__A_StageStep[],
+    /**
+     * Scope in which the A-Feature will be executed
+     */
+    scope: A_Scope
+}
 
 export enum A_TYPES__FeatureState {
     INITIALIZED = "INITIALIZED",

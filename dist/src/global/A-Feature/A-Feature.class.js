@@ -10,7 +10,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Feature = void 0;
-const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Feature_Define_decorator_1 = require("../../decorators/A-Feature/A-Feature-Define.decorator");
 const A_Feature_Extend_decorator_1 = require("../../decorators/A-Feature/A-Feature-Extend.decorator");
 const A_Feature_types_1 = require("./A-Feature.types");
@@ -43,10 +42,18 @@ class A_Feature {
         this._index = 0;
         this.state = A_Feature_types_1.A_TYPES__FeatureState.INITIALIZED;
         this.name = params.name || this.constructor.name;
+        this.Scope = params.scope;
         this.SM = new StepsManager_class_1.StepsManager(params.steps);
         this.stages = this.SM.toStages(this);
         this._current = this.stages[0];
-        A_Context_class_1.A_Context.allocate(this, params);
+        this.Scope.printInheritanceChain();
+    }
+    /**
+     * Returns the current A-Feature Stage
+     *
+     */
+    get stage() {
+        return this._current;
     }
     /**
      * Custom iterator to iterate over the steps of the feature
@@ -73,13 +80,6 @@ class A_Feature {
                 }
             }
         };
-    }
-    /**
-     * Returns the current A-Feature Stage
-     *
-     */
-    get stage() {
-        return this._current;
     }
     /**
      * This method checks if the A-Feature is done
@@ -115,7 +115,7 @@ class A_Feature {
      */
     completed() {
         return __awaiter(this, void 0, void 0, function* () {
-            this.result = A_Context_class_1.A_Context.scope(this).toJSON();
+            this.result = this.Scope.toJSON();
             this.state = A_Feature_types_1.A_TYPES__FeatureState.COMPLETED;
             return this.result;
         });
@@ -137,7 +137,7 @@ class A_Feature {
      * This method processes the feature by executing all the stages
      *
      */
-    process() {
+    process(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             if (this.isDone()) {
                 return this.result;

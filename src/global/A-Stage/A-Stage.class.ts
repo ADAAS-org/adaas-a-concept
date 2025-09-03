@@ -84,7 +84,6 @@ export class A_Stage {
                         return this.feature;
 
                     return scope
-                        .merge(A_Context.scope(this.feature))
                         .resolve(arg.target)
                 })
             )
@@ -119,7 +118,7 @@ export class A_Stage {
         // TODO: probably would be better to do it another way. let's think about it
         const instance = component instanceof A_Container
             ? component
-            : A_Context.scope(this.feature).resolve(component);
+            : this.feature.Scope.resolve(component);
 
         if (!instance)
             throw new Error(`Unable to resolve component ${component.name}`);
@@ -161,6 +160,9 @@ export class A_Stage {
         scope: A_Scope = new A_Scope({}, {}),
         params?: Partial<A_TYPES__A_StageStepProcessingExtraParams>
     ): Promise<void> {
+
+        scope = scope.inherit(this.feature.Scope);
+
         if (!this.processed)
             this.processed = new Promise<void>(
                 async (resolve, reject) => {

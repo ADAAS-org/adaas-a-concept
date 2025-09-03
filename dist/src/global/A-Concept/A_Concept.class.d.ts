@@ -1,6 +1,7 @@
-import { A_TYPES__ConceptAbstractionCallParams, A_TYPES__IConceptConstructor } from "./A_Concept.types";
+import { A_TYPES__IConceptConstructor } from "./A_Concept.types";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Abstraction_Extend } from "../../decorators/A-Abstraction/A-Abstraction-Extend.decorator";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 /**
  * A_Concept is a placeholder for the concept of the ani program.
  *
@@ -53,41 +54,41 @@ export declare class A_Concept<_Imports extends A_Container[] = any> {
     protected containers: A_Container[];
     constructor(props: A_TYPES__IConceptConstructor<_Imports>);
     get namespace(): string;
-    get Scope(): import("../A-Scope/A-Scope.class").A_Scope;
+    get Scope(): A_Scope;
     /**
      * Load the concept.
      */
-    load(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    load(scope?: A_Scope): Promise<void>;
     /**
      * Run the concept.
      */
-    run(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    run(scope?: A_Scope): Promise<void>;
     /**
      * Start the concept.
      *
      * @param params
      */
-    start(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    start(scope?: A_Scope): Promise<void>;
     /**
      * Stop the concept.
      *
      * @param params
      */
-    stop(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    stop(scope?: A_Scope): Promise<void>;
     /**
      * Build the concept.
      */
-    build(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    build(scope?: A_Scope): Promise<void>;
     /**
      * Deploy the concept.
      */
-    deploy(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    deploy(scope?: A_Scope): Promise<void>;
     /**
      * Publish the concept.
      */
-    publish(params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    publish(scope?: A_Scope): Promise<void>;
     /**
      * Call the specific method of the concept or included modules.
      */
-    call<K extends Record<_Imports[number]['name'], string>>(container: K[keyof K], params?: Partial<A_TYPES__ConceptAbstractionCallParams>): Promise<void>;
+    call<K extends Record<_Imports[number]['name'], string>>(container: K[keyof K]): Promise<void>;
 }

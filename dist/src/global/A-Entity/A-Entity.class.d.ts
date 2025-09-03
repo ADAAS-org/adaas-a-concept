@@ -1,6 +1,6 @@
 import { ASEID } from "@adaas/a-utils";
 import { A_TYPES__Entity_JSON, A_TYPES__IEntity } from "./A-Entity.types";
-import { A_TYPES__FeatureCallParams } from "../A-Feature/A-Feature.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -55,7 +55,7 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * @param lifecycleMethod
      * @param args
      */
-    call(feature: string, params?: Partial<A_TYPES__FeatureCallParams>): Promise<any>;
+    call(feature: string, scope?: A_Scope): Promise<any>;
     /**
      * The default method that can be called and extended to load entity data.
      */

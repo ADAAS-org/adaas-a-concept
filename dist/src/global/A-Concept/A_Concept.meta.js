@@ -11,17 +11,25 @@ class A_ConceptMeta extends A_Meta_class_1.A_Meta {
         this.containers = containers;
         this.base = base;
     }
-    abstractionDefinition(method, params) {
-        const featureDefinitions = this.containers.map(container => A_Context_class_1.A_Context.abstractionDefinition(container.Scope, container, method, params));
-        const definition = Object.assign(Object.assign({}, params), { name: `${this.base.name}.${method}`, features: featureDefinitions, parent: this.base.Scope, components: (params === null || params === void 0 ? void 0 : params.components) || [], fragments: (params === null || params === void 0 ? void 0 : params.fragments) || [] });
+    abstractionDefinition(method, scope) {
+        const featureDefinitions = this.containers.map(container => A_Context_class_1.A_Context.abstractionDefinition(container, method, scope));
+        const definition = {
+            name: `${this.base.name}.${method}`,
+            features: featureDefinitions,
+            scope
+        };
         return definition;
     }
-    abstraction(method, params) {
+    abstraction(method, scope) {
         const featureDefinitions = this.containers.map(container => {
-            const definition = A_Context_class_1.A_Context.abstractionDefinition(container.Scope, container, method, params);
+            const definition = A_Context_class_1.A_Context.abstractionDefinition(container, method, container.Scope);
             return Object.assign(Object.assign({}, definition), { steps: definition.steps.map(step => (Object.assign(Object.assign({}, step), { component: step.component ? step.component : container }))) });
         });
-        const definition = Object.assign(Object.assign({}, params), { name: `${this.base.name}.${method}`, features: featureDefinitions, parent: this.base.Scope, components: (params === null || params === void 0 ? void 0 : params.components) || [], fragments: (params === null || params === void 0 ? void 0 : params.fragments) || [] });
+        const definition = {
+            name: `${this.base.name}.${method}`,
+            features: featureDefinitions,
+            scope
+        };
         return new A_Abstraction_class_1.A_Abstraction(definition);
     }
 }

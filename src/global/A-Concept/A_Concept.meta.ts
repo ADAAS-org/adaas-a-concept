@@ -9,6 +9,7 @@ import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_TYPES__A_FeatureDecoratorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_TYPES__A_AbstractionConstructor } from "../A-Abstraction/A-Abstraction.types";
 import { A_Abstraction } from "../A-Abstraction/A-Abstraction.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 // import { A_TYPES__ComponentMeta } from "./A-Component.types";
 
 
@@ -24,21 +25,17 @@ export class A_ConceptMeta extends A_Meta<any> {
 
     abstractionDefinition(
         method: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
-    ): A_TYPES__Required<Partial<A_TYPES__A_AbstractionConstructor>, ['features']> {
+        scope: A_Scope
+    ): A_TYPES__A_AbstractionConstructor {
 
         const featureDefinitions = this.containers.map(container =>
-            A_Context.abstractionDefinition(container.Scope, container, method, params)
+            A_Context.abstractionDefinition(container, method, scope)
         );
 
-
         const definition = {
-            ...params,
             name: `${this.base.name}.${method}`,
             features: featureDefinitions,
-            parent: this.base.Scope,
-            components: params?.components || [],
-            fragments: params?.fragments || [],
+            scope
         };
 
         return definition;
@@ -48,12 +45,11 @@ export class A_ConceptMeta extends A_Meta<any> {
 
     abstraction(
         method: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ConceptAbstractionCallParams>
+        scope: A_Scope
     ): A_Abstraction {
 
-
         const featureDefinitions = this.containers.map(container => {
-            const definition = A_Context.abstractionDefinition(container.Scope, container, method, params);
+            const definition = A_Context.abstractionDefinition(container, method, container.Scope);
 
             return {
                 ...definition,
@@ -63,12 +59,9 @@ export class A_ConceptMeta extends A_Meta<any> {
 
 
         const definition = {
-            ...params,
             name: `${this.base.name}.${method}`,
             features: featureDefinitions,
-            parent: this.base.Scope,
-            components: params?.components || [],
-            fragments: params?.fragments || [],
+            scope
         };
 
         return new A_Abstraction(definition);

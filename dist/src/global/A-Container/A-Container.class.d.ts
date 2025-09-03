@@ -1,7 +1,6 @@
 import { A_TYPES__ContainerConstructor } from "./A-Container.types";
-import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Scope } from "../A-Scope/A-Scope.class";
-import { A_TYPES__FeatureCallParams, A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
+import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 /**
  * This class should combine Components to achieve the goal withing Concept
  *
@@ -26,13 +25,13 @@ export declare class A_Container {
      * Configuration of the container that will be used to run it.
      */
     config: Partial<A_TYPES__ContainerConstructor<any>>);
-    call(feature: string, params?: Partial<A_TYPES__FeatureCallParams>): Promise<any>;
+    call(feature: string, scope?: A_Scope): Promise<any>;
     /**
      * This method allows to get a feature Definition for the future reuse with custom Feature classes
      *
      * @param feature
      */
-    feature(feature: string, params?: Partial<A_TYPES__FeatureCallParams>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    feature(feature: string, scope?: A_Scope): A_TYPES__FeatureConstructor;
     /**
      *  Before init hook to be used in inherited classes
      *

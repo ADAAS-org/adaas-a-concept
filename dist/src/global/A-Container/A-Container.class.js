@@ -35,13 +35,12 @@ class A_Container {
      */
     config) {
         this.config = config;
-        const components = config.components || [];
-        const fragments = config.fragments || [];
-        A_Context_class_1.A_Context.allocate(this, config);
+        A_Context_class_1.A_Context.allocate(this, Object.assign({ name: this.name }, config));
     }
-    call(feature_1) {
-        return __awaiter(this, arguments, void 0, function* (feature, params = {}) {
-            const newFeature = A_Context_class_1.A_Context.feature(this.Scope, this, feature, params);
+    call(feature, scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            scope = scope ? scope.inherit(this.Scope) : this.Scope;
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
             return yield newFeature.process();
         });
     }
@@ -50,8 +49,9 @@ class A_Container {
      *
      * @param feature
      */
-    feature(feature, params = {}) {
-        return A_Context_class_1.A_Context.featureDefinition(this.Scope, this, feature, params);
+    feature(feature, scope) {
+        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+        return A_Context_class_1.A_Context.featureDefinition(this, feature, scope);
     }
     // ==============================================================
     // ======================= HOOKS ================================

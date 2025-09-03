@@ -5,6 +5,7 @@ import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Config } from "@adaas/a-concept/base/A-Config/A-Config.context";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { HTTPRequest } from "../contexts/http-request.context";
+import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 
 
 
@@ -42,11 +43,12 @@ export class HttpServer extends A_Container {
         req: IncomingMessage,
         res: ServerResponse
     ) {
-        return await this.call('onRequest', {
+        return await this.call('onRequest', new A_Scope({
+            name: `http-request::${Date.now()}`,
             fragments: [
                 new HTTPRequest(req, res)
             ]
-        });
+        }));
     }
 
 

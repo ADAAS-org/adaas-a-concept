@@ -68,7 +68,6 @@ class A_Stage {
                 if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature))
                     return this.feature;
                 return scope
-                    .merge(A_Context_class_1.A_Context.scope(this.feature))
                     .resolve(arg.target);
             })));
         });
@@ -94,7 +93,7 @@ class A_Stage {
         // TODO: probably would be better to do it another way. let's think about it
         const instance = component instanceof A_Container_class_1.A_Container
             ? component
-            : A_Context_class_1.A_Context.scope(this.feature).resolve(component);
+            : this.feature.Scope.resolve(component);
         if (!instance)
             throw new Error(`Unable to resolve component ${component.name}`);
         if (!instance[handler])
@@ -125,6 +124,7 @@ class A_Stage {
          * Scope to be used to resolve the steps dependencies
          */
         scope = new A_Scope_class_1.A_Scope({}, {}), params) {
+            scope = scope.inherit(this.feature.Scope);
             if (!this.processed)
                 this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {

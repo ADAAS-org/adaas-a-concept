@@ -119,21 +119,33 @@ export class A_Context {
         importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
     ): A_Scope
     static allocate(
+        component: any,
+        importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope
+    ): A_Scope
+    static allocate(
         feature: A_Feature,
         importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+    ): A_Scope
+    static allocate(
+        feature: A_Feature,
+        importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope
     ): A_Scope
     static allocate(
         container: A_Container,
         importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
     ): A_Scope
     static allocate(
+        container: A_Container,
+        importing: A_Scope
+    ): A_Scope
+    static allocate(
         param1: A_Container | A_Feature | A_Component | any,
-        param2: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>
+        param2: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope
     ): A_Scope {
 
         const instance = this.getInstance();
 
-        const newScope = new A_Scope(param2, param2);
+        const newScope = param2 instanceof A_Scope ? param2 : new A_Scope(param2, param2);
 
         switch (true) {
             case param1 instanceof A_Container:
@@ -345,33 +357,14 @@ export class A_Context {
      * @returns 
      */
     static featureDefinition(
-        scope: A_Scope,
-        entity: A_Entity,
-        feature: A_TYPES__EntityBaseMethod | string | RegExp,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static featureDefinition(
-        scope: A_Scope,
-        container: A_Container,
-        feature: string,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static featureDefinition(
-        scope: A_Scope,
-        component: A_Component,
-        feature: string,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static featureDefinition(
-        scope: A_Scope,
-        param1: A_Component | A_Container | A_Entity,
-        param2: string,
-        param3?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
+        component: A_Component | A_Container | A_Entity,
+        feature: string | RegExp,
+        scope: A_Scope
+    ): A_TYPES__FeatureConstructor {
         const instance = this.getInstance();
 
-        const component = param1;
-        const config = param3 || {};
+        const name = `${component.constructor.name}.${feature}`;
+
 
         /**
          * Important NOTE::: Component Scope and Parent Scope are different things.
@@ -433,10 +426,10 @@ export class A_Context {
             throw new Error(`[!] A-Concept Context: Features not found. for Component ${component.constructor.name}`);
 
 
-        const featureDefinition = allFeatures.get(param2);
+        const featureDefinition = allFeatures.get(feature);
 
         if (!featureDefinition)
-            throw new Error(`[!] A-Concept Context: Feature ${param2} not found. for Component ${component.constructor.name}`);
+            throw new Error(`[!] A-Concept Context: Feature ${feature} not found. for Component ${component.constructor.name}`);
 
 
         const steps: A_TYPES__A_StageStep[] = [
@@ -449,7 +442,6 @@ export class A_Context {
         //     scope: scope.name
         // }).toString();
 
-        const feature = `${component.constructor.name}.${param2}`;
 
         // Now we need to resolve the method from all registered components 
 
@@ -460,7 +452,7 @@ export class A_Context {
                 if (scope.has(constructor))
                     // Get all extensions for the feature
                     meta
-                        .extensions(feature)
+                        .extensions(name)
                         .forEach((declaration) => {
                             steps.push({
                                 component: constructor,
@@ -470,14 +462,8 @@ export class A_Context {
             });
 
 
-        return {
-            name: feature,
-            fragments: config.fragments || [],
-            components: config.components || [],
-            entities: config.entities || [],
-            steps,
-            parent: scope
-        };
+
+        return { name, steps, scope };
     }
 
     /**
@@ -487,33 +473,13 @@ export class A_Context {
      * @returns 
      */
     static abstractionDefinition(
-        scope: A_Scope,
-        entity: A_Entity,
-        feature: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static abstractionDefinition(
-        scope: A_Scope,
-        container: A_Container,
-        feature: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static abstractionDefinition(
-        scope: A_Scope,
-        component: A_Component,
-        feature: A_TYPES__ConceptStage,
-        params?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>
-    static abstractionDefinition(
-        scope: A_Scope,
-        param1: A_Component | A_Container | A_Entity,
-        param2: A_TYPES__ConceptStage,
-        param3?: Partial<A_TYPES__ScopeConstructor>
-    ): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']> {
+        component: A_Component | A_Container | A_Entity,
+        abstraction: A_TYPES__ConceptStage,
+        scope: A_Scope
+    ): A_TYPES__FeatureConstructor {
         const instance = this.getInstance();
 
-        const component = param1;
-        const config = param3 || {};
+        const name = `${component.constructor.name}.${abstraction}`;
 
         let metaKey;
 
@@ -534,14 +500,13 @@ export class A_Context {
 
         const featureDefinition = this.meta(component)
             .get(metaKey)
-            .get(param2) || []
+            .get(abstraction) || []
 
 
         const steps: A_TYPES__A_StageStep[] = [
             ...featureDefinition
         ];
 
-        const feature = `${component.constructor.name}.${param2}`;
 
         // We need to get all components that has extensions for the feature in component
         instance.componentsMeta
@@ -550,7 +515,7 @@ export class A_Context {
                 if (scope.has(constructor))
                     // Get all extensions for the feature
                     meta
-                        .abstractions(feature)
+                        .abstractions(name)
                         .forEach((declaration) => {
                             steps.push({
                                 component: constructor,
@@ -560,14 +525,7 @@ export class A_Context {
             });
 
 
-        return {
-            name: feature,
-            fragments: config.fragments || [],
-            components: config.components || [],
-            entities: config.entities || [],
-            steps,
-            parent: scope
-        };
+        return { name, steps, scope };
     }
 
     /**
@@ -577,31 +535,26 @@ export class A_Context {
      * @returns 
      */
     static feature<T extends Array<string>>(
-        scope: A_Scope,
         entity: A_Entity<any, any>,
         feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
-        params?: Partial<A_TYPES__ScopeConstructor>
+        scope: A_Scope
     ): A_Feature
     static feature<T extends Array<string>>(
-        scope: A_Scope,
         container: A_Container,
         feature: T[number],
-        params?: Partial<A_TYPES__ScopeConstructor>
+        scope: A_Scope
     ): A_Feature
     static feature(
-        scope: A_Scope,
         component: A_Component,
         feature: string,
-        params?: Partial<A_TYPES__ScopeConstructor>
+        scope: A_Scope
     ): A_Feature
     static feature<T extends Array<string>>(
-        scope: A_Scope,
         param1: A_Component | A_Container | A_Entity<any, any>,
         param2: string | T[number],
-        param3?: Partial<A_TYPES__ScopeConstructor>
+        param3: A_Scope
     ): A_Feature {
-
-        const featureConstructor = this.featureDefinition(scope, param1, param2, param3);
+        const featureConstructor = this.featureDefinition(param1, param2, param3);
 
         const newFeature = new A_Feature(featureConstructor);
 

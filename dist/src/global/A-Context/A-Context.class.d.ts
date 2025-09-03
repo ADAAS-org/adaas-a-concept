@@ -1,4 +1,3 @@
-import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
@@ -55,8 +54,11 @@ export declare class A_Context {
     static get root(): A_Scope;
     static get environment(): 'server' | 'browser';
     static allocate(component: any, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static allocate(component: any, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope): A_Scope;
     static allocate(feature: A_Feature, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static allocate(feature: A_Feature, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope): A_Scope;
     static allocate(container: A_Container, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
+    static allocate(container: A_Container, importing: A_Scope): A_Scope;
     static meta(container: typeof A_Container): A_ContainerMeta;
     static meta(container: A_Container): A_ContainerMeta;
     static meta(entity: A_Entity): A_ContainerMeta;
@@ -84,27 +86,23 @@ export declare class A_Context {
      * @param scope
      * @returns
      */
-    static featureDefinition(scope: A_Scope, entity: A_Entity, feature: A_TYPES__EntityBaseMethod | string | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static featureDefinition(scope: A_Scope, container: A_Container, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static featureDefinition(scope: A_Scope, component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static featureDefinition(component: A_Component | A_Container | A_Entity, feature: string | RegExp, scope: A_Scope): A_TYPES__FeatureConstructor;
     /**
      * This method returns a constructor params to create a new feature
      *
      * @param scope
      * @returns
      */
-    static abstractionDefinition(scope: A_Scope, entity: A_Entity, feature: A_TYPES__ConceptStage, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static abstractionDefinition(scope: A_Scope, container: A_Container, feature: A_TYPES__ConceptStage, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
-    static abstractionDefinition(scope: A_Scope, component: A_Component, feature: A_TYPES__ConceptStage, params?: Partial<A_TYPES__ScopeConstructor>): A_TYPES__Required<Partial<A_TYPES__FeatureConstructor>, ['steps', 'fragments', 'name', 'components']>;
+    static abstractionDefinition(component: A_Component | A_Container | A_Entity, abstraction: A_TYPES__ConceptStage, scope: A_Scope): A_TYPES__FeatureConstructor;
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
      *
      * @param scope
      * @returns
      */
-    static feature<T extends Array<string>>(scope: A_Scope, entity: A_Entity<any, any>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
-    static feature<T extends Array<string>>(scope: A_Scope, container: A_Container, feature: T[number], params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
-    static feature(scope: A_Scope, component: A_Component, feature: string, params?: Partial<A_TYPES__ScopeConstructor>): A_Feature;
+    static feature<T extends Array<string>>(entity: A_Entity<any, any>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, scope: A_Scope): A_Feature;
+    static feature<T extends Array<string>>(container: A_Container, feature: T[number], scope: A_Scope): A_Feature;
+    static feature(component: A_Component, feature: string, scope: A_Scope): A_Feature;
     /**
      * Register a Namespace in the provider.
      * @param Namespace

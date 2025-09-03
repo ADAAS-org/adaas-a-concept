@@ -48,6 +48,7 @@ console.log('Simple concept loaded', A_Concept);
         ]
     });
 
+    await concept.load();
     await concept.start();
 
 

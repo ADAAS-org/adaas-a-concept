@@ -1,7 +1,8 @@
 import { A_Abstraction_Extend } from "../../decorators/A-Abstraction/A-Abstraction-Extend.decorator";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__A_AbstractionConstructor, A_TYPES__AbstractionState } from "./A-Abstraction.types";
-import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_Error } from "@adaas/a-utils";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 export declare class A_Abstraction {
     name: string;
     protected features: A_Feature[];
@@ -9,11 +10,16 @@ export declare class A_Abstraction {
     protected _index: number;
     state: A_TYPES__AbstractionState;
     error?: A_Error;
+    readonly Scope: A_Scope;
     /**
      * Define a new A-Abstraction
      */
     static get Extend(): typeof A_Abstraction_Extend;
-    constructor(params: A_TYPES__Required<Partial<A_TYPES__A_AbstractionConstructor>, ['name', 'features']>);
+    constructor(
+    /**
+     * Parameters to define the A-Abstraction
+     */
+    params: A_TYPES__A_AbstractionConstructor);
     get feature(): A_Feature | undefined;
     [Symbol.iterator](): Iterator<A_Feature, any>;
     /**

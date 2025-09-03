@@ -16,12 +16,21 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  *
  */
 class A_Component {
-    constructor(params) {
+    constructor() {
         console.log('A-Component instance created', this);
     }
-    call(feature_1) {
-        return __awaiter(this, arguments, void 0, function* (feature, params = {}) {
-            const newFeature = A_Context_class_1.A_Context.feature(A_Context_class_1.A_Context.scope(this), this, feature, params);
+    call(
+    /**
+     * Name of the feature to call
+     */
+    feature, 
+    /**
+     * Scope in which the feature will be executed
+     */
+    scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            scope = scope ? scope.inherit(A_Context_class_1.A_Context.scope(this)) : A_Context_class_1.A_Context.scope(this);
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
             return yield newFeature.process();
         });
     }

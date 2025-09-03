@@ -36,12 +36,13 @@ export class MainContainer extends A_Container {
     @A_Feature.Define()
     async method_A() {
         console.log('Method A');
-        await this.call('method_A', {
+        await this.call('method_A', new A_Scope({
+            name: `method-A::${Date.now()}`,
             fragments: [
                 new ContextFragmentA(),
                 new ContextFragmentB()
             ]
-        });
+        }));
     }
 
 
@@ -62,10 +63,10 @@ export class MainContainer extends A_Container {
         const logger = this.Scope.resolve(A_Logger);
 
         // or  you can manually call the feature
-
-        const feature = A_Context.feature(this.Scope, this, 'method_B', {
+        const feature = A_Context.feature(this, 'method_B', new A_Scope({
+            name: `method-B::${Date.now()}`,
             fragments: [new ContextFragmentA(), new ContextFragmentB()]
-        });
+        }));
 
         for (const stage of feature) {
             logger.log('Manual Loop Execution Step', feature.stage);
