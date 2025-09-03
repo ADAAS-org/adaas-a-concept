@@ -92,6 +92,32 @@ class A_Scope {
             }
         }
     }
+    /**
+     * Merges two scopes into a new one
+     *
+     * @param anotherScope
+     * @returns
+     */
+    merge(anotherScope) {
+        const merged = new A_Scope({
+            name: `${this.name}&${anotherScope.name}`,
+            components: Array.from(new Set([
+                ...this.params.components,
+                ...anotherScope.params.components
+            ])),
+            fragments: Array.from(new Set([
+                ...this.params.fragments,
+                ...anotherScope.params.fragments
+            ])),
+            entities: Array.from(new Set([
+                ...this.params.entities,
+                ...anotherScope.params.entities
+            ])),
+        }, {
+            parent: this._parent || anotherScope._parent
+        });
+        return merged;
+    }
     // base definition
     resolve(param1, param2) {
         switch (true) {

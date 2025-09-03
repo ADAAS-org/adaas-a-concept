@@ -41,6 +41,13 @@ export declare class A_Scope {
     has(entity: typeof A_Entity): boolean;
     has(fragment: typeof A_Fragment): boolean;
     /**
+     * Merges two scopes into a new one
+     *
+     * @param anotherScope
+     * @returns
+     */
+    merge(anotherScope: A_Scope): A_Scope;
+    /**
      * This method is used to get the component by class
      *
      * @param component

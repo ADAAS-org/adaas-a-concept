@@ -1,6 +1,7 @@
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "../../decorators/A-Feature/A-Feature.decorator.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 export declare enum A_TYPES__A_Stage_Status {
     /**
      * The stage is currently being processed
@@ -75,4 +76,8 @@ export type A_TYPES__A_Stage_JSON = {
      *
      */
     status: A_TYPES__A_Stage_Status;
+};
+export type A_TYPES__A_StageStepProcessingExtraParams = {
+    steps: A_TYPES__A_StageStep[];
+    scope: A_Scope;
 };

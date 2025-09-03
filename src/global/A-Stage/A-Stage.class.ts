@@ -1,8 +1,10 @@
 import { A_CommonHelper, A_Error } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
-import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep } from "./A-Stage.types";
+import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep, A_TYPES__A_StageStepProcessingExtraParams } from "./A-Stage.types";
 import { A_Container } from "../A-Container/A-Container.class";
+import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
 
 
 /**
@@ -51,7 +53,11 @@ export class A_Stage {
      * @param step 
      * @returns 
      */
-    protected async getStepArgs(step: A_TYPES__A_StageStep) {
+    protected async getStepArgs(
+        step: A_TYPES__A_StageStep,
+        scope: A_Scope = new A_Scope({}, {})
+    ) {
+
         return Promise
             .all(A_Context
                 .meta(
@@ -60,12 +66,15 @@ export class A_Stage {
                         : step.component
                 )
                 .injections(step.handler)
-                .map(async arg =>
-                    // In case if the target is a feature step then pass the current feature
-                    A_CommonHelper.isInheritedFrom(arg.target, A_Feature)
-                        ? this.feature
-                        : A_Context.scope(this.feature).resolve(arg.target)
-                ));
+                .map(async arg => {
+                    if (A_CommonHelper.isInheritedFrom(arg.target, A_Feature))
+                        return this.feature;
+
+                    return scope
+                        .merge(A_Context.scope(this.feature))
+                        .resolve(arg.target)
+                })
+            )
     }
 
 
@@ -116,14 +125,14 @@ export class A_Stage {
      * @param step 
      * @returns 
      */
-    protected async callStepHandler(step: A_TYPES__A_StageStep) {
-
+    protected async callStepHandler(
+        step: A_TYPES__A_StageStep,
+        scope?: A_Scope
+    ) {
         const instance = await this.getStepInstance(step);
-        const callArgs = await this.getStepArgs(step);
-
+        const callArgs = await this.getStepArgs(step, scope);
 
         return instance[step.handler](...callArgs);
-
     }
 
 
@@ -132,30 +141,35 @@ export class A_Stage {
      * 
      * @returns 
      */
-    async process(): Promise<void> {
+    async process(
+        params?: Partial<A_TYPES__A_StageStepProcessingExtraParams>
+    ): Promise<void> {
         if (!this.processed)
             this.processed = new Promise<void>(
                 async (resolve, reject) => {
                     try {
                         this.status = A_TYPES__A_Stage_Status.PROCESSING;
 
+                        if (params?.steps && params.steps.length) {
+                            params.steps.forEach(step => this.add(step));
+                        }
+
                         const syncSteps = this.steps.filter(step => step.behavior === 'sync');
                         const asyncSteps = this.steps.filter(step => step.behavior === 'async');
 
                         // Run sync steps
-
                         await Promise
                             .all([
 
                                 // Run async steps that are independent of each other
-                                ...asyncSteps.map(step => this.callStepHandler(step)),
+                                ...asyncSteps.map(step => this.callStepHandler(step, params?.scope)),
 
                                 // Run sync steps that are dependent on each other
                                 new Promise<void>(
                                     async (r, j) => {
                                         try {
                                             for (const step of syncSteps) {
-                                                await this.callStepHandler(step);
+                                                await this.callStepHandler(step, params?.scope);
                                             }
 
                                             return r();

@@ -165,6 +165,39 @@ export class A_Scope {
     }
 
 
+
+    /**
+     * Merges two scopes into a new one
+     * 
+     * @param anotherScope 
+     * @returns 
+     */
+    merge(anotherScope: A_Scope): A_Scope {
+        const merged = new A_Scope(
+            {
+                name: `${this.name}&${anotherScope.name}`,
+                components: Array.from(new Set([
+                    ...this.params.components,
+                    ...anotherScope.params.components
+                ])),
+                fragments: Array.from(new Set([
+                    ...this.params.fragments,
+                    ...anotherScope.params.fragments
+                ])),
+                entities: Array.from(new Set([
+                    ...this.params.entities,
+                    ...anotherScope.params.entities
+                ])),
+            },
+            {
+                parent: this._parent || anotherScope._parent
+            }
+        );
+
+        return merged;
+    }
+
+
     /**
      * This method is used to get the component by class
      * 
