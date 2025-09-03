@@ -225,11 +225,15 @@ class A_Context {
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
-        const featureDefinition = this.meta(component)
-            .get(metaKey)
-            .get(param2);
+        const meta = this.meta(component);
+        if (!meta)
+            throw new Error(`[!] A-Concept Context: Meta not found. for Component ${component.constructor.name}`);
+        const allFeatures = meta.get(metaKey);
+        if (!allFeatures)
+            throw new Error(`[!] A-Concept Context: Features not found. for Component ${component.constructor.name}`);
+        const featureDefinition = allFeatures.get(param2);
         if (!featureDefinition)
-            throw new Error(`[!] A-Concept Context: Feature not found.`);
+            throw new Error(`[!] A-Concept Context: Feature ${param2} not found. for Component ${component.constructor.name}`);
         const steps = [
             ...featureDefinition.template
         ];
