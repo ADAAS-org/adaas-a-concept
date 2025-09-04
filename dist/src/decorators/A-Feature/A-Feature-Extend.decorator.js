@@ -27,11 +27,21 @@ function A_Feature_Extend(param1) {
         else {
             targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
         }
+        const existedDefinitions = A_Context_class_1.A_Context
+            .meta(target)
+            .get(A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES);
         // Get the existed metadata or create a new one
         const existedMeta = A_Context_class_1.A_Context
             .meta(target)
             .get(A_Component_types_1.A_TYPES__ComponentMetaKey.EXTENSIONS)
             || new A_Meta_class_1.A_Meta();
+        if (existedDefinitions
+            && existedDefinitions.size()
+            && existedDefinitions.has(propertyKey)
+            && existedDefinitions.get(propertyKey).invoke) {
+            throw new Error(`A-Feature-Extend cannot be used on the method "${propertyKey}" because it is already defined as a Feature with "invoke" set to true.
+            Please remove the A-Feature-Extend decorator or set "invoke" to false in the A-Feature decorator.`);
+        }
         const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
         // Add the new method to the metadata
         existedMetaValue.push({

@@ -308,8 +308,14 @@ class A_Context {
         });
         return { name, steps, scope };
     }
-    static feature(param1, param2, param3) {
-        const featureConstructor = this.featureDefinition(param1, param2, param3);
+    /**
+     * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
+     *
+     * @param scope
+     * @returns
+     */
+    static feature(component, feature, scope) {
+        const featureConstructor = this.featureDefinition(component, feature, scope);
         const newFeature = new A_Feature_class_1.A_Feature(featureConstructor);
         return newFeature;
     }

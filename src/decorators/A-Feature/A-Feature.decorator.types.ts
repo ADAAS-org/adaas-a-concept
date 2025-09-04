@@ -39,6 +39,7 @@ export type A_TYPES__A_FeatureTemplateItem = A_TYPES__Required<Partial<A_TYPES__
 export type A_TYPES__A_DefineDecorator_Meta = {
     name: string,
     handler: string,
+    invoke: boolean,
     channel: Array<typeof A_Channel>
     template: Array<A_TYPES__A_StageStep>
 }

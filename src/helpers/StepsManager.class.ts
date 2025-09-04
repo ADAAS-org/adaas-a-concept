@@ -82,7 +82,7 @@ export class StepsManager {
             if (!this.visited.has(this.ID(entity))) this.visit(this.ID(entity));
         });
 
-        const stages: A_Stage[] = [];
+        const stages: A_TmpStage[] = [];
 
         // Map sorted names back to entity objects
         this.sortedEntities
@@ -96,13 +96,73 @@ export class StepsManager {
 
 
                 if (!stage) {
-                    stage = new A_Stage(feature);
+                    stage = new A_TmpStage();
                     stages.push(stage);
                 }
 
                 stage.add(step);
             });
 
-        return stages;
+        return stages.map(stage => new A_Stage(feature, stage.steps) );
+    }
+}
+
+
+
+
+
+export class A_TmpStage {
+
+    readonly name: string = 'A_TmpStage';
+
+    private readonly _steps!: A_TYPES__A_StageStep[];
+
+    constructor(
+        _steps: A_TYPES__A_StageStep[] = []
+    ) {
+        this._steps = _steps;
+    }
+
+
+    get before(): string[] {
+        return this._steps.reduce((acc, step) => ([
+            ...acc,
+            ...step.before
+        ]), [] as string[]);
+    }
+
+    get after(): string[] {
+        return this._steps.reduce((acc, step) => ([
+            ...acc,
+            ...step.after
+        ]), [] as string[]);
+    }
+
+    get steps(): A_TYPES__A_StageStep[] {
+        return this._steps;
+    }
+
+
+    get asyncSteps(): A_TYPES__A_StageStep[] {
+        return this._steps.filter(step => step.behavior === 'async');
+    }
+
+    get syncSteps(): A_TYPES__A_StageStep[] {
+        return this._steps.filter(step => step.behavior === 'sync');
+    }
+
+
+    /**
+     * Adds a step to the stage
+     * 
+     * @param step 
+     * @returns 
+     */
+    add(
+        step: A_TYPES__A_StageStep
+    ): this {
+        this._steps.push(step);
+
+        return this;
     }
 }

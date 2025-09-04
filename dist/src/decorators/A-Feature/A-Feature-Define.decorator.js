@@ -47,6 +47,7 @@ function A_Feature_Define(config = {}) {
         existedMeta.set(propertyKey, {
             name: `${target.constructor.name}.${handlerName}`,
             handler: handlerName,
+            invoke: invoke,
             template: config.template && config.template.length ? config.template.map(item => (Object.assign(Object.assign({}, item), { before: item.before || [], after: item.after || [], behavior: item.behavior || 'sync' }))) : [],
             channel: config.channel || []
         });

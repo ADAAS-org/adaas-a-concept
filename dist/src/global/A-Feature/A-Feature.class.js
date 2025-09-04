@@ -15,6 +15,7 @@ const A_Feature_Extend_decorator_1 = require("../../decorators/A-Feature/A-Featu
 const A_Feature_types_1 = require("./A-Feature.types");
 const a_utils_1 = require("@adaas/a-utils");
 const StepsManager_class_1 = require("../../helpers/StepsManager.class");
+const A_Stage_error_1 = require("../A-Stage/A-Stage.error");
 /**
  * A_Feature is representing a feature that can be executed across multiple components
  * This class stores the steps of the feature and executes them in order of appearance
@@ -139,41 +140,32 @@ class A_Feature {
      */
     process(scope) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('Processing feature:', this.name);
             if (this.isDone()) {
                 return this.result;
             }
             try {
                 this.state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
                 for (const stage of this.stages) {
+                    console.log('Processing stage:', stage.name);
                     yield stage.process();
+                    console.log('Stage processed:', stage.name, 'Status:', stage.status);
                 }
-                yield this.completed();
+                return yield this.completed();
             }
             catch (error) {
-                yield this.failed(error);
+                return yield this.failed(error);
             }
         });
     }
     errorHandler(error) {
         return __awaiter(this, void 0, void 0, function* () {
+            console.log('Feature failed with error:', this.name);
             switch (true) {
+                case error instanceof A_Stage_error_1.A_StageError:
+                    return; // Do nothing, already handled in the stage
                 case error instanceof a_utils_1.A_Error:
                     throw error;
-                case error instanceof Error
-                    && error.message === 'FEATURE_PROCESSING_INTERRUPTED'
-                    && this.state === A_Feature_types_1.A_TYPES__FeatureState.FAILED:
-                    throw new a_utils_1.A_Error({
-                        message: 'FEATURE_PROCESSING_INTERRUPTED',
-                        code: 'FEATURE_PROCESSING_INTERRUPTED',
-                        data: {
-                            feature: this
-                        }
-                    });
-                case error instanceof Error
-                    && error.message === 'FEATURE_PROCESSING_INTERRUPTED'
-                    && this.state === A_Feature_types_1.A_TYPES__FeatureState.COMPLETED:
-                    // Do nothing
-                    break;
                 default:
                     throw error;
             }

@@ -40,6 +40,12 @@ export declare class A_Meta<_StorageItems extends Record<string, any>> implement
      */
     delete(key: keyof _StorageItems): boolean;
     /**
+     * Method to get the size of the map
+     *
+     * @returns
+     */
+    size(): number;
+    /**
      * This method is needed to convert the key to a regular expression and cover cases like:
      *
      * simple * e.g. "a*" instead of "a.*"

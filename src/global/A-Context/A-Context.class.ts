@@ -535,26 +535,11 @@ export class A_Context {
      * @returns 
      */
     static feature<T extends Array<string>>(
-        entity: A_Entity<any, any>,
-        feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp,
+        component: A_Component | A_Container | A_Entity<any, any>,
+        feature: string | T[number]| RegExp,
         scope: A_Scope
-    ): A_Feature
-    static feature<T extends Array<string>>(
-        container: A_Container,
-        feature: T[number],
-        scope: A_Scope
-    ): A_Feature
-    static feature(
-        component: A_Component,
-        feature: string,
-        scope: A_Scope
-    ): A_Feature
-    static feature<T extends Array<string>>(
-        param1: A_Component | A_Container | A_Entity<any, any>,
-        param2: string | T[number],
-        param3: A_Scope
     ): A_Feature {
-        const featureConstructor = this.featureDefinition(param1, param2, param3);
+        const featureConstructor = this.featureDefinition(component, feature, scope);
 
         const newFeature = new A_Feature(featureConstructor);
 

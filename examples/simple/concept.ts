@@ -48,17 +48,22 @@ console.log('Simple concept loaded', A_Concept);
         ]
     });
 
-    await concept.load();
-    await concept.start();
+    // await concept.load();
+    // await concept.start();
 
 
-    await main.method_B()
+    // await main.method_B()
 
 
-    await main.method_C();
+    // await main.method_C();
 
+    try {
+        await main.call('method_A')
 
-    await main.call('method_A')
+    } catch (error) {
+        console.error('Error occurred:', error);
+    }
+
 
 
 })();

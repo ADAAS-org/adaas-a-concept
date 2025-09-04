@@ -77,6 +77,7 @@ export function A_Feature_Define(
         existedMeta.set(propertyKey, {
             name: `${target.constructor.name}.${handlerName}`,
             handler: handlerName,
+            invoke: invoke,
             template: config.template && config.template.length ? config.template.map(
                 item => ({
                     ...item,

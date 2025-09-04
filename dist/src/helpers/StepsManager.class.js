@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.StepsManager = void 0;
+exports.A_TmpStage = exports.StepsManager = void 0;
 const A_Stage_class_1 = require("../global/A-Stage/A-Stage.class");
 class StepsManager {
     constructor(entities) {
@@ -76,13 +76,51 @@ class StepsManager {
                     && step.before.every(before => stage.after.includes(before));
             });
             if (!stage) {
-                stage = new A_Stage_class_1.A_Stage(feature);
+                stage = new A_TmpStage();
                 stages.push(stage);
             }
             stage.add(step);
         });
-        return stages;
+        return stages.map(stage => new A_Stage_class_1.A_Stage(feature, stage.steps));
     }
 }
 exports.StepsManager = StepsManager;
+class A_TmpStage {
+    constructor(_steps = []) {
+        this.name = 'A_TmpStage';
+        this._steps = _steps;
+    }
+    get before() {
+        return this._steps.reduce((acc, step) => ([
+            ...acc,
+            ...step.before
+        ]), []);
+    }
+    get after() {
+        return this._steps.reduce((acc, step) => ([
+            ...acc,
+            ...step.after
+        ]), []);
+    }
+    get steps() {
+        return this._steps;
+    }
+    get asyncSteps() {
+        return this._steps.filter(step => step.behavior === 'async');
+    }
+    get syncSteps() {
+        return this._steps.filter(step => step.behavior === 'sync');
+    }
+    /**
+     * Adds a step to the stage
+     *
+     * @param step
+     * @returns
+     */
+    add(step) {
+        this._steps.push(step);
+        return this;
+    }
+}
+exports.A_TmpStage = A_TmpStage;
 //# sourceMappingURL=StepsManager.class.js.map

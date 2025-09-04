@@ -11,8 +11,9 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
  * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
  */
 export declare class A_Stage {
-    private feature;
-    private _steps;
+    readonly name: string;
+    private readonly feature;
+    private readonly _steps;
     constructor(feature: A_Feature, _steps?: A_TYPES__A_StageStep[]);
     status: A_TYPES__A_Stage_Status;
     /**

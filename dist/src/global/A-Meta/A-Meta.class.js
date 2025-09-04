@@ -75,6 +75,14 @@ class A_Meta {
         return this.meta.delete(key);
     }
     /**
+     * Method to get the size of the map
+     *
+     * @returns
+     */
+    size() {
+        return this.meta.size;
+    }
+    /**
      * This method is needed to convert the key to a regular expression and cover cases like:
      *
      * simple * e.g. "a*" instead of "a.*"

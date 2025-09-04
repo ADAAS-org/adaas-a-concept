@@ -14,10 +14,10 @@ export class ComponentA extends A_Component {
 
 
     @A_Feature.Extend()
+    @A_Feature.Define() 
     async method_A(
         @A_Inject(ContextFragmentA) fragmentA: ContextFragmentA,
         @A_Inject(A_Logger) logger: A_Logger,
-
     ) {
         logger.log('red', 'Component A ->  method_A()');
         fragmentA.decrement();
@@ -31,9 +31,18 @@ export class ComponentA extends A_Component {
     async someMethod(
         @A_Inject(ContextFragmentB) fragmentB: ContextFragmentB
     ) {
-        console.log('Component A ->  method_A() -> someMethod()');
+        // throw new Error('Some error occurred');
 
-        fragmentB.increment();
+        return new Promise<void>((resolve, reject) => {
+            setTimeout(() => {
+                console.log('Component A ->  method_A() -> someMethod()');
+
+                fragmentB.increment();
+                console.log('awaited after 5 sec');
+                resolve();
+
+            }, 5000);
+        });
     }
 
 

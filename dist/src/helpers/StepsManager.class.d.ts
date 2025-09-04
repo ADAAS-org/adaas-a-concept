@@ -14,3 +14,20 @@ export declare class StepsManager {
     private visit;
     toStages(feature: A_Feature): Array<A_Stage>;
 }
+export declare class A_TmpStage {
+    readonly name: string;
+    private readonly _steps;
+    constructor(_steps?: A_TYPES__A_StageStep[]);
+    get before(): string[];
+    get after(): string[];
+    get steps(): A_TYPES__A_StageStep[];
+    get asyncSteps(): A_TYPES__A_StageStep[];
+    get syncSteps(): A_TYPES__A_StageStep[];
+    /**
+     * Adds a step to the stage
+     *
+     * @param step
+     * @returns
+     */
+    add(step: A_TYPES__A_StageStep): this;
+}

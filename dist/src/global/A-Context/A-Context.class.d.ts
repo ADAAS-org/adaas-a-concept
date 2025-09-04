@@ -7,7 +7,6 @@ import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Sc
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_ComponentMeta } from "../A-Component/A-Component.meta";
 import { A_ContainerMeta } from "../A-Container/A-Container.meta";
-import { A_TYPES__EntityBaseMethod } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
@@ -100,9 +99,7 @@ export declare class A_Context {
      * @param scope
      * @returns
      */
-    static feature<T extends Array<string>>(entity: A_Entity<any, any>, feature: A_TYPES__EntityBaseMethod | string | T[number] | RegExp, scope: A_Scope): A_Feature;
-    static feature<T extends Array<string>>(container: A_Container, feature: T[number], scope: A_Scope): A_Feature;
-    static feature(component: A_Component, feature: string, scope: A_Scope): A_Feature;
+    static feature<T extends Array<string>>(component: A_Component | A_Container | A_Entity<any, any>, feature: string | T[number] | RegExp, scope: A_Scope): A_Feature;
     /**
      * Register a Namespace in the provider.
      * @param Namespace

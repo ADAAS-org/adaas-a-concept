@@ -94,6 +94,16 @@ export class A_Meta<
 
 
     /**
+     * Method to get the size of the map
+     * 
+     * @returns 
+     */
+    size(): number {
+        return this.meta.size;
+    }
+
+
+    /**
      * This method is needed to convert the key to a regular expression and cover cases like: 
      * 
      * simple * e.g. "a*" instead of "a.*"

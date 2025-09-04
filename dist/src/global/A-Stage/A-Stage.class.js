@@ -16,6 +16,7 @@ const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 const A_Stage_types_1 = require("./A-Stage.types");
 const A_Container_class_1 = require("../A-Container/A-Container.class");
 const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
+const A_Stage_error_1 = require("./A-Stage.error");
 /**
  * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
  * Each stage may contain one or more functions.
@@ -25,9 +26,17 @@ const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
  */
 class A_Stage {
     constructor(feature, _steps = []) {
+        this.name = 'A_Stage';
+        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
         this.feature = feature;
         this._steps = _steps;
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
+        this.name = `${this.feature.name}::a-stage:[sync:${this
+            .syncSteps
+            .map(s => s.component.name + '.' + s.handler)
+            .join(' -> ')}][async:${this
+            .asyncSteps
+            .map(s => s.component.name + '.' + s.handler)
+            .join(' -> ')}]`;
     }
     get before() {
         return this._steps.reduce((acc, step) => ([
@@ -110,7 +119,7 @@ class A_Stage {
         return __awaiter(this, void 0, void 0, function* () {
             const instance = yield this.getStepInstance(step);
             const callArgs = yield this.getStepArgs(step, scope);
-            return instance[step.handler](...callArgs);
+            return yield instance[step.handler](...callArgs);
         });
     }
     /**
@@ -125,6 +134,7 @@ class A_Stage {
          */
         scope = new A_Scope_class_1.A_Scope({}, {}), params) {
             scope = scope.inherit(this.feature.Scope);
+            console.log(' -> Init stage processing:', this.name);
             if (!this.processed)
                 this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {
@@ -143,7 +153,9 @@ class A_Stage {
                             new Promise((r, j) => __awaiter(this, void 0, void 0, function* () {
                                 try {
                                     for (const step of syncSteps) {
+                                        console.log(' - -> Processing stage step:', step.handler, ' with Regexp: ', step.name);
                                         yield this.callStepHandler(step, scope);
+                                        console.log(' - -> Finished processing stage step:', step.handler);
                                     }
                                     return r();
                                 }
@@ -153,6 +165,7 @@ class A_Stage {
                             }))
                         ]);
                         this.completed();
+                        console.log(' -> Finished stage processing:', this.name);
                         return resolve();
                     }
                     catch (error) {
@@ -180,7 +193,7 @@ class A_Stage {
     }
     failed(error) {
         this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.FAILED;
-        this.feature.failed(error);
+        this.feature.failed(new A_Stage_error_1.A_StageError(error));
     }
     // ==========================================
     // ============ Serialization ===============

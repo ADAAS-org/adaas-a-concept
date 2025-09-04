@@ -3,8 +3,8 @@ import { A_Context } from "../A-Context/A-Context.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep, A_TYPES__A_StageStepProcessingExtraParams } from "./A-Stage.types";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_StageError } from "./A-Stage.error";
 
 
 /**
@@ -16,12 +16,24 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
  */
 export class A_Stage {
 
+    readonly name: string = 'A_Stage';
 
+    private readonly feature!: A_Feature;
+    private readonly _steps!: A_TYPES__A_StageStep[];
 
     constructor(
-        private feature: A_Feature,
-        private _steps: A_TYPES__A_StageStep[] = []
+        feature: A_Feature,
+        _steps: A_TYPES__A_StageStep[] = []
     ) {
+        this.feature = feature;
+        this._steps = _steps;
+        this.name = `${this.feature.name}::a-stage:[sync:${this
+            .syncSteps
+            .map(s => s.component.name + '.' + s.handler)
+            .join(' -> ')}][async:${this
+                .asyncSteps
+                .map(s => s.component.name + '.' + s.handler)
+                .join(' -> ')}]`;
 
     }
 
@@ -54,10 +66,10 @@ export class A_Stage {
     get asyncSteps(): A_TYPES__A_StageStep[] {
         return this._steps.filter(step => step.behavior === 'async');
     }
-    
+
     get syncSteps(): A_TYPES__A_StageStep[] {
         return this._steps.filter(step => step.behavior === 'sync');
-    }   
+    }
 
 
     /**
@@ -139,12 +151,12 @@ export class A_Stage {
      */
     protected async callStepHandler(
         step: A_TYPES__A_StageStep,
-        scope: A_Scope 
+        scope: A_Scope
     ) {
         const instance = await this.getStepInstance(step);
         const callArgs = await this.getStepArgs(step, scope);
 
-        return instance[step.handler](...callArgs);
+        return await instance[step.handler](...callArgs);
     }
 
 
@@ -163,6 +175,9 @@ export class A_Stage {
 
         scope = scope.inherit(this.feature.Scope);
 
+
+        console.log(' -> Init stage processing:', this.name);
+
         if (!this.processed)
             this.processed = new Promise<void>(
                 async (resolve, reject) => {
@@ -177,7 +192,7 @@ export class A_Stage {
                         const asyncSteps = this.asyncSteps.filter(params?.filter || (() => true));
 
                         // Run sync _steps
-                        await Promise 
+                        await Promise
                             .all([
 
                                 // Run async _steps that are independent of each other
@@ -188,11 +203,16 @@ export class A_Stage {
                                     async (r, j) => {
                                         try {
                                             for (const step of syncSteps) {
+                                                console.log(' - -> Processing stage step:', step.handler, ' with Regexp: ', step.name);
+
                                                 await this.callStepHandler(step, scope);
+
+                                                console.log(' - -> Finished processing stage step:', step.handler);
                                             }
 
                                             return r();
                                         } catch (error) {
+
                                             return j(error);
                                         }
                                     }
@@ -201,6 +221,7 @@ export class A_Stage {
 
                         this.completed();
 
+                        console.log(' -> Finished stage processing:', this.name);
                         return resolve();
 
                     } catch (error) {
@@ -243,7 +264,7 @@ export class A_Stage {
     ) {
         this.status = A_TYPES__A_Stage_Status.FAILED;
 
-        this.feature.failed(error);
+        this.feature.failed(new A_StageError(error));
     }
 
 
