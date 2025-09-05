@@ -115,7 +115,7 @@ class A_Entity {
      */
     load(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.call('load', scope);
+            return this.call('load', scope);
         });
     }
     /**
@@ -123,7 +123,7 @@ class A_Entity {
      */
     destroy(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.call('destroy', scope);
+            return this.call('destroy', scope);
         });
     }
     /**
@@ -131,7 +131,7 @@ class A_Entity {
      */
     save(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.call('save', scope);
+            return this.call('save', scope);
         });
     }
     // ====================================================================

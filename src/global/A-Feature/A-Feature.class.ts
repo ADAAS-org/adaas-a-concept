@@ -62,9 +62,6 @@ export class A_Feature {
         this.stages = this.SM.toStages(this);
 
         this._current = this.stages[0];
-
-
-        this.Scope.printInheritanceChain();
     }
 
 

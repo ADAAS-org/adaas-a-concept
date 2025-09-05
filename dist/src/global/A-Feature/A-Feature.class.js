@@ -47,7 +47,6 @@ class A_Feature {
         this.SM = new StepsManager_class_1.StepsManager(params.steps);
         this.stages = this.SM.toStages(this);
         this._current = this.stages[0];
-        this.Scope.printInheritanceChain();
     }
     /**
      * Returns the current A-Feature Stage

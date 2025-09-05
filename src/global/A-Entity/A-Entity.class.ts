@@ -161,21 +161,21 @@ export class A_Entity<
     async load(
         scope?: A_Scope,
     ) {
-        this.call('load', scope);
+        return this.call('load', scope);
     }
 
     /**
      * The default method that can be called and extended to destroy entity data.
      */
     async destroy(scope?: A_Scope) {
-        this.call('destroy', scope);
+        return this.call('destroy', scope);
     }
 
     /**
      * The default method that can be called and extended to save entity data.
      */
     async save(scope?: A_Scope) {
-        this.call('save', scope);
+        return this.call('save', scope);
     }
 
 

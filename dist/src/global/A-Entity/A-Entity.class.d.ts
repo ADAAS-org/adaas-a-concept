@@ -59,15 +59,15 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
     /**
      * The default method that can be called and extended to load entity data.
      */
-    load(scope?: A_Scope): Promise<void>;
+    load(scope?: A_Scope): Promise<any>;
     /**
      * The default method that can be called and extended to destroy entity data.
      */
-    destroy(scope?: A_Scope): Promise<void>;
+    destroy(scope?: A_Scope): Promise<any>;
     /**
      * The default method that can be called and extended to save entity data.
      */
-    save(scope?: A_Scope): Promise<void>;
+    save(scope?: A_Scope): Promise<any>;
     fromNew(newEntity: _ConstructorType): void;
     fromJSON(serialized: _SerializedType): void;
     /**
