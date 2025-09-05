@@ -1,6 +1,6 @@
 {
   "name": "@adaas/a-concept",
-  "version": "0.0.43",
+  "version": "0.0.44",
   "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
