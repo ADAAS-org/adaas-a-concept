@@ -158,17 +158,25 @@ export class A_Entity<
     /**
      * The default method that can be called and extended to load entity data.
      */
-    async load() { }
+    async load(
+        scope?: A_Scope,
+    ) {
+        this.call('load', scope);
+    }
 
     /**
      * The default method that can be called and extended to destroy entity data.
      */
-    async destroy() { }
+    async destroy(scope?: A_Scope) {
+        this.call('destroy', scope);
+    }
 
     /**
      * The default method that can be called and extended to save entity data.
      */
-    async save() { }
+    async save(scope?: A_Scope) {
+        this.call('save', scope);
+    }
 
 
 

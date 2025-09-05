@@ -113,20 +113,26 @@ class A_Entity {
     /**
      * The default method that can be called and extended to load entity data.
      */
-    load() {
-        return __awaiter(this, void 0, void 0, function* () { });
+    load(scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.call('load', scope);
+        });
     }
     /**
      * The default method that can be called and extended to destroy entity data.
      */
-    destroy() {
-        return __awaiter(this, void 0, void 0, function* () { });
+    destroy(scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.call('destroy', scope);
+        });
     }
     /**
      * The default method that can be called and extended to save entity data.
      */
-    save() {
-        return __awaiter(this, void 0, void 0, function* () { });
+    save(scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.call('save', scope);
+        });
     }
     // ====================================================================
     // ================== Entity Serialization ============================

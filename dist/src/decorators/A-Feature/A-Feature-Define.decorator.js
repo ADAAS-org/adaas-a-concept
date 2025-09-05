@@ -42,11 +42,12 @@ function A_Feature_Define(config = {}) {
         // Get the existed metadata or create a new one
         const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();
         const handlerName = config.name || propertyKey;
-        const invoke = config.invoke !== false;
+        //  default to false
+        const invoke = config.invoke || false;
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
             name: `${target.constructor.name}.${handlerName}`,
-            handler: handlerName,
+            handler: propertyKey,
             invoke: invoke,
             template: config.template && config.template.length ? config.template.map(item => (Object.assign(Object.assign({}, item), { before: item.before || [], after: item.after || [], behavior: item.behavior || 'sync' }))) : [],
             channel: config.channel || []
@@ -66,7 +67,7 @@ function A_Feature_Define(config = {}) {
                 originalMethod.apply(this, args);
             // Call your `call` with the function name
             if (typeof this.call === "function" && invoke)
-                return this.call(propertyKey);
+                return this.call(handlerName);
         };
         return descriptor;
     };

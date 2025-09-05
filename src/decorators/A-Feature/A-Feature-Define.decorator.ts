@@ -70,13 +70,14 @@ export function A_Feature_Define(
 
 
         const handlerName = config.name || propertyKey;
-        const invoke = config.invoke !== false;
-
+        //  default to false
+        const invoke = config.invoke || false;
+ 
 
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
             name: `${target.constructor.name}.${handlerName}`,
-            handler: handlerName,
+            handler: propertyKey,
             invoke: invoke,
             template: config.template && config.template.length ? config.template.map(
                 item => ({
@@ -114,7 +115,7 @@ export function A_Feature_Define(
 
             // Call your `call` with the function name
             if (typeof (this as any).call === "function" && invoke)
-                return (this as any).call(propertyKey);
+                return (this as any).call(handlerName);
 
         };
 
