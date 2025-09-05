@@ -100,7 +100,7 @@ class A_Scope {
             chain.push(current.name);
             current = current._parent;
         }
-        // console.log(chain.join(' -> '));
+        console.log(chain.join(' -> '));
     }
     has(entity) {
         switch (true) {

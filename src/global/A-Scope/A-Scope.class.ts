@@ -153,7 +153,7 @@ export class A_Scope {
             current = current._parent;
         }
 
-        // console.log(chain.join(' -> '));
+        console.log(chain.join(' -> '));
     }
 
 
