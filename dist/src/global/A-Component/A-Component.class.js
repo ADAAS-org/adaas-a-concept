@@ -17,7 +17,6 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
  */
 class A_Component {
     constructor() {
-        console.log('A-Component instance created', this);
     }
     call(
     /**

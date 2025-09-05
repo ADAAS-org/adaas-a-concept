@@ -140,16 +140,16 @@ class A_Feature {
      */
     process(scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Processing feature:', this.name);
+            // console.log('Processing feature:', this.name);
             if (this.isDone()) {
                 return this.result;
             }
             try {
                 this.state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
                 for (const stage of this.stages) {
-                    console.log('Processing stage:', stage.name);
+                    // console.log('Processing stage:', stage.name);
                     yield stage.process();
-                    console.log('Stage processed:', stage.name, 'Status:', stage.status);
+                    // console.log('Stage processed:', stage.name, 'Status:', stage.status);
                 }
                 return yield this.completed();
             }
@@ -160,7 +160,6 @@ class A_Feature {
     }
     errorHandler(error) {
         return __awaiter(this, void 0, void 0, function* () {
-            console.log('Feature failed with error:', this.name);
             switch (true) {
                 case error instanceof A_Stage_error_1.A_StageError:
                     return; // Do nothing, already handled in the stage

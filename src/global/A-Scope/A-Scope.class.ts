@@ -153,7 +153,7 @@ export class A_Scope {
             current = current._parent;
         }
 
-        console.log(chain.join(' -> '));
+        // console.log(chain.join(' -> '));
     }
 
 
@@ -173,11 +173,37 @@ export class A_Scope {
         fragment: typeof A_Fragment
     ): boolean
     has(
-        entity: typeof A_Fragment | typeof A_Component | typeof A_Entity
+        constructor: string
+    ): boolean
+    has(
+        entity: typeof A_Fragment | typeof A_Component | typeof A_Entity | string
     ): boolean {
 
 
         switch (true) {
+
+            case typeof entity === 'string': {
+                const possibleComponent = this.params.components.find(c => c.name === entity);
+
+                if (possibleComponent) {
+                    return true;
+                }
+
+                const possibleFragment = this.params.fragments.find(f => f.name === entity);
+
+                if (possibleFragment) {
+                    return true;
+                }
+
+                if (this.params.entities.some(e => e.constructor.name === entity)) {
+                    return true;
+                }
+
+                if (!!this._parent)
+                    return this._parent.has(entity);
+
+                return false;
+            }
 
             case A_CommonHelper.isInheritedFrom(entity, A_Component): {
                 const found = this.params.components.includes(entity as { new(...args: any[]): A_Component });

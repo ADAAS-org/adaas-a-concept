@@ -181,6 +181,7 @@ class A_Context {
      * @returns
      */
     static featureDefinition(component, feature, scope) {
+        var _a, _b;
         const instance = this.getInstance();
         const name = `${component.constructor.name}.${feature}`;
         /**
@@ -230,17 +231,10 @@ class A_Context {
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
-        const meta = this.meta(component);
-        if (!meta)
-            throw new Error(`[!] A-Concept Context: Meta not found. for Component ${component.constructor.name}`);
-        const allFeatures = meta.get(metaKey);
-        if (!allFeatures)
-            throw new Error(`[!] A-Concept Context: Features not found. for Component ${component.constructor.name}`);
-        const featureDefinition = allFeatures.get(feature);
-        if (!featureDefinition)
-            throw new Error(`[!] A-Concept Context: Feature ${feature} not found. for Component ${component.constructor.name}`);
+        const featureDefinition = (_b = (_a = this
+            .meta(component)) === null || _a === void 0 ? void 0 : _a.get(metaKey)) === null || _b === void 0 ? void 0 : _b.get(feature);
         const steps = [
-            ...featureDefinition.template
+            ...((featureDefinition === null || featureDefinition === void 0 ? void 0 : featureDefinition.template) || [])
         ];
         // const feature: string = new ASEID({
         //     id: `${param2}-${Math.random()}`,

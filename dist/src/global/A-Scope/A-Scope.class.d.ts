@@ -50,6 +50,7 @@ export declare class A_Scope {
     has(component: typeof A_Component): boolean;
     has(entity: typeof A_Entity): boolean;
     has(fragment: typeof A_Fragment): boolean;
+    has(constructor: string): boolean;
     /**
      * Merges two scopes into a new one
      *

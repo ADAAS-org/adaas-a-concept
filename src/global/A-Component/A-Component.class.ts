@@ -11,8 +11,6 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
  */
 export class A_Component {
     constructor() {
-        console.log('A-Component instance created', this);
-
     }
 
 

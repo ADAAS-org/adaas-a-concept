@@ -13,7 +13,6 @@ export class ComponentA extends A_Component {
 
 
 
-    @A_Feature.Extend()
     @A_Feature.Define() 
     async method_A(
         @A_Inject(ContextFragmentA) fragmentA: ContextFragmentA,

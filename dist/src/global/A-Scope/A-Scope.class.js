@@ -100,10 +100,26 @@ class A_Scope {
             chain.push(current.name);
             current = current._parent;
         }
-        console.log(chain.join(' -> '));
+        // console.log(chain.join(' -> '));
     }
     has(entity) {
         switch (true) {
+            case typeof entity === 'string': {
+                const possibleComponent = this.params.components.find(c => c.name === entity);
+                if (possibleComponent) {
+                    return true;
+                }
+                const possibleFragment = this.params.fragments.find(f => f.name === entity);
+                if (possibleFragment) {
+                    return true;
+                }
+                if (this.params.entities.some(e => e.constructor.name === entity)) {
+                    return true;
+                }
+                if (!!this._parent)
+                    return this._parent.has(entity);
+                return false;
+            }
             case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component): {
                 const found = this.params.components.includes(entity);
                 if (!found && !!this._parent)

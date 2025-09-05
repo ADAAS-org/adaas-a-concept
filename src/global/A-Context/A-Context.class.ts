@@ -20,6 +20,7 @@ import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 import { A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
+import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 
 
 
@@ -414,26 +415,14 @@ export class A_Context {
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
 
-        const meta = this.meta(component);
-
-        if (!meta)
-            throw new Error(`[!] A-Concept Context: Meta not found. for Component ${component.constructor.name}`);
-
-
-        const allFeatures = meta.get(metaKey)
-
-        if (!allFeatures)
-            throw new Error(`[!] A-Concept Context: Features not found. for Component ${component.constructor.name}`);
-
-
-        const featureDefinition = allFeatures.get(feature);
-
-        if (!featureDefinition)
-            throw new Error(`[!] A-Concept Context: Feature ${feature} not found. for Component ${component.constructor.name}`);
+        const featureDefinition: A_TYPES__A_DefineDecorator_Meta | undefined = this
+            .meta(component)
+            ?.get(metaKey)
+            ?.get(feature);
 
 
         const steps: A_TYPES__A_StageStep[] = [
-            ...featureDefinition.template
+            ...(featureDefinition?.template || [])
         ];
         // const feature: string = new ASEID({
         //     id: `${param2}-${Math.random()}`,
@@ -536,7 +525,7 @@ export class A_Context {
      */
     static feature<T extends Array<string>>(
         component: A_Component | A_Container | A_Entity<any, any>,
-        feature: string | T[number]| RegExp,
+        feature: string | T[number] | RegExp,
         scope: A_Scope
     ): A_Feature {
         const featureConstructor = this.featureDefinition(component, feature, scope);

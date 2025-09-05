@@ -183,8 +183,7 @@ export class A_Feature {
     async process(
         scope?: A_Scope
     ) {
-
-        console.log('Processing feature:', this.name);
+        // console.log('Processing feature:', this.name);
 
         if (this.isDone()) {
             return this.result;
@@ -194,12 +193,12 @@ export class A_Feature {
             this.state = A_TYPES__FeatureState.PROCESSING;
 
             for (const stage of this.stages) {
-                console.log('Processing stage:', stage.name);
+                // console.log('Processing stage:', stage.name);
 
                 await stage.process();
 
-                console.log('Stage processed:', stage.name, 'Status:', stage.status);
-            }   
+                // console.log('Stage processed:', stage.name, 'Status:', stage.status);
+            }
 
 
             return await this.completed();
@@ -214,7 +213,6 @@ export class A_Feature {
 
 
     protected async errorHandler(error: Error | A_Error | unknown) {
-        console.log('Feature failed with error:', this.name);
 
         switch (true) {
             case error instanceof A_StageError:

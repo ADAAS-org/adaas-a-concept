@@ -134,7 +134,7 @@ class A_Stage {
          */
         scope = new A_Scope_class_1.A_Scope({}, {}), params) {
             scope = scope.inherit(this.feature.Scope);
-            console.log(' -> Init stage processing:', this.name);
+            // console.log(' -> Init stage processing:', this.name);
             if (!this.processed)
                 this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {
@@ -153,9 +153,9 @@ class A_Stage {
                             new Promise((r, j) => __awaiter(this, void 0, void 0, function* () {
                                 try {
                                     for (const step of syncSteps) {
-                                        console.log(' - -> Processing stage step:', step.handler, ' with Regexp: ', step.name);
+                                        // console.log(' - -> Processing stage step:', step.handler, ' with Regexp: ', step.name);
                                         yield this.callStepHandler(step, scope);
-                                        console.log(' - -> Finished processing stage step:', step.handler);
+                                        // console.log(' - -> Finished processing stage step:', step.handler);
                                     }
                                     return r();
                                 }
@@ -165,7 +165,7 @@ class A_Stage {
                             }))
                         ]);
                         this.completed();
-                        console.log(' -> Finished stage processing:', this.name);
+                        // console.log(' -> Finished stage processing:', this.name);
                         return resolve();
                     }
                     catch (error) {
