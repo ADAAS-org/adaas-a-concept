@@ -181,10 +181,32 @@ class A_Scope {
             case typeof param1 === 'function': {
                 return this.resolveOnce(param1);
             }
+            case typeof param1 === 'string': {
+                return this.resolveByName(param1);
+            }
             default: {
                 throw new Error('Invalid arguments provided');
             }
         }
+    }
+    resolveByName(name) {
+        // Check components
+        const component = this.params.components.find(c => c.name === name);
+        if (component)
+            return component;
+        // Check fragments
+        const fragment = this.params.fragments.find(f => f.constructor.name === name);
+        if (fragment)
+            return fragment;
+        // Check entities
+        const entity = this.params.entities.find(e => e.constructor.name === name);
+        if (entity)
+            return entity;
+        // If not found in current scope, check parent scope
+        if (this._parent) {
+            return this._parent.resolveByName(name);
+        }
+        throw new Error(`Component, Fragment, or Entity with name ${name} not found in the scope ${this.name}`);
     }
     resolveOnce(component, instructions) {
         switch (true) {

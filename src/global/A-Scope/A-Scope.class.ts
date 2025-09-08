@@ -282,6 +282,9 @@ export class A_Scope {
      * @returns 
      */
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
+        string: string
+    ): InstanceType<T>
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: T
     ): InstanceType<T>
     resolve<T extends { new(...args: any[]): A_Entity }>(
@@ -293,7 +296,7 @@ export class A_Scope {
     ): Array<InstanceType<T>>
     // base definition
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
-        param1: Array<T> | T,
+        param1: Array<T> | T | string,
         param2?: string | Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): Array<InstanceType<T>> | InstanceType<T> {
 
@@ -306,12 +309,38 @@ export class A_Scope {
                 return this.resolveOnce(param1);
             }
 
+            case typeof param1 === 'string': {
+                return this.resolveByName(param1) as InstanceType<T>;
+            }
+
+
             default: {
                 throw new Error('Invalid arguments provided');
             }
         }
     }
 
+
+    private resolveByName(name: string): A_Entity | A_Fragment | { new(...args: any[]): A_Component } {
+        // Check components
+        const component = this.params.components.find(c => c.name === name);
+        if (component) return component;
+
+        // Check fragments
+        const fragment = this.params.fragments.find(f => f.constructor.name === name);
+        if (fragment) return fragment;
+
+        // Check entities
+        const entity = this.params.entities.find(e => e.constructor.name === name);
+        if (entity) return entity ;
+
+        // If not found in current scope, check parent scope
+        if (this._parent) {
+            return this._parent.resolveByName(name);
+        }
+
+        throw new Error(`Component, Fragment, or Entity with name ${name} not found in the scope ${this.name}`);
+    }
 
 
 

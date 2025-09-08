@@ -68,11 +68,13 @@ export declare class A_Scope {
      * @param component
      * @returns
      */
+    resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(string: string): InstanceType<T>;
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: T): InstanceType<T>;
     resolve<T extends {
         new (...args: any[]): A_Entity;
     }>(entity: T, instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>): InstanceType<T>;
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: Array<T>): Array<InstanceType<T>>;
+    private resolveByName;
     private resolveOnce;
     private resolveEntity;
     private resolveFragment;
