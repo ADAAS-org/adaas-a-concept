@@ -31,6 +31,7 @@ export declare class A_Scope {
     get fragments(): A_Fragment[];
     parent(setValue: A_Scope): void;
     parent(): A_Scope;
+    isInheritedFrom(scope: A_Scope): boolean;
     inherit(parent: A_Scope): A_Scope;
     /**
      * Helper method to check circular inheritance

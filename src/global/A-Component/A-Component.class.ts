@@ -14,6 +14,7 @@ export class A_Component {
     }
 
 
+
     async call(
         /**
          * Name of the feature to call
@@ -22,9 +23,13 @@ export class A_Component {
         /**
          * Scope in which the feature will be executed
          */
-        scope?: A_Scope,
+        scope: A_Scope = A_Context.scope(this)
     ) {
-        scope = scope ? scope.inherit(A_Context.scope(this)) : A_Context.scope(this);
+
+        if (scope && !scope.isInheritedFrom(A_Context.scope(this))) {
+            scope = scope.inherit(A_Context.scope(this));
+        }
+
 
         const newFeature = A_Context.feature(this, feature, scope);
 

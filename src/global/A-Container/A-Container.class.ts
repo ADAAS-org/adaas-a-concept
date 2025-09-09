@@ -53,9 +53,13 @@ export class A_Container {
 
     async call(
         feature: string,
-        scope?: A_Scope,
+        scope: A_Scope = this.Scope
     ) {
-        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+
+        if (scope && !scope.isInheritedFrom(this.Scope)) {
+            scope = scope.inherit(this.Scope);
+        }
+
 
         const newFeature = A_Context.feature(this, feature, scope);
 
@@ -70,10 +74,12 @@ export class A_Container {
      */
     feature(
         feature: string,
-        scope?: A_Scope,
-    ): A_TYPES__FeatureConstructor {
+        scope: A_Scope = this.Scope
+    ) {
 
-        scope = scope ? scope.inherit(this.Scope) : this.Scope;
+        if (scope && !scope.isInheritedFrom(this.Scope)) {
+            scope = scope.inherit(this.Scope);
+        }
 
         return A_Context.featureDefinition(this, feature, scope);
     }

@@ -129,6 +129,8 @@ export class A_Entity<
         return this.aseid.shard;
     }
 
+ 
+
 
     /**
      * Call a feature of the component
@@ -138,10 +140,12 @@ export class A_Entity<
      */
     async call(
         feature: string,
-        scope?: A_Scope,
+        scope: A_Scope = A_Context.scope(this)
     ) {
 
-        scope = scope ? scope.inherit(A_Context.scope(this)) : A_Context.scope(this);
+        if (scope && !scope.isInheritedFrom(A_Context.scope(this))) {
+            scope = scope.inherit(A_Context.scope(this));
+        }
 
         const newFeature = A_Context.feature(this, feature, scope);
 

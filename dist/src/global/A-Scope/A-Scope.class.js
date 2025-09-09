@@ -65,6 +65,16 @@ class A_Scope {
         }
         return this._parent;
     }
+    isInheritedFrom(scope) {
+        let current = this;
+        while (current) {
+            if (current === scope) {
+                return true;
+            }
+            current = current._parent;
+        }
+        return false;
+    }
     inherit(parent) {
         // Prevent circular inheritance
         const circularCheck = this.checkCircularInheritance(parent);

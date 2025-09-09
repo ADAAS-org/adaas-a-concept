@@ -107,6 +107,20 @@ export class A_Scope {
     }
 
 
+    isInheritedFrom(scope: A_Scope): boolean {
+        let current: A_Scope | undefined = this;
+
+        while (current) {
+            if (current === scope) {
+                return true;
+            }
+            current = current._parent;
+        }
+
+        return false;
+    }
+
+
     inherit(parent: A_Scope): A_Scope {
         // Prevent circular inheritance
         const circularCheck = this.checkCircularInheritance(parent);
@@ -313,7 +327,6 @@ export class A_Scope {
                 return this.resolveByName(param1) as InstanceType<T>;
             }
 
-
             default: {
                 throw new Error('Invalid arguments provided');
             }
@@ -332,7 +345,7 @@ export class A_Scope {
 
         // Check entities
         const entity = this.params.entities.find(e => e.constructor.name === name);
-        if (entity) return entity ;
+        if (entity) return entity;
 
         // If not found in current scope, check parent scope
         if (this._parent) {
