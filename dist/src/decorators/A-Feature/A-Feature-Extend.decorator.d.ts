@@ -30,3 +30,4 @@ export declare function A_Feature_Extend(config: Partial<A_TYPES__A_ExtendDecora
  * [!] AND it will be applicable for ANY element where the name is the same as the name of the function
  */
 export declare function A_Feature_Extend(): any;
+export declare function buildTargetRegexp(param1: any, include: any[], exclude: any[], propertyKey: string): RegExp;

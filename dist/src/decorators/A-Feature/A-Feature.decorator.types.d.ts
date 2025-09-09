@@ -38,15 +38,34 @@ export type A_TYPES__A_ExtendDecoratorConfig = {
      *
      * [!] If not provided will be applied to all containers with the same name.
      * [!!] By default uses OR to join all provided items. If you need more complex Logic, please use Regexp instead
+     *
+     * [!!!] In case if you need to exclude some containers, entities or components, please use "exclude" property
+     *
+     * Example:
+     *
+     * ```ts
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      scope: {
+     *          include: [A_Container1, A_Entity1],
+     *          exclude: [A_Component1]
+     *      }
+     *  })
+     * ```
      */
-    scope: Array<{
-        new (...args: any[]): A_Container;
-    } | {
-        new (...args: any[]): A_Entity;
-    } | {
-        new (...args: any[]): A_Component;
-    }>;
+    scope: Array<A_TYPES__A_ExtendDecorator_ScopeItem> | Partial<A_TYPES__A_ExtendDecorator_ScopeConfig>;
 } & A_TYPES__A_ExtendDecorator_BehaviorConfig;
+export type A_TYPES__A_ExtendDecorator_ScopeItem = {
+    new (...args: any[]): A_Container;
+} | {
+    new (...args: any[]): A_Entity;
+} | {
+    new (...args: any[]): A_Component;
+};
+export type A_TYPES__A_ExtendDecorator_ScopeConfig = {
+    include?: Array<A_TYPES__A_ExtendDecorator_ScopeItem>;
+    exclude?: Array<A_TYPES__A_ExtendDecorator_ScopeItem>;
+};
 export type A_TYPES__A_ExtendDecorator_BehaviorConfig = {
     /**
      * The behavior of the method.

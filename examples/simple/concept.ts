@@ -10,6 +10,7 @@ import { ENVConfigReader } from "@adaas/a-concept/base/A-Config/components/ENVCo
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
+import { SecondaryContainer } from "./containers/Secondary.container";
 
 console.log('Simple concept loaded', A_Concept);
 
@@ -17,6 +18,19 @@ console.log('Simple concept loaded', A_Concept);
 
     const main = new MainContainer({
         name: 'MainContainer',
+        components: [
+            A_Logger,
+            ComponentA,
+            ComponentB
+        ],
+        fragments: [
+            new ContextFragmentA(),
+            new ContextFragmentB()
+        ]
+    })
+
+    const second = new SecondaryContainer({
+        name: 'SecondaryContainer',
         components: [
             A_Logger,
             ComponentA,
@@ -44,7 +58,8 @@ console.log('Simple concept loaded', A_Concept);
                     ENVConfigReader
                 ]
             }),
-            main
+            main,
+            second
         ]
     });
 
@@ -58,7 +73,8 @@ console.log('Simple concept loaded', A_Concept);
     // await main.method_C();
 
     try {
-        await main.call('method_A')
+        await main.call('method_C')
+        await second.call('method_C')
 
     } catch (error) {
         console.error('Error occurred:', error);

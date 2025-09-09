@@ -4,6 +4,7 @@ import { ContextFragmentB } from "../context/Fragment_B.context";
 import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
+import { SecondaryContainer } from "../containers/Secondary.container";
 
 export class ComponentA extends A_Component {
 
@@ -13,7 +14,7 @@ export class ComponentA extends A_Component {
 
 
 
-    @A_Feature.Define() 
+    @A_Feature.Define()
     async method_A(
         @A_Inject(ContextFragmentA) fragmentA: ContextFragmentA,
         @A_Inject(A_Logger) logger: A_Logger,
@@ -45,7 +46,9 @@ export class ComponentA extends A_Component {
     }
 
 
-    @A_Feature.Extend()
+    @A_Feature.Extend({
+        scope: [SecondaryContainer]
+    })
     async method_C(
         @A_Inject(A_Logger) logger: A_Logger
     ) {
