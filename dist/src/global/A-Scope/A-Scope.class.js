@@ -203,15 +203,15 @@ class A_Scope {
         // Check components
         const component = this.params.components.find(c => c.name === name);
         if (component)
-            return component;
+            return this.resolveComponent(component);
         // Check fragments
         const fragment = this.params.fragments.find(f => f.constructor.name === name);
         if (fragment)
-            return fragment;
+            return this.resolveFragment(fragment.constructor);
         // Check entities
         const entity = this.params.entities.find(e => e.constructor.name === name);
         if (entity)
-            return entity;
+            return this.resolveEntity(entity.constructor);
         // If not found in current scope, check parent scope
         if (this._parent) {
             return this._parent.resolveByName(name);

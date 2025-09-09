@@ -106,7 +106,6 @@ export class A_Scope {
         return this._parent;
     }
 
-
     isInheritedFrom(scope: A_Scope): boolean {
         let current: A_Scope | undefined = this;
 
@@ -334,18 +333,18 @@ export class A_Scope {
     }
 
 
-    private resolveByName(name: string): A_Entity | A_Fragment | { new(...args: any[]): A_Component } {
+    private resolveByName(name: string): A_Entity | A_Fragment | A_Component  {
         // Check components
         const component = this.params.components.find(c => c.name === name);
-        if (component) return component;
+        if (component) return this.resolveComponent(component);
 
         // Check fragments
         const fragment = this.params.fragments.find(f => f.constructor.name === name);
-        if (fragment) return fragment;
+        if (fragment) return this.resolveFragment(fragment.constructor as any);
 
         // Check entities
         const entity = this.params.entities.find(e => e.constructor.name === name);
-        if (entity) return entity;
+        if (entity) return this.resolveEntity(entity.constructor as any);
 
         // If not found in current scope, check parent scope
         if (this._parent) {
