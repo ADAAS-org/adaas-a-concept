@@ -26,7 +26,7 @@ class A_Entity {
      */
     static get entity() {
         return a_utils_1.A_CommonHelper
-            .toUpperSnakeCase(this.constructor.name)
+            .toUpperSnakeCase(this.name)
             .toLocaleLowerCase()
             .replace(/_/g, '-');
     }

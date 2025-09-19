@@ -35,7 +35,7 @@ export class A_Entity<
      */
     static get entity(): string {
         return A_CommonHelper
-            .toUpperSnakeCase(this.constructor.name)
+            .toUpperSnakeCase(this.name)
             .toLocaleLowerCase()
             .replace(/_/g, '-');
     }
