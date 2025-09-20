@@ -102,6 +102,10 @@ class A_Entity {
      */
     call(feature_1) {
         return __awaiter(this, arguments, void 0, function* (feature, scope = A_Context_class_1.A_Context.scope(this)) {
+            //  scope can be completely custom without relation to the entity scope
+            //  or it can be inherited from the entity scope
+            // [!Not Now!] however, each feature should create own scope regardless of the passed scope
+            //  to avoid any possible side effects
             if (scope && !scope.isInheritedFrom(A_Context_class_1.A_Context.scope(this))) {
                 scope = scope.inherit(A_Context_class_1.A_Context.scope(this));
             }

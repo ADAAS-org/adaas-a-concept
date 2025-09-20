@@ -129,7 +129,7 @@ export class A_Entity<
         return this.aseid.shard;
     }
 
- 
+
 
 
     /**
@@ -142,6 +142,11 @@ export class A_Entity<
         feature: string,
         scope: A_Scope = A_Context.scope(this)
     ) {
+        //  scope can be completely custom without relation to the entity scope
+        //  or it can be inherited from the entity scope
+        // [!Not Now!] however, each feature should create own scope regardless of the passed scope
+        //  to avoid any possible side effects
+
 
         if (scope && !scope.isInheritedFrom(A_Context.scope(this))) {
             scope = scope.inherit(A_Context.scope(this));
