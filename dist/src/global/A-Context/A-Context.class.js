@@ -255,7 +255,7 @@ class A_Context {
                     steps.push(Object.assign({ component: constructor }, declaration));
                 });
         });
-        return { name, steps, scope };
+        return { name, steps, scope, caller: component };
     }
     /**
      * This method returns a constructor params to create a new feature
@@ -300,7 +300,7 @@ class A_Context {
                     steps.push(Object.assign({ component: constructor }, declaration));
                 });
         });
-        return { name, steps, scope };
+        return { name, steps, scope, caller: component };
     }
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.

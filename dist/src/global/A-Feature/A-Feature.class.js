@@ -16,6 +16,7 @@ const A_Feature_types_1 = require("./A-Feature.types");
 const a_utils_1 = require("@adaas/a-utils");
 const StepsManager_class_1 = require("../../helpers/StepsManager.class");
 const A_Stage_error_1 = require("../A-Stage/A-Stage.error");
+const A_FeatureCaller_class_1 = require("./A-FeatureCaller.class");
 /**
  * A_Feature is representing a feature that can be executed across multiple components
  * This class stores the steps of the feature and executes them in order of appearance
@@ -47,6 +48,7 @@ class A_Feature {
         this.SM = new StepsManager_class_1.StepsManager(params.steps);
         this.stages = this.SM.toStages(this);
         this._current = this.stages[0];
+        this._caller = new A_FeatureCaller_class_1.A_FeatureCaller(params.caller);
     }
     /**
      * Returns the current A-Feature Stage
@@ -54,6 +56,9 @@ class A_Feature {
      */
     get stage() {
         return this._current;
+    }
+    get Caller() {
+        return this._caller;
     }
     /**
      * Custom iterator to iterate over the steps of the feature

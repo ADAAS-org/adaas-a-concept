@@ -1,7 +1,6 @@
 import {
     A_CommonHelper,
     A_Polyfills,
-    A_TYPES__Required,
 } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
@@ -12,7 +11,7 @@ import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Sc
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_ComponentMeta } from "../A-Component/A-Component.meta";
 import { A_ContainerMeta } from "../A-Container/A-Container.meta";
-import { A_TYPES__EntityBaseMethod, A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.types";
+import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
@@ -452,7 +451,7 @@ export class A_Context {
 
 
 
-        return { name, steps, scope };
+        return { name, steps, scope, caller: component };
     }
 
     /**
@@ -514,7 +513,7 @@ export class A_Context {
             });
 
 
-        return { name, steps, scope };
+        return { name, steps, scope, caller: component };
     }
 
     /**

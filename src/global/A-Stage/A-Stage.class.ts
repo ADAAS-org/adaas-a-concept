@@ -5,6 +5,7 @@ import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep, A
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_StageError } from "./A-Stage.error";
+import { A_FeatureCaller } from "../A-Feature/A-FeatureCaller.class";
 
 
 /**
@@ -92,11 +93,14 @@ export class A_Stage {
                 )
                 .injections(step.handler)
                 .map(async arg => {
+                    if (A_CommonHelper.isInheritedFrom(arg.target, A_FeatureCaller))
+                        return this.feature.Caller.resolve();
+
+
                     if (A_CommonHelper.isInheritedFrom(arg.target, A_Feature))
                         return this.feature;
 
-                    return scope
-                        .resolve(arg.target)
+                    return scope.resolve(arg.target)
                 })
             )
     }

@@ -13,6 +13,7 @@ import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_CommonHelper } from "@adaas/a-utils";
+import { A_FeatureCaller } from "@adaas/a-concept/global/A-Feature/A-FeatureCaller.class";
 
 
 
@@ -36,10 +37,10 @@ export function A_Inject(
 export function A_Inject(
     component: { new(...args: any[]): A_Component }
 ): A_TYPES__A_InjectDecoratorReturn
-//  Allows to inject just one container
-// export function A_Inject(
-//     container: typeof A_Container
-// ): A_TYPES__A_InjectDecoratorReturn
+//  Allows to inject just one A_FeatureCaller
+export function A_Inject(
+    container: typeof A_FeatureCaller
+): A_TYPES__A_InjectDecoratorReturn
 // Allows to inject just one Context Fragment
 export function A_Inject(
     fragment: { new(...args: any[]): A_Fragment }
@@ -54,6 +55,7 @@ export function A_Inject(
 export function A_Inject(
     param1: typeof A_Scope
         | typeof A_Feature
+        | typeof A_FeatureCaller
         | { new(...args: any[]): A_Component }
         | { new(...args: any[]): A_Fragment }
         | { new(...args: any[]): A_Entity },

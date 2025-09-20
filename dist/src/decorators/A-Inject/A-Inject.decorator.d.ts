@@ -4,6 +4,7 @@ import { A_Fragment } from "../../global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "../../global/A-Scope/A-Scope.class";
 import { A_Feature } from "../../global/A-Feature/A-Feature.class";
 import { A_Entity } from "../../global/A-Entity/A-Entity.class";
+import { A_FeatureCaller } from "../../global/A-Feature/A-FeatureCaller.class";
 /**
  * A-Inject decorator
  *
@@ -20,6 +21,7 @@ export declare function A_Inject(feature: typeof A_Feature): A_TYPES__A_InjectDe
 export declare function A_Inject(component: {
     new (...args: any[]): A_Component;
 }): A_TYPES__A_InjectDecoratorReturn;
+export declare function A_Inject(container: typeof A_FeatureCaller): A_TYPES__A_InjectDecoratorReturn;
 export declare function A_Inject(fragment: {
     new (...args: any[]): A_Fragment;
 }): A_TYPES__A_InjectDecoratorReturn;

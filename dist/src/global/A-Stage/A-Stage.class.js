@@ -17,6 +17,7 @@ const A_Stage_types_1 = require("./A-Stage.types");
 const A_Container_class_1 = require("../A-Container/A-Container.class");
 const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
 const A_Stage_error_1 = require("./A-Stage.error");
+const A_FeatureCaller_class_1 = require("../A-Feature/A-FeatureCaller.class");
 /**
  * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
  * Each stage may contain one or more functions.
@@ -74,10 +75,11 @@ class A_Stage {
                 : step.component)
                 .injections(step.handler)
                 .map((arg) => __awaiter(this, void 0, void 0, function* () {
+                if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_FeatureCaller_class_1.A_FeatureCaller))
+                    return this.feature.Caller.resolve();
                 if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature))
                     return this.feature;
-                return scope
-                    .resolve(arg.target);
+                return scope.resolve(arg.target);
             })));
         });
     }

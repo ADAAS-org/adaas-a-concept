@@ -8,6 +8,7 @@ import { A_Stage } from "../A-Stage/A-Stage.class";
 import { StepsManager } from "@adaas/a-concept/helpers/StepsManager.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_StageError } from "../A-Stage/A-Stage.error";
+import { A_FeatureCaller } from "./A-FeatureCaller.class";
 
 /**
  * A_Feature is representing a feature that can be executed across multiple components
@@ -39,6 +40,7 @@ export class A_Feature {
     // protected scope: A_Scope
     protected stages: Array<A_Stage> = [];
     protected _current?: A_Stage;
+    protected _caller!: A_FeatureCaller;
     protected _index: number = 0;
     protected SM: StepsManager;
 
@@ -62,6 +64,8 @@ export class A_Feature {
         this.stages = this.SM.toStages(this);
 
         this._current = this.stages[0];
+
+        this._caller = new A_FeatureCaller(params.caller);
     }
 
 
@@ -71,6 +75,11 @@ export class A_Feature {
      */
     get stage(): A_Stage | undefined {
         return this._current;
+    }
+
+
+    get Caller(): A_FeatureCaller {
+        return this._caller;
     }
 
 

@@ -2,6 +2,8 @@ import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_Container } from "../A-Container/A-Container.class";
+import { A_Component } from "../A-Component/A-Component.class";
 export type A_TYPES__FeatureIteratorReturn<T extends any = any> = () => Promise<T>;
 export type A_TYPES__FeatureCallParams = {
     fragments: Array<A_Fragment>;
@@ -23,6 +25,10 @@ export type A_TYPES__FeatureConstructor = {
      * Scope in which the A-Feature will be executed
      */
     scope: A_Scope;
+    /**
+     *
+     */
+    caller: A_Component | A_Entity | A_Container;
 };
 export declare enum A_TYPES__FeatureState {
     INITIALIZED = "INITIALIZED",

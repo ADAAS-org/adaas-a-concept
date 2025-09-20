@@ -67,7 +67,7 @@ console.log('Simple concept loaded', A_Concept);
     // await concept.start();
 
 
-    // await main.method_B()
+    await main.method_A()
 
 
     // await main.method_C();
