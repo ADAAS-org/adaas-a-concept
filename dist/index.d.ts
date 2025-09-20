@@ -15,6 +15,7 @@ export * from './src/global/A-Entity/A-Entity.types';
 export { A_Channel } from './src/global/A-Channel/A-Channel.class';
 export * from './src/global/A-Channel/A-Channel.types';
 export { A_Feature } from './src/global/A-Feature/A-Feature.class';
+export { A_FeatureCaller } from './src/global/A-Feature/A-FeatureCaller.class';
 export * from './src/global/A-Feature/A-Feature.types';
 export { A_Stage } from './src/global/A-Stage/A-Stage.class';
 export * from './src/global/A-Stage/A-Stage.types';
