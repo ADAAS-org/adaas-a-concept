@@ -40,40 +40,122 @@ export class A_Entity<
             .replace(/_/g, '-');
     }
 
+    /**
+     * Create a new A_entity instance from Aseid String
+     * e.g. project@scope:entity:0000000001
+     * 
+     * @param aseid 
+     */
     constructor(
+        /**
+         * ASEID string that represents the entity
+         */
         aseid: string
     )
+    /**
+     * Create a new A_entity instance from Aseid instance
+     * e.g. new ASEID({namespace: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
+     * 
+     * @param aseid 
+     */
     constructor(
+        /**
+         * ASEID instance that represents the entity
+         */
         aseid: ASEID
     )
+    /**
+     * Create a new A_entity instance from serialized object
+     * 
+     * @param serialized 
+     */
     constructor(
+        /**
+         * Serialized object that represents the entity
+         */
         serialized: _SerializedType
     )
+    /**
+     * Create a new A_entity instance from constructor object
+     * 
+     * @param newEntity 
+     */
     constructor(
+        /**
+         * Constructor object that represents the entity
+         */
         newEntity: _ConstructorType
     )
     constructor(props: string | ASEID | _SerializedType | _ConstructorType) {
 
-
-        switch (true) {
-            case (typeof props === 'string' && ASEID.isASEID(props)):
-                this.aseid = new ASEID(props);
-                break;
-            case (props instanceof ASEID):
-                this.aseid = props;
-                break;
-            case (!!props && typeof props === 'object' && 'aseid' in props):
-                this.fromJSON(props);
-                break;
-
-            case (typeof props === 'object'):
-                this.fromNew(props as _ConstructorType);
-                break
-
-            default:
-                throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
-        }
+        const initializer = this.getInitializer(props);
+        // the returned initializer is already bound to `this` (we used .bind(this)),
+        // so calling it will run the appropriate logic on this instance:
+        initializer.call(this, props);
     }
+
+
+    // --- Type guards used to classify `props` properly ---
+    protected isStringASEID(x: unknown): x is string {
+        return typeof x === "string" && ASEID.isASEID(x);
+    }
+
+    protected isASEIDInstance(x: unknown): x is ASEID {
+        return x instanceof ASEID;
+    }
+
+    /**
+     * A "serialized" object is considered such if it is a non-null object 
+     * and contains an "aseid" property (this mirrors your original check). 
+     * 
+     * @param x 
+     * @returns 
+     */
+    protected isSerializedObject(x: unknown): x is _SerializedType {
+        return !!x && typeof x === "object" && "aseid" in (x as object);
+    }
+
+    /**
+     * Constructor-style props = a plain object which does NOT contain "aseid".
+     * This is the "create from provided fields" case.
+     * 
+     * @param x 
+     * @returns 
+     */
+    protected isConstructorProps(x: unknown): x is _ConstructorType {
+        return !!x && typeof x === "object" && !("aseid" in (x as object));
+    }
+
+    // --- Overloads: provide precise return-type depending on input ---
+    protected getInitializer(
+        props: string | ASEID | _SerializedType | _ConstructorType
+    ): (props: any) => void {
+        // 1) string that matches ASEID format -> fromASEID
+        if (this.isStringASEID(props)) {
+            return this.fromASEID as (p: string) => void;
+        }
+
+        // 2) ASEID instance -> fromASEID
+        if (this.isASEIDInstance(props)) {
+            return this.fromASEID as (p: ASEID) => void;
+        }
+
+        // 3) serialized object (has 'aseid') -> fromJSON
+        if (this.isSerializedObject(props)) {
+            return this.fromJSON as (p: _SerializedType) => void;
+        }
+
+        // 4) plain object with no 'aseid' -> treat as constructor props -> fromNew
+        if (this.isConstructorProps(props)) {
+            return this.fromNew as (p: _ConstructorType) => void;
+        }
+
+        // none of the above -> throw consistent error
+        throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+    }
+
+
+
 
     // ====================================================================
     // ================== DUPLICATED ASEID Getters ========================
@@ -193,7 +275,19 @@ export class A_Entity<
     // ================== Entity Serialization ============================
     // ====================================================================
 
+    fromASEID(aseid: string | ASEID): void {
+        if (typeof aseid === 'string' && ASEID.isASEID(aseid)) {
+            this.aseid = new ASEID(aseid);
+        } else if (aseid instanceof ASEID) {
+            this.aseid = aseid;
+        } else {
+            throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+        }
+    }
+
     fromNew(newEntity: _ConstructorType): void {
+        // this.aseid = new ASEID
+
         return;
     }
 

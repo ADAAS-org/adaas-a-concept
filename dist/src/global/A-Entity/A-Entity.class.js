@@ -31,22 +31,58 @@ class A_Entity {
             .replace(/_/g, '-');
     }
     constructor(props) {
-        switch (true) {
-            case (typeof props === 'string' && a_utils_1.ASEID.isASEID(props)):
-                this.aseid = new a_utils_1.ASEID(props);
-                break;
-            case (props instanceof a_utils_1.ASEID):
-                this.aseid = props;
-                break;
-            case (!!props && typeof props === 'object' && 'aseid' in props):
-                this.fromJSON(props);
-                break;
-            case (typeof props === 'object'):
-                this.fromNew(props);
-                break;
-            default:
-                throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+        const initializer = this.getInitializer(props);
+        // the returned initializer is already bound to `this` (we used .bind(this)),
+        // so calling it will run the appropriate logic on this instance:
+        initializer.call(this, props);
+    }
+    // --- Type guards used to classify `props` properly ---
+    isStringASEID(x) {
+        return typeof x === "string" && a_utils_1.ASEID.isASEID(x);
+    }
+    isASEIDInstance(x) {
+        return x instanceof a_utils_1.ASEID;
+    }
+    /**
+     * A "serialized" object is considered such if it is a non-null object
+     * and contains an "aseid" property (this mirrors your original check).
+     *
+     * @param x
+     * @returns
+     */
+    isSerializedObject(x) {
+        return !!x && typeof x === "object" && "aseid" in x;
+    }
+    /**
+     * Constructor-style props = a plain object which does NOT contain "aseid".
+     * This is the "create from provided fields" case.
+     *
+     * @param x
+     * @returns
+     */
+    isConstructorProps(x) {
+        return !!x && typeof x === "object" && !("aseid" in x);
+    }
+    // --- Overloads: provide precise return-type depending on input ---
+    getInitializer(props) {
+        // 1) string that matches ASEID format -> fromASEID
+        if (this.isStringASEID(props)) {
+            return this.fromASEID;
         }
+        // 2) ASEID instance -> fromASEID
+        if (this.isASEIDInstance(props)) {
+            return this.fromASEID;
+        }
+        // 3) serialized object (has 'aseid') -> fromJSON
+        if (this.isSerializedObject(props)) {
+            return this.fromJSON;
+        }
+        // 4) plain object with no 'aseid' -> treat as constructor props -> fromNew
+        if (this.isConstructorProps(props)) {
+            return this.fromNew;
+        }
+        // none of the above -> throw consistent error
+        throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
     }
     // ====================================================================
     // ================== DUPLICATED ASEID Getters ========================
@@ -143,7 +179,19 @@ class A_Entity {
     // ====================================================================
     // ================== Entity Serialization ============================
     // ====================================================================
+    fromASEID(aseid) {
+        if (typeof aseid === 'string' && a_utils_1.ASEID.isASEID(aseid)) {
+            this.aseid = new a_utils_1.ASEID(aseid);
+        }
+        else if (aseid instanceof a_utils_1.ASEID) {
+            this.aseid = aseid;
+        }
+        else {
+            throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+        }
+    }
     fromNew(newEntity) {
+        // this.aseid = new ASEID
         return;
     }
     fromJSON(serialized) {

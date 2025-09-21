@@ -4,6 +4,7 @@ import { A_Abstraction } from "../A-Abstraction/A-Abstraction.class";
 import { A_ConceptMeta } from "./A_Concept.meta";
 import { A_Abstraction_Extend } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction-Extend.decorator";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecorator_Injectable } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
 
 
 // export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
@@ -124,6 +125,19 @@ export class A_Concept<
         return this.sharedBase.Scope;
     }
 
+    /**
+     * Register a class or value in the concept scope.
+     */
+    get register(): A_Scope['register'] {
+        return this.sharedBase.Scope.register.bind(this.sharedBase.Scope);
+    }
+
+    /**
+     * Resolve a class or value from the concept scope.
+     */
+    get resolve(): A_Scope['resolve'] {
+        return this.sharedBase.Scope.resolve.bind(this.sharedBase.Scope);
+    }
 
 
     // =======================================================================

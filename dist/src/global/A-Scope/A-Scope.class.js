@@ -186,10 +186,10 @@ class A_Scope {
     resolve(param1, param2) {
         switch (true) {
             case Array.isArray(param1): {
-                return param1.map(c => this.resolveOnce(c));
+                return param1.map(c => this.resolveOnce(param1, param2));
             }
             case typeof param1 === 'function': {
-                return this.resolveOnce(param1);
+                return this.resolveOnce(param1, param2);
             }
             case typeof param1 === 'string': {
                 return this.resolveByName(param1);
@@ -265,14 +265,14 @@ class A_Scope {
                 {
                     return this._entities.get(query.aseid.toString());
                 }
-            case !!query.id
-                && this._entities.has(query.id):
-                {
-                    // in this case we have to find the entity by the id
-                    const entities = Array.from(this._entities.values());
-                    const found = entities.find(e => e.id === query.id);
-                    return found;
-                }
+            case !!query.id: {
+                // in this case we have to find the entity by the id
+                const entities = Array.from(this._entities.values());
+                const found = entities.filter(e => e instanceof entity).find(e => {
+                    return String(e.id) === String(query.id);
+                });
+                return found;
+            }
             default:
                 throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
         }
@@ -332,6 +332,7 @@ class A_Scope {
         }
     }
     register(param1) {
+        console.log(`Registering in scope ${this.name}:`, param1);
         switch (true) {
             case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);

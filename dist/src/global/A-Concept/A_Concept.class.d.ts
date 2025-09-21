@@ -56,6 +56,14 @@ export declare class A_Concept<_Imports extends A_Container[] = any> {
     get namespace(): string;
     get Scope(): A_Scope;
     /**
+     * Register a class or value in the concept scope.
+     */
+    get register(): A_Scope['register'];
+    /**
+     * Resolve a class or value from the concept scope.
+     */
+    get resolve(): A_Scope['resolve'];
+    /**
      * Load the concept.
      */
     load(scope?: A_Scope): Promise<void>;

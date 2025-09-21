@@ -100,6 +100,18 @@ class A_Concept {
     get Scope() {
         return this.sharedBase.Scope;
     }
+    /**
+     * Register a class or value in the concept scope.
+     */
+    get register() {
+        return this.sharedBase.Scope.register.bind(this.sharedBase.Scope);
+    }
+    /**
+     * Resolve a class or value from the concept scope.
+     */
+    get resolve() {
+        return this.sharedBase.Scope.resolve.bind(this.sharedBase.Scope);
+    }
     // =======================================================================
     // ==========================  LIFECYCLE  ================================
     // =======================================================================

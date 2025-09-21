@@ -14,10 +14,67 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * Entity Identifier that corresponds to the class name
      */
     static get entity(): string;
-    constructor(aseid: string);
-    constructor(aseid: ASEID);
-    constructor(serialized: _SerializedType);
-    constructor(newEntity: _ConstructorType);
+    /**
+     * Create a new A_entity instance from Aseid String
+     * e.g. project@scope:entity:0000000001
+     *
+     * @param aseid
+     */
+    constructor(
+    /**
+     * ASEID string that represents the entity
+     */
+    aseid: string);
+    /**
+     * Create a new A_entity instance from Aseid instance
+     * e.g. new ASEID({namespace: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
+     *
+     * @param aseid
+     */
+    constructor(
+    /**
+     * ASEID instance that represents the entity
+     */
+    aseid: ASEID);
+    /**
+     * Create a new A_entity instance from serialized object
+     *
+     * @param serialized
+     */
+    constructor(
+    /**
+     * Serialized object that represents the entity
+     */
+    serialized: _SerializedType);
+    /**
+     * Create a new A_entity instance from constructor object
+     *
+     * @param newEntity
+     */
+    constructor(
+    /**
+     * Constructor object that represents the entity
+     */
+    newEntity: _ConstructorType);
+    protected isStringASEID(x: unknown): x is string;
+    protected isASEIDInstance(x: unknown): x is ASEID;
+    /**
+     * A "serialized" object is considered such if it is a non-null object
+     * and contains an "aseid" property (this mirrors your original check).
+     *
+     * @param x
+     * @returns
+     */
+    protected isSerializedObject(x: unknown): x is _SerializedType;
+    /**
+     * Constructor-style props = a plain object which does NOT contain "aseid".
+     * This is the "create from provided fields" case.
+     *
+     * @param x
+     * @returns
+     */
+    protected isConstructorProps(x: unknown): x is _ConstructorType;
+    protected getInitializer(props: string | ASEID | _SerializedType | _ConstructorType): (props: any) => void;
     /**
      * Extracts the ID from the ASEID
      * ID is the unique identifier of the entity
@@ -68,6 +125,7 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * The default method that can be called and extended to save entity data.
      */
     save(scope?: A_Scope): Promise<any>;
+    fromASEID(aseid: string | ASEID): void;
     fromNew(newEntity: _ConstructorType): void;
     fromJSON(serialized: _SerializedType): void;
     /**

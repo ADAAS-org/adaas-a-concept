@@ -315,15 +315,15 @@ export class A_Scope {
 
         switch (true) {
             case Array.isArray(param1): {
-                return param1.map(c => this.resolveOnce(c));
+                return param1.map(c => this.resolveOnce(param1 as any, param2 as any));
             }
 
             case typeof param1 === 'function': {
-                return this.resolveOnce(param1);
+                return this.resolveOnce(param1 as any, param2 as any);
             }
 
             case typeof param1 === 'string': {
-                return this.resolveByName(param1) as InstanceType<T>;
+                return this.resolveByName(param1 as any) as InstanceType<T>;
             }
 
             default: {
@@ -333,7 +333,7 @@ export class A_Scope {
     }
 
 
-    private resolveByName(name: string): A_Entity | A_Fragment | A_Component  {
+    private resolveByName(name: string): A_Entity | A_Fragment | A_Component {
         // Check components
         const component = this.params.components.find(c => c.name === name);
         if (component) return this.resolveComponent(component);
@@ -433,15 +433,21 @@ export class A_Scope {
                     return this._entities.get(query.aseid.toString()) as InstanceType<T>;
                 }
 
-            case !!query.id
-                && this._entities.has(query.id): {
-                    // in this case we have to find the entity by the id
-                    const entities = Array.from(this._entities.values());
+            case !!query.id: {
 
-                    const found = entities.find(e => e.id === query.id);
+                // in this case we have to find the entity by the id
+                const entities = Array.from(this._entities.values());
 
-                    return found as InstanceType<T>;
-                }
+                const found = entities.filter(
+                    e => e instanceof entity
+                ).find(e => {
+
+
+                    return String(e.id) === String(query.id)
+                });
+
+                return found as InstanceType<T>;
+            }
 
             default:
                 throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
@@ -546,6 +552,8 @@ export class A_Scope {
         param1: A_Fragment | A_Component | A_Entity
     ): void {
 
+
+        console.log(`Registering in scope ${this.name}:`, param1);
 
         switch (true) {
             case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
