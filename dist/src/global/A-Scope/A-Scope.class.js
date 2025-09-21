@@ -332,7 +332,6 @@ class A_Scope {
         }
     }
     register(param1) {
-        console.log(`Registering in scope ${this.name}:`, param1);
         switch (true) {
             case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);

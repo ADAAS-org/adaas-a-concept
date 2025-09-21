@@ -441,8 +441,6 @@ export class A_Scope {
                 const found = entities.filter(
                     e => e instanceof entity
                 ).find(e => {
-
-
                     return String(e.id) === String(query.id)
                 });
 
@@ -551,10 +549,6 @@ export class A_Scope {
     register(
         param1: A_Fragment | A_Component | A_Entity
     ): void {
-
-
-        console.log(`Registering in scope ${this.name}:`, param1);
-
         switch (true) {
             case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);
