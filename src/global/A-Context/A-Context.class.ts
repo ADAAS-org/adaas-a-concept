@@ -21,6 +21,7 @@ import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.types";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 import { A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
 import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
 
 
 
@@ -80,7 +81,7 @@ export class A_Context {
 
     private constructor() {
         this._root = new A_Scope({
-            name: 'root'
+            name: process && process.env ? process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept'
         });
     }
 
@@ -625,5 +626,26 @@ export class A_Context {
 
                 break;
         }
+    }
+
+
+    /**
+     * Resets the Context to its initial state.
+     */
+    static reset() {
+        const instance = A_Context.getInstance();
+
+        instance.containers = new WeakMap();
+        instance.features = new WeakMap();
+        instance.registry = new WeakMap();
+        instance.containersMeta = new Map();
+        instance.componentsMeta = new Map();
+        instance.entitiesMeta = new Map();
+        instance.customMeta = new Map();
+
+        instance._root = new A_Scope({
+            name: process && process.env ? process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept'
+        });
+
     }
 }

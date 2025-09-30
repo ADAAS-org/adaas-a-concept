@@ -24,6 +24,7 @@ const A_Inject_decorator_1 = require("../../../decorators/A-Inject/A-Inject.deco
 const A_Component_class_1 = require("../../../global/A-Component/A-Component.class");
 const A_Config_context_1 = require("../A-Config.context");
 const A_Concept_class_1 = require("../../../global/A-Concept/A_Concept.class");
+const env_constants_1 = require("../../../constants/env.constants");
 /**
  * Config Reader
  */
@@ -34,7 +35,10 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
     }
     inject(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = yield this.read(config.CONFIG_PROPERTIES);
+            const data = yield this.read([
+                ...config.CONFIG_PROPERTIES,
+                ...env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY
+            ]);
             config.set(data);
             const rootDir = yield this.getProjectRoot();
             config.set('A_CONCEPT_ROOT_FOLDER', rootDir);

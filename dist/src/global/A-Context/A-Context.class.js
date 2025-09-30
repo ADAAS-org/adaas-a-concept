@@ -15,6 +15,7 @@ const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
 const A_Entity_meta_1 = require("../A-Entity/A-Entity.meta");
 const A_Container_types_1 = require("../A-Container/A-Container.types");
 const A_Component_types_1 = require("../A-Component/A-Component.types");
+const env_constants_1 = require("../../constants/env.constants");
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -45,7 +46,7 @@ class A_Context {
         // uses to allow to store custom meta data
         this.customMeta = new Map();
         this._root = new A_Scope_class_1.A_Scope({
-            name: 'root'
+            name: process && process.env ? process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept'
         });
     }
     // ===================================================================================================
@@ -355,6 +356,22 @@ class A_Context {
                     instance.registry.set(param1, scope);
                 break;
         }
+    }
+    /**
+     * Resets the Context to its initial state.
+     */
+    static reset() {
+        const instance = A_Context.getInstance();
+        instance.containers = new WeakMap();
+        instance.features = new WeakMap();
+        instance.registry = new WeakMap();
+        instance.containersMeta = new Map();
+        instance.componentsMeta = new Map();
+        instance.entitiesMeta = new Map();
+        instance.customMeta = new Map();
+        instance._root = new A_Scope_class_1.A_Scope({
+            name: process && process.env ? process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept'
+        });
     }
 }
 exports.A_Context = A_Context;

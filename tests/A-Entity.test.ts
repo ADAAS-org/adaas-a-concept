@@ -1,4 +1,5 @@
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
+import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_TYPES__Entity_JSON } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
@@ -45,6 +46,8 @@ describe('A-Entity tests', () => {
         process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_DEFAULT_SCOPE] = 'env-scope';
         process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] = 'env-namespace';
 
+        A_Context.reset();
+
         const entity = new A_Entity();
 
         expect(entity.aseid).toBeInstanceOf(ASEID);
@@ -53,6 +56,8 @@ describe('A-Entity tests', () => {
 
         delete process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_DEFAULT_SCOPE];
         delete process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE];
+
+        A_Context.reset();
     });
     it('Should Allow to create an entity from ASEID', async () => {
         const entity = new A_Entity(

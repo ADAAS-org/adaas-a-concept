@@ -39,7 +39,7 @@ class A_Entity {
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
     static get namespace() {
-        return process && process.env ? process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept';
+        return A_Context_class_1.A_Context.root.name;
     }
     /**
      * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE

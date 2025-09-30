@@ -5,35 +5,33 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_TYPES__ConceptENVVariables 
 
 
 export class A_Config<
-    T extends string = A_TYPES__ConceptENVVariables
+    T extends Array<string | A_TYPES__ConceptENVVariables[number]> = A_TYPES__ConceptENVVariables
 > extends A_Fragment {
 
     config: A_TYPES__ConfigContainerConstructor<T>;
 
-    // Custom properties
-    private VARIABLES: Map<string, any> = new Map<string, any>();
 
-    CONFIG_PROPERTIES: T[] = [];
+    private VARIABLES: Map<T[number], any> = new Map<T[number], any>();
+
+    CONFIG_PROPERTIES!: T;
 
     protected DEFAULT_ALLOWED_TO_READ_PROPERTIES = A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY;
 
 
     constructor(
-        config: A_TYPES__Required<Partial<A_TYPES__ConfigContainerConstructor<T>>, ['variables']>
+        config: Partial<A_TYPES__ConfigContainerConstructor<T>>
     ) {
         super(config);
 
         this.config = A_CommonHelper.deepCloneAndMerge<A_TYPES__ConfigContainerConstructor<T>>(config as any, {
             name: this.name,
             strict: false,
-            defaults: {} as Record<T, any>,
-            variables: [] as T[]
+            defaults: {},
+            variables: A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY as any as T
         });
 
-        this.CONFIG_PROPERTIES = this.config.variables ? this.config.variables : [];
-    }
+        this.CONFIG_PROPERTIES = this.config.variables ? this.config.variables : [] as any as T;
 
-    protected async onInit(): Promise<void> {
         this.config.variables.forEach((variable) => {
             this.VARIABLES.set(variable, this.config.defaults[variable]);
         });
@@ -47,7 +45,7 @@ export class A_Config<
      * @returns 
      */
     get<_OutType = any>(
-        property: T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]
+        property: T[number] | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]
     ): _OutType {
         if (this.CONFIG_PROPERTIES.includes(property as any)
             || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property as any)
@@ -70,22 +68,22 @@ export class A_Config<
      */
     set(
         variables: Array<{
-            property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
+            property: T[number] | A_TYPES__ConceptENVVariables[number],
             value: any
         }>
     )
     set(
-        variables: Partial<Record<T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number], any>>
+        variables: Partial<Record<T[number] | A_TYPES__ConceptENVVariables[number], any>>
     )
     set(
-        property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
+        property: T[number] | A_TYPES__ConceptENVVariables[number],
         value: any
     )
     set(
-        property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number] | Array<{
-            property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
+        property: T[number] | A_TYPES__ConceptENVVariables[number] | Array<{
+            property: T[number] | A_TYPES__ConceptENVVariables[number],
             value: any
-        }> | Partial<Record<T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number], any>>,
+        }> | Partial<Record<T[number] | A_TYPES__ConceptENVVariables[number], any>>,
         value?: any
     ) {
         const array = Array.isArray(property)
@@ -104,7 +102,7 @@ export class A_Config<
             let targetValue = value
                 ? value
                 : this.config?.defaults
-                    ? this.config.defaults[property as T]
+                    ? this.config.defaults[property as T[number]]
                     : undefined;
 
             this.VARIABLES.set(property as string, targetValue);

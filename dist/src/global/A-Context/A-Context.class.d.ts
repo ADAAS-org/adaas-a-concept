@@ -126,4 +126,8 @@ export declare class A_Context {
     static register(scope: A_Scope, entity: A_Entity): any;
     static register(scope: A_Scope, component: A_Component): any;
     static register(scope: A_Scope, fragment: A_Fragment): any;
+    /**
+     * Resets the Context to its initial state.
+     */
+    static reset(): void;
 }

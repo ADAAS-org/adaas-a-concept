@@ -47,7 +47,7 @@ export class A_Entity<
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
     static get namespace(): string {
-        return process && process.env ? process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE] || 'a-concept' : 'a-concept';
+        return A_Context.root.name;
     }
 
     /**

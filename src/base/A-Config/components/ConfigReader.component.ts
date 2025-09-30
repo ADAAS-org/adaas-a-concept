@@ -4,6 +4,7 @@ import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorato
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Config } from "../A-Config.context";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "@adaas/a-concept/constants/env.constants";
 
 /**
  * Config Reader
@@ -22,7 +23,10 @@ export class ConfigReader extends A_Component {
         @A_Inject(A_Config) config: A_Config,
     ) {
 
-        const data = await this.read(config.CONFIG_PROPERTIES);
+        const data = await this.read([
+            ...config.CONFIG_PROPERTIES,
+            ...A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY
+        ]);
 
         config.set(data);
 

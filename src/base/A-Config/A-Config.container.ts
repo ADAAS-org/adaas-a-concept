@@ -55,7 +55,6 @@ export class A_ConfigLoader extends A_Container {
     @A_Concept.Load()
     async readVariables(
         @A_Inject(A_Config) config: A_Config,
-        @A_Inject(A_Scope) scope: A_Scope,
     ) {
         await this.reader.inject(config);
     }
