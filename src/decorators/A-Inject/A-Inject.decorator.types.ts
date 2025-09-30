@@ -2,6 +2,7 @@ import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.cla
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
+import { A_FeatureCaller } from "@adaas/a-concept/global/A-Feature/A-FeatureCaller.class";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { ASEID } from "@adaas/a-utils";
@@ -60,21 +61,21 @@ export type A_TYPES__A_InjectDecorator_Injectable =
     | { new(...args: any[]): A_Container }
     | { new(...args: any[]): A_Scope }
     | { new(...args: any[]): A_Feature }
-    | { new(...args: any[]): A_Entity };
+    | { new(...args: any[]): A_Entity }
+    | { new(...args: any[]): A_FeatureCaller };
 
 
-export type A_TYPES__A_InjectDecorator_EntityInjectionInstructions = {
-    query: Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery>,
+export type A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T extends A_Entity = A_Entity> = {
+    query: Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>,
     pagination: Partial<A_TYPES__A_InjectDecorator_EntityInjectionPagination>
 }
 
 
-export type A_TYPES__A_InjectDecorator_EntityInjectionQuery = {
-    aseid: string | ASEID,
-    id: string,
-    type: { new(...args: any[]): A_Entity },
-    entity: string
-}
+export type A_TYPES__A_InjectDecorator_EntityInjectionQuery<T extends A_Entity = A_Entity> = {
+    aseid: string,
+} & {
+    [key in keyof T]?: any
+};
 
 
 export type A_TYPES__A_InjectDecorator_EntityInjectionPagination = {

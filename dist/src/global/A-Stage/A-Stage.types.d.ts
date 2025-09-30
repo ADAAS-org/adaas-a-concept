@@ -52,7 +52,7 @@ export type A_TYPES__A_StageStep = {
     /**
      * The component to be called
      */
-    component: typeof A_Component | A_Container;
+    component: typeof A_Component | A_Container | string;
     /**
      * The method to be called on the component
      */

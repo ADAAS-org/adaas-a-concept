@@ -22,13 +22,13 @@ export class ConfigReader extends A_Component {
         @A_Inject(A_Config) config: A_Config,
     ) {
 
-        const data = this.read(config.CONFIG_PROPERTIES);
+        const data = await this.read(config.CONFIG_PROPERTIES);
 
         config.set(data);
 
         const rootDir = await this.getProjectRoot();
 
-        config.set('CONCEPT_ROOT_FOLDER', rootDir);
+        config.set('A_CONCEPT_ROOT_FOLDER', rootDir);
     }
 
 
@@ -59,19 +59,6 @@ export class ConfigReader extends A_Component {
      * @returns {string|null} - The path to the root directory or null if package.json is not found
      */
     protected async getProjectRoot(startPath = __dirname) {
-        // let currentPath = startPath;
-
-        // const fs = await A_Polyfills.fs();
-
-        // while (!fs.existsSync(`${currentPath}/package.json`)) {
-        //     const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-        //     if (parentPath === currentPath || parentPath === '') {
-        //         // Reached the root of the filesystem without finding package.json
-        //         return null;
-        //     }
-        //     currentPath = parentPath;
-        // }
-
         return process.cwd();
     }
 }

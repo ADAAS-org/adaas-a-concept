@@ -1,0 +1,17 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.A_CONSTANTS_A_Command_Features = exports.A_CONSTANTS__A_Command_Status = void 0;
+var A_CONSTANTS__A_Command_Status;
+(function (A_CONSTANTS__A_Command_Status) {
+    A_CONSTANTS__A_Command_Status["INITIALIZED"] = "INITIALIZED";
+    A_CONSTANTS__A_Command_Status["IN_PROGRESS"] = "IN_PROGRESS";
+    A_CONSTANTS__A_Command_Status["COMPLETED"] = "COMPLETED";
+    A_CONSTANTS__A_Command_Status["FAILED"] = "FAILED";
+})(A_CONSTANTS__A_Command_Status || (exports.A_CONSTANTS__A_Command_Status = A_CONSTANTS__A_Command_Status = {}));
+var A_CONSTANTS_A_Command_Features;
+(function (A_CONSTANTS_A_Command_Features) {
+    A_CONSTANTS_A_Command_Features["EXECUTE"] = "execute";
+    A_CONSTANTS_A_Command_Features["COMPLETE"] = "complete";
+    A_CONSTANTS_A_Command_Features["FAIL"] = "fail";
+})(A_CONSTANTS_A_Command_Features || (exports.A_CONSTANTS_A_Command_Features = A_CONSTANTS_A_Command_Features = {}));
+//# sourceMappingURL=A_Command.constants.js.map

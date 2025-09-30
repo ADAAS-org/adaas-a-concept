@@ -1,5 +1,6 @@
 import {
     A_CommonHelper,
+    A_Error,
     A_Polyfills,
 } from "@adaas/a-utils";
 import { A_Component } from "../A-Component/A-Component.class";
@@ -147,6 +148,10 @@ export class A_Context {
 
         const newScope = param2 instanceof A_Scope ? param2 : new A_Scope(param2, param2);
 
+        if (!newScope.isInheritedFrom(A_Context.root)) {
+            newScope.inherit(A_Context.root);
+        }
+
         switch (true) {
             case param1 instanceof A_Container:
                 instance.containers.set(param1, newScope);
@@ -169,6 +174,14 @@ export class A_Context {
 
 
 
+    /**
+     * Get or Create Meta for the specific class or instance.
+     * This method will return the existing meta if it exists, or create a new one if it doesn't.
+     * 
+     * Meta object contains custom metadata based on the class type.
+     * 
+     * @param container 
+     */
     static meta(
         container: typeof A_Container,
     ): A_ContainerMeta
@@ -182,6 +195,9 @@ export class A_Context {
         entity: typeof A_Entity,
     ): A_ContainerMeta
     static meta(
+        component: string,
+    ): A_ComponentMeta
+    static meta(
         component: typeof A_Component,
     ): A_ComponentMeta
     static meta(
@@ -193,6 +209,7 @@ export class A_Context {
             | A_Entity
             | typeof A_Entity
             | { new(...args: any[]): any }
+            | string
     ): A_Meta<T>
     static meta<T extends Record<string, any>>(
         param1: typeof A_Component | typeof A_Container | A_Container
@@ -200,8 +217,8 @@ export class A_Context {
             | A_Entity
             | typeof A_Entity
             | { new(...args: any[]): any }
+            | string
     ): A_ContainerMeta | A_ComponentMeta | A_Meta<T> {
-
 
         const instance = this.getInstance();
 
@@ -211,6 +228,7 @@ export class A_Context {
 
 
         switch (true) {
+            // 1) If param1 is instance of A_Container
             case param1 instanceof A_Container: {
 
                 metaStorage = instance.containersMeta;
@@ -219,7 +237,7 @@ export class A_Context {
 
                 break;
             }
-
+            // 2) If param1 is class of A_Container
             case A_CommonHelper.isInheritedFrom(param1, A_Container): {
                 metaStorage = instance.containersMeta;
                 property = param1 as typeof A_Container;
@@ -227,7 +245,7 @@ export class A_Context {
 
                 break;
             }
-
+            // 3) If param1 is instance of A_Component
             case param1 instanceof A_Component: {
                 metaStorage = instance.componentsMeta;
                 property = param1.constructor;
@@ -235,7 +253,7 @@ export class A_Context {
 
                 break;
             }
-
+            // 4) If param1 is class of A_Component
             case A_CommonHelper.isInheritedFrom(param1, A_Component): {
                 metaStorage = instance.componentsMeta;
                 property = param1 as typeof A_Component;
@@ -243,7 +261,7 @@ export class A_Context {
 
                 break;
             }
-
+            // 5) If param1 is instance of A_Entity
             case param1 instanceof A_Entity: {
                 metaStorage = instance.entitiesMeta;
                 property = param1.constructor;
@@ -251,15 +269,25 @@ export class A_Context {
 
                 break;
             }
-
+            // 6) If param1 is class of A_Entity
             case A_CommonHelper.isInheritedFrom(param1, A_Entity): {
                 metaStorage = instance.entitiesMeta;
                 property = param1 as typeof A_Entity;
                 metaType = A_EntityMeta;
+
                 break;
             }
+            // 7) If param1 is string then we need to find the component by its name
+            case typeof param1 === 'string': {
+                metaStorage = instance.componentsMeta;
+                const found = Array.from(instance.componentsMeta).find(([c]) => c.name === param1)!;
+                if (!(found && found.length)) throw new A_Error(`Component with name ${param1} not found`);
+                property = found[0];
+                metaType = A_ComponentMeta;
 
-
+                break;
+            }
+            // 8) If param1 is any other class or function
             default: {
                 metaStorage = instance.customMeta;
                 property = typeof (param1 as any) === 'function' ? param1 : param1.constructor;
@@ -281,6 +309,15 @@ export class A_Context {
 
 
 
+    /**
+     * Get the scope of the specific class or instance.
+     * 
+     * Every execution in Concept has its own scope.
+     * 
+     * This method will return the scope of the specific class or instance.
+     * 
+     * @param entity 
+     */
     static scope(
         entity: A_Entity
     ): A_Scope

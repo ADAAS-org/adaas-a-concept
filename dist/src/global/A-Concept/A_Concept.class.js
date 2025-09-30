@@ -11,10 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Concept = void 0;
 const A_Concept_types_1 = require("./A_Concept.types");
-const A_Container_class_1 = require("../A-Container/A-Container.class");
 const A_Abstraction_class_1 = require("../A-Abstraction/A-Abstraction.class");
-const A_Concept_meta_1 = require("./A_Concept.meta");
-// export type RunParams<T> = T extends A_Container<any, infer Params> ? Params : never;
+const A_Context_class_1 = require("../A-Context/A-Context.class");
 /**
  * A_Concept is a placeholder for the concept of the ani program.
  *
@@ -80,37 +78,32 @@ class A_Concept {
     }
     constructor(props) {
         this.props = props;
-        this.sharedBase = new A_Container_class_1.A_Container({
-            name: `${props.name}::base`,
-            fragments: props.fragments || [],
-            entities: props.entities || [],
-            components: [
-            // A_Logger,
-            ],
-        });
-        this.containers = (props.containers || []).map(container => {
-            container.Scope.parent(this.Scope);
-            return container;
-        });
-        this.meta = new A_Concept_meta_1.A_ConceptMeta(this.containers, this.sharedBase);
+        this._name = props.name || A_Context_class_1.A_Context.root.name;
+        if (props.components && props.components.length)
+            props.components.forEach(component => this.Scope.register(component));
+        if (props.fragments && props.fragments.length)
+            props.fragments.forEach(fragment => this.Scope.register(fragment));
+        if (props.entities && props.entities.length)
+            props.entities.forEach(entity => this.Scope.register(entity));
+        this.containers = props.containers || [];
     }
     get namespace() {
-        return this.sharedBase.name;
+        return A_Context_class_1.A_Context.root.name;
     }
     get Scope() {
-        return this.sharedBase.Scope;
+        return A_Context_class_1.A_Context.root;
     }
     /**
      * Register a class or value in the concept scope.
      */
     get register() {
-        return this.sharedBase.Scope.register.bind(this.sharedBase.Scope);
+        return this.Scope.register.bind(this.Scope);
     }
     /**
      * Resolve a class or value from the concept scope.
      */
     get resolve() {
-        return this.sharedBase.Scope.resolve.bind(this.sharedBase.Scope);
+        return this.Scope.resolve.bind(this.Scope);
     }
     // =======================================================================
     // ==========================  LIFECYCLE  ================================
@@ -121,7 +114,7 @@ class A_Concept {
     load(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Load, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Load, scope);
             yield abstraction.process();
         });
     }
@@ -131,7 +124,7 @@ class A_Concept {
     run(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Run, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Run, scope);
             yield abstraction.process();
         });
     }
@@ -143,7 +136,7 @@ class A_Concept {
     start(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Start, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Start, scope);
             yield abstraction.process();
         });
     }
@@ -155,7 +148,7 @@ class A_Concept {
     stop(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Stop, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Stop, scope);
             yield abstraction.process();
         });
     }
@@ -165,7 +158,7 @@ class A_Concept {
     build(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Build, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Build, scope);
             yield abstraction.process();
         });
     }
@@ -175,7 +168,7 @@ class A_Concept {
     deploy(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Deploy, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Deploy, scope);
             yield abstraction.process();
         });
     }
@@ -185,7 +178,7 @@ class A_Concept {
     publish(scope) {
         return __awaiter(this, void 0, void 0, function* () {
             scope = scope ? scope.inherit(this.Scope) : this.Scope;
-            const abstraction = this.meta.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Publish, scope);
+            const abstraction = this.abstraction(A_Concept_types_1.A_TYPES__ConceptStage.Publish, scope);
             yield abstraction.process();
         });
     }
@@ -204,6 +197,18 @@ class A_Concept {
             // const feature = new A_Feature(definition);
             // await feature.process();
         });
+    }
+    abstraction(method, scope) {
+        const featureDefinitions = this.containers.map(container => {
+            const definition = A_Context_class_1.A_Context.abstractionDefinition(container, method, container.Scope);
+            return Object.assign(Object.assign({}, definition), { steps: definition.steps.map(step => (Object.assign(Object.assign({}, step), { component: step.component ? step.component : container }))) });
+        });
+        const definition = {
+            name: `${this.namespace}.${method}`,
+            features: featureDefinitions,
+            scope
+        };
+        return new A_Abstraction_class_1.A_Abstraction(definition);
     }
 }
 exports.A_Concept = A_Concept;

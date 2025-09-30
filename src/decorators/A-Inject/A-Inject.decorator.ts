@@ -46,9 +46,9 @@ export function A_Inject(
     fragment: { new(...args: any[]): A_Fragment }
 ): A_TYPES__A_InjectDecoratorReturn
 
-export function A_Inject(
-    entity: { new(...args: any[]): A_Entity },
-    config: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
+export function A_Inject<T extends A_Entity>(
+    entity: { new(...args: any[]): T },
+    config: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
 ): A_TYPES__A_InjectDecoratorReturn
 
 // ====================== BASE FUNCTION ======================

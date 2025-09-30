@@ -12,18 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Config = void 0;
 const a_utils_1 = require("@adaas/a-utils");
 const A_Fragment_class_1 = require("../../global/A-Fragment/A-Fragment.class");
+const env_constants_1 = require("../../constants/env.constants");
 class A_Config extends A_Fragment_class_1.A_Fragment {
     constructor(config) {
         super(config);
         // Custom properties
         this.VARIABLES = new Map();
         this.CONFIG_PROPERTIES = [];
-        this.DEFAULT_ALLOWED_TO_READ_PROPERTIES = [
-            'CONFIG_SDK_VALIDATION',
-            'CONFIG_VERBOSE',
-            'CONFIG_IGNORE_ERRORS',
-            'CONCEPT_ROOT_FOLDER',
-        ];
+        this.DEFAULT_ALLOWED_TO_READ_PROPERTIES = env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY;
         this.config = a_utils_1.A_CommonHelper.deepCloneAndMerge(config, {
             name: this.name,
             strict: false,

@@ -4,6 +4,8 @@ import { A_TYPES__A_ChannelAggregated, A_TYPES__A_ChannelAggregateMethods, A_TYP
 
 
 /**
+ * [!] DEPRECATED - use simply A_Component instead
+ * 
  * A_Channel is an abstraction over any Communication Type from event emitters to message queues, HTTP requests, etc.
  * 
  * A_Channel uses to connect Containers between each other. When

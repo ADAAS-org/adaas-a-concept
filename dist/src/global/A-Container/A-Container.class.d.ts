@@ -20,6 +20,11 @@ export declare class A_Container {
     ready: Promise<void>;
     get name(): string;
     get Scope(): A_Scope;
+    /**
+     * Creates a new instance of A_Container
+     *
+     * @param config
+     */
     constructor(
     /**
      * Configuration of the container that will be used to run it.

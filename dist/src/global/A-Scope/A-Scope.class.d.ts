@@ -48,9 +48,9 @@ export declare class A_Scope {
      * @param component
      * @returns
      */
-    has(component: typeof A_Component): boolean;
-    has(entity: typeof A_Entity): boolean;
-    has(fragment: typeof A_Fragment): boolean;
+    has<T extends A_Component>(component: new (...args: any[]) => T): boolean;
+    has<T extends A_Entity>(entity: new (...args: any[]) => T): boolean;
+    has<T extends A_Fragment>(fragment: new (...args: any[]) => T): boolean;
     has(constructor: string): boolean;
     /**
      * Merges two scopes into a new one
@@ -71,9 +71,9 @@ export declare class A_Scope {
      */
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(string: string): InstanceType<T>;
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: T): InstanceType<T>;
-    resolve<T extends {
-        new (...args: any[]): A_Entity;
-    }>(entity: T, instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>): InstanceType<T>;
+    resolve<T extends A_Entity>(entity: {
+        new (...args: any[]): T;
+    }, instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): T | Array<T>;
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(component: Array<T>): Array<InstanceType<T>>;
     private resolveByName;
     private resolveOnce;
@@ -86,6 +86,7 @@ export declare class A_Scope {
      *
      * @param fragment
      */
+    register<T extends A_Component>(component: new (...args: any[]) => T): void;
     register(entity: A_Entity): void;
     register(component: A_Component): void;
     register(fragment: A_Fragment): void;

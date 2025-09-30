@@ -37,7 +37,7 @@ export enum A_TYPES__ConceptMetaKey {
 export interface A_TYPES__IConceptConstructor<
     T extends Array<A_Container>
 > {
-    name: string,
+    name?: string,
 
     /**
      * A set of Context Fragments to register globally for the concept.
@@ -62,10 +62,12 @@ export interface A_TYPES__IConceptConstructor<
 
 
     /**
-     * A set of external Concepts that can be used in the current Concept. 
-     * To provide additional functionality or extend the current Concept.
+     * A set of Components available for all containers and fragments in the concept. 
+     * These components will be registered in the root scope of the concept.
+     * 
+     * [!] Note that these components will be available in all containers and fragments in the concept.
      */
-    // import?: Array<A_Concept>
+    components?: Array<{ new(...args: any[]): A_Component }>
 }
 
 

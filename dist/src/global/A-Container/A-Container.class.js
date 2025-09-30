@@ -29,6 +29,11 @@ class A_Container {
     get Scope() {
         return A_Context_class_1.A_Context.scope(this);
     }
+    /**
+     * Creates a new instance of A_Container
+     *
+     * @param config
+     */
     constructor(
     /**
      * Configuration of the container that will be used to run it.

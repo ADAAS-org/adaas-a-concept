@@ -21,7 +21,7 @@ export class StepsManager {
     }
 
     private ID(step: A_TYPES__A_StageStep) {
-        return `${step.component.name}.${step.handler}`;
+        return `${typeof step.component === 'string' ? step.component : step.component.name}.${step.handler}`;
     }
 
     private buildGraph() {
@@ -103,7 +103,7 @@ export class StepsManager {
                 stage.add(step);
             });
 
-        return stages.map(stage => new A_Stage(feature, stage.steps) );
+        return stages.map(stage => new A_Stage(feature, stage.steps));
     }
 }
 

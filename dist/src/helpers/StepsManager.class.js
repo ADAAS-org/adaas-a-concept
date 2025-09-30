@@ -11,7 +11,7 @@ class StepsManager {
         this.sortedEntities = [];
     }
     ID(step) {
-        return `${step.component.name}.${step.handler}`;
+        return `${typeof step.component === 'string' ? step.component : step.component.name}.${step.handler}`;
     }
     buildGraph() {
         // Initialize graph nodes

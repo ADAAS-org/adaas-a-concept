@@ -71,6 +71,9 @@ class A_Context {
     static allocate(param1, param2) {
         const instance = this.getInstance();
         const newScope = param2 instanceof A_Scope_class_1.A_Scope ? param2 : new A_Scope_class_1.A_Scope(param2, param2);
+        if (!newScope.isInheritedFrom(A_Context.root)) {
+            newScope.inherit(A_Context.root);
+        }
         switch (true) {
             case param1 instanceof A_Container_class_1.A_Container:
                 instance.containers.set(param1, newScope);
@@ -89,42 +92,59 @@ class A_Context {
         let property;
         let metaType;
         switch (true) {
+            // 1) If param1 is instance of A_Container
             case param1 instanceof A_Container_class_1.A_Container: {
                 metaStorage = instance.containersMeta;
                 property = param1.constructor;
                 metaType = A_Container_meta_1.A_ContainerMeta;
                 break;
             }
+            // 2) If param1 is class of A_Container
             case a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Container_class_1.A_Container): {
                 metaStorage = instance.containersMeta;
                 property = param1;
                 metaType = A_Container_meta_1.A_ContainerMeta;
                 break;
             }
+            // 3) If param1 is instance of A_Component
             case param1 instanceof A_Component_class_1.A_Component: {
                 metaStorage = instance.componentsMeta;
                 property = param1.constructor;
                 metaType = A_Component_meta_1.A_ComponentMeta;
                 break;
             }
+            // 4) If param1 is class of A_Component
             case a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Component_class_1.A_Component): {
                 metaStorage = instance.componentsMeta;
                 property = param1;
                 metaType = A_Component_meta_1.A_ComponentMeta;
                 break;
             }
+            // 5) If param1 is instance of A_Entity
             case param1 instanceof A_Entity_class_1.A_Entity: {
                 metaStorage = instance.entitiesMeta;
                 property = param1.constructor;
                 metaType = A_Component_meta_1.A_ComponentMeta;
                 break;
             }
+            // 6) If param1 is class of A_Entity
             case a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Entity_class_1.A_Entity): {
                 metaStorage = instance.entitiesMeta;
                 property = param1;
                 metaType = A_Entity_meta_1.A_EntityMeta;
                 break;
             }
+            // 7) If param1 is string then we need to find the component by its name
+            case typeof param1 === 'string': {
+                metaStorage = instance.componentsMeta;
+                const found = Array.from(instance.componentsMeta).find(([c]) => c.name === param1);
+                if (!(found && found.length))
+                    throw new a_utils_1.A_Error(`Component with name ${param1} not found`);
+                property = found[0];
+                metaType = A_Component_meta_1.A_ComponentMeta;
+                break;
+            }
+            // 8) If param1 is any other class or function
             default: {
                 metaStorage = instance.customMeta;
                 property = typeof param1 === 'function' ? param1 : param1.constructor;

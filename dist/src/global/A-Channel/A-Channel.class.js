@@ -11,6 +11,8 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Channel = void 0;
 /**
+ * [!] DEPRECATED - use simply A_Component instead
+ *
  * A_Channel is an abstraction over any Communication Type from event emitters to message queues, HTTP requests, etc.
  *
  * A_Channel uses to connect Containers between each other. When

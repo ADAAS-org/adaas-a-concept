@@ -6,6 +6,7 @@ import { A_Container } from "../A-Container/A-Container.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_StageError } from "./A-Stage.error";
 import { A_FeatureCaller } from "../A-Feature/A-FeatureCaller.class";
+import { A_Entity } from "../A-Entity/A-Entity.class";
 
 
 /**
@@ -30,10 +31,10 @@ export class A_Stage {
         this._steps = _steps;
         this.name = `${this.feature.name}::a-stage:[sync:${this
             .syncSteps
-            .map(s => s.component.name + '.' + s.handler)
+            .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
             .join(' -> ')}][async:${this
                 .asyncSteps
-                .map(s => s.component.name + '.' + s.handler)
+                .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
                 .join(' -> ')}]`;
 
     }
@@ -87,9 +88,11 @@ export class A_Stage {
         return Promise
             .all(A_Context
                 .meta(
-                    step.component instanceof A_Container
+                    // TODO: fix types
+                    (step.component instanceof A_Container
                         ? step.component.constructor
-                        : step.component
+                        : step.component) as any
+
                 )
                 .injections(step.handler)
                 .map(async arg => {
@@ -100,7 +103,7 @@ export class A_Stage {
                     if (A_CommonHelper.isInheritedFrom(arg.target, A_Feature))
                         return this.feature;
 
-                    return scope.resolve(arg.target)
+                    return scope.resolve((arg as any).target, (arg as any).instructions)
                 })
             )
     }
@@ -134,10 +137,11 @@ export class A_Stage {
         // TODO: probably would be better to do it another way. let's think about it
         const instance = component instanceof A_Container
             ? component
-            : this.feature.Scope.resolve(component);
+            // TODO: fix types
+            : this.feature.Scope.resolve(component as any);
 
         if (!instance)
-            throw new Error(`Unable to resolve component ${component.name}`);
+            throw new Error(`Unable to resolve component ${typeof component === 'string' ? component : component.name} from scope ${this.feature.Scope.name}`);
 
         if (!instance[handler])
             throw new Error(`Handler ${handler} not found in ${instance.constructor.name}`);

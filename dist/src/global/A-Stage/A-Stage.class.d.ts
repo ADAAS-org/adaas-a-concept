@@ -3,6 +3,7 @@ import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__A_Stage_JSON, A_TYPES__A_Stage_Status, A_TYPES__A_StageStep, A_TYPES__A_StageStepProcessingExtraParams } from "./A-Stage.types";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_Entity } from "../A-Entity/A-Entity.class";
 /**
  * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
  * Each stage may contain one or more functions.
@@ -31,7 +32,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<(import("../A-Fragment/A-Fragment.class").A_Fragment | import("../A-Component/A-Component.class").A_Component | A_Container | import("../A-Entity/A-Entity.class").A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Scope | A_Feature)[]>;
+    protected getStepArgs(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<(import("../A-Component/A-Component.class").A_Component | A_Container | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON>[] | A_Feature)[]>;
     /**
      * Adds a step to the stage
      *
@@ -45,7 +46,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepInstance(step: A_TYPES__A_StageStep): import("../A-Component/A-Component.class").A_Component | A_Container;
+    protected getStepInstance(step: A_TYPES__A_StageStep): any;
     /**
      * Calls the handler of the step
      *

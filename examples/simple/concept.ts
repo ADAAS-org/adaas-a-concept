@@ -9,6 +9,7 @@ import { A_ConfigLoader } from "@adaas/a-concept/base/A-Config/A-Config.containe
 import { ENVConfigReader } from "@adaas/a-concept/base/A-Config/components/ENVConfigReader.component";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
 import { SecondaryContainer } from "./containers/Secondary.container";
+import { EntityA } from "./entities/EntityA.entity";
 
 (async () => {
 
@@ -56,6 +57,11 @@ import { SecondaryContainer } from "./containers/Secondary.container";
             }),
             main,
             second
+        ],
+        entities: [
+            new EntityA({ bar: 'bar' }),
+            new EntityA({ bar: 'bar' }),
+            new EntityA({ bar: 'barZ' }),
         ]
     });
 

@@ -34,10 +34,10 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
     }
     inject(config) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = this.read(config.CONFIG_PROPERTIES);
+            const data = yield this.read(config.CONFIG_PROPERTIES);
             config.set(data);
             const rootDir = yield this.getProjectRoot();
-            config.set('CONCEPT_ROOT_FOLDER', rootDir);
+            config.set('A_CONCEPT_ROOT_FOLDER', rootDir);
         });
     }
     /**
@@ -65,16 +65,6 @@ let ConfigReader = class ConfigReader extends A_Component_class_1.A_Component {
      */
     getProjectRoot() {
         return __awaiter(this, arguments, void 0, function* (startPath = __dirname) {
-            // let currentPath = startPath;
-            // const fs = await A_Polyfills.fs();
-            // while (!fs.existsSync(`${currentPath}/package.json`)) {
-            //     const parentPath = currentPath.substring(0, currentPath.lastIndexOf('/'));
-            //     if (parentPath === currentPath || parentPath === '') {
-            //         // Reached the root of the filesystem without finding package.json
-            //         return null;
-            //     }
-            //     currentPath = parentPath;
-            // }
             return process.cwd();
         });
     }

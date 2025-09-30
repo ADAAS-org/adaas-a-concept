@@ -9,6 +9,7 @@ import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
+    A_TYPES__A_InjectDecorator_EntityInjectionQuery,
     A_TYPES__A_InjectDecorator_Injectable
 } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
 
@@ -176,20 +177,20 @@ export class A_Scope {
      * @param component 
      * @returns 
      */
-    has(
-        component: typeof A_Component
+    has<T extends A_Component>(
+        component: new (...args: any[]) => T
     ): boolean
-    has(
-        entity: typeof A_Entity
+    has<T extends A_Entity>(
+        entity: new (...args: any[]) => T
     ): boolean
-    has(
-        fragment: typeof A_Fragment
+    has<T extends A_Fragment>(
+        fragment: new (...args: any[]) => T
     ): boolean
     has(
         constructor: string
     ): boolean
-    has(
-        entity: typeof A_Fragment | typeof A_Component | typeof A_Entity | string
+    has<T extends A_Fragment | A_Component | A_Entity>(
+        entity: T | string | (new (...args: any[]) => T)
     ): boolean {
 
 
@@ -218,38 +219,41 @@ export class A_Scope {
                 return false;
             }
 
-            case A_CommonHelper.isInheritedFrom(entity, A_Component): {
-                const found = this.params.components.includes(entity as { new(...args: any[]): A_Component });
+            case typeof entity === 'function'
+                && A_CommonHelper.isInheritedFrom(entity, A_Component): {
+                    const found = this.params.components.includes(entity as { new(...args: any[]): A_Component });
 
-                if (!found && !!this._parent)
-                    return this._parent.has(entity as any);
+                    if (!found && !!this._parent) {
+                        return this._parent.has(entity as any);
+                    }
 
-                return found;
-            }
+                    return found;
+                }
 
-            case A_CommonHelper.isInheritedFrom(entity, A_Entity): {
-                const entities = Array.from(this._entities.values());
+            case typeof entity === 'function'
+                && A_CommonHelper.isInheritedFrom(entity, A_Entity): {
+                    const entities = Array.from(this._entities.values());
 
-                const found = entities.find(e => e instanceof entity);
+                    const found = entities.find(e => e instanceof entity);
 
-                return !!found;
-            }
+                    return !!found;
+                }
 
-            case A_CommonHelper.isInheritedFrom(entity, A_Fragment): {
-                const found = this._fragments.has(entity);
+            case typeof entity === 'function'
+                && A_CommonHelper.isInheritedFrom(entity, A_Fragment): {
+                    const found = this._fragments.has(entity);
 
-                if (!found && !!this._parent)
-                    return this._parent.has(entity as any);
+                    if (!found && !!this._parent)
+                        return this._parent.has(entity as any);
 
-                return found;
-            }
+                    return found;
+                }
 
             default: {
                 return false;
             }
         }
     }
-
 
 
     /**
@@ -300,10 +304,10 @@ export class A_Scope {
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: T
     ): InstanceType<T>
-    resolve<T extends { new(...args: any[]): A_Entity }>(
-        entity: T,
-        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): InstanceType<T>
+    resolve<T extends A_Entity>(
+        entity: { new(...args: any[]): T },
+        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
+    ): T | Array<T>
     resolve<T extends A_TYPES__A_InjectDecorator_Injectable>(
         component: Array<T>
     ): Array<InstanceType<T>>
@@ -312,6 +316,7 @@ export class A_Scope {
         param1: Array<T> | T | string,
         param2?: string | Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): Array<InstanceType<T>> | InstanceType<T> {
+
 
         switch (true) {
             case Array.isArray(param1): {
@@ -372,7 +377,7 @@ export class A_Scope {
 
         switch (true) {
             case A_CommonHelper.isInheritedFrom(component, A_Entity): {
-                return this.resolveEntity(component as typeof A_Entity, instructions) as InstanceType<T>;
+                return this.resolveEntity(component as any, instructions) as InstanceType<T>;
             }
 
             case A_CommonHelper.isInheritedFrom(component, A_Fragment): {
@@ -395,17 +400,17 @@ export class A_Scope {
 
     private resolveEntity<T extends { new(...args: any[]): A_Entity }>(
         entity: T,
-        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): InstanceType<T> | undefined {
+        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<InstanceType<T>>>
+    ): InstanceType<T> | undefined | InstanceType<T>[] {
 
-        const query = instructions?.query || {};
+        const query = instructions?.query || {} as Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<InstanceType<T>>>;
         const count = instructions?.pagination?.count || 1;
-
 
         switch (true) {
             case !instructions: {
 
                 const entities = Array.from(this._entities.values());
+
 
                 const found = entities.find(e => e instanceof entity);
 
@@ -417,7 +422,7 @@ export class A_Scope {
                         return this._parent.resolveEntity(entity, instructions);
 
                     default:
-                        throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
+                        throw new Error(`Entity ${entity.name} not found in the scope ${this.name}`);
                 }
             }
 
@@ -428,6 +433,7 @@ export class A_Scope {
                 }
 
             case !!query.aseid
+                && typeof query.aseid === 'object'
                 && query.aseid instanceof ASEID
                 && this._entities.has(query.aseid.toString()): {
                     return this._entities.get(query.aseid.toString()) as InstanceType<T>;
@@ -447,8 +453,29 @@ export class A_Scope {
                 return found as InstanceType<T>;
             }
 
-            default:
-                throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
+            default: {
+                const entities = Array.from(this._entities.values());
+
+                const found = entities.filter(
+                    e => e instanceof entity
+                ).filter(e => {
+                    return Object.entries(query).every(([key, value]) => {
+                        if (key in e) {
+                            return (e as any)[key] === value;
+                        }
+                        return false;
+                    });
+                });
+
+                if (found.length === 0 && !!this._parent)
+                    return this._parent.resolveEntity(entity, instructions);
+
+                if (count === 1)
+                    return found[0] as InstanceType<T>;
+
+                return found as InstanceType<T>[];
+            }
+
         }
     }
 
@@ -457,6 +484,7 @@ export class A_Scope {
     private resolveFragment<T extends typeof A_Fragment>(fragment: T): InstanceType<T> {
 
         const fragmentInstancePresented = this.fragments.some(fr => fr instanceof fragment);
+
 
         switch (true) {
 
@@ -543,13 +571,27 @@ export class A_Scope {
      * 
      * @param fragment 
      */
+    register<T extends A_Component>(component: new (...args: any[]) => T): void
     register(entity: A_Entity): void
     register(component: A_Component): void
     register(fragment: A_Fragment): void
     register(
-        param1: A_Fragment | A_Component | A_Entity
+        param1: A_Fragment | A_Component | A_Entity | (new (...args: any[]) => A_Component)
     ): void {
         switch (true) {
+            case param1 instanceof A_Component && !this._components.has(param1.constructor): {
+                this._components.set(param1.constructor, param1);
+
+                const allowedComponent = this.components.find(c => c === param1.constructor);
+
+                if (!allowedComponent) {
+                    this.components.push(param1.constructor as any);
+                }
+
+                A_Context.register(this, param1);
+                break;
+            }
+
             case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);
                 A_Context.register(this, param1);
@@ -581,6 +623,13 @@ export class A_Scope {
                 break;
             }
 
+            case typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Component): {
+                const allowedComponent = this.components.find(c => c === param1);
+
+                if (!allowedComponent)
+                    this.components.push(param1);
+                break;
+            }
             default:
                 if (param1 instanceof A_Entity)
                     throw new Error(`Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);

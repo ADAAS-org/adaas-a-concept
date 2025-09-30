@@ -33,10 +33,10 @@ class A_Stage {
         this._steps = _steps;
         this.name = `${this.feature.name}::a-stage:[sync:${this
             .syncSteps
-            .map(s => s.component.name + '.' + s.handler)
+            .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
             .join(' -> ')}][async:${this
             .asyncSteps
-            .map(s => s.component.name + '.' + s.handler)
+            .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
             .join(' -> ')}]`;
     }
     get before() {
@@ -70,16 +70,18 @@ class A_Stage {
         return __awaiter(this, void 0, void 0, function* () {
             return Promise
                 .all(A_Context_class_1.A_Context
-                .meta(step.component instanceof A_Container_class_1.A_Container
+                .meta(
+            // TODO: fix types
+            (step.component instanceof A_Container_class_1.A_Container
                 ? step.component.constructor
-                : step.component)
+                : step.component))
                 .injections(step.handler)
                 .map((arg) => __awaiter(this, void 0, void 0, function* () {
                 if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_FeatureCaller_class_1.A_FeatureCaller))
                     return this.feature.Caller.resolve();
                 if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature))
                     return this.feature;
-                return scope.resolve(arg.target);
+                return scope.resolve(arg.target, arg.instructions);
             })));
         });
     }
@@ -104,9 +106,10 @@ class A_Stage {
         // TODO: probably would be better to do it another way. let's think about it
         const instance = component instanceof A_Container_class_1.A_Container
             ? component
+            // TODO: fix types
             : this.feature.Scope.resolve(component);
         if (!instance)
-            throw new Error(`Unable to resolve component ${component.name}`);
+            throw new Error(`Unable to resolve component ${typeof component === 'string' ? component : component.name} from scope ${this.feature.Scope.name}`);
         if (!instance[handler])
             throw new Error(`Handler ${handler} not found in ${instance.constructor.name}`);
         return instance;

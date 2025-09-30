@@ -18,8 +18,6 @@ import { A_TYPES__FeatureCallParams, A_TYPES__FeatureConstructor } from "../A-Fe
  * - etc.
  */
 export class A_Container {
-    // scope!: A_Scope
-
     protected readonly config!: Partial<A_TYPES__ContainerConstructor<any>>;
 
     /**
@@ -36,6 +34,11 @@ export class A_Container {
     }
 
 
+    /**
+     * Creates a new instance of A_Container
+     * 
+     * @param config 
+     */
     constructor(
         /**
          * Configuration of the container that will be used to run it.

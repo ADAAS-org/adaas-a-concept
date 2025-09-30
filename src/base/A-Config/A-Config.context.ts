@@ -1,10 +1,11 @@
 import { A_CommonHelper, A_TYPES__Required } from "@adaas/a-utils";
 import { A_TYPES__ConfigContainerConstructor } from "./A-Config.types";
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_TYPES__ConceptENVVariables } from "@adaas/a-concept/constants/env.constants";
 
 
 export class A_Config<
-    T extends string = any
+    T extends string = A_TYPES__ConceptENVVariables
 > extends A_Fragment {
 
     config: A_TYPES__ConfigContainerConstructor<T>;
@@ -14,12 +15,7 @@ export class A_Config<
 
     CONFIG_PROPERTIES: T[] = [];
 
-    protected DEFAULT_ALLOWED_TO_READ_PROPERTIES = [
-        'CONFIG_SDK_VALIDATION',
-        'CONFIG_VERBOSE',
-        'CONFIG_IGNORE_ERRORS',
-        'CONCEPT_ROOT_FOLDER',
-    ] as const;
+    protected DEFAULT_ALLOWED_TO_READ_PROPERTIES = A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY;
 
 
     constructor(
@@ -72,24 +68,24 @@ export class A_Config<
      * 
      * @param variables 
      */
-    set<V extends string = T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]>(
+    set(
         variables: Array<{
-            property: V,
+            property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
             value: any
         }>
     )
-    set<V extends string = T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]>(
-        variables: Record<V, any>
+    set(
+        variables: Partial<Record<T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number], any>>
     )
-    set<V extends string = T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]>(
-        property: V,
+    set(
+        property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
         value: any
     )
-    set<V extends string = T | typeof this.DEFAULT_ALLOWED_TO_READ_PROPERTIES[number]>(
-        property: V | Array<{
-            property: V,
+    set(
+        property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number] | Array<{
+            property: T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number],
             value: any
-        }> | Record<V, any>,
+        }> | Partial<Record<T | typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY[number], any>>,
         value?: any
     ) {
         const array = Array.isArray(property)

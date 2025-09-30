@@ -58,15 +58,33 @@ export declare class A_Context {
     static allocate(feature: A_Feature, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig> | A_Scope): A_Scope;
     static allocate(container: A_Container, importing: Partial<A_TYPES__ScopeConstructor & A_TYPES__ScopeConfig>): A_Scope;
     static allocate(container: A_Container, importing: A_Scope): A_Scope;
+    /**
+     * Get or Create Meta for the specific class or instance.
+     * This method will return the existing meta if it exists, or create a new one if it doesn't.
+     *
+     * Meta object contains custom metadata based on the class type.
+     *
+     * @param container
+     */
     static meta(container: typeof A_Container): A_ContainerMeta;
     static meta(container: A_Container): A_ContainerMeta;
     static meta(entity: A_Entity): A_ContainerMeta;
     static meta(entity: typeof A_Entity): A_ContainerMeta;
+    static meta(component: string): A_ComponentMeta;
     static meta(component: typeof A_Component): A_ComponentMeta;
     static meta(component: A_Component): A_ComponentMeta;
     static meta<T extends Record<string, any>>(constructor: typeof A_Component | typeof A_Container | A_Container | A_Component | A_Entity | typeof A_Entity | {
         new (...args: any[]): any;
-    }): A_Meta<T>;
+    } | string): A_Meta<T>;
+    /**
+     * Get the scope of the specific class or instance.
+     *
+     * Every execution in Concept has its own scope.
+     *
+     * This method will return the scope of the specific class or instance.
+     *
+     * @param entity
+     */
     static scope(entity: A_Entity): A_Scope;
     static scope(component: A_Component): A_Scope;
     static scope(container: A_Container): A_Scope;

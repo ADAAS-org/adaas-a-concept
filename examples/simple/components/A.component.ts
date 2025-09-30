@@ -7,6 +7,7 @@ import { A_Logger } from "@adaas/a-concept/base/A-Logger/A-Logger.component";
 import { SecondaryContainer } from "../containers/Secondary.container";
 import { A_FeatureCaller } from "@adaas/a-concept/global/A-Feature/A-FeatureCaller.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
+import { EntityA } from "../entities/EntityA.entity";
 
 export class ComponentA extends A_Component {
 
@@ -48,7 +49,7 @@ export class ComponentA extends A_Component {
                 console.log('awaited after 5 sec');
                 resolve();
 
-            }, 5000);
+            }, 2000);
         });
     }
 
@@ -57,8 +58,14 @@ export class ComponentA extends A_Component {
         scope: [SecondaryContainer]
     })
     async method_C(
-        @A_Inject(A_Logger) logger: A_Logger
+        @A_Inject(A_Logger) logger: A_Logger,
+        @A_Inject(EntityA, {
+            query: {
+                bar: 'bar'
+            }
+        }) entities: EntityA
     ) {
+        logger.log('entities', entities);
         logger.log('red', 'Component A ->  method_C()');
     }
 }

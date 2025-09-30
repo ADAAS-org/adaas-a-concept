@@ -17,7 +17,7 @@ export declare enum A_TYPES__ConceptMetaKey {
     LIFECYCLE = "a-component-extensions"
 }
 export interface A_TYPES__IConceptConstructor<T extends Array<A_Container>> {
-    name: string;
+    name?: string;
     /**
      * A set of Context Fragments to register globally for the concept.
      * These fragments will be available in the global context.
@@ -34,6 +34,15 @@ export interface A_TYPES__IConceptConstructor<T extends Array<A_Container>> {
      * These components will be used in the concept.
      */
     entities?: Array<A_Entity>;
+    /**
+     * A set of Components available for all containers and fragments in the concept.
+     * These components will be registered in the root scope of the concept.
+     *
+     * [!] Note that these components will be available in all containers and fragments in the concept.
+     */
+    components?: Array<{
+        new (...args: any[]): A_Component;
+    }>;
 }
 /**
  * Uses as a transfer object to pass configurations to Feature constructor

@@ -130,23 +130,30 @@ class A_Scope {
                     return this._parent.has(entity);
                 return false;
             }
-            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component): {
-                const found = this.params.components.includes(entity);
-                if (!found && !!this._parent)
-                    return this._parent.has(entity);
-                return found;
-            }
-            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Entity_class_1.A_Entity): {
-                const entities = Array.from(this._entities.values());
-                const found = entities.find(e => e instanceof entity);
-                return !!found;
-            }
-            case a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Fragment_class_1.A_Fragment): {
-                const found = this._fragments.has(entity);
-                if (!found && !!this._parent)
-                    return this._parent.has(entity);
-                return found;
-            }
+            case typeof entity === 'function'
+                && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component):
+                {
+                    const found = this.params.components.includes(entity);
+                    if (!found && !!this._parent) {
+                        return this._parent.has(entity);
+                    }
+                    return found;
+                }
+            case typeof entity === 'function'
+                && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Entity_class_1.A_Entity):
+                {
+                    const entities = Array.from(this._entities.values());
+                    const found = entities.find(e => e instanceof entity);
+                    return !!found;
+                }
+            case typeof entity === 'function'
+                && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Fragment_class_1.A_Fragment):
+                {
+                    const found = this._fragments.has(entity);
+                    if (!found && !!this._parent)
+                        return this._parent.has(entity);
+                    return found;
+                }
             default: {
                 return false;
             }
@@ -250,7 +257,7 @@ class A_Scope {
                     case !found && !!this._parent:
                         return this._parent.resolveEntity(entity, instructions);
                     default:
-                        throw new Error(`Fragment ${entity.name} not found in the scope ${this.name}`);
+                        throw new Error(`Entity ${entity.name} not found in the scope ${this.name}`);
                 }
             }
             case !!query.aseid
@@ -260,6 +267,7 @@ class A_Scope {
                     return this._entities.get(query.aseid);
                 }
             case !!query.aseid
+                && typeof query.aseid === 'object'
                 && query.aseid instanceof a_utils_1.ASEID
                 && this._entities.has(query.aseid.toString()):
                 {
@@ -273,8 +281,22 @@ class A_Scope {
                 });
                 return found;
             }
-            default:
-                throw new Error(`Entity ${entity.constructor.name} not found in the scope ${this.name}`);
+            default: {
+                const entities = Array.from(this._entities.values());
+                const found = entities.filter(e => e instanceof entity).filter(e => {
+                    return Object.entries(query).every(([key, value]) => {
+                        if (key in e) {
+                            return e[key] === value;
+                        }
+                        return false;
+                    });
+                });
+                if (found.length === 0 && !!this._parent)
+                    return this._parent.resolveEntity(entity, instructions);
+                if (count === 1)
+                    return found[0];
+                return found;
+            }
         }
     }
     resolveFragment(fragment) {
@@ -333,6 +355,15 @@ class A_Scope {
     }
     register(param1) {
         switch (true) {
+            case param1 instanceof A_Component_class_1.A_Component && !this._components.has(param1.constructor): {
+                this._components.set(param1.constructor, param1);
+                const allowedComponent = this.components.find(c => c === param1.constructor);
+                if (!allowedComponent) {
+                    this.components.push(param1.constructor);
+                }
+                A_Context_class_1.A_Context.register(this, param1);
+                break;
+            }
             case param1 instanceof A_Entity_class_1.A_Entity && !this._entities.has(param1.aseid.toString()): {
                 this._entities.set(param1.aseid.toString(), param1);
                 A_Context_class_1.A_Context.register(this, param1);
@@ -354,6 +385,12 @@ class A_Scope {
                     this.components.push(param1.constructor);
                 }
                 A_Context_class_1.A_Context.register(this, param1);
+                break;
+            }
+            case typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Component_class_1.A_Component): {
+                const allowedComponent = this.components.find(c => c === param1);
+                if (!allowedComponent)
+                    this.components.push(param1);
                 break;
             }
             default:
