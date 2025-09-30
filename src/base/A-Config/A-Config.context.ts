@@ -5,7 +5,7 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_TYPES__ConceptENVVariables 
 
 
 export class A_Config<
-    T extends Array<string | A_TYPES__ConceptENVVariables[number]> = A_TYPES__ConceptENVVariables
+    T extends Array<string | A_TYPES__ConceptENVVariables[number]> = any[]
 > extends A_Fragment {
 
     config: A_TYPES__ConfigContainerConstructor<T>;

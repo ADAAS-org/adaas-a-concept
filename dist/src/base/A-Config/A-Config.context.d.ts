@@ -1,7 +1,7 @@
 import { A_TYPES__ConfigContainerConstructor } from "./A-Config.types";
 import { A_Fragment } from "../../global/A-Fragment/A-Fragment.class";
 import { A_TYPES__ConceptENVVariables } from "../../constants/env.constants";
-export declare class A_Config<T extends Array<string | A_TYPES__ConceptENVVariables[number]> = A_TYPES__ConceptENVVariables> extends A_Fragment {
+export declare class A_Config<T extends Array<string | A_TYPES__ConceptENVVariables[number]> = any[]> extends A_Fragment {
     config: A_TYPES__ConfigContainerConstructor<T>;
     private VARIABLES;
     CONFIG_PROPERTIES: T;
