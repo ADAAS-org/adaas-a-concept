@@ -293,6 +293,34 @@ export class A_Scope {
 
 
     /**
+     * Allows to retrieve the constructor of the component or entity by its name
+     * 
+     * 
+     * @param name 
+     * @returns 
+     */
+    resolveConstructor<T extends A_Component | A_Entity>(name: string): new (...args: any[]) => T {
+        // Check components
+        const component = this.params.components.find(c => c.name === name);
+        if (component) return component as any;
+
+        // Check entities
+        const entity = this.params.entities.find(e => e.constructor.name === name);
+        if (entity) return entity.constructor as any;
+
+        // If not found in current scope, check parent scope
+        if (!!this._parent) {
+            return this._parent.resolveConstructor(name);
+        }
+
+        throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
+    }
+
+
+
+
+
+    /**
      * This method is used to get the component by class
      * 
      * @param component 
@@ -572,11 +600,16 @@ export class A_Scope {
      * @param fragment 
      */
     register<T extends A_Component>(component: new (...args: any[]) => T): void
+    register<T extends A_Entity>(component: new (...args: any[]) => T): void
     register(entity: A_Entity): void
     register(component: A_Component): void
     register(fragment: A_Fragment): void
     register(
-        param1: A_Fragment | A_Component | A_Entity | (new (...args: any[]) => A_Component)
+        param1: A_Fragment
+            | A_Component
+            | A_Entity
+            | (new (...args: any[]) => A_Component)
+            | (new (...args: any[]) => A_Entity)
     ): void {
         switch (true) {
             case param1 instanceof A_Component && !this._components.has(param1.constructor): {
@@ -630,6 +663,15 @@ export class A_Scope {
                     this.components.push(param1);
                 break;
             }
+            case typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Entity): {
+                const allowedComponent = this.params.entities.find(e => e.constructor === param1);
+
+                if (!allowedComponent) {
+                    this.params.entities.push(new (param1 as any)());
+                }
+                break;
+            }
+
             default:
                 if (param1 instanceof A_Entity)
                     throw new Error(`Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);

@@ -1,3 +1,4 @@
+import { A_Command } from "@adaas/a-concept/base/A-Command/A_Command.entity";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
@@ -49,7 +50,7 @@ describe('A-Scope tests', () => {
 
     it('should resolve component registered in parent scope', async () => {
         const parentScope = new A_Scope({ name: 'ParentScope' });
-        const childScope = new A_Scope({ name: 'ChildScope'});
+        const childScope = new A_Scope({ name: 'ChildScope' });
 
         childScope.parent(parentScope);
 
@@ -159,5 +160,26 @@ describe('A-Scope tests', () => {
         });
 
     });
+    it('Should allow to resolve A-Entity by classname', async () => {
+        class MyCommand extends A_Command<{ foo: string }> {
+            public foo!: string;
 
+            fromUndefined(): void {
+                super.fromUndefined();
+                this.foo = 'bar';
+            }
+        }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.register(MyCommand);
+
+        const resolved = scope.resolveConstructor<MyCommand>('MyCommand');
+        expect(resolved).toBe(MyCommand);
+
+        const instance = new resolved();
+
+        expect(instance).toBeInstanceOf(MyCommand);
+        expect(instance.foo).toBe('bar');
+
+    });
 });

@@ -189,6 +189,28 @@ class A_Scope {
         });
         return merged;
     }
+    /**
+     * Allows to retrieve the constructor of the component or entity by its name
+     *
+     *
+     * @param name
+     * @returns
+     */
+    resolveConstructor(name) {
+        // Check components
+        const component = this.params.components.find(c => c.name === name);
+        if (component)
+            return component;
+        // Check entities
+        const entity = this.params.entities.find(e => e.constructor.name === name);
+        if (entity)
+            return entity.constructor;
+        // If not found in current scope, check parent scope
+        if (!!this._parent) {
+            return this._parent.resolveConstructor(name);
+        }
+        throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
+    }
     // base definition
     resolve(param1, param2) {
         switch (true) {
@@ -391,6 +413,13 @@ class A_Scope {
                 const allowedComponent = this.components.find(c => c === param1);
                 if (!allowedComponent)
                     this.components.push(param1);
+                break;
+            }
+            case typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Entity_class_1.A_Entity): {
+                const allowedComponent = this.params.entities.find(e => e.constructor === param1);
+                if (!allowedComponent) {
+                    this.params.entities.push(new param1());
+                }
                 break;
             }
             default:

@@ -64,6 +64,14 @@ export declare class A_Scope {
      */
     merge(anotherScope: A_Scope): A_Scope;
     /**
+     * Allows to retrieve the constructor of the component or entity by its name
+     *
+     *
+     * @param name
+     * @returns
+     */
+    resolveConstructor<T extends A_Component | A_Entity>(name: string): new (...args: any[]) => T;
+    /**
      * This method is used to get the component by class
      *
      * @param component
@@ -87,6 +95,7 @@ export declare class A_Scope {
      * @param fragment
      */
     register<T extends A_Component>(component: new (...args: any[]) => T): void;
+    register<T extends A_Entity>(component: new (...args: any[]) => T): void;
     register(entity: A_Entity): void;
     register(component: A_Component): void;
     register(fragment: A_Fragment): void;

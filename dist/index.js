@@ -17,7 +17,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_Errors = exports.A_ErrorsManager = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Connect = exports.A_Abstraction_Extend = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Stage = exports.A_FeatureCaller = exports.A_Feature = exports.A_Channel = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Abstraction = exports.A_Context = void 0;
+exports.A_Errors = exports.A_ErrorsManager = exports.A_CommandContext = exports.A_Command = exports.FileConfigReader = exports.ENVConfigReader = exports.ConfigReader = exports.A_Config = exports.A_ConfigLoader = exports.A_Connect = exports.A_Abstraction_Extend = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_Scope = exports.A_Stage = exports.A_FeatureCaller = exports.A_Feature = exports.A_Channel = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Abstraction = exports.A_Context = void 0;
 // ---------------------- Major Components ----------------------
 var A_Context_class_1 = require("./src/global/A-Context/A-Context.class");
 Object.defineProperty(exports, "A_Context", { enumerable: true, get: function () { return A_Context_class_1.A_Context; } });
@@ -88,6 +88,7 @@ var A_Config_container_1 = require("./src/base/A-Config/A-Config.container");
 Object.defineProperty(exports, "A_ConfigLoader", { enumerable: true, get: function () { return A_Config_container_1.A_ConfigLoader; } });
 var A_Config_context_1 = require("./src/base/A-Config/A-Config.context");
 Object.defineProperty(exports, "A_Config", { enumerable: true, get: function () { return A_Config_context_1.A_Config; } });
+__exportStar(require("./src/base/A-Config/A-Config.types"), exports);
 var ConfigReader_component_1 = require("./src/base/A-Config/components/ConfigReader.component");
 Object.defineProperty(exports, "ConfigReader", { enumerable: true, get: function () { return ConfigReader_component_1.ConfigReader; } });
 var ENVConfigReader_component_1 = require("./src/base/A-Config/components/ENVConfigReader.component");
@@ -97,6 +98,12 @@ Object.defineProperty(exports, "FileConfigReader", { enumerable: true, get: func
 __exportStar(require("./src/base/A-Config/A-Config.types"), exports);
 __exportStar(require("./src/base/A-Logger/A-Logger.component"), exports);
 // export * from './src/base/A-Logger/A-Logger.types';
+var A_Command_entity_1 = require("./src/base/A-Command/A_Command.entity");
+Object.defineProperty(exports, "A_Command", { enumerable: true, get: function () { return A_Command_entity_1.A_Command; } });
+__exportStar(require("./src/base/A-Command/A_Command.types"), exports);
+__exportStar(require("./src/base/A-Command/A_Command.constants"), exports);
+var A_Command_context_1 = require("./src/base/A-Command/context/A_Command.context");
+Object.defineProperty(exports, "A_CommandContext", { enumerable: true, get: function () { return A_Command_context_1.A_CommandContext; } });
 var A_Errors_component_1 = require("./src/base/A-Errors/A-Errors.component");
 Object.defineProperty(exports, "A_ErrorsManager", { enumerable: true, get: function () { return A_Errors_component_1.A_ErrorsManager; } });
 var A_Errors_context_1 = require("./src/base/A-Errors/A-Errors.context");
