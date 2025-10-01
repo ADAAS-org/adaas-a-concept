@@ -32,11 +32,11 @@ export class A_ConfigLoader extends A_Container {
 
         switch (true) {
 
-            case A_Context.environment === 'server' && !!fs.existsSync(`${this.Scope.name}.conf.json`):
+            case A_Context.environment === 'server' && !!fs.existsSync(`${A_Context.root.name}.conf.json`):
                 this.reader = this.Scope.resolve(FileConfigReader);
                 break;
 
-            case A_Context.environment === 'server': !fs.existsSync(`${this.Scope.name}.conf.json`)
+            case A_Context.environment === 'server': !fs.existsSync(`${A_Context.root.name}.conf.json`)
                 this.reader = this.Scope.resolve(ENVConfigReader);
                 break;
 

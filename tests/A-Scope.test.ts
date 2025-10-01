@@ -1,3 +1,5 @@
+import './test.setup';
+
 import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";

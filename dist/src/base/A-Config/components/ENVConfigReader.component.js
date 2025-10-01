@@ -12,17 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ENVConfigReader = void 0;
 const a_utils_1 = require("@adaas/a-utils");
 const ConfigReader_component_1 = require("./ConfigReader.component");
-const A_Context_class_1 = require("../../../global/A-Context/A-Context.class");
-const env_constants_1 = require("../../../constants/env.constants");
 class ENVConfigReader extends ConfigReader_component_1.ConfigReader {
     /**
      * Get the configuration property Name
      * @param property
      */
     getConfigurationProperty_ENV_Alias(property) {
-        if (env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.some(p => p === property))
-            return a_utils_1.A_CommonHelper.toUpperSnakeCase(property);
-        return `${a_utils_1.A_CommonHelper.toUpperSnakeCase(A_Context_class_1.A_Context.root.name)}_${a_utils_1.A_CommonHelper.toUpperSnakeCase(property)}`;
+        return a_utils_1.A_CommonHelper.toUpperSnakeCase(property);
     }
     resolve(property) {
         return process.env[this.getConfigurationProperty_ENV_Alias(property)];

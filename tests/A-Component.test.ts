@@ -1,3 +1,5 @@
+import './test.setup';
+
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 
 jest.retryTimes(0);

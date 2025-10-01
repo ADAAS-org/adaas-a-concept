@@ -1,7 +1,5 @@
 import { A_CommonHelper } from "@adaas/a-utils";
 import { ConfigReader } from "./ConfigReader.component";
-import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "@adaas/a-concept/constants/env.constants";
 
 
 export class ENVConfigReader extends ConfigReader {
@@ -12,10 +10,7 @@ export class ENVConfigReader extends ConfigReader {
      * @param property 
      */
     getConfigurationProperty_ENV_Alias(property: string): string {
-        if (A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.some(p => p === property))
-            return A_CommonHelper.toUpperSnakeCase(property);
-
-        return `${A_CommonHelper.toUpperSnakeCase(A_Context.root.name)}_${A_CommonHelper.toUpperSnakeCase(property)}`;
+        return A_CommonHelper.toUpperSnakeCase(property);
     }
 
 

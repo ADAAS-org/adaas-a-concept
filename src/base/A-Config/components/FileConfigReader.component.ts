@@ -1,5 +1,6 @@
 import { A_CommonHelper, A_Polyfills } from "@adaas/a-utils";
 import { ConfigReader } from "./ConfigReader.component";
+import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 
 export class FileConfigReader extends ConfigReader {
 
@@ -24,7 +25,7 @@ export class FileConfigReader extends ConfigReader {
     ): Promise<Record<T, any>> {
         const fs = await A_Polyfills.fs();
         try {
-            const data = fs.readFileSync(`${this.scope.name}.conf.json`, 'utf8');
+            const data = fs.readFileSync(`${A_Context.root.name}.conf.json`, 'utf8');
 
             const config: Record<T, any> = JSON.parse(data);
 

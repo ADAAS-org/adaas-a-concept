@@ -17,7 +17,7 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
         });
         this.CONFIG_PROPERTIES = this.config.variables ? this.config.variables : [];
         this.config.variables.forEach((variable) => {
-            this.VARIABLES.set(variable, this.config.defaults[variable]);
+            this.VARIABLES.set(a_utils_1.A_CommonHelper.toUpperSnakeCase(variable), this.config.defaults[variable]);
         });
     }
     /**
@@ -30,7 +30,7 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
         if (this.CONFIG_PROPERTIES.includes(property)
             || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property)
             || !(this.config.strict))
-            return this.VARIABLES.get(property);
+            return this.VARIABLES.get(a_utils_1.A_CommonHelper.toUpperSnakeCase(property));
         throw new Error('Property not exists or not allowed to read');
         // return this.concept.Errors.throw(A_SDK_CONSTANTS__ERROR_CODES.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ) as never;
     }
@@ -52,7 +52,7 @@ class A_Config extends A_Fragment_class_1.A_Fragment {
                 : ((_a = this.config) === null || _a === void 0 ? void 0 : _a.defaults)
                     ? this.config.defaults[property]
                     : undefined;
-            this.VARIABLES.set(property, targetValue);
+            this.VARIABLES.set(a_utils_1.A_CommonHelper.toUpperSnakeCase(property), targetValue);
         }
     }
 }

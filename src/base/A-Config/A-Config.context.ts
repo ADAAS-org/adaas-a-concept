@@ -33,7 +33,10 @@ export class A_Config<
         this.CONFIG_PROPERTIES = this.config.variables ? this.config.variables : [] as any as T;
 
         this.config.variables.forEach((variable) => {
-            this.VARIABLES.set(variable, this.config.defaults[variable]);
+            this.VARIABLES.set(
+                A_CommonHelper.toUpperSnakeCase(variable),
+                this.config.defaults[variable]
+            );
         });
     }
 
@@ -51,7 +54,7 @@ export class A_Config<
             || this.DEFAULT_ALLOWED_TO_READ_PROPERTIES.includes(property as any)
             || !(this.config.strict)
         )
-            return this.VARIABLES.get(property as string) as _OutType;
+            return this.VARIABLES.get(A_CommonHelper.toUpperSnakeCase(property)) as _OutType;
 
         throw new Error('Property not exists or not allowed to read') as never;
         // return this.concept.Errors.throw(A_SDK_CONSTANTS__ERROR_CODES.CONFIGURATION_PROPERTY_NOT_EXISTS_OR_NOT_ALLOWED_TO_READ) as never;
@@ -105,7 +108,7 @@ export class A_Config<
                     ? this.config.defaults[property as T[number]]
                     : undefined;
 
-            this.VARIABLES.set(property as string, targetValue);
+            this.VARIABLES.set(A_CommonHelper.toUpperSnakeCase(property), targetValue);
         }
     }
 }

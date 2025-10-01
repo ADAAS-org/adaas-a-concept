@@ -1,5 +1,4 @@
-
-
+import './test.setup';
 
 import { A_CONSTANTS__A_Command_Status, A_CONSTANTS_A_Command_Features } from "@adaas/a-concept/global/A-Command/A-Command.constants";
 import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";

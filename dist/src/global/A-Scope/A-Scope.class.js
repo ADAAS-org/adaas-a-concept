@@ -235,9 +235,6 @@ class A_Scope {
         if (!!this._parent) {
             return this._parent.resolveConstructor(name);
         }
-        console.log('this.params.components', this.params.components);
-        console.log('this.params.entities', this.params.entities);
-        console.log('this.params.commands', this.params.commands);
         throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
     // base definition

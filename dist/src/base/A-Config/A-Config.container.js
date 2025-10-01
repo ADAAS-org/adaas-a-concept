@@ -35,11 +35,11 @@ class A_ConfigLoader extends A_Container_class_1.A_Container {
         return __awaiter(this, void 0, void 0, function* () {
             const fs = yield a_utils_1.A_Polyfills.fs();
             switch (true) {
-                case A_Context_class_1.A_Context.environment === 'server' && !!fs.existsSync(`${this.Scope.name}.conf.json`):
+                case A_Context_class_1.A_Context.environment === 'server' && !!fs.existsSync(`${A_Context_class_1.A_Context.root.name}.conf.json`):
                     this.reader = this.Scope.resolve(FileConfigReader_component_1.FileConfigReader);
                     break;
                 case A_Context_class_1.A_Context.environment === 'server':
-                    !fs.existsSync(`${this.Scope.name}.conf.json`);
+                    !fs.existsSync(`${A_Context_class_1.A_Context.root.name}.conf.json`);
                     this.reader = this.Scope.resolve(ENVConfigReader_component_1.ENVConfigReader);
                     break;
                 case A_Context_class_1.A_Context.environment === 'browser':

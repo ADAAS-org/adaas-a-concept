@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileConfigReader = void 0;
 const a_utils_1 = require("@adaas/a-utils");
 const ConfigReader_component_1 = require("./ConfigReader.component");
+const A_Context_class_1 = require("../../../global/A-Context/A-Context.class");
 class FileConfigReader extends ConfigReader_component_1.ConfigReader {
     constructor() {
         super(...arguments);
@@ -31,7 +32,7 @@ class FileConfigReader extends ConfigReader_component_1.ConfigReader {
         return __awaiter(this, void 0, void 0, function* () {
             const fs = yield a_utils_1.A_Polyfills.fs();
             try {
-                const data = fs.readFileSync(`${this.scope.name}.conf.json`, 'utf8');
+                const data = fs.readFileSync(`${A_Context_class_1.A_Context.root.name}.conf.json`, 'utf8');
                 const config = JSON.parse(data);
                 this.FileData = new Map(Object.entries(config));
                 return config;
