@@ -7,6 +7,7 @@ const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Component_types_1 = require("../A-Component/A-Component.types");
 const A_Component_class_1 = require("../A-Component/A-Component.class");
 const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
+const A_Command_class_1 = require("../A-Command/A-Command.class");
 /**
  *
  *
@@ -25,6 +26,7 @@ class A_Scope {
         this.name = '';
         this._components = new WeakMap();
         this._fragments = new WeakMap();
+        this._commands = new Map();
         this._entities = new Map();
         this.name = params.name || this.constructor.name;
         // TODO: move to defaults
@@ -33,6 +35,7 @@ class A_Scope {
             components: [],
             fragments: [],
             entities: [],
+            commands: [],
         };
         this.params = Object.assign(Object.assign({}, defaultParams), params);
         this.initComponents(params.components || []);
@@ -55,6 +58,9 @@ class A_Scope {
     }
     get components() {
         return this.params.components || [];
+    }
+    get commands() {
+        return this.params.commands || [];
     }
     get fragments() {
         return this.params.fragments || [];
@@ -133,7 +139,7 @@ class A_Scope {
             case typeof entity === 'function'
                 && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Component_class_1.A_Component):
                 {
-                    const found = this.params.components.includes(entity);
+                    const found = this.components.includes(entity);
                     if (!found && !!this._parent) {
                         return this._parent.has(entity);
                     }
@@ -150,6 +156,14 @@ class A_Scope {
                 && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Fragment_class_1.A_Fragment):
                 {
                     const found = this._fragments.has(entity);
+                    if (!found && !!this._parent)
+                        return this._parent.has(entity);
+                    return found;
+                }
+            case typeof entity === 'function'
+                && a_utils_1.A_CommonHelper.isInheritedFrom(entity, A_Command_class_1.A_Command):
+                {
+                    const found = this.commands.includes(entity);
                     if (!found && !!this._parent)
                         return this._parent.has(entity);
                     return found;
@@ -192,23 +206,38 @@ class A_Scope {
     /**
      * Allows to retrieve the constructor of the component or entity by its name
      *
+     * [!] Notes:
+     * - In case of search for A-Entity please ensure that provided string corresponds to the static entity property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Command please ensure that provided string corresponds to the static code property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Component please ensure that provided string corresponds to the class name in PascalCase
      *
      * @param name
      * @returns
      */
     resolveConstructor(name) {
         // Check components
-        const component = this.params.components.find(c => c.name === name);
+        const component = this.params.components.find(c => c.name === a_utils_1.A_CommonHelper.toPascalCase(name));
         if (component)
             return component;
         // Check entities
-        const entity = this.params.entities.find(e => e.constructor.name === name);
+        const entity = this.params.entities.find(e => e.constructor.entity === name
+            || e.constructor.name === a_utils_1.A_CommonHelper.toPascalCase(name)
+            || e.constructor.entity === a_utils_1.A_CommonHelper.toKebabCase(name));
         if (entity)
             return entity.constructor;
+        // Check commands 
+        const command = this.params.commands.find(c => c.code === name
+            || c.name === a_utils_1.A_CommonHelper.toPascalCase(name)
+            || c.code === a_utils_1.A_CommonHelper.toKebabCase(name));
+        if (command)
+            return command;
         // If not found in current scope, check parent scope
         if (!!this._parent) {
             return this._parent.resolveConstructor(name);
         }
+        console.log('this.params.components', this.params.components);
+        console.log('this.params.entities', this.params.entities);
+        console.log('this.params.commands', this.params.commands);
         throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
     // base definition
@@ -233,6 +262,10 @@ class A_Scope {
         const component = this.params.components.find(c => c.name === name);
         if (component)
             return this.resolveComponent(component);
+        // Check commands
+        const command = this.params.commands.find(c => c.name === name);
+        if (command)
+            return this.resolveComponent(command);
         // Check fragments
         const fragment = this.params.fragments.find(f => f.constructor.name === name);
         if (fragment)
@@ -375,6 +408,23 @@ class A_Scope {
                 throw new Error(`Component ${component.name} not found in the scope ${this.name}`);
         }
     }
+    /**
+     * Should be similar to resolveEntity but for commands
+     *
+     * @param command
+     */
+    resolveCommand(command) {
+        const commands = Array.from(this._commands.values());
+        const found = commands.find(e => e instanceof command);
+        switch (true) {
+            case !!found:
+                return found;
+            case !found && !!this._parent:
+                return this._parent.resolveCommand(command);
+            default:
+                throw new Error(`Command ${command.name} not found in the scope ${this.name}`);
+        }
+    }
     register(param1) {
         switch (true) {
             case param1 instanceof A_Component_class_1.A_Component && !this._components.has(param1.constructor): {
@@ -416,9 +466,16 @@ class A_Scope {
                 break;
             }
             case typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Entity_class_1.A_Entity): {
-                const allowedComponent = this.params.entities.find(e => e.constructor === param1);
-                if (!allowedComponent) {
+                const allowedEntity = this.params.entities.find(e => e.constructor === param1);
+                if (!allowedEntity) {
                     this.params.entities.push(new param1());
+                }
+                break;
+            }
+            case typeof param1 === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(param1, A_Command_class_1.A_Command): {
+                const allowedCommand = this.commands.find(c => c === param1);
+                if (!allowedCommand) {
+                    this.commands.push(param1);
                 }
                 break;
             }

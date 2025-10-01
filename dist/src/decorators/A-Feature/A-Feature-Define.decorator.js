@@ -9,6 +9,8 @@ const A_Container_types_1 = require("../../global/A-Container/A-Container.types"
 const A_Entity_types_1 = require("../../global/A-Entity/A-Entity.types");
 const A_Component_types_1 = require("../../global/A-Component/A-Component.types");
 const A_Meta_class_1 = require("../../global/A-Meta/A-Meta.class");
+const A_Command_class_1 = require("../../global/A-Command/A-Command.class");
+const A_Command_types_1 = require("../../global/A-Command/A-Command.types");
 /**
  * A-Feature decorator
  *
@@ -36,8 +38,13 @@ function A_Feature_Define(config = {}) {
             case target instanceof A_Component_class_1.A_Component:
                 metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
                 break;
-            default:
-                throw new Error(`A-Feature cannot be defined on the ${target} level`);
+            case target instanceof A_Command_class_1.A_Command:
+                metaKey = A_Command_types_1.A_TYPES__CommandMetaKey.FEATURES;
+                break;
+            default: {
+                console.log(target);
+                throw new Error(`A-Feature cannot be defined on the ${target.constructor.name} level`);
+            }
         }
         // Get the existed metadata or create a new one
         const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();

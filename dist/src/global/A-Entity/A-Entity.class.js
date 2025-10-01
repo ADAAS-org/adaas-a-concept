@@ -29,10 +29,7 @@ class A_Entity {
      * Entity Identifier that corresponds to the class name
      */
     static get entity() {
-        return a_utils_1.A_CommonHelper
-            .toUpperSnakeCase(this.name)
-            .toLocaleLowerCase()
-            .replace(/_/g, '-');
+        return a_utils_1.A_CommonHelper.toKebabCase(this.name);
     }
     /**
      * DEFAULT Namespace of the entity from environment variable A_CONCEPT_NAMESPACE

@@ -3,6 +3,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__A_InjectDecorator_Injectable } from "../../decorators/A-Inject/A-Inject.decorator.types";
+import { A_Command } from "../A-Command/A-Command.class";
 /**
  *
  *
@@ -20,6 +21,7 @@ export declare class A_Scope {
     readonly name: string;
     private _components;
     private _fragments;
+    private _commands;
     private _entities;
     private _parent?;
     protected params: A_TYPES__ScopeConstructor;
@@ -28,6 +30,7 @@ export declare class A_Scope {
     private initEntities;
     private initFragments;
     get components(): (new (...args: any[]) => A_Component)[];
+    get commands(): (new (...args: any[]) => A_Command)[];
     get fragments(): A_Fragment[];
     parent(setValue: A_Scope): void;
     parent(): A_Scope;
@@ -66,6 +69,10 @@ export declare class A_Scope {
     /**
      * Allows to retrieve the constructor of the component or entity by its name
      *
+     * [!] Notes:
+     * - In case of search for A-Entity please ensure that provided string corresponds to the static entity property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Command please ensure that provided string corresponds to the static code property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Component please ensure that provided string corresponds to the class name in PascalCase
      *
      * @param name
      * @returns
@@ -90,12 +97,19 @@ export declare class A_Scope {
     private resolveScope;
     private resolveComponent;
     /**
+     * Should be similar to resolveEntity but for commands
+     *
+     * @param command
+     */
+    private resolveCommand;
+    /**
      * This method is used to register the component in the scope
      *
      * @param fragment
      */
     register<T extends A_Component>(component: new (...args: any[]) => T): void;
-    register<T extends A_Entity>(component: new (...args: any[]) => T): void;
+    register<T extends A_Entity>(entity: new (...args: any[]) => T): void;
+    register<T extends A_Command>(command: new (...args: any[]) => T): void;
     register(entity: A_Entity): void;
     register(component: A_Component): void;
     register(fragment: A_Fragment): void;

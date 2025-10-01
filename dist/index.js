@@ -98,11 +98,11 @@ Object.defineProperty(exports, "FileConfigReader", { enumerable: true, get: func
 __exportStar(require("./src/base/A-Config/A-Config.types"), exports);
 __exportStar(require("./src/base/A-Logger/A-Logger.component"), exports);
 // export * from './src/base/A-Logger/A-Logger.types';
-var A_Command_entity_1 = require("./src/base/A-Command/A_Command.entity");
-Object.defineProperty(exports, "A_Command", { enumerable: true, get: function () { return A_Command_entity_1.A_Command; } });
-__exportStar(require("./src/base/A-Command/A_Command.types"), exports);
-__exportStar(require("./src/base/A-Command/A_Command.constants"), exports);
-var A_Command_context_1 = require("./src/base/A-Command/context/A_Command.context");
+var A_Command_class_1 = require("./src/global/A-Command/A-Command.class");
+Object.defineProperty(exports, "A_Command", { enumerable: true, get: function () { return A_Command_class_1.A_Command; } });
+__exportStar(require("./src/global/A-Command/A-Command.types"), exports);
+__exportStar(require("./src/global/A-Command/A-Command.constants"), exports);
+var A_Command_context_1 = require("./src/global/A-Command/context/A_Command.context");
 Object.defineProperty(exports, "A_CommandContext", { enumerable: true, get: function () { return A_Command_context_1.A_CommandContext; } });
 var A_Errors_component_1 = require("./src/base/A-Errors/A-Errors.component");
 Object.defineProperty(exports, "A_ErrorsManager", { enumerable: true, get: function () { return A_Errors_component_1.A_ErrorsManager; } });

@@ -36,10 +36,7 @@ export class A_Entity<
      * Entity Identifier that corresponds to the class name
      */
     static get entity(): string {
-        return A_CommonHelper
-            .toUpperSnakeCase(this.name)
-            .toLocaleLowerCase()
-            .replace(/_/g, '-');
+        return A_CommonHelper.toKebabCase(this.name);
     }
 
     /**

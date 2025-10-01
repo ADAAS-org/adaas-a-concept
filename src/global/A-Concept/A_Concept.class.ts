@@ -106,6 +106,9 @@ export class A_Concept<
         if (props.entities && props.entities.length)
             props.entities.forEach(entity => this.Scope.register(entity))
 
+        if (props.commands && props.commands.length)
+            props.commands.forEach(command => this.Scope.register(command))
+
         this.containers = props.containers || [];
     }
 

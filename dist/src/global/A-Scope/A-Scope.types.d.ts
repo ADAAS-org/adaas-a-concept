@@ -1,3 +1,4 @@
+import { A_Command } from "../A-Command/A-Command.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
@@ -22,6 +23,12 @@ export type A_TYPES__ScopeConstructor = {
      *
      */
     entities: Array<A_Entity>;
+    /**
+     * A set of Commands available in the Scope
+     */
+    commands: Array<{
+        new (...args: any[]): A_Command;
+    }>;
 };
 export type A_TYPES__ScopeConfig = {
     /**

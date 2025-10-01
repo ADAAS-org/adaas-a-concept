@@ -16,6 +16,8 @@ const A_Entity_meta_1 = require("../A-Entity/A-Entity.meta");
 const A_Container_types_1 = require("../A-Container/A-Container.types");
 const A_Component_types_1 = require("../A-Component/A-Component.types");
 const env_constants_1 = require("../../constants/env.constants");
+const A_Command_class_1 = require("../A-Command/A-Command.class");
+const A_Command_types_1 = require("../A-Command/A-Command.types");
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -33,6 +35,7 @@ class A_Context {
          * A set of globally registered features.
          */
         this.features = new WeakMap();
+        this.commands = new WeakMap();
         /**
          * Uses to store the scope of every element in the program.
          */
@@ -81,6 +84,9 @@ class A_Context {
                 break;
             case param1 instanceof A_Feature_class_1.A_Feature:
                 instance.features.set(param1, newScope);
+                break;
+            case param1 instanceof A_Command_class_1.A_Command:
+                instance.commands.set(param1, newScope);
                 break;
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
@@ -172,6 +178,8 @@ class A_Context {
                 return instance.registry.get(param1);
             case param1 instanceof A_Fragment_class_1.A_Fragment:
                 return instance.registry.get(param1);
+            case param1 instanceof A_Command_class_1.A_Command:
+                return instance.commands.get(param1);
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
         }
@@ -245,9 +253,10 @@ class A_Context {
                 metaKey = A_Container_types_1.A_TYPES__ContainerMetaKey.FEATURES;
                 break;
             case component instanceof A_Component_class_1.A_Component:
-                {
-                    metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
-                }
+                metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES;
+                break;
+            case component instanceof A_Command_class_1.A_Command:
+                metaKey = A_Command_types_1.A_TYPES__CommandMetaKey.FEATURES;
                 break;
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
@@ -296,9 +305,10 @@ class A_Context {
                 metaKey = A_Container_types_1.A_TYPES__ContainerMetaKey.ABSTRACTIONS;
                 break;
             case component instanceof A_Component_class_1.A_Component:
-                {
-                    metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS;
-                }
+                metaKey = A_Component_types_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS;
+                break;
+            case component instanceof A_Command_class_1.A_Command:
+                metaKey = A_Command_types_1.A_TYPES__CommandMetaKey.ABSTRACTIONS;
                 break;
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);

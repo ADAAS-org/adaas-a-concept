@@ -2,6 +2,7 @@ import { A_TYPES__A_FeatureDecoratorConfig, A_TYPES__A_FeatureDecoratorDescripto
 import { A_Entity } from "../../global/A-Entity/A-Entity.class";
 import { A_Component } from "../../global/A-Component/A-Component.class";
 import { A_Container } from "../../global/A-Container/A-Container.class";
+import { A_Command } from "../../global/A-Command/A-Command.class";
 /**
  * A-Feature decorator
  *
@@ -15,4 +16,4 @@ import { A_Container } from "../../global/A-Container/A-Container.class";
  * @param params
  * @returns
  */
-export declare function A_Feature_Define(config?: Partial<A_TYPES__A_FeatureDecoratorConfig>): (target: A_Container | A_Entity | A_Component, propertyKey: string, descriptor: A_TYPES__A_FeatureDecoratorDescriptor) => A_TYPES__A_FeatureDecoratorDescriptor;
+export declare function A_Feature_Define(config?: Partial<A_TYPES__A_FeatureDecoratorConfig>): (target: A_Container | A_Entity | A_Component | A_Command, propertyKey: string, descriptor: A_TYPES__A_FeatureDecoratorDescriptor) => A_TYPES__A_FeatureDecoratorDescriptor;

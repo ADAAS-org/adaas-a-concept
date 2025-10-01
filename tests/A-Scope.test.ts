@@ -1,4 +1,4 @@
-import { A_Command } from "@adaas/a-concept/base/A-Command/A_Command.entity";
+import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
@@ -161,22 +161,63 @@ describe('A-Scope tests', () => {
 
     });
     it('Should allow to resolve A-Entity by classname', async () => {
-        class MyCommand extends A_Command<{ foo: string }> {
+        class MyEntity extends A_Entity<{ foo: string }> {
             public foo!: string;
 
             fromUndefined(): void {
                 super.fromUndefined();
                 this.foo = 'bar';
             }
+
+        }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.register(MyEntity);
+
+        const resolved = scope.resolveConstructor<MyEntity>('my_entity');
+        const resolved2 = scope.resolveConstructor<MyEntity>('my-entity');
+        const resolved3 = scope.resolveConstructor<MyEntity>('MyEntity');
+        expect(resolved).toBe(MyEntity);
+        expect(resolved2).toBe(MyEntity);
+        expect(resolved3).toBe(MyEntity);
+
+        expect(() => {
+            scope.resolveConstructor<MyEntity>('my__entity');
+        }).toThrow();
+
+        const instance = new resolved();
+
+        expect(instance).toBeInstanceOf(MyEntity);
+        expect(instance.foo).toBe('bar');
+
+    });
+    it('Should allow to resolve A-Command by classname', async () => {
+        class MyCommand extends A_Command<{ foo: string }, { bar: string }> {
+            public foo!: string;
+
+            fromNew(newCommand: { foo: string; }): void {
+                super.fromNew(newCommand);
+                this.foo = newCommand.foo;
+            }
+
         }
 
         const scope = new A_Scope({ name: 'TestScope' });
         scope.register(MyCommand);
 
-        const resolved = scope.resolveConstructor<MyCommand>('MyCommand');
+        const resolved = scope.resolveConstructor<MyCommand>('my-command');
+        const resolved2 = scope.resolveConstructor<MyCommand>('my_command');
+        const resolved3 = scope.resolveConstructor<MyCommand>('MyCommand');
         expect(resolved).toBe(MyCommand);
+        expect(resolved2).toBe(MyCommand);
+        expect(resolved3).toBe(MyCommand);
 
-        const instance = new resolved();
+        expect(() => {
+            scope.resolveConstructor<MyCommand>('my--command');
+        }).toThrow();
+
+
+        const instance = new resolved({ foo: 'bar' });
 
         expect(instance).toBeInstanceOf(MyCommand);
         expect(instance.foo).toBe('bar');

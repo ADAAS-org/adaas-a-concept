@@ -32,7 +32,7 @@ export declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<(import("../A-Component/A-Component.class").A_Component | A_Container | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON>[] | A_Feature)[]>;
+    protected getStepArgs(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<(import("../A-Component/A-Component.class").A_Component | A_Container | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON> | A_Feature | A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON>[] | import("../A-Command/A-Command.class").A_Command<import("../A-Command/A-Command.types").A_TYPES__Command_Constructor, Record<string, any>>)[]>;
     /**
      * Adds a step to the stage
      *

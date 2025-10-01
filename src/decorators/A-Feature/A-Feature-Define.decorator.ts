@@ -14,6 +14,9 @@ import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component
 import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.types";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
+import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";
+import { A_TYPES__CommandMetaKey } from "@adaas/a-concept/global/A-Command/A-Command.types";
+import { A_CommandMeta } from "@adaas/a-concept/global/A-Command/A-Command.meta";
 
 /**
  * A-Feature decorator
@@ -32,12 +35,12 @@ export function A_Feature_Define(
     config: Partial<A_TYPES__A_FeatureDecoratorConfig> = {}
 ) {
     return function (
-        target: A_Container | A_Entity | A_Component,
+        target: A_Container | A_Entity | A_Component | A_Command,
         propertyKey: string,
         descriptor: A_TYPES__A_FeatureDecoratorDescriptor
     ) {
 
-        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta = A_Context.meta(target.constructor as any);
+        const meta: A_EntityMeta | A_ContainerMeta | A_ComponentMeta | A_CommandMeta = A_Context.meta(target.constructor as any);
 
         let metaKey;
 
@@ -52,8 +55,13 @@ export function A_Feature_Define(
             case target instanceof A_Component:
                 metaKey = A_TYPES__ComponentMetaKey.FEATURES
                 break;
-            default:
-                throw new Error(`A-Feature cannot be defined on the ${target} level`);
+            case target instanceof A_Command:
+                metaKey = A_TYPES__CommandMetaKey.FEATURES
+                break;
+            default: {
+                console.log(target);
+                throw new Error(`A-Feature cannot be defined on the ${(target as any).constructor.name} level`);
+            }
         }
 
 
@@ -72,7 +80,7 @@ export function A_Feature_Define(
         const handlerName = config.name || propertyKey;
         //  default to false
         const invoke = config.invoke || false;
- 
+
 
         // Set the metadata of the method to define a custom Feature with name 
         existedMeta.set(propertyKey, {
@@ -100,7 +108,6 @@ export function A_Feature_Define(
 
 
         const originalMethod = descriptor.value!;
-
 
 
         // Wrap the original method to add the call to `call`

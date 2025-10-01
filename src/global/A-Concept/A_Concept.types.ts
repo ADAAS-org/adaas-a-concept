@@ -4,6 +4,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_Command } from "../A-Command/A-Command.class";
 
 
 export enum A_TYPES__ConceptStage {
@@ -68,6 +69,15 @@ export interface A_TYPES__IConceptConstructor<
      * [!] Note that these components will be available in all containers and fragments in the concept.
      */
     components?: Array<{ new(...args: any[]): A_Component }>
+
+
+    /**
+     * A set of Commands available for all containers and fragments in the concept. 
+     * These commands will be registered in the root scope of the concept.
+     * 
+     * [!] Note that these commands will be available in all containers and fragments in the concept.
+     */
+    commands?: Array<{ new(...args: any[]): A_Command }>
 }
 
 

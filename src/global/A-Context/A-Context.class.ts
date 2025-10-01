@@ -22,6 +22,8 @@ import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.types";
 import { A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
 import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
+import { A_Command } from "../A-Command/A-Command.class";
+import { A_TYPES__CommandMetaKey } from "../A-Command/A-Command.types";
 
 
 
@@ -45,6 +47,9 @@ export class A_Context {
      * A set of globally registered features.
      */
     protected features: WeakMap<A_Feature, A_Scope> = new WeakMap();
+
+
+    protected commands: WeakMap<A_Command, A_Scope> = new WeakMap();
 
 
     /**
@@ -161,6 +166,11 @@ export class A_Context {
 
             case param1 instanceof A_Feature:
                 instance.features.set(param1, newScope);
+
+                break;
+
+            case param1 instanceof A_Command:
+                instance.commands.set(param1, newScope);
 
                 break;
 
@@ -356,6 +366,9 @@ export class A_Context {
             case param1 instanceof A_Fragment:
                 return instance.registry.get(param1);
 
+            case param1 instanceof A_Command:
+                return instance.commands.get(param1);
+
             default:
                 throw new Error(`[!] A-Concept Context: Unknown type of the parameter.`);
         }
@@ -444,10 +457,13 @@ export class A_Context {
             case component instanceof A_Container:
                 metaKey = A_TYPES__ContainerMetaKey.FEATURES
                 break;
-            case component instanceof A_Component: {
+            case component instanceof A_Component:
                 metaKey = A_TYPES__ComponentMetaKey.FEATURES
-            }
                 break;
+            case component instanceof A_Command:
+                metaKey = A_TYPES__CommandMetaKey.FEATURES
+                break;
+
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);
         }
@@ -499,7 +515,7 @@ export class A_Context {
      * @returns 
      */
     static abstractionDefinition(
-        component: A_Component | A_Container | A_Entity,
+        component: A_Component | A_Container | A_Entity | A_Command,
         abstraction: A_TYPES__ConceptStage,
         scope: A_Scope
     ): A_TYPES__FeatureConstructor {
@@ -516,9 +532,11 @@ export class A_Context {
             case component instanceof A_Container:
                 metaKey = A_TYPES__ContainerMetaKey.ABSTRACTIONS
                 break;
-            case component instanceof A_Component: {
+            case component instanceof A_Component:
                 metaKey = A_TYPES__ComponentMetaKey.ABSTRACTIONS
-            }
+                break;
+            case component instanceof A_Command:
+                metaKey = A_TYPES__CommandMetaKey.ABSTRACTIONS
                 break;
             default:
                 throw new Error(`A-Feature cannot be defined on the ${component} level`);

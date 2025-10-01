@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_CommandContext = void 0;
-const A_Fragment_class_1 = require("../../../global/A-Fragment/A-Fragment.class");
+const A_Fragment_class_1 = require("../../A-Fragment/A-Fragment.class");
 class A_CommandContext extends A_Fragment_class_1.A_Fragment {
     /**
      * ExecutionContext for the A-Command

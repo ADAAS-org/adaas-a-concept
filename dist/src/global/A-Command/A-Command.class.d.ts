@@ -1,10 +1,42 @@
-import { A_Entity } from "../../global/A-Entity/A-Entity.class";
-import { A_TYPES__Command_Constructor, A_TYPES__Command_Listener, A_TYPES__Command_Serialized } from "./A_Command.types";
-import { A_Error } from "@adaas/a-utils";
-import { A_Scope } from "../../global/A-Scope/A-Scope.class";
-import { A_CONSTANTS__A_Command_Event, A_CONSTANTS__A_Command_Status, A_CONSTANTS_A_Command_Features } from "./A_Command.constants";
-export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor = A_TYPES__Command_Constructor, ResultType extends Record<string, any> = Record<string, any>> extends A_Entity<InvokeType, A_TYPES__Command_Serialized<ResultType>> {
-    protected _scope: A_Scope;
+import { A_TYPES__Command_Constructor, A_TYPES__Command_Listener, A_TYPES__Command_Serialized } from "./A-Command.types";
+import { A_Error, ASEID } from "@adaas/a-utils";
+import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_CONSTANTS__A_Command_Event, A_CONSTANTS__A_Command_Status } from "./A-Command.constants";
+export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor = A_TYPES__Command_Constructor, ResultType extends Record<string, any> = Record<string, any>> {
+    /**
+     * Command Identifier that corresponds to the class name
+     */
+    static get code(): string;
+    /**
+     * DEFAULT Namespace of the command from environment variable A_CONCEPT_NAMESPACE
+     * [!] If environment variable is not set, it will default to 'a-concept'
+     */
+    static get namespace(): string;
+    /**
+     * DEFAULT Scope of the command from environment variable A_CONCEPT_DEFAULT_SCOPE
+     * [!] If environment variable is not set, it will default to 'core'
+     * [!] Scope is an application specific identifier that can be used to group commands together
+     * [!] e.g. 'default', 'core', 'public', 'internal', etc
+     */
+    static get scope(): string;
+    /**
+     * ASEID is a command identifier that is unique across the system
+     * A - A_Concept or Application
+     * S - System or Scope
+     * E - Entity
+     * ID - Identifier
+     *
+     * [!] ASEID is immutable and should not be changed after the entity is created
+     *
+     * [!] ASEID is composed of the following parts:
+     * - namespace: an application specific identifier from where the command is coming from
+     * - scope: the scope of the command from Application Namespace
+     * - entity: the name of the command from Application Namespace
+     * - id: the unique identifier of the command
+     *
+     * [!] For more information about ASEID, please refer to the ASEID class documentation
+     */
+    aseid: ASEID;
     protected _result?: ResultType;
     protected _errors?: Set<A_Error>;
     protected _params: InvokeType;
@@ -69,17 +101,38 @@ export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor =
      */
     params: InvokeType | A_TYPES__Command_Serialized<ResultType>);
     /**
+     * Extracts the ID from the ASEID
+     * ID is the unique identifier of the entity
+     */
+    get id(): string | number;
+    /**
+     * Extracts the namespace from the ASEID
+     * namespace is an application specific identifier from where the entity is coming from
+     */
+    get namespace(): string;
+    /**
+     * Extracts the scope from the ASEID
+     * scope is the scope of the entity from Application Namespace
+     */
+    get scope(): string;
+    /**
+     * Extracts the entity from the ASEID
+     * entity is the name of the entity from Application Namespace
+     *
+     */
+    get entity(): string;
+    /**
      * Executes the command logic.
      */
-    [A_CONSTANTS_A_Command_Features.EXECUTE](): Promise<any>;
+    execute(): Promise<any>;
     /**
      * Marks the command as completed
      */
-    [A_CONSTANTS_A_Command_Features.COMPLETE](): Promise<void>;
+    complete(): Promise<void>;
     /**
      * Marks the command as failed
      */
-    [A_CONSTANTS_A_Command_Features.FAIL](): Promise<void>;
+    fail(): Promise<void>;
     /**
      * Registers an event listener for a specific event
      *
@@ -120,4 +173,13 @@ export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor =
      * @returns
      */
     toJSON(): A_TYPES__Command_Serialized<ResultType>;
+    /**
+     * Call a feature of the component with the provided scope
+     *
+     * [!] If the provided scope is not inherited from the entity scope, it will be inherited
+     *
+     * @param lifecycleMethod
+     * @param args
+     */
+    call(feature: string, scope?: A_Scope): Promise<any>;
 }

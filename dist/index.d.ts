@@ -41,10 +41,10 @@ export { ENVConfigReader } from './src/base/A-Config/components/ENVConfigReader.
 export { FileConfigReader } from './src/base/A-Config/components/FileConfigReader.component';
 export * from './src/base/A-Config/A-Config.types';
 export * from './src/base/A-Logger/A-Logger.component';
-export { A_Command } from './src/base/A-Command/A_Command.entity';
-export * from './src/base/A-Command/A_Command.types';
-export * from './src/base/A-Command/A_Command.constants';
-export { A_CommandContext } from './src/base/A-Command/context/A_Command.context';
+export { A_Command } from './src/global/A-Command/A-Command.class';
+export * from './src/global/A-Command/A-Command.types';
+export * from './src/global/A-Command/A-Command.constants';
+export { A_CommandContext } from './src/global/A-Command/context/A_Command.context';
 export { A_ErrorsManager } from './src/base/A-Errors/A-Errors.component';
 export { A_Errors } from './src/base/A-Errors/A-Errors.context';
 export * from './src/base/A-Errors/A-Errors.types';

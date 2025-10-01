@@ -1,3 +1,4 @@
+import { A_Command } from "../A-Command/A-Command.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Feature } from "./A-Feature.class";
@@ -10,12 +11,12 @@ import { A_Feature } from "./A-Feature.class";
  *
  */
 export declare class A_FeatureCaller {
-    protected _component: A_Component | A_Feature | A_Container;
-    constructor(component: A_Component | A_Feature | A_Container);
+    protected _component: A_Component | A_Feature | A_Container | A_Command;
+    constructor(component: A_Component | A_Feature | A_Container | A_Command);
     /**
      * Resolves the component that initiated the feature call
      *
      * @returns
      */
-    resolve(): A_Component | A_Feature | A_Container;
+    resolve(): A_Component | A_Feature | A_Container | A_Command;
 }

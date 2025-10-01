@@ -1,4 +1,4 @@
-import { A_Fragment } from "../../../global/A-Fragment/A-Fragment.class";
+import { A_Fragment } from "../../A-Fragment/A-Fragment.class";
 import { A_Error } from "@adaas/a-utils";
 export declare class A_CommandContext<T extends Record<string, any> = Record<string, any>> extends A_Fragment {
     /**

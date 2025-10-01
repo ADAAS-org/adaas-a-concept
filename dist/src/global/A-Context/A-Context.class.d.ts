@@ -11,6 +11,7 @@ import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
 import { A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
+import { A_Command } from "../A-Command/A-Command.class";
 /**
  * Namespace Provider is responsible for providing the Namespace to the Containers and other Namespaces.
  * This class stores all Namespaces across the Program.
@@ -28,6 +29,7 @@ export declare class A_Context {
      * A set of globally registered features.
      */
     protected features: WeakMap<A_Feature, A_Scope>;
+    protected commands: WeakMap<A_Command, A_Scope>;
     /**
      * Uses to store the scope of every element in the program.
      */
@@ -110,7 +112,7 @@ export declare class A_Context {
      * @param scope
      * @returns
      */
-    static abstractionDefinition(component: A_Component | A_Container | A_Entity, abstraction: A_TYPES__ConceptStage, scope: A_Scope): A_TYPES__FeatureConstructor;
+    static abstractionDefinition(component: A_Component | A_Container | A_Entity | A_Command, abstraction: A_TYPES__ConceptStage, scope: A_Scope): A_TYPES__FeatureConstructor;
     /**
      * This method returns a step-by-step instructions of feature implementation depending on the feature name and the class.
      *

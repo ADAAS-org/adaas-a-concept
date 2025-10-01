@@ -1,10 +1,4 @@
 "use strict";
-var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
-    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
-    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
-    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
-    return c > 3 && r && Object.defineProperty(target, key, r), r;
-};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -14,16 +8,39 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a, _b, _c;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Command = void 0;
-const A_Entity_class_1 = require("../../global/A-Entity/A-Entity.class");
 const a_utils_1 = require("@adaas/a-utils");
-const A_Scope_class_1 = require("../../global/A-Scope/A-Scope.class");
-const A_Feature_class_1 = require("../../global/A-Feature/A-Feature.class");
 const A_Command_context_1 = require("./context/A_Command.context");
-const A_Command_constants_1 = require("./A_Command.constants");
-class A_Command extends A_Entity_class_1.A_Entity {
+const A_Command_constants_1 = require("./A-Command.constants");
+const A_Context_class_1 = require("../A-Context/A-Context.class");
+const env_constants_1 = require("../../constants/env.constants");
+class A_Command {
+    // ====================================================================
+    // ================== Static A-Command Information ====================
+    // ====================================================================
+    /**
+     * Command Identifier that corresponds to the class name
+     */
+    static get code() {
+        return a_utils_1.A_CommonHelper.toKebabCase(this.name);
+    }
+    /**
+     * DEFAULT Namespace of the command from environment variable A_CONCEPT_NAMESPACE
+     * [!] If environment variable is not set, it will default to 'a-concept'
+     */
+    static get namespace() {
+        return A_Context_class_1.A_Context.root.name;
+    }
+    /**
+     * DEFAULT Scope of the command from environment variable A_CONCEPT_DEFAULT_SCOPE
+     * [!] If environment variable is not set, it will default to 'core'
+     * [!] Scope is an application specific identifier that can be used to group commands together
+     * [!] e.g. 'default', 'core', 'public', 'internal', etc
+     */
+    static get scope() {
+        return process && process.env ? process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_DEFAULT_SCOPE] || 'core' : 'core';
+    }
     /**
      * Execution Duration in milliseconds
      */
@@ -40,7 +57,7 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * Command execution context is stored in A_CommandContext fragment within this scope
      */
     get Scope() {
-        return this._scope;
+        return A_Context_class_1.A_Context.scope(this);
     }
     /**
      * Unique code identifying the command type
@@ -48,7 +65,7 @@ class A_Command extends A_Entity_class_1.A_Entity {
      *
      */
     get Code() {
-        return this.constructor.name;
+        return this.constructor.code;
     }
     /**
      * Current status of the command
@@ -102,8 +119,42 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * Command invocation parameters
      */
     params) {
-        super(params);
         this._listeners = new Map();
+        if (params && typeof params === 'object' && 'aseid' in params) {
+            this.fromJSON(params);
+        }
+        else {
+            this.fromNew(params);
+        }
+    }
+    /**
+     * Extracts the ID from the ASEID
+     * ID is the unique identifier of the entity
+     */
+    get id() {
+        return this.aseid.id;
+    }
+    /**
+     * Extracts the namespace from the ASEID
+     * namespace is an application specific identifier from where the entity is coming from
+     */
+    get namespace() {
+        return this.aseid.namespace;
+    }
+    /**
+     * Extracts the scope from the ASEID
+     * scope is the scope of the entity from Application Namespace
+     */
+    get scope() {
+        return this.aseid.scope;
+    }
+    /**
+     * Extracts the entity from the ASEID
+     * entity is the name of the entity from Application Namespace
+     *
+     */
+    get entity() {
+        return this.aseid.entity;
     }
     // --------------------------------------------------------------------------
     // A-Command Core Features
@@ -111,12 +162,12 @@ class A_Command extends A_Entity_class_1.A_Entity {
     /**
      * Executes the command logic.
      */
-    [_a = A_Command_constants_1.A_CONSTANTS_A_Command_Features.EXECUTE]() {
+    execute() {
         return __awaiter(this, void 0, void 0, function* () {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.IN_PROGRESS;
             this._startTime = new Date();
             try {
-                yield this.call('execute', this._scope);
+                yield this.call('execute');
                 yield this.complete();
             }
             catch (error) {
@@ -127,23 +178,23 @@ class A_Command extends A_Entity_class_1.A_Entity {
     /**
      * Marks the command as completed
      */
-    [_b = A_Command_constants_1.A_CONSTANTS_A_Command_Features.COMPLETE]() {
+    complete() {
         return __awaiter(this, void 0, void 0, function* () {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.COMPLETED;
             this._endTime = new Date();
             this._result = this.Scope.resolve(A_Command_context_1.A_CommandContext).toJSON();
-            this.call('complete', this._scope);
+            this.call('complete');
         });
     }
     /**
      * Marks the command as failed
      */
-    [_c = A_Command_constants_1.A_CONSTANTS_A_Command_Features.FAIL]() {
+    fail() {
         return __awaiter(this, void 0, void 0, function* () {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.FAILED;
             this._endTime = new Date();
             this._errors = this.Scope.resolve(A_Command_context_1.A_CommandContext).Errors;
-            this.call('fail', this._scope);
+            this.call('fail');
         });
     }
     // --------------------------------------------------------------------------   
@@ -168,8 +219,8 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * @param listener
      */
     off(event, listener) {
-        var _d;
-        (_d = this._listeners.get(event)) === null || _d === void 0 ? void 0 : _d.delete(listener);
+        var _a;
+        (_a = this._listeners.get(event)) === null || _a === void 0 ? void 0 : _a.delete(listener);
     }
     /**
      * Emits an event to all registered listeners
@@ -177,8 +228,8 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * @param event
      */
     emit(event) {
-        var _d;
-        (_d = this._listeners.get(event)) === null || _d === void 0 ? void 0 : _d.forEach(listener => {
+        var _a;
+        (_a = this._listeners.get(event)) === null || _a === void 0 ? void 0 : _a.forEach(listener => {
             listener(this);
         });
     }
@@ -193,15 +244,20 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * @param newEntity
      */
     fromNew(newEntity) {
-        super.fromNew(newEntity);
-        this._params = newEntity;
-        this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.INITIALIZED;
-        this._scope = new A_Scope_class_1.A_Scope({
+        this.aseid = new a_utils_1.ASEID({
+            namespace: this.constructor.namespace,
+            scope: this.constructor.scope,
+            entity: this.constructor.code,
+            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+        });
+        A_Context_class_1.A_Context.allocate(this, {
             name: `a-command-scope::${this.id}`,
             fragments: [
                 new A_Command_context_1.A_CommandContext()
             ]
         });
+        this._params = newEntity;
+        this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.INITIALIZED;
     }
     /**
      * Allows to convert serialized data to Command instance
@@ -211,18 +267,18 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * @param serialized
      */
     fromJSON(serialized) {
-        super.fromJSON(serialized);
-        if (serialized.startedAt)
-            this._startTime = new Date(serialized.startedAt);
-        if (serialized.endedAt)
-            this._endTime = new Date(serialized.endedAt);
+        this.aseid = new a_utils_1.ASEID(serialized.aseid);
         const context = new A_Command_context_1.A_CommandContext();
-        this._scope = new A_Scope_class_1.A_Scope({
+        A_Context_class_1.A_Context.allocate(this, {
             name: `a-command-scope::${this.id}`,
             fragments: [
                 context
             ]
         });
+        if (serialized.startedAt)
+            this._startTime = new Date(serialized.startedAt);
+        if (serialized.endedAt)
+            this._endTime = new Date(serialized.endedAt);
         // Restore result and errors in the context
         if (serialized.result) {
             Object.entries(serialized.result).forEach(([key, value]) => {
@@ -242,18 +298,35 @@ class A_Command extends A_Entity_class_1.A_Entity {
      * @returns
      */
     toJSON() {
-        return Object.assign(Object.assign({}, super.toJSON()), { code: this.Code, status: this._status, startedAt: this._startTime ? this._startTime.toISOString() : undefined, endedAt: this._endTime ? this._endTime.toISOString() : undefined, duration: this.Duration, result: this.Result, errors: this.Errors ? Array.from(this.Errors).map(err => err.toJSON()) : undefined });
+        return {
+            aseid: this.aseid.toString(),
+            code: this.Code,
+            status: this._status,
+            startedAt: this._startTime ? this._startTime.toISOString() : undefined,
+            endedAt: this._endTime ? this._endTime.toISOString() : undefined,
+            duration: this.Duration,
+            result: this.Result,
+            errors: this.Errors ? Array.from(this.Errors).map(err => err.toJSON()) : undefined
+        };
     }
     ;
+    /**
+     * Call a feature of the component with the provided scope
+     *
+     * [!] If the provided scope is not inherited from the entity scope, it will be inherited
+     *
+     * @param lifecycleMethod
+     * @param args
+     */
+    call(feature_1) {
+        return __awaiter(this, arguments, void 0, function* (feature, scope = this.Scope) {
+            if (scope && !scope.isInheritedFrom(this.Scope)) {
+                scope = scope.inherit(this.Scope);
+            }
+            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
+            return yield newFeature.process();
+        });
+    }
 }
 exports.A_Command = A_Command;
-__decorate([
-    A_Feature_class_1.A_Feature.Define()
-], A_Command.prototype, _a, null);
-__decorate([
-    A_Feature_class_1.A_Feature.Define()
-], A_Command.prototype, _b, null);
-__decorate([
-    A_Feature_class_1.A_Feature.Define()
-], A_Command.prototype, _c, null);
-//# sourceMappingURL=A_Command.entity.js.map
+//# sourceMappingURL=A-Command.class.js.map

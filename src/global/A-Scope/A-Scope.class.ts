@@ -12,6 +12,7 @@ import {
     A_TYPES__A_InjectDecorator_EntityInjectionQuery,
     A_TYPES__A_InjectDecorator_Injectable
 } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
+import { A_Command } from "../A-Command/A-Command.class";
 
 
 /**
@@ -33,6 +34,7 @@ export class A_Scope {
 
     private _components: WeakMap<typeof A_Component.constructor, any> = new WeakMap();
     private _fragments: WeakMap<typeof A_Fragment.constructor, any> = new WeakMap();
+    private _commands: Map<string, A_Command> = new Map();
     private _entities: Map<string, A_Entity> = new Map();
 
     private _parent?: A_Scope;
@@ -52,6 +54,7 @@ export class A_Scope {
             components: [],
             fragments: [],
             entities: [],
+            commands: [],
         };
 
 
@@ -88,6 +91,10 @@ export class A_Scope {
 
     get components() {
         return this.params.components || [];
+    }
+
+    get commands() {
+        return this.params.commands || [];
     }
 
     get fragments() {
@@ -189,7 +196,7 @@ export class A_Scope {
     has(
         constructor: string
     ): boolean
-    has<T extends A_Fragment | A_Component | A_Entity>(
+    has<T extends A_Fragment | A_Component | A_Entity | A_Command>(
         entity: T | string | (new (...args: any[]) => T)
     ): boolean {
 
@@ -221,7 +228,7 @@ export class A_Scope {
 
             case typeof entity === 'function'
                 && A_CommonHelper.isInheritedFrom(entity, A_Component): {
-                    const found = this.params.components.includes(entity as { new(...args: any[]): A_Component });
+                    const found = this.components.includes(entity as { new(...args: any[]): A_Component });
 
                     if (!found && !!this._parent) {
                         return this._parent.has(entity as any);
@@ -248,6 +255,16 @@ export class A_Scope {
 
                     return found;
                 }
+            case typeof entity === 'function'
+                && A_CommonHelper.isInheritedFrom(entity, A_Command): {
+                    const found = this.commands.includes(entity as { new(...args: any[]): A_Command });
+
+                    if (!found && !!this._parent)
+                        return this._parent.has(entity as any);
+
+                    return found;
+                }
+
 
             default: {
                 return false;
@@ -295,23 +312,41 @@ export class A_Scope {
     /**
      * Allows to retrieve the constructor of the component or entity by its name
      * 
+     * [!] Notes:
+     * - In case of search for A-Entity please ensure that provided string corresponds to the static entity property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Command please ensure that provided string corresponds to the static code property of the class. [!] By default it's the kebab-case of the class name
+     * - In case of search for A_Component please ensure that provided string corresponds to the class name in PascalCase
      * 
      * @param name 
      * @returns 
      */
     resolveConstructor<T extends A_Component | A_Entity>(name: string): new (...args: any[]) => T {
         // Check components
-        const component = this.params.components.find(c => c.name === name);
+        const component = this.params.components.find(c => c.name === A_CommonHelper.toPascalCase(name));
         if (component) return component as any;
 
         // Check entities
-        const entity = this.params.entities.find(e => e.constructor.name === name);
+        const entity = this.params.entities.find(e => (e.constructor as any).entity === name
+            || (e.constructor as any).name === A_CommonHelper.toPascalCase(name)
+            || (e.constructor as any).entity === A_CommonHelper.toKebabCase(name)
+        );
         if (entity) return entity.constructor as any;
+
+        // Check commands 
+        const command = this.params.commands.find(c => (c as any).code === name
+            || (c as any).name === A_CommonHelper.toPascalCase(name)
+            || (c as any).code === A_CommonHelper.toKebabCase(name)
+        );
+        if (command) return command as any;
 
         // If not found in current scope, check parent scope
         if (!!this._parent) {
             return this._parent.resolveConstructor(name);
         }
+
+        console.log('this.params.components', this.params.components);
+        console.log('this.params.entities', this.params.entities);
+        console.log('this.params.commands', this.params.commands);
 
         throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
@@ -370,6 +405,10 @@ export class A_Scope {
         // Check components
         const component = this.params.components.find(c => c.name === name);
         if (component) return this.resolveComponent(component);
+
+        // Check commands
+        const command = this.params.commands.find(c => c.name === name);
+        if (command) return this.resolveComponent(command);
 
         // Check fragments
         const fragment = this.params.fragments.find(f => f.constructor.name === name);
@@ -436,9 +475,7 @@ export class A_Scope {
 
         switch (true) {
             case !instructions: {
-
                 const entities = Array.from(this._entities.values());
-
 
                 const found = entities.find(e => e instanceof entity);
 
@@ -593,6 +630,31 @@ export class A_Scope {
     }
 
 
+    /**
+     * Should be similar to resolveEntity but for commands
+     * 
+     * @param command 
+     */
+    private resolveCommand<T extends A_Command>(command: {
+        new(...args: any[]): T
+    }): T {
+        const commands = Array.from(this._commands.values());
+
+        const found = commands.find(e => e instanceof command);
+
+        switch (true) {
+            case !!found:
+                return found as T;
+
+            case !found && !!this._parent:
+                return this._parent.resolveCommand(command);
+
+            default:
+                throw new Error(`Command ${command.name} not found in the scope ${this.name}`);
+        }
+    }
+
+
 
     /**
      * This method is used to register the component in the scope
@@ -600,7 +662,8 @@ export class A_Scope {
      * @param fragment 
      */
     register<T extends A_Component>(component: new (...args: any[]) => T): void
-    register<T extends A_Entity>(component: new (...args: any[]) => T): void
+    register<T extends A_Entity>(entity: new (...args: any[]) => T): void
+    register<T extends A_Command>(command: new (...args: any[]) => T): void
     register(entity: A_Entity): void
     register(component: A_Component): void
     register(fragment: A_Fragment): void
@@ -610,6 +673,7 @@ export class A_Scope {
             | A_Entity
             | (new (...args: any[]) => A_Component)
             | (new (...args: any[]) => A_Entity)
+            | (new (...args: any[]) => A_Command)
     ): void {
         switch (true) {
             case param1 instanceof A_Component && !this._components.has(param1.constructor): {
@@ -664,10 +728,18 @@ export class A_Scope {
                 break;
             }
             case typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Entity): {
-                const allowedComponent = this.params.entities.find(e => e.constructor === param1);
+                const allowedEntity = this.params.entities.find(e => e.constructor === param1);
 
-                if (!allowedComponent) {
+                if (!allowedEntity) {
                     this.params.entities.push(new (param1 as any)());
+                }
+                break;
+            }
+            case typeof param1 === 'function' && A_CommonHelper.isInheritedFrom(param1, A_Command): {
+                const allowedCommand = this.commands.find(c => c === param1);
+
+                if (!allowedCommand) {
+                    this.commands.push(param1 as any);
                 }
                 break;
             }
