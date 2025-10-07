@@ -1,7 +1,8 @@
 import {
     A_CommonHelper,
     A_Error,
-    ASEID
+    ASEID,
+    A_IdentityHelper
 } from "@adaas/a-utils";
 import {
     A_TYPES__Entity_JSON,
@@ -10,7 +11,7 @@ import {
 import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "@adaas/a-concept/constants/env.constants";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
 
 
 
@@ -375,7 +376,7 @@ export class A_Entity<
             namespace: (this.constructor as typeof A_Entity).namespace,
             scope: (this.constructor as typeof A_Entity).scope,
             entity: (this.constructor as typeof A_Entity).entity,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: A_IdentityHelper.generateTimeId()
         });
         return;
     }
@@ -393,7 +394,7 @@ export class A_Entity<
             namespace: (this.constructor as typeof A_Entity).namespace,
             scope: (this.constructor as typeof A_Entity).scope,
             entity: (this.constructor as typeof A_Entity).entity,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: A_IdentityHelper.generateTimeId()
         });
 
         return;

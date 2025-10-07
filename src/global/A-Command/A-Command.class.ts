@@ -1,5 +1,5 @@
 import { A_TYPES__Command_Constructor, A_TYPES__Command_Listener, A_TYPES__Command_Serialized } from "./A-Command.types";
-import { A_CommonHelper, A_Error, ASEID } from "@adaas/a-utils";
+import { A_CommonHelper, A_Error, A_IdentityHelper, ASEID } from "@adaas/a-utils";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_CommandContext } from "./context/A_Command.context";
 import { A_CONSTANTS__A_Command_Event, A_CONSTANTS__A_Command_Status } from "./A-Command.constants";
@@ -9,7 +9,8 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/e
 
 export class A_Command<
     InvokeType extends A_TYPES__Command_Constructor = A_TYPES__Command_Constructor,
-    ResultType extends Record<string, any> = Record<string, any>
+    ResultType extends Record<string, any> = Record<string, any>,
+    LifecycleEvents extends string = A_CONSTANTS__A_Command_Event
 > {
 
     // ====================================================================
@@ -70,7 +71,10 @@ export class A_Command<
     protected _params!: InvokeType;
     protected _status!: A_CONSTANTS__A_Command_Status
 
-    protected _listeners: Map<A_CONSTANTS__A_Command_Event, Set<A_TYPES__Command_Listener<ResultType>>> = new Map();
+    protected _listeners: Map<LifecycleEvents | A_CONSTANTS__A_Command_Event, Set<A_TYPES__Command_Listener<
+        InvokeType, ResultType,
+        LifecycleEvents
+    >>> = new Map();
 
     protected _startTime?: Date;
     protected _endTime?: Date
@@ -201,9 +205,20 @@ export class A_Command<
 
 
     // --------------------------------------------------------------------------
-    // A-Command Core Features
+    // A-Command Lifecycle Methods
     // --------------------------------------------------------------------------
 
+    // should create a new Task in DB  with basic records
+    async init(): Promise<void> {
+        this.emit('init');
+        return await this.call('init');
+    }
+
+    // Should compile everything before execution
+    async compile() {
+        this.emit('compile');
+        return await this.call('compile');
+    }
 
     /**
      * Executes the command logic.
@@ -213,6 +228,7 @@ export class A_Command<
         this._startTime = new Date();
 
         try {
+            this.emit('execute');
             await this.call('execute');
             await this.complete();
 
@@ -229,7 +245,8 @@ export class A_Command<
         this._endTime = new Date();
         this._result = this.Scope.resolve(A_CommandContext).toJSON() as ResultType;
 
-        this.call('complete');
+        this.emit('complete');
+        return await this.call('complete');
     }
 
 
@@ -241,7 +258,8 @@ export class A_Command<
         this._endTime = new Date();
         this._errors = this.Scope.resolve(A_CommandContext).Errors;
 
-        this.call('fail');
+        this.emit('fail');
+        return await this.call('fail');
     }
 
 
@@ -255,7 +273,7 @@ export class A_Command<
      * @param event 
      * @param listener 
      */
-    on(event: A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<ResultType>) {
+    on(event: LifecycleEvents | A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<InvokeType, ResultType, LifecycleEvents>) {
         if (!this._listeners.has(event)) {
             this._listeners.set(event, new Set());
         }
@@ -267,7 +285,7 @@ export class A_Command<
      * @param event 
      * @param listener 
      */
-    off(event: A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<ResultType>) {
+    off(event: LifecycleEvents | A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<InvokeType, ResultType, LifecycleEvents>) {
         this._listeners.get(event)?.delete(listener);
     }
     /**
@@ -275,7 +293,7 @@ export class A_Command<
      * 
      * @param event 
      */
-    emit(event: A_CONSTANTS__A_Command_Event) {
+    emit(event: LifecycleEvents | A_CONSTANTS__A_Command_Event) {
         this._listeners.get(event)?.forEach(listener => {
             listener(this);
         });
@@ -300,7 +318,7 @@ export class A_Command<
             namespace: (this.constructor as typeof A_Command).namespace,
             scope: (this.constructor as typeof A_Command).scope,
             entity: (this.constructor as typeof A_Command).code,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: A_IdentityHelper.generateTimeId(),
         });
 
         A_Context.allocate(this, {

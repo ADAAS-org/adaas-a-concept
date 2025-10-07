@@ -157,8 +157,22 @@ class A_Command {
         return this.aseid.entity;
     }
     // --------------------------------------------------------------------------
-    // A-Command Core Features
+    // A-Command Lifecycle Methods
     // --------------------------------------------------------------------------
+    // should create a new Task in DB  with basic records
+    init() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.emit('init');
+            return yield this.call('init');
+        });
+    }
+    // Should compile everything before execution
+    compile() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.emit('compile');
+            return yield this.call('compile');
+        });
+    }
     /**
      * Executes the command logic.
      */
@@ -167,6 +181,7 @@ class A_Command {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.IN_PROGRESS;
             this._startTime = new Date();
             try {
+                this.emit('execute');
                 yield this.call('execute');
                 yield this.complete();
             }
@@ -183,7 +198,8 @@ class A_Command {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.COMPLETED;
             this._endTime = new Date();
             this._result = this.Scope.resolve(A_Command_context_1.A_CommandContext).toJSON();
-            this.call('complete');
+            this.emit('complete');
+            return yield this.call('complete');
         });
     }
     /**
@@ -194,7 +210,8 @@ class A_Command {
             this._status = A_Command_constants_1.A_CONSTANTS__A_Command_Status.FAILED;
             this._endTime = new Date();
             this._errors = this.Scope.resolve(A_Command_context_1.A_CommandContext).Errors;
-            this.call('fail');
+            this.emit('fail');
+            return yield this.call('fail');
         });
     }
     // --------------------------------------------------------------------------   
@@ -248,7 +265,7 @@ class A_Command {
             namespace: this.constructor.namespace,
             scope: this.constructor.scope,
             entity: this.constructor.code,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: a_utils_1.A_IdentityHelper.generateTimeId(),
         });
         A_Context_class_1.A_Context.allocate(this, {
             name: `a-command-scope::${this.id}`,

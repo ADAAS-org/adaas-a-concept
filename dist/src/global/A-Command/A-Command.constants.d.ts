@@ -4,9 +4,14 @@ export declare enum A_CONSTANTS__A_Command_Status {
     COMPLETED = "COMPLETED",
     FAILED = "FAILED"
 }
+/**
+ * A-Command Lifecycle Features
+ */
 export declare enum A_CONSTANTS_A_Command_Features {
+    INIT = "init",
+    COMPLIED = "complied",
     EXECUTE = "execute",
     COMPLETE = "complete",
     FAIL = "fail"
 }
-export type A_CONSTANTS__A_Command_Event = 'create' | 'start' | 'execute' | 'complete' | 'fail';
+export type A_CONSTANTS__A_Command_Event = 'init' | 'compile' | 'execute' | 'complete' | 'fail';

@@ -8,8 +8,13 @@ var A_CONSTANTS__A_Command_Status;
     A_CONSTANTS__A_Command_Status["COMPLETED"] = "COMPLETED";
     A_CONSTANTS__A_Command_Status["FAILED"] = "FAILED";
 })(A_CONSTANTS__A_Command_Status || (exports.A_CONSTANTS__A_Command_Status = A_CONSTANTS__A_Command_Status = {}));
+/**
+ * A-Command Lifecycle Features
+ */
 var A_CONSTANTS_A_Command_Features;
 (function (A_CONSTANTS_A_Command_Features) {
+    A_CONSTANTS_A_Command_Features["INIT"] = "init";
+    A_CONSTANTS_A_Command_Features["COMPLIED"] = "complied";
     A_CONSTANTS_A_Command_Features["EXECUTE"] = "execute";
     A_CONSTANTS_A_Command_Features["COMPLETE"] = "complete";
     A_CONSTANTS_A_Command_Features["FAIL"] = "fail";

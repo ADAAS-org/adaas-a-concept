@@ -262,7 +262,7 @@ class A_Entity {
             namespace: this.constructor.namespace,
             scope: this.constructor.scope,
             entity: this.constructor.entity,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: a_utils_1.A_IdentityHelper.generateTimeId()
         });
         return;
     }
@@ -279,7 +279,7 @@ class A_Entity {
             namespace: this.constructor.namespace,
             scope: this.constructor.scope,
             entity: this.constructor.entity,
-            id: `${new Date().getTime().toString()}-${Math.floor(Math.random() * 10000000).toString()}`,
+            id: a_utils_1.A_IdentityHelper.generateTimeId()
         });
         return;
     }

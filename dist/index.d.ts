@@ -1,3 +1,4 @@
+export * from './src/constants/env.constants';
 export { A_Context } from './src/global/A-Context/A-Context.class';
 export { A_Abstraction } from './src/global/A-Abstraction/A-Abstraction.class';
 export * from './src/global/A-Abstraction/A-Abstraction.types';

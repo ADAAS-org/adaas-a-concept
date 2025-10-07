@@ -1,6 +1,6 @@
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_TYPES__A_ChannelAggregated, A_TYPES__A_ChannelAggregateMethods, A_TYPES__A_ChannelCallParams, A_TYPES__A_ChannelConstructor } from "./A-Channel.types";
+import { A_TYPES__A_ChannelConstructor } from "./A-Channel.types";
 /**
  * [!] DEPRECATED - use simply A_Component instead
  *
@@ -12,7 +12,5 @@ import { A_TYPES__A_ChannelAggregated, A_TYPES__A_ChannelAggregateMethods, A_TYP
  */
 export declare class A_Channel<T extends Array<A_Component | A_Container> = any[], _Constructor extends A_TYPES__A_ChannelConstructor = A_TYPES__A_ChannelConstructor> {
     id: string;
-    protected channel: A_TYPES__A_ChannelAggregated<T>;
     constructor(params: A_TYPES__A_ChannelConstructor);
-    call<_Resp extends any>(prop: A_TYPES__A_ChannelAggregateMethods<T>, params?: Partial<A_TYPES__A_ChannelCallParams>): Promise<_Resp>;
 }

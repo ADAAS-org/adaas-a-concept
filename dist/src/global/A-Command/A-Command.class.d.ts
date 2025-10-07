@@ -2,7 +2,7 @@ import { A_TYPES__Command_Constructor, A_TYPES__Command_Listener, A_TYPES__Comma
 import { A_Error, ASEID } from "@adaas/a-utils";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_CONSTANTS__A_Command_Event, A_CONSTANTS__A_Command_Status } from "./A-Command.constants";
-export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor = A_TYPES__Command_Constructor, ResultType extends Record<string, any> = Record<string, any>> {
+export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor = A_TYPES__Command_Constructor, ResultType extends Record<string, any> = Record<string, any>, LifecycleEvents extends string = A_CONSTANTS__A_Command_Event> {
     /**
      * Command Identifier that corresponds to the class name
      */
@@ -41,7 +41,7 @@ export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor =
     protected _errors?: Set<A_Error>;
     protected _params: InvokeType;
     protected _status: A_CONSTANTS__A_Command_Status;
-    protected _listeners: Map<A_CONSTANTS__A_Command_Event, Set<A_TYPES__Command_Listener<ResultType>>>;
+    protected _listeners: Map<LifecycleEvents | A_CONSTANTS__A_Command_Event, Set<A_TYPES__Command_Listener<InvokeType, ResultType, LifecycleEvents>>>;
     protected _startTime?: Date;
     protected _endTime?: Date;
     /**
@@ -121,6 +121,8 @@ export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor =
      *
      */
     get entity(): string;
+    init(): Promise<void>;
+    compile(): Promise<any>;
     /**
      * Executes the command logic.
      */
@@ -128,31 +130,31 @@ export declare class A_Command<InvokeType extends A_TYPES__Command_Constructor =
     /**
      * Marks the command as completed
      */
-    complete(): Promise<void>;
+    complete(): Promise<any>;
     /**
      * Marks the command as failed
      */
-    fail(): Promise<void>;
+    fail(): Promise<any>;
     /**
      * Registers an event listener for a specific event
      *
      * @param event
      * @param listener
      */
-    on(event: A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<ResultType>): void;
+    on(event: LifecycleEvents | A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<InvokeType, ResultType, LifecycleEvents>): void;
     /**
      * Removes an event listener for a specific event
      *
      * @param event
      * @param listener
      */
-    off(event: A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<ResultType>): void;
+    off(event: LifecycleEvents | A_CONSTANTS__A_Command_Event, listener: A_TYPES__Command_Listener<InvokeType, ResultType, LifecycleEvents>): void;
     /**
      * Emits an event to all registered listeners
      *
      * @param event
      */
-    emit(event: A_CONSTANTS__A_Command_Event): void;
+    emit(event: LifecycleEvents | A_CONSTANTS__A_Command_Event): void;
     /**
      * Allows to create a Command instance from new data
      *
