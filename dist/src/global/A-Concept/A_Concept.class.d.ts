@@ -55,7 +55,7 @@ export declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
     protected containers: A_Container[];
     constructor(props: A_TYPES__IConceptConstructor<_Imports>);
     get namespace(): string;
-    get Scope(): A_Scope;
+    get Scope(): A_Scope<import("../A-Scope/A-Scope.types").A_TYPES__AllowedComponentsConstructor[], import("../A-Scope/A-Scope.types").A_TYPES__AllowedCommandsConstructor[], import("../A-Entity/A-Entity.class").A_Entity<any, import("../A-Entity/A-Entity.types").A_TYPES__Entity_JSON>[], import("../A-Fragment/A-Fragment.class").A_Fragment[]>;
     /**
      * Register a class or value in the concept scope.
      */
