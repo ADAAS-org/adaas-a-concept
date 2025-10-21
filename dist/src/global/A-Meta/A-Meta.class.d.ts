@@ -3,7 +3,7 @@
  *
  * [!] Meta can be different depending on the type of input data
  */
-export declare class A_Meta<_StorageItems extends Record<string, any>> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+export declare class A_Meta<_StorageItems extends Record<string, any> = any> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]>;
     /**
      * Method to get the iterator for the meta object

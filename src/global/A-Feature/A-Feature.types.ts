@@ -6,7 +6,6 @@ import { A_Component } from "../A-Component/A-Component.class"
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types"
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types"
 import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types"
-import { A_TYPES__Command_Constructor } from "../../../../adaas-a-utils/src/base/A-Command/A-Command.types"
 import { A_Feature } from "./A-Feature.class"
 import { A_TYPES__Required } from "@adaas/a-concept/types/A_Common.types"
 import { A_Scope } from "../A-Scope/A-Scope.class"
@@ -106,7 +105,6 @@ export type A_TYPES__FeatureAvailableComponents = InstanceType<A_TYPES__FeatureA
 export type A_TYPES__FeatureAvailableConstructors = A_TYPES__Component_Constructor
     | A_TYPES__Entity_Constructor
     | A_TYPES__Container_Constructor
-    | A_TYPES__Command_Constructor
 
 
 

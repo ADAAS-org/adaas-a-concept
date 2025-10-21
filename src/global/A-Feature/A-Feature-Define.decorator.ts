@@ -12,7 +12,6 @@ import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 import { A_TYPES__EntityMetaKey } from "@adaas/a-concept/global/A-Entity/A-Entity.constants";
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.constants";
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.constants";
-import { A_TYPES__CommandMetaKey } from "@adaas/a-concept/base/A-Command/A-Command.constants";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_FeatureError } from "./A-Feature.error";
 

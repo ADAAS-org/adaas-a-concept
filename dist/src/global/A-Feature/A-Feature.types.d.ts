@@ -1,38 +1,261 @@
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
-import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
-import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Component } from "../A-Component/A-Component.class";
-export type A_TYPES__FeatureIteratorReturn<T extends any = any> = () => Promise<T>;
-export type A_TYPES__FeatureCallParams = {
-    fragments: Array<A_Fragment>;
-    entities: Array<A_Entity<any, any>>;
-    components: Array<{
-        new (...args: any[]): any;
-    }>;
-};
-export type A_TYPES__FeatureConstructor = {
+import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
+import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types";
+import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
+import { A_Feature } from "./A-Feature.class";
+import { A_TYPES__Required } from "../../types/A_Common.types";
+import { A_Scope } from "../A-Scope/A-Scope.class";
+/**
+ * Feature constructor type
+ * Uses the generic type T to specify the type of the feature
+ */
+export type A_TYPES__Feature_Constructor<T = A_Feature> = new (...args: any[]) => T;
+/**
+ * Feature initialization type
+ */
+export type A_TYPES__Feature_Init<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> = A_TYPES__Feature_InitWithComponent<T> | A_TYPES__Feature_InitWithTemplate;
+/**
+ * Feature initialization type using component
+ */
+export type A_TYPES__Feature_InitWithComponent<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> = {
     /**
-     * Name of the A-Feature
+     * Feature Name
      */
     name: string;
     /**
-     * Steps that compose the A-Feature
+     * The component from where the feature is calling. It's important for proper scoping.
+     * Based on the component would be retrieved connected components, entities and containers.
+     *
+     * [!] Could be Container, Entity, Component or Command
      */
-    steps: A_TYPES__A_StageStep[];
+    component: T;
+};
+/**
+ * Feature initialization type using template
+ */
+export type A_TYPES__Feature_InitWithTemplate = {
     /**
-     * Scope in which the A-Feature will be executed
+     * Feature Name
+     */
+    name: string;
+    /**
+     * The scope from where to retrieve dependent components, entities and containers.
+     *
+     * [!] Important for proper scoping.
      */
     scope: A_Scope;
     /**
+     * Optional Feature template to be used instead of building it from decorators
+     */
+    template: Array<A_TYPES__FeatureDefineDecoratorTemplateItem>;
+};
+/**
+ * Feature serialized type
+ */
+export type A_TYPES__Feature_Serialized = {};
+/**
+ * Feature lifecycle states
+ */
+export declare enum A_TYPES__FeatureState {
+    /**
+     * The feature has been initialized
+     */
+    INITIALIZED = "INITIALIZED",
+    /**
+     * The feature is currently being processed
+     */
+    PROCESSING = "PROCESSING",
+    /**
+     * The feature has been completed
+     */
+    COMPLETED = "COMPLETED",
+    /**
+     * The feature has been interrupted
+     */
+    INTERRUPTED = "INTERRUPTED"
+}
+/**
+ * A list of component where features can be Defined
+ *
+ * [!] On this component Feature Definition is Available
+ */
+export type A_TYPES__FeatureAvailableComponents = InstanceType<A_TYPES__FeatureAvailableConstructors>;
+/**
+ * A list of constructors where features can be Defined
+ *
+ * [!] On this component Feature Definition is Available
+ */
+export type A_TYPES__FeatureAvailableConstructors = A_TYPES__Component_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Container_Constructor;
+/**
+ * Indicates a type of Feature Define decorator
+ */
+export type A_TYPES__FeatureDefineDecoratorDescriptor = TypedPropertyDescriptor<() => any> | TypedPropertyDescriptor<(...args: any[]) => any> | TypedPropertyDescriptor<(...args: any[]) => Promise<any>> | TypedPropertyDescriptor<() => Promise<any>>;
+/**
+ * Describes additional configuration properties to be used in Feature Define decorator
+ */
+export type A_TYPES__FeatureDefineDecoratorConfig = {
+    /**
+     * Feature name
+     *
+     * [!] By default uses the method name
+     */
+    name: string;
+    /**
+     * Indicates a default behavior of the feature. If true the feature will be automatically attached to the execution.
+     *
+     * [!] Before feature execution the method itself will be called to prepare the feature template
+     * [!] Default is false
+     */
+    invoke: boolean;
+    /**
+     * Allows to add a default behavior or number of steps that will be part of the feature
+     */
+    template: Array<A_TYPES__FeatureDefineDecoratorTemplateItem>;
+};
+/**
+ * Describes a single template item used in Feature Define decorator
+ */
+export type A_TYPES__FeatureDefineDecoratorTemplateItem = A_TYPES__Required<Partial<A_TYPES__A_StageStep>, ['name', 'handler', 'component']>;
+/**
+ * Describes a target where Feature Define decorator can be applied
+ *
+ * [!] The feature can be defined on Container, Entity, Component or Command
+ */
+export type A_TYPES__FeatureDefineDecoratorTarget = A_Container | A_Entity | A_Component;
+/**
+ * A type of Meta information stored by Feature Define decorator
+ * This information then uses by A-Context to build a proper feature template
+ */
+export type A_TYPES__FeatureDefineDecoratorMeta = {
+    /**
+     * Feature name
+     * mainly it's a unique combination of the class name and method name
+     */
+    name: string;
+    /**
+     * Actual method name in the class
+     */
+    handler: string;
+    /**
+     * Indicates a default behavior of the feature. If true the feature will be automatically attached to the execution.
+     *
+     * [!] Before feature execution the method itself will be called to prepare the feature template
+     * [!] Default is false
+     */
+    invoke: boolean;
+    /**
+     * Allows to add a default behavior or number of steps that will be part of the feature
+     */
+    template: Array<A_TYPES__A_StageStep>;
+};
+/**
+ * Descriptor type for A_Extend decorator
+ */
+export type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<() => any> | TypedPropertyDescriptor<(...args: any[]) => any> | TypedPropertyDescriptor<(...args: any[]) => Promise<any>> | TypedPropertyDescriptor<() => Promise<any>>;
+/**
+ * Target type for A_Extend decorator
+ *
+ * [!] Can be applied only on A-Components
+ */
+export type A_TYPES__FeatureExtendDecoratorTarget = A_Component;
+/**
+ * Meta type for A_Extend decorator
+ */
+export type A_TYPES__FeatureExtendDecoratorMeta = {
+    /**
+     * Original Feature Extension name
+     *
+     * [!] could be string or regex
+     */
+    name: string;
+    /**
+     * Actual method name in the class
+     */
+    handler: string;
+} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
+/**
+ * Configuration type for A_Extend decorator
+ */
+export type A_TYPES__FeatureExtendDecoratorConfig = {
+    /**
+     * Name of the container Lifecycle method to be extended.
+     *
+     * [!] If not provided will be used the name of the method.
+     * [!!] If name contains "." dot it will be considered as a path to the method.
+     */
+    name: string;
+    /**
+     * Container class or container name uses to identify the proper container in case when the name is not unique.
+     *
+     * [!] If not provided will be applied to all containers with the same name.
+     * [!!] By default uses OR to join all provided items. If you need more complex Logic, please use Regexp instead
+     *
+     * [!!!] In case if you need to exclude some containers, entities or components, please use "exclude" property
+     *
+     * Example:
+     *
+     * ```ts
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      scope: {
+     *          include: [A_Container1, A_Entity1],
+     *          exclude: [A_Component1]
+     *      }
+     *  })
+     * ```
+     */
+    scope: Array<A_TYPES__FeatureExtendDecoratorScopeItem> | Partial<A_TYPES__FeatureExtendDecoratorScopeConfig>;
+} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
+/**
+ * Scope item that can be used in A_Extend decorator configuration
+ */
+export type A_TYPES__FeatureExtendDecoratorScopeConfig = {
+    /**
+     * A list of components, entities or containers to include in the scope of the extension
+     */
+    include?: Array<A_TYPES__FeatureExtendDecoratorScopeItem>;
+    /**
+     * A list of components, entities or containers to exclude from the scope of the extension
+     */
+    exclude?: Array<A_TYPES__FeatureExtendDecoratorScopeItem>;
+};
+/**
+ * A single item that can be used in scope configuration
+ */
+export type A_TYPES__FeatureExtendDecoratorScopeItem = {
+    new (...args: any[]): A_Container;
+} | {
+    new (...args: any[]): A_Entity;
+} | {
+    new (...args: any[]): A_Component;
+};
+/**
+ * Behavior configuration for A_Extend decorator
+ */
+export type A_TYPES__FeatureExtendDecoratorBehaviorConfig = {
+    /**
+     * The behavior of the method.
+     * In case its async it will be executed independently from the main thread.
+     *
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
      *
      */
-    caller: A_Component | A_Entity | A_Container;
+    behavior: 'async' | 'sync';
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    before: string[];
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    after: string[];
 };
-export declare enum A_TYPES__FeatureState {
-    INITIALIZED = "INITIALIZED",
-    PROCESSING = "PROCESSING",
-    COMPLETED = "COMPLETED",
-    FAILED = "FAILED"
-}

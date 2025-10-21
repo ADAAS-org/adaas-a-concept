@@ -1,14 +1,18 @@
-import { A_TYPES__AllowedCommandsConstructor, A_TYPES__AllowedComponentsConstructor, A_TYPES__AllowedEntitiesConstructor, A_TYPES__AllowedFragmentsConstructor, A_TYPES__AllowedScopesConstructor, A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from './A-Scope.types';
-import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions } from "../../decorators/A-Inject/A-Inject.decorator.types";
+import { A_TYPES__ScopeConfig, A_TYPES__Scope_Init, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeResolvableComponents } from './A-Scope.types';
+import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__InjectableConstructors } from "../A-Inject/A-Inject.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
-import { A_Command } from "../A-Command/A-Command.class";
-export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsConstructor[] = A_TYPES__AllowedComponentsConstructor[], _CommandType extends A_TYPES__AllowedCommandsConstructor[] = A_TYPES__AllowedCommandsConstructor[], _EntityType extends A_Entity[] = A_Entity[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
+import { A_Error } from "../A-Error/A_Error.class";
+import { A_TYPES__Entity_Constructor } from '../A-Entity/A-Entity.types';
+import { A_TYPES__Component_Constructor } from '../A-Component/A-Component.types';
+import { A_TYPES__Fragment_Constructor } from '../A-Fragment/A-Fragment.types';
+import { A_TYPES__Error_Constructor } from '../A-Error/A_Error.types';
+export declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
     /**
      * Scope Name uses for identification and logging purposes
      */
-    readonly name: string;
+    protected _name: string;
     /**
      * Parent scope reference, used for inheritance of components, fragments, entities and commands
      */
@@ -19,55 +23,59 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     protected _allowedComponents: Set<_ComponentType[number]>;
     /**
+     * A set of allowed errors, A set of constructors that are allowed in the scope
+     */
+    protected _allowedErrors: Set<_ErrorType[number]>;
+    /**
      * A set of allowed entities, A set of constructors that are allowed in the scope
      */
-    protected _allowedEntities: Set<A_TYPES__AllowedEntitiesConstructor<_EntityType[number]>>;
+    protected _allowedEntities: Set<_EntityType[number]>;
     /**
      * A set of allowed fragments, A set of constructors that are allowed in the scope
      */
-    protected _allowedFragments: Set<A_TYPES__AllowedFragmentsConstructor<_FragmentType[number]>>;
+    protected _allowedFragments: Set<A_TYPES__Fragment_Constructor<_FragmentType[number]>>;
     /**
-     * A set of allowed commands, A set of constructors that are allowed in the scope
-     */
-    protected _allowedCommands: Set<_CommandType[number]>;
-    /**
-     * Internal storage for the components, fragments, entities and commands
+     * Storage for the components, should be strong as components are unique per scope
      */
     protected _components: Map<_ComponentType[number], InstanceType<_ComponentType[number]>>;
     /**
-     * Storage for the fragments, should be weak as fragments are singletons per scope
+     * Storage for the errors, should be strong as errors are unique per code
      */
-    protected _fragments: Map<A_TYPES__AllowedFragmentsConstructor<_FragmentType[number]>, _FragmentType[number]>;
+    protected _errors: Map<string, InstanceType<_ErrorType[number]>>;
     /**
      * Storage for the entities, should be strong as entities are unique per aseid
      */
-    protected _entities: Map<string, _EntityType[number]>;
+    protected _entities: Map<string, InstanceType<_EntityType[number]>>;
     /**
-     * Storage for the commands, should be strong as commands are unique per code
+     * Storage for the fragments, should be weak as fragments are singletons per scope
      */
-    protected _commands: Map<string, InstanceType<_CommandType[number]>>;
+    protected _fragments: Map<A_TYPES__Fragment_Constructor<_FragmentType[number]>, _FragmentType[number]>;
+    /**
+     * Returns the name of the scope
+     */
+    get name(): string;
     /**
      * Returns a list of Constructors for A-Components that are available in the scope
      */
     get allowedComponents(): Set<_ComponentType[number]>;
     /**
-     * Returns a list of Constructors for A-Commands that are available in the scope
+     * Returns a list of Constructors for A-Entities that are available in the scope
      */
-    get allowedCommands(): Set<_CommandType[number]>;
+    get allowedEntities(): Set<_EntityType[number]>;
     /**
      * Returns a list of Constructors for A-Fragments that are available in the scope
      */
-    get allowedFragments(): Set<A_TYPES__AllowedFragmentsConstructor<_FragmentType[number]>>;
+    get allowedFragments(): Set<A_TYPES__Fragment_Constructor<_FragmentType[number]>>;
     /**
-     * Returns a list of Constructors for A-Entities that are available in the scope
+     * Returns a list of Constructors for A-Errors that are available in the scope
      */
-    get allowedEntities(): Set<A_TYPES__AllowedEntitiesConstructor<_EntityType[number]>>;
+    get allowedErrors(): Set<_ErrorType[number]>;
     /**
      * Returns an Array of entities registered in the scope
      *
      * [!] One entity per aseid
      */
-    get entities(): Array<_EntityType[number]>;
+    get entities(): Array<InstanceType<_EntityType[number]>>;
     /**
      * Returns an Array of fragments registered in the scope
      *
@@ -81,29 +89,45 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     get components(): Array<InstanceType<_ComponentType[number]>>;
     /**
-     * Returns an Array of commands registered in the scope
+     * Returns the parent scope of the current scope
      *
-     * [!] One command per command aseid
-     * [!!] There may be any number of instances of the same command code, but with different aseids.
+     * @param setValue
+     * @returns
      */
-    get commands(): Array<InstanceType<_CommandType[number]>>;
+    get parent(): A_Scope | undefined;
     /**
      * A_Scope refers to the visibility and accessibility of :
      * - variables,
      * - Components,
      * - Context Fragments
-     * - Commands
      * - Entities
      * - and objects in different parts of your code.
      * Scope determines where a particular piece of data (like a variable or function)
      * can be accessed, modified, or referenced, and it plays a crucial role in avoiding naming collisions and ensuring data integrity.
      *
-     * [!] The scope behavior is similar to tree structure where each scope can have a parent scope and inherit its components, fragments, entities and commands
+     * [!] The scope behavior is similar to tree structure where each scope can have a parent scope and inherit its components, fragments, entities and errors
      *
      * @param params
      * @param config
      */
-    constructor(params: Partial<A_TYPES__ScopeConstructor<_ComponentType, _CommandType, _EntityType, _FragmentType>>, config?: Partial<A_TYPES__ScopeConfig>);
+    constructor();
+    constructor(
+    /**
+     * A set of constructors that are allowed in the scope
+     */
+    params: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, 
+    /**
+     * Configuration options for the scope
+     */
+    config?: Partial<A_TYPES__ScopeConfig>);
+    /**
+     * Determines which initializer method to use based on the type of the first parameter.
+     *
+     * @param param1
+     * @returns
+     */
+    protected getInitializer(param1?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, param2?: Partial<A_TYPES__ScopeConfig>): (param1: any, param2: any) => void | (() => void);
+    protected defaultInitialized(params?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, config?: Partial<A_TYPES__ScopeConfig>): void;
     /**
      * This method is used to initialize the components in the scope
      * To save memory components are initialized only when they are requested
@@ -114,13 +138,24 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     protected initComponents(_components?: _ComponentType): void;
     /**
+     * This method is used to initialize the errors in the scope
+     *
+     * This method only registers the errors in the scope in case they are not registered yet
+     *
+     * @param _errors
+     */
+    protected initErrors(_errors?: _ErrorType): void;
+    /**
      * This method is used to initialize the entities in the scope
      *
      * This method only registers the entities in the scope in case they are not registered yet
      *
      * @param _entities
      */
-    protected initEntities(_entities?: _EntityType): void;
+    protected initEntities(_entities?: [
+        ..._EntityType,
+        ...InstanceType<_EntityType[number]>[]
+    ]): void;
     /**
      * This method is used to initialize the fragments in the scope
      *
@@ -130,22 +165,17 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     protected initFragments(_fragments?: _FragmentType): void;
     /**
-     * This method is used to initialize the commands in the scope
+     * Returns the issuer of the scope, useful for debugging and tracking purposes
      *
-     * This method only registers the commands in the scope in case they are not registered yet
+     * Issuer can be:
+     * - A Container that allocated the scope
+     * - A Feature that allocated the scope
      *
-     * @param _commands
-     */
-    protected initCommands(_commands?: _CommandType): void;
-    /**
-     * This method is used to get or set the parent scope
+     * [!] Note that the issuer is the direct allocator of the scope, so if a Container allocated a Feature that allocated the scope, the issuer will be the Feature
      *
-     * [!] Note that setting the parent scope will override the existing parent scope
-     *
-     * @param setValue
      * @returns
      */
-    parent(setValue?: A_Scope): A_Scope | undefined;
+    issuer<T extends A_TYPES__ScopeLinkedComponents>(): T;
     /**
      * This method is used to inherit from a parent scope
      *
@@ -167,24 +197,19 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
     /**
      * Provide a component constructor to check if it's available in the scope
      */
-    component: A_TYPES__AllowedComponentsConstructor<T>): boolean;
+    component: A_TYPES__Component_Constructor<T>): boolean;
     has<T extends A_Entity>(
     /**
      * Provide an entity constructor to check if it's available in the scope
      *
      * [!] Note that entities are unique per aseid, so this method checks if there's at least one entity of the provided type in the scope
      */
-    entity: A_TYPES__AllowedEntitiesConstructor<T>): boolean;
+    entity: A_TYPES__Entity_Constructor<T>): boolean;
     has<T extends A_Fragment>(
     /**
      * Provide a fragment constructor to check if it's available in the scope
      */
-    fragment: A_TYPES__AllowedFragmentsConstructor<T>): boolean;
-    has<T extends A_Fragment>(
-    /**
-     * Provide a command constructor to check if it's available in the scope
-     */
-    command: A_TYPES__AllowedCommandsConstructor<T>): boolean;
+    fragment: A_TYPES__Fragment_Constructor<T>): boolean;
     has(
     /**
      * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
@@ -206,32 +231,26 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      *
      * [!] Notes:
      * - In case of search for A-Entity please ensure that provided string corresponds to the static entity property of the class. [!] By default it's the kebab-case of the class name
-     * - In case of search for A_Command please ensure that provided string corresponds to the static code property of the class. [!] By default it's the kebab-case of the class name
      * - In case of search for A_Component please ensure that provided string corresponds to the class name in PascalCase
      *
      * @param name
      * @returns
      */
-    resolveConstructor<T extends A_Command>(
-    /**
-     * Provide the command name or code to retrieve its constructor
-     */
-    name: string): A_TYPES__AllowedCommandsConstructor<T>;
     resolveConstructor<T extends A_Entity>(
     /**
      * Provide the entity name or static entity property to retrieve its constructor
      */
-    name: string): A_TYPES__AllowedEntitiesConstructor<T>;
+    name: string): A_TYPES__Entity_Constructor<T>;
     resolveConstructor<T extends A_Component>(
     /**
      * Provide the component name in PascalCase to retrieve its constructor
      */
-    name: string): A_TYPES__AllowedComponentsConstructor<T>;
+    name: string): A_TYPES__Component_Constructor<T>;
     resolveConstructor<T extends A_Fragment>(
     /**
      * Provide the fragment name in PascalCase to retrieve its constructor
      */
-    name: string): A_TYPES__AllowedFragmentsConstructor<T>;
+    name: string): A_TYPES__Fragment_Constructor<T>;
     /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -246,8 +265,8 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
     /**
      * Provide a component constructor to resolve its instance from the scope
      */
-    component: A_TYPES__AllowedComponentsConstructor<T>): T;
-    resolve<T extends A_TYPES__AllowedComponentsConstructor[]>(
+    component: A_TYPES__Component_Constructor<T>): T;
+    resolve<T extends A_TYPES__Component_Constructor[]>(
     /**
      * Provide an array of component constructors to resolve their instances from the scope
      */
@@ -256,27 +275,17 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
     /**
      * Provide a fragment constructor to resolve its instance from the scope
      */
-    fragment: A_TYPES__AllowedFragmentsConstructor<T>): T;
-    resolve<T extends A_TYPES__AllowedFragmentsConstructor[]>(
+    fragment: A_TYPES__Fragment_Constructor<T>): T;
+    resolve<T extends A_TYPES__Fragment_Constructor[]>(
     /**
      * Provide an array of fragment constructors to resolve their instances from the scope
      */
     fragments: [...T]): Array<InstanceType<T[number]>>;
-    resolve<T extends A_Command>(
-    /**
-     * Provide a command constructor to resolve its instance from the scope
-     */
-    command: A_TYPES__AllowedCommandsConstructor<T>): T;
-    resolve<T extends A_TYPES__AllowedCommandsConstructor[]>(
-    /**
-     * Provide an array of command constructors to resolve their instances from the scope
-     */
-    commands: [...T]): Array<InstanceType<T[number]>>;
     resolve<T extends A_Entity>(
     /**
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
-    entity: A_TYPES__AllowedEntitiesConstructor<T>): T | undefined;
+    entity: A_TYPES__Entity_Constructor<T>): T | undefined;
     resolve<T extends A_Scope>(
     /**
      * Uses only in case of resolving a single entity
@@ -288,11 +297,25 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
     /**
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
-    entity: A_TYPES__AllowedEntitiesConstructor<T>, 
+    entity: A_TYPES__Entity_Constructor<T>, 
     /**
      * Provide optional instructions to find a specific entity or a set of entities
      */
     instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
+    resolve(constructorName: string): A_TYPES__ScopeResolvableComponents;
+    resolve<T extends A_TYPES__ScopeResolvableComponents>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    param1: A_TYPES__InjectableConstructors): T | Array<T>;
+    /**
+     * This method is used internally to resolve a component, fragment or entity by its constructor name
+     *
+     * [!] Note that this method checks for the component, fragment or entity in the current scope and all parent scopes
+     *
+     * @param name  - name of the component, fragment or entity to resolve (constructor name for components and fragments, static entity property for entities, static code property for commands)
+     * @returns
+     */
     private resolveByName;
     /**
      * This method is used internally to resolve a single component, fragment or entity from the scope
@@ -334,12 +357,6 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     private resolveComponent;
     /**
-     * Should be similar to resolveEntity but for commands
-     *
-     * @param command
-     */
-    private resolveCommand;
-    /**
      * This method is used to register the component in the scope
      *
      * @param fragment
@@ -348,42 +365,42 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
     /**
      * Provide a component constructor to register it in the scope
      */
-    component: A_TYPES__AllowedComponentsConstructor<T>): void;
-    register<T extends A_Entity>(
-    /**
-     * Provide an entity constructor to register it in the scope
-     */
-    entity: A_TYPES__AllowedEntitiesConstructor<T>): void;
-    register<T extends A_Command>(
-    /**
-     * Provide a command constructor to register it in the scope
-     */
-    command: A_TYPES__AllowedCommandsConstructor<T>): void;
-    register<T extends A_Fragment>(
-    /**
-     * Provide a command instance to register it in the scope
-     */
-    fragment: A_TYPES__AllowedFragmentsConstructor<T>): void;
-    register(
-    /**
-     * Provide an entity instance to register it in the scope
-     */
-    entity: A_Entity): void;
+    component: A_TYPES__Component_Constructor<T>): void;
     register(
     /**
      * Provide a command instance to register it in the scope
      */
     component: A_Component): void;
+    register<T extends A_Error>(
+    /**
+     * Provide an error constructor to register it in the scope
+     */
+    error: A_TYPES__Error_Constructor<T>): void;
     register(
+    /**
+     * Provide an error instance to register it in the scope
+     */
+    error: A_Error): void;
+    register<T extends A_Fragment>(
     /**
      * Provide a command instance to register it in the scope
      */
-    command: A_Command): void;
+    fragment: A_TYPES__Fragment_Constructor<T>): void;
     register(
     /**
      * Provide a fragment instance to register it in the scope
      */
     fragment: A_Fragment): void;
+    register<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to register it in the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): void;
+    register(
+    /**
+     * Provide an entity instance to register it in the scope
+     */
+    entity: A_Entity): void;
     /**
      * This method is useful when you want to serialize the scope to JSON
      *
@@ -394,41 +411,6 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     toJSON(): Record<string, any>;
     /**
-     * Type guard to check if the constructor is of type A_Component
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isComponentConstructor(ctor: unknown): ctor is A_TYPES__AllowedComponentsConstructor;
-    /**
-     * Type guard to check if the constructor is of type A_Command
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isCommandConstructor(ctor: unknown): ctor is A_TYPES__AllowedCommandsConstructor;
-    /**
-     * Type guard to check if the constructor is of type A_Fragment
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isFragmentConstructor(ctor: any): ctor is A_TYPES__AllowedFragmentsConstructor;
-    /**
-     * Type guard to check if the constructor is of type A_Entity
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isEntityConstructor(ctor: unknown): ctor is A_TYPES__AllowedEntitiesConstructor;
-    /**
-     * Type guard to check if the constructor is of type A_Scope
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isScopeConstructor(ctor: unknown): ctor is A_TYPES__AllowedScopesConstructor;
-    /**
      * Type guard to check if the constructor is of type A_Component and is allowed in the scope
      *
      * @param ctor
@@ -436,26 +418,26 @@ export declare class A_Scope<_ComponentType extends A_TYPES__AllowedComponentsCo
      */
     protected isAllowedComponent(ctor: unknown): ctor is _ComponentType[number];
     /**
-     * Type guard to check if the constructor is of type A_Command and is allowed in the scope
-     *
-     * @param ctor
-     * @returns
-     */
-    protected isAllowedCommand(ctor: unknown): ctor is _CommandType[number];
-    /**
      * Type guard to check if the constructor is of type A_Entity and is allowed in the scope
      *
      * @param ctor
      * @returns
      */
-    protected isAllowedEntity(ctor: unknown): ctor is A_TYPES__AllowedEntitiesConstructor<_EntityType[number]>;
+    protected isAllowedEntity(ctor: unknown): ctor is A_TYPES__Entity_Constructor<_EntityType[number]>;
     /**
      * Type guard to check if the constructor is of type A_Fragment and is allowed in the scope
      *
      * @param ctor
      * @returns
      */
-    protected isAllowedFragment(ctor: unknown): ctor is A_TYPES__AllowedFragmentsConstructor<_FragmentType[number]>;
+    protected isAllowedFragment(ctor: unknown): ctor is A_TYPES__Fragment_Constructor<_FragmentType[number]>;
+    /**
+     * Type guard to check if the constructor is of type A_Error and is allowed in the scope
+     *
+     * @param ctor
+     * @returns
+     */
+    protected isAllowedError(ctor: unknown): ctor is A_TYPES__Error_Constructor<_ErrorType[number]>;
     /**
      * This method is used to check if the scope is inherited from another scope
      *

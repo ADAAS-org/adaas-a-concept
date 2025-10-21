@@ -36,22 +36,6 @@ var A_TYPES__A_Stage_Status;
      */
     A_TYPES__A_Stage_Status["INITIALIZED"] = "INITIALIZED";
     /**
-     * The stage has been reset
-     */
-    // RESET = 'RESET',
-    /**
-     * The stage has been resumed
-     */
-    // RESUMED = 'RESUMED',
-    /**
-     * The stage has been suspended
-     */
-    // SUSPENDED = 'SUSPENDED',
-    /**
-     * The stage has been terminated
-     */
-    // TERMINATED = 'TERMINATED',
-    /**
      * The stage has been aborted
      */
     A_TYPES__A_Stage_Status["ABORTED"] = "ABORTED";

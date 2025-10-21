@@ -10,10 +10,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Entity = void 0;
-const a_utils_1 = require("@adaas/a-utils");
-const errors_constants_1 = require("@adaas/a-utils/dist/src/constants/errors.constants");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
-const env_constants_1 = require("../../constants/env.constants");
+const A_Formatter_helper_1 = require("../../helpers/A_Formatter.helper");
+const ASEID_class_1 = require("../ASEID/ASEID.class");
+const A_Identity_helper_1 = require("../../helpers/A_Identity.helper");
+const A_Entity_error_1 = require("./A-Entity.error");
+const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -29,14 +31,14 @@ class A_Entity {
      * Entity Identifier that corresponds to the class name
      */
     static get entity() {
-        return a_utils_1.A_CommonHelper.toKebabCase(this.name);
+        return A_Formatter_helper_1.A_FormatterHelper.toKebabCase(this.name);
     }
     /**
-     * DEFAULT Namespace of the entity from environment variable A_CONCEPT_NAMESPACE
+     * DEFAULT Concept Name (Application Name) of the entity from environment variable A_CONCEPT_NAME
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
-    static get namespace() {
-        return A_Context_class_1.A_Context.root.name;
+    static get concept() {
+        return A_Context_class_1.A_Context.concept;
     }
     /**
      * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE
@@ -45,7 +47,7 @@ class A_Entity {
      * [!] e.g. 'default', 'core', 'public', 'internal', etc
      */
     static get scope() {
-        return process && process.env ? process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_DEFAULT_SCOPE] || 'core' : 'core';
+        return A_Context_class_1.A_Context.root.name;
     }
     constructor(props) {
         const initializer = this.getInitializer(props);
@@ -64,22 +66,22 @@ class A_Entity {
         return this.aseid.id;
     }
     /**
-     * Extracts the namespace from the ASEID
-     * namespace is an application specific identifier from where the entity is coming from
+     * Extracts the concept from the ASEID
+     * concept is an application specific identifier from where the entity is coming from
      */
-    get namespace() {
-        return this.aseid.namespace;
+    get concept() {
+        return this.aseid.concept;
     }
     /**
      * Extracts the scope from the ASEID
-     * scope is the scope of the entity from Application Namespace
+     * scope is the scope of the entity from concept
      */
     get scope() {
         return this.aseid.scope;
     }
     /**
      * Extracts the entity from the ASEID
-     * entity is the name of the entity from Application Namespace
+     * entity is the name of the entity from concept
      *
      */
     get entity() {
@@ -104,10 +106,10 @@ class A_Entity {
     // ====================================================================
     // --- Type guards used to classify `props` properly ---
     isStringASEID(x) {
-        return typeof x === "string" && a_utils_1.ASEID.isASEID(x);
+        return typeof x === "string" && ASEID_class_1.ASEID.isASEID(x);
     }
     isASEIDInstance(x) {
-        return x instanceof a_utils_1.ASEID;
+        return x instanceof ASEID_class_1.ASEID;
     }
     /**
      * A "serialized" object is considered such if it is a non-null object
@@ -178,7 +180,7 @@ class A_Entity {
             return this.fromNew;
         }
         // none of the above -> throw consistent error
-        throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+        throw new A_Entity_error_1.A_Entity_Error(A_Entity_error_1.A_Entity_Error.ValidationError, 'Unable to determine A-Entity constructor initialization method. Please check the provided parameters.');
     }
     /**
      * Call a feature of the component with the provided scope
@@ -188,17 +190,13 @@ class A_Entity {
      * @param lifecycleMethod
      * @param args
      */
-    call(feature_1) {
-        return __awaiter(this, arguments, void 0, function* (feature, scope = A_Context_class_1.A_Context.scope(this)) {
-            //  scope can be completely custom without relation to the entity scope
-            //  or it can be inherited from the entity scope
-            // [!Not Now!] however, each feature should create own scope regardless of the passed scope
-            //  to avoid any possible side effects
-            if (scope && !scope.isInheritedFrom(A_Context_class_1.A_Context.scope(this))) {
-                scope = scope.inherit(A_Context_class_1.A_Context.scope(this));
-            }
-            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
-            return yield newFeature.process();
+    call(feature, scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const newFeature = new A_Feature_class_1.A_Feature({
+                name: feature,
+                component: this
+            });
+            return yield newFeature.process(scope);
         });
     }
     // ====================================================================
@@ -239,15 +237,10 @@ class A_Entity {
      * @param aseid
      */
     fromASEID(aseid) {
-        if (typeof aseid === 'string' && a_utils_1.ASEID.isASEID(aseid)) {
-            this.aseid = new a_utils_1.ASEID(aseid);
-        }
-        else if (aseid instanceof a_utils_1.ASEID) {
+        if (aseid instanceof ASEID_class_1.ASEID)
             this.aseid = aseid;
-        }
-        else {
-            throw new a_utils_1.A_Error(errors_constants_1.A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
-        }
+        else
+            this.aseid = new ASEID_class_1.ASEID(aseid);
     }
     /**
      * Handles the case when no props are provided to the constructor.
@@ -258,11 +251,11 @@ class A_Entity {
      * @returns
      */
     fromUndefined() {
-        this.aseid = new a_utils_1.ASEID({
-            namespace: this.constructor.namespace,
+        this.aseid = new ASEID_class_1.ASEID({
+            concept: this.constructor.concept,
             scope: this.constructor.scope,
             entity: this.constructor.entity,
-            id: a_utils_1.A_IdentityHelper.generateTimeId()
+            id: A_Identity_helper_1.A_IdentityHelper.generateTimeId()
         });
         return;
     }
@@ -275,11 +268,11 @@ class A_Entity {
      * @returns
      */
     fromNew(newEntity) {
-        this.aseid = new a_utils_1.ASEID({
-            namespace: this.constructor.namespace,
+        this.aseid = new ASEID_class_1.ASEID({
+            concept: this.constructor.concept,
             scope: this.constructor.scope,
             entity: this.constructor.entity,
-            id: a_utils_1.A_IdentityHelper.generateTimeId()
+            id: A_Identity_helper_1.A_IdentityHelper.generateTimeId()
         });
         return;
     }
@@ -294,7 +287,7 @@ class A_Entity {
      * @returns
      */
     fromJSON(serialized) {
-        this.aseid = new a_utils_1.ASEID(serialized.aseid);
+        this.aseid = new ASEID_class_1.ASEID(serialized.aseid);
         return;
     }
     /**

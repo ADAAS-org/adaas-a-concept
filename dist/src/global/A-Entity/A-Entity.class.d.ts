@@ -1,6 +1,6 @@
-import { ASEID } from "@adaas/a-utils";
-import { A_TYPES__Entity_JSON, A_TYPES__IEntity } from "./A-Entity.types";
+import { A_TYPES__Entity_Serialized, A_TYPES__Entity_Init, A_TYPES__IEntity } from "./A-Entity.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { ASEID } from "../ASEID/ASEID.class";
 /**
  * A_Entity is another abstraction that describes all major participants in the system business logic.
  * Each Entity should have a clear definition and a clear set of responsibilities.
@@ -8,16 +8,16 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
  *
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON> implements A_TYPES__IEntity {
+export declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_TYPES__Entity_Init, _SerializedType extends A_TYPES__Entity_Serialized = A_TYPES__Entity_Serialized> implements A_TYPES__IEntity {
     /**
      * Entity Identifier that corresponds to the class name
      */
     static get entity(): string;
     /**
-     * DEFAULT Namespace of the entity from environment variable A_CONCEPT_NAMESPACE
+     * DEFAULT Concept Name (Application Name) of the entity from environment variable A_CONCEPT_NAME
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
-    static get namespace(): string;
+    static get concept(): string;
     /**
      * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE
      * [!] If environment variable is not set, it will default to 'core'
@@ -35,9 +35,9 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * [!] ASEID is immutable and should not be changed after the entity is created
      *
      * [!] ASEID is composed of the following parts:
-     * - namespace: an application specific identifier from where the entity is coming from
-     * - scope: the scope of the entity from Application Namespace
-     * - entity: the name of the entity from Application Namespace
+     * - concept: an application specific identifier from where the entity is coming from
+     * - scope: the scope of the entity from concept
+     * - entity: the name of the entity from concept
      * - id: the unique identifier of the entity
      *
      * [!] For more information about ASEID, please refer to the ASEID class documentation]
@@ -56,7 +56,7 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
     aseid?: string);
     /**
      * Create a new A_entity instance from Aseid instance
-     * e.g. new ASEID({namespace: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
+     * e.g. new ASEID({concept: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
      *
      * @param aseid
      */
@@ -91,18 +91,18 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      */
     get id(): string | number;
     /**
-     * Extracts the namespace from the ASEID
-     * namespace is an application specific identifier from where the entity is coming from
+     * Extracts the concept from the ASEID
+     * concept is an application specific identifier from where the entity is coming from
      */
-    get namespace(): string;
+    get concept(): string;
     /**
      * Extracts the scope from the ASEID
-     * scope is the scope of the entity from Application Namespace
+     * scope is the scope of the entity from concept
      */
     get scope(): string;
     /**
      * Extracts the entity from the ASEID
-     * entity is the name of the entity from Application Namespace
+     * entity is the name of the entity from concept
      *
      */
     get entity(): string;
@@ -171,19 +171,19 @@ export declare class A_Entity<_ConstructorType = any, _SerializedType extends A_
      * @param lifecycleMethod
      * @param args
      */
-    call(feature: string, scope?: A_Scope): Promise<any>;
+    call(feature: string, scope?: A_Scope): Promise<void>;
     /**
      * The default method that can be called and extended to load entity data.
      */
-    load(scope?: A_Scope): Promise<any>;
+    load(scope?: A_Scope): Promise<void>;
     /**
      * The default method that can be called and extended to destroy entity data.
      */
-    destroy(scope?: A_Scope): Promise<any>;
+    destroy(scope?: A_Scope): Promise<void>;
     /**
      * The default method that can be called and extended to save entity data.
      */
-    save(scope?: A_Scope): Promise<any>;
+    save(scope?: A_Scope): Promise<void>;
     /**
      * Create a new entity from ASEID string or instance
      * [!] Executed when the constructor is called with a string or ASEID instance that represents the ASEID

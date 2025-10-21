@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_ComponentMeta = void 0;
 const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
-const A_Component_types_1 = require("./A-Component.types");
+const A_Component_constants_1 = require("./A-Component.constants");
 class A_ComponentMeta extends A_Meta_class_1.A_Meta {
     /**
      * Allows to get all the injections for a given handler
@@ -11,7 +11,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
      * @returns
      */
     injections(handler) {
-        const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+        const injections = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.INJECTIONS);
         const args = (injections === null || injections === void 0 ? void 0 : injections.get(handler)) || [];
         return args;
     }
@@ -23,8 +23,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
      */
     extensions(feature) {
         const steps = [];
-        const extensions = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.EXTENSIONS);
-        const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+        const extensions = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.EXTENSIONS);
         extensions === null || extensions === void 0 ? void 0 : extensions
         // returns all extensions that match the feature
         .find(feature).forEach(([handler, extensions]) => {
@@ -47,7 +46,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
      * @returns
      */
     features() {
-        const features = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.FEATURES);
+        const features = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.FEATURES);
         return (features === null || features === void 0 ? void 0 : features.toArray().map(([, feature]) => feature)) || [];
     }
     /**
@@ -58,9 +57,8 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
      */
     abstractions(abstraction) {
         const steps = [];
-        const abstractions = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS);
-        const injections = this.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
-        // const constructor = A_Context.component(this);
+        const abstractions = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS);
+        const injections = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.INJECTIONS);
         abstractions === null || abstractions === void 0 ? void 0 : abstractions
         // returns all extensions that match the feature
         .find(abstraction).forEach(([handler, extensions]) => {

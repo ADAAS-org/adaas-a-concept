@@ -21,8 +21,6 @@ import { A_TYPES__Fragment_Constructor } from "@adaas/a-concept/global/A-Fragmen
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_TYPES__Scope_Constructor } from "@adaas/a-concept/global/A-Scope/A-Scope.types";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
-import { A_TYPES__Command_Constructor } from "../../../../adaas-a-utils/src/base/A-Command/A-Command.types";
-
 
 
 /**

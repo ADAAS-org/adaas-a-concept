@@ -8,15 +8,21 @@ exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
     // These environment variables are used by A-Concept core to configure the application
     // ----------------------------------------------------------
     /**
-     * Namespace of the application
+     * Name of the application
+     *
+     * DEFAULT value is 'a-concept'
+     *
      * [!] Provided name will be used for all aseids in the application by default
      */
-    A_CONCEPT_NAMESPACE: 'A_CONCEPT_NAMESPACE',
+    A_CONCEPT_NAME: 'A_CONCEPT_NAME',
     /**
-     * Default scope of the application
+     * Root scope of the application
+     *
+     * DEFAULT value is 'root'
+     *
      * [!] Provided name will be used for all aseids in the application by default
      */
-    A_CONCEPT_DEFAULT_SCOPE: 'A_CONCEPT_DEFAULT_SCOPE',
+    A_CONCEPT_ROOT_SCOPE: 'A_CONCEPT_ROOT_SCOPE',
     /**
      * Environment of the application e.g. development, production, staging
      */
@@ -26,15 +32,16 @@ exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
      * [!] Automatically set by A-Concept when the application starts
      */
     A_CONCEPT_ROOT_FOLDER: 'A_CONCEPT_ROOT_FOLDER',
-    CONFIG_SDK_VALIDATION: 'CONFIG_SDK_VALIDATION',
-    CONFIG_VERBOSE: 'CONFIG_VERBOSE',
-    CONFIG_IGNORE_ERRORS: 'CONFIG_IGNORE_ERRORS',
+    /**
+     * Allows to define a default error description for errors thrown without a description
+     */
+    A_ERROR_DEFAULT_DESCRIPTION: 'A_ERROR_DEFAULT_DESCRIPTION',
 };
 exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY = [
-    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAMESPACE,
+    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAME,
+    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE,
     exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ENVIRONMENT,
     exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER,
-    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.CONFIG_VERBOSE,
-    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.CONFIG_IGNORE_ERRORS,
+    exports.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION,
 ];
 //# sourceMappingURL=env.constants.js.map

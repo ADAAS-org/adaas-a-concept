@@ -1,44 +1,36 @@
-import { A_TYPES__FragmentConstructor } from "./A-Fragment.types";
-/**
- * A-Fragment = Context Fragments is a set of arguments that can be used to define a Context for the pipeline.
- * In other words it is a dynamic context that will be created on pipeline start and destroyed on pipeline end.
- * During the execution of the pipeline, the Context Fragments can be used to pass the data between the pipeline steps.
- *
- * Or to store the data that is required for the pipeline execution
- *
- */
-export declare class A_Fragment {
+import { A_Meta } from "../A-Meta/A-Meta.class";
+import { A_TYPES__Fragment_Init } from "./A-Fragment.types";
+export declare class A_Fragment<_MemoryItems extends Record<string, any> = any> {
+    /**
+     * Fragment Name
+     */
     name: string;
     /**
-     * Indicates that Context Fragment is ready to use
+     * Memory storage for the Fragment instance
      */
-    ready: Promise<void>;
-    constructor(params?: Partial<A_TYPES__FragmentConstructor>);
-    private hasInherited;
+    protected _meta: A_Meta<_MemoryItems>;
     /**
-     * Initializes the Namespace or can be used to reinitialize the Namespace
+     * A-Fragment is a singleton, a piece of execution Context that can be shared between the Components/Entities/Commands
+     * For every A_Scope can be defined only One A_Fragment of the same type.
+     * This class is useful for the design purpose and maintainance of the application
+     *
+     *
+     * [!] Every A_Fragment is a Memory Class that can store data in memory between the steps of the pipeline.
+     * [!] So if it necessary to store some information in the Execution Context - use memory of the Fragment
      */
-    private init;
+    constructor(params?: Partial<A_TYPES__Fragment_Init>);
     /**
-     *  Before init hook to be used in inherited classes
+     * Returns the Meta object that allows to store data in the Fragment memory
      *
      * @returns
      */
-    protected onBeforeInit(): Promise<void>;
-    /**
-     * Main initialization method for the SDK
-     */
-    protected onInit(): Promise<void>;
-    /**
-     *  After init hook to be used in inherited classes
-     *
-     * @returns
-     */
-    protected onAfterInit(): Promise<void>;
+    get memory(): A_Meta<_MemoryItems>;
     /**
      * Returns the JSON representation of the Fragment
      *
      * @returns
      */
-    toJSON(): Record<string, any>;
+    toJSON(): _MemoryItems & {
+        name: string;
+    };
 }

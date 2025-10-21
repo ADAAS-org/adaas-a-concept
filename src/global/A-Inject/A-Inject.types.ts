@@ -1,4 +1,3 @@
-import { A_TYPES__Command_Constructor } from "@adaas/a-concept/base/A-Command/A-Command.types";
 import { A_TYPES__Component_Constructor } from "@adaas/a-concept/global/A-Component/A-Component.types";
 import { A_TYPES__Container_Constructor } from "@adaas/a-concept/global/A-Container/A-Container.types";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
@@ -49,7 +48,6 @@ export type A_TYPES__InjectableTargets = A_TYPES__Component_Constructor
 
 export type A_TYPES__InjectableConstructors = A_TYPES__Component_Constructor
     | A_TYPES__Container_Constructor
-    | A_TYPES__Command_Constructor
     | A_TYPES__Entity_Constructor
     | A_TYPES__Feature_Constructor
     | A_TYPES__Caller_Constructor

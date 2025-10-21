@@ -1,6 +1,6 @@
-import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "../../decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
+import { A_TYPES__FeatureExtendDecoratorBehaviorConfig } from "../A-Feature/A-Feature.types";
 export declare enum A_TYPES__A_Stage_Status {
     /**
      * The stage is currently being processed
@@ -32,18 +32,6 @@ export declare enum A_TYPES__A_Stage_Status {
      */
     INITIALIZED = "INITIALIZED",
     /**
-     * The stage has been reset
-     */
-    /**
-     * The stage has been resumed
-     */
-    /**
-     * The stage has been suspended
-     */
-    /**
-     * The stage has been terminated
-     */
-    /**
      * The stage has been aborted
      */
     ABORTED = "ABORTED"
@@ -52,7 +40,7 @@ export type A_TYPES__A_StageStep = {
     /**
      * The component to be called
      */
-    component: typeof A_Component | A_Container | string;
+    component: A_TYPES__Component_Constructor | A_Container | string;
     /**
      * The method to be called on the component
      */
@@ -64,7 +52,7 @@ export type A_TYPES__A_StageStep = {
      *
      */
     name: string;
-} & A_TYPES__A_ExtendDecorator_BehaviorConfig;
+} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
 export type A_TYPES__A_Stage_JSON = {
     /**
      * The name of the stage

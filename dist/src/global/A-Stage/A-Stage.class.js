@@ -10,34 +10,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Stage = void 0;
-const a_utils_1 = require("@adaas/a-utils");
-const A_Context_class_1 = require("../A-Context/A-Context.class");
-const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 const A_Stage_types_1 = require("./A-Stage.types");
-const A_Container_class_1 = require("../A-Container/A-Container.class");
-const A_Scope_class_1 = require("../A-Scope/A-Scope.class");
+const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Stage_error_1 = require("./A-Stage.error");
-const A_FeatureCaller_class_1 = require("../A-Feature/A-FeatureCaller.class");
-/**
- * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
- * Each stage may contain one or more functions.
- * [!] That always run in parallel (in NodeJS asynchronously), independently of each other.
- *
- * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
- */
+const A_TypeGuards_helper_1 = require("../../helpers/A_TypeGuards.helper");
 class A_Stage {
-    constructor(feature, _steps = []) {
-        this.name = 'A_Stage';
+    /**
+     * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
+     * Each stage may contain one or more functions.
+     * [!] That always run in parallel (in NodeJS asynchronously), independently of each other.
+     *
+     * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
+     */
+    constructor(feature, steps = []) {
         this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
-        this.feature = feature;
-        this._steps = _steps;
-        this.name = `${this.feature.name}::a-stage:[sync:${this
-            .syncSteps
-            .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
-            .join(' -> ')}][async:${this
-            .asyncSteps
-            .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
-            .join(' -> ')}]`;
+        this._feature = feature;
+        this._steps = steps;
+    }
+    get name() {
+        return this.toString();
     }
     get before() {
         return this._steps.reduce((acc, step) => ([
@@ -66,22 +57,37 @@ class A_Stage {
      * @param step
      * @returns
      */
-    getStepArgs(step, scope) {
+    getStepArgs(scope, step) {
         return __awaiter(this, void 0, void 0, function* () {
+            let resolverConstructor;
+            switch (true) {
+                case A_TypeGuards_helper_1.A_TypeGuards.isContainerInstance(step.component):
+                    resolverConstructor = step.component.constructor;
+                    break;
+                case A_TypeGuards_helper_1.A_TypeGuards.isString(step.component):
+                    resolverConstructor = scope.resolveConstructor(step.component);
+                    break;
+                default:
+                    resolverConstructor = step.component;
+                    break;
+            }
             return Promise
                 .all(A_Context_class_1.A_Context
-                .meta(
-            // TODO: fix types
-            (step.component instanceof A_Container_class_1.A_Container
-                ? step.component.constructor
-                : step.component))
+                .meta(resolverConstructor)
                 .injections(step.handler)
                 .map((arg) => __awaiter(this, void 0, void 0, function* () {
-                if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_FeatureCaller_class_1.A_FeatureCaller))
-                    return this.feature.Caller.resolve();
-                if (a_utils_1.A_CommonHelper.isInheritedFrom(arg.target, A_Feature_class_1.A_Feature))
-                    return this.feature;
-                return scope.resolve(arg.target, arg.instructions);
+                switch (true) {
+                    case A_TypeGuards_helper_1.A_TypeGuards.isCallerConstructor(arg.target):
+                        return this._feature.caller.component;
+                    case A_TypeGuards_helper_1.A_TypeGuards.isScopeConstructor(arg.target):
+                        return scope;
+                    case A_TypeGuards_helper_1.A_TypeGuards.isFeatureConstructor(arg.target):
+                        return this._feature;
+                    case A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(arg.target) && 'instructions' in arg:
+                        return scope.resolve(arg.target, arg.instructions);
+                    default:
+                        return scope.resolve(arg.target);
+                }
             })));
         });
     }
@@ -101,17 +107,24 @@ class A_Stage {
      * @param step
      * @returns
      */
-    getStepInstance(step) {
+    getStepInstance(scope, step) {
         const { component, handler } = step;
-        // TODO: probably would be better to do it another way. let's think about it
-        const instance = component instanceof A_Container_class_1.A_Container
-            ? component
-            // TODO: fix types
-            : this.feature.Scope.resolve(component);
+        let instance;
+        switch (true) {
+            case A_TypeGuards_helper_1.A_TypeGuards.isContainerInstance(component):
+                instance = component;
+                break;
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(component):
+                instance = scope.resolve(component);
+                break;
+            default:
+                instance = scope.resolve(component);
+                break;
+        }
         if (!instance)
-            throw new Error(`Unable to resolve component ${typeof component === 'string' ? component : component.name} from scope ${this.feature.Scope.name}`);
+            throw new A_Stage_error_1.A_StageError(A_Stage_error_1.A_StageError.CompileError, `Unable to resolve component ${typeof component === 'string' ? component : component.name} from scope ${scope.name}`);
         if (!instance[handler])
-            throw new Error(`Handler ${handler} not found in ${instance.constructor.name}`);
+            throw new A_Stage_error_1.A_StageError(A_Stage_error_1.A_StageError.CompileError, `Handler ${handler} not found in ${instance.constructor.name}`);
         return instance;
     }
     /**
@@ -122,24 +135,30 @@ class A_Stage {
      */
     callStepHandler(step, scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const instance = yield this.getStepInstance(step);
-            const callArgs = yield this.getStepArgs(step, scope);
+            const instance = yield this.getStepInstance(scope, step);
+            const callArgs = yield this.getStepArgs(scope, step);
             return yield instance[step.handler](...callArgs);
         });
     }
+    skip() {
+        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.SKIPPED;
+    }
+    process(
     /**
-     * Runs async all the _steps of the stage
-     *
-     * @returns
+     * Scope to be used to resolve the steps dependencies
      */
-    process() {
-        return __awaiter(this, arguments, void 0, function* (
-        /**
-         * Scope to be used to resolve the steps dependencies
-         */
-        scope = new A_Scope_class_1.A_Scope({}, {}), params) {
-            scope = scope.inherit(this.feature.Scope);
-            // console.log(' -> Init stage processing:', this.name);
+    param1, 
+    /**
+     * Extra parameters to control the steps processing
+     */
+    param2) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const scope = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(param1)
+                ? param1
+                : A_Context_class_1.A_Context.scope(this._feature);
+            const params = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(param1)
+                ? param2
+                : param1;
             if (!this.processed)
                 this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {
@@ -170,7 +189,6 @@ class A_Stage {
                             }))
                         ]);
                         this.completed();
-                        // console.log(' -> Finished stage processing:', this.name);
                         return resolve();
                     }
                     catch (error) {
@@ -181,24 +199,15 @@ class A_Stage {
             return this.processed;
         });
     }
-    /**
-     * Skips the stage
-     *
-     */
-    skip() {
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.SKIPPED;
-        this.feature.next(this);
-    }
     // ==========================================
     // ============ Status methods =============
     // ==========================================
     completed() {
         this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.COMPLETED;
-        this.feature.next(this);
     }
     failed(error) {
+        this._error = error;
         this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.FAILED;
-        this.feature.failed(new A_Stage_error_1.A_StageError(error));
     }
     // ==========================================
     // ============ Serialization ===============
@@ -209,9 +218,32 @@ class A_Stage {
      */
     toJSON() {
         return {
-            name: 'A_Stage',
+            name: this.name,
             status: this.status,
         };
+    }
+    /**
+     * Returns a string representation of the stage
+     *
+     * @returns
+     */
+    toString() {
+        return [
+            this._feature.name,
+            '::a-stage:',
+            '[sync:',
+            this
+                .syncSteps
+                .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
+                .join(' -> '),
+            ']',
+            '[async:',
+            this
+                .asyncSteps
+                .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
+                .join(' -> '),
+            ']'
+        ].join('');
     }
 }
 exports.A_Stage = A_Stage;

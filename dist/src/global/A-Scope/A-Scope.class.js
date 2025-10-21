@@ -1,33 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Scope = void 0;
-const a_utils_1 = require("@adaas/a-utils");
-const A_Component_types_1 = require("../A-Component/A-Component.types");
 const A_Fragment_class_1 = require("../A-Fragment/A-Fragment.class");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Component_class_1 = require("../A-Component/A-Component.class");
 const A_Entity_class_1 = require("../A-Entity/A-Entity.class");
-const A_Command_class_1 = require("../A-Command/A-Command.class");
+const A_TypeGuards_helper_1 = require("../../helpers/A_TypeGuards.helper");
+const A_Error_class_1 = require("../A-Error/A_Error.class");
+const A_Formatter_helper_1 = require("../../helpers/A_Formatter.helper");
+const ASEID_class_1 = require("../ASEID/ASEID.class");
+const A_Common_helper_1 = require("../../helpers/A_Common.helper");
+const A_Scope_error_1 = require("./A-Scope.error");
+const A_Component_constants_1 = require("../A-Component/A-Component.constants");
 class A_Scope {
     // ===========================================================================
     // --------------------Readonly Allowed Properties----------------------------
     // ===========================================================================
     /**
+     * Returns the name of the scope
+     */
+    get name() { return this._name; }
+    /**
      * Returns a list of Constructors for A-Components that are available in the scope
      */
     get allowedComponents() { return this._allowedComponents; }
     /**
-     * Returns a list of Constructors for A-Commands that are available in the scope
+     * Returns a list of Constructors for A-Entities that are available in the scope
      */
-    get allowedCommands() { return this._allowedCommands; }
+    get allowedEntities() { return this._allowedEntities; }
     /**
      * Returns a list of Constructors for A-Fragments that are available in the scope
      */
     get allowedFragments() { return this._allowedFragments; }
     /**
-     * Returns a list of Constructors for A-Entities that are available in the scope
+     * Returns a list of Constructors for A-Errors that are available in the scope
      */
-    get allowedEntities() { return this._allowedEntities; }
+    get allowedErrors() { return this._allowedErrors; }
+    // ===========================================================================
+    // --------------------Readonly Registered Properties--------------------------
+    // ===========================================================================
     /**
      * Returns an Array of entities registered in the scope
      *
@@ -47,33 +58,15 @@ class A_Scope {
      */
     get components() { return Array.from(this._components.values()); }
     /**
-     * Returns an Array of commands registered in the scope
+     * Returns the parent scope of the current scope
      *
-     * [!] One command per command aseid
-     * [!!] There may be any number of instances of the same command code, but with different aseids.
+     * @param setValue
+     * @returns
      */
-    get commands() { return Array.from(this._commands.values()); }
-    /**
-     * A_Scope refers to the visibility and accessibility of :
-     * - variables,
-     * - Components,
-     * - Context Fragments
-     * - Commands
-     * - Entities
-     * - and objects in different parts of your code.
-     * Scope determines where a particular piece of data (like a variable or function)
-     * can be accessed, modified, or referenced, and it plays a crucial role in avoiding naming collisions and ensuring data integrity.
-     *
-     * [!] The scope behavior is similar to tree structure where each scope can have a parent scope and inherit its components, fragments, entities and commands
-     *
-     * @param params
-     * @param config
-     */
-    constructor(params, config = {}) {
-        /**
-         * Scope Name uses for identification and logging purposes
-         */
-        this.name = '';
+    get parent() {
+        return this._parent;
+    }
+    constructor(param1, param2) {
         // ===========================================================================
         // --------------------ALLowed Constructors--------------------------------
         // ===========================================================================
@@ -83,6 +76,10 @@ class A_Scope {
          */
         this._allowedComponents = new Set();
         /**
+         * A set of allowed errors, A set of constructors that are allowed in the scope
+         */
+        this._allowedErrors = new Set();
+        /**
          * A set of allowed entities, A set of constructors that are allowed in the scope
          */
         this._allowedEntities = new Set();
@@ -90,32 +87,51 @@ class A_Scope {
          * A set of allowed fragments, A set of constructors that are allowed in the scope
          */
         this._allowedFragments = new Set();
-        /**
-         * A set of allowed commands, A set of constructors that are allowed in the scope
-         */
-        this._allowedCommands = new Set();
         // ===========================================================================
         // --------------------Internal Storage--------------------------------
         // ===========================================================================
         /**
-         * Internal storage for the components, fragments, entities and commands
+         * Storage for the components, should be strong as components are unique per scope
          */
         this._components = new Map();
         /**
-         * Storage for the fragments, should be weak as fragments are singletons per scope
+         * Storage for the errors, should be strong as errors are unique per code
          */
-        this._fragments = new Map();
+        this._errors = new Map();
         /**
          * Storage for the entities, should be strong as entities are unique per aseid
          */
         this._entities = new Map();
         /**
-         * Storage for the commands, should be strong as commands are unique per code
+         * Storage for the fragments, should be weak as fragments are singletons per scope
          */
-        this._commands = new Map();
-        this.name = params.name || this.constructor.name;
+        this._fragments = new Map();
+        const initializer = this.getInitializer(param1);
+        // the returned initializer is already bound to `this` (we used .bind(this)),
+        // so calling it will run the appropriate logic on this instance:
+        initializer.call(this, param1, param2);
+    }
+    /**
+     * Determines which initializer method to use based on the type of the first parameter.
+     *
+     * @param param1
+     * @returns
+     */
+    getInitializer(param1, param2) {
+        switch (true) {
+            case !param1 && !param2:
+                ;
+                return this.defaultInitialized;
+            case !!param1:
+                return this.defaultInitialized;
+            default:
+                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ConstructorError, 'Invalid parameters provided to A_Scope constructor');
+        }
+    }
+    defaultInitialized(params = {}, config = {}) {
+        this._name = params.name || this.constructor.name;
         this.initComponents(params.components);
-        this.initCommands(params.commands);
+        this.initErrors(params.errors);
         this.initFragments(params.fragments);
         this.initEntities(params.entities);
         if (config.parent) {
@@ -135,13 +151,21 @@ class A_Scope {
      */
     initComponents(_components) { _components === null || _components === void 0 ? void 0 : _components.forEach(this.register.bind(this)); }
     /**
+     * This method is used to initialize the errors in the scope
+     *
+     * This method only registers the errors in the scope in case they are not registered yet
+     *
+     * @param _errors
+     */
+    initErrors(_errors) { _errors === null || _errors === void 0 ? void 0 : _errors.forEach(this.register.bind(this)); }
+    /**
      * This method is used to initialize the entities in the scope
      *
      * This method only registers the entities in the scope in case they are not registered yet
      *
      * @param _entities
      */
-    initEntities(_entities) { _entities === null || _entities === void 0 ? void 0 : _entities.forEach(this.register.bind(this)); }
+    initEntities(_entities) { _entities === null || _entities === void 0 ? void 0 : _entities.forEach(ent => this.register(ent)); }
     /**
      * This method is used to initialize the fragments in the scope
      *
@@ -151,26 +175,18 @@ class A_Scope {
      */
     initFragments(_fragments) { _fragments === null || _fragments === void 0 ? void 0 : _fragments.forEach(this.register.bind(this)); }
     /**
-     * This method is used to initialize the commands in the scope
+     * Returns the issuer of the scope, useful for debugging and tracking purposes
      *
-     * This method only registers the commands in the scope in case they are not registered yet
+     * Issuer can be:
+     * - A Container that allocated the scope
+     * - A Feature that allocated the scope
      *
-     * @param _commands
-     */
-    initCommands(_commands) { _commands === null || _commands === void 0 ? void 0 : _commands.forEach(this.register.bind(this)); }
-    /**
-     * This method is used to get or set the parent scope
+     * [!] Note that the issuer is the direct allocator of the scope, so if a Container allocated a Feature that allocated the scope, the issuer will be the Feature
      *
-     * [!] Note that setting the parent scope will override the existing parent scope
-     *
-     * @param setValue
      * @returns
      */
-    parent(setValue) {
-        if (setValue) {
-            return this.inherit(setValue);
-        }
-        return this._parent;
+    issuer() {
+        return A_Context_class_1.A_Context.issuer(this);
     }
     /**
      * This method is used to inherit from a parent scope
@@ -181,10 +197,16 @@ class A_Scope {
      * @returns
      */
     inherit(parent) {
+        if (!parent)
+            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.InitializationError, `Invalid parent scope provided`);
+        if (parent === this)
+            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.CircularInheritanceError, `Unable to inherit scope ${this.name} from itself`);
+        if (parent === this._parent)
+            return this;
         // Prevent circular inheritance
         const circularCheck = this.checkCircularInheritance(parent);
         if (circularCheck)
-            throw new a_utils_1.A_Error(`Circular inheritance detected: ${[...circularCheck, parent.name].join(' -> ')}`);
+            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.CircularInheritanceError, `Circular inheritance detected: ${[...circularCheck, parent.name].join(' -> ')}`);
         this._parent = parent;
         return this;
     }
@@ -201,10 +223,6 @@ class A_Scope {
                 const possibleFragment = Array.from(this.allowedFragments).find(f => f.name === ctor);
                 if (possibleFragment)
                     found = true;
-                // 1.3 Check if it's a command code or name
-                const possibleCommand = Array.from(this.allowedCommands).find(c => c.name === ctor);
-                if (possibleCommand)
-                    found = true;
                 // 1.4 Check if it's an entity name or entity static entity property
                 const possibleEntity = Array.from(this.allowedEntities).find(e => e.name === ctor);
                 if (possibleEntity)
@@ -215,23 +233,18 @@ class A_Scope {
                 return false;
             }
             // 2) Check if it's a Component
-            case this.isComponentConstructor(ctor): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(ctor): {
                 found = this.isAllowedComponent(ctor);
                 break;
             }
             // 3) Check if it's an Entity
-            case this.isEntityConstructor(ctor): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(ctor): {
                 found = this.isAllowedEntity(ctor);
                 break;
             }
             // 4) Check if it's a Fragment
-            case this.isFragmentConstructor(ctor): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isFragmentConstructor(ctor): {
                 found = this.isAllowedFragment(ctor);
-                break;
-            }
-            // 5) Check if it's a Command
-            case this.isCommandConstructor(ctor): {
-                found = this.isAllowedCommand(ctor);
                 break;
             }
         }
@@ -253,9 +266,11 @@ class A_Scope {
         const merged = new A_Scope({
             name: `${this.name} + ${anotherScope.name}`,
             components: [...this.allowedComponents, ...anotherScope.allowedComponents],
-            commands: [...this.allowedCommands, ...anotherScope.allowedCommands],
             fragments: [...this.fragments, ...anotherScope.fragments],
-            entities: [...this.entities, ...anotherScope.entities],
+            entities: [
+                ...this.entities, ...anotherScope.entities,
+                ...this.allowedEntities, ...anotherScope.allowedEntities
+            ],
         }, {
             parent: this._parent || anotherScope._parent
         });
@@ -264,25 +279,19 @@ class A_Scope {
     resolveConstructor(name) {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(c => c.name === name
-            || c.name === a_utils_1.A_CommonHelper.toPascalCase(name));
+            || c.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name));
         if (component)
             return component;
         // 2) Check entities
         const entity = Array.from(this.allowedEntities).find(e => e.name === name
-            || e.name === a_utils_1.A_CommonHelper.toPascalCase(name)
+            || e.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name)
             || e.entity === name
-            || e.entity === a_utils_1.A_CommonHelper.toKebabCase(name));
+            || e.entity === A_Formatter_helper_1.A_FormatterHelper.toKebabCase(name));
         if (entity)
             return entity;
-        // 3) Check commands
-        const command = Array.from(this.allowedCommands).find(c => c.code === name
-            || c.name === a_utils_1.A_CommonHelper.toPascalCase(name)
-            || c.code === a_utils_1.A_CommonHelper.toKebabCase(name));
-        if (command)
-            return command;
-        // 4) Check fragments
+        // 3) Check fragments
         const fragment = Array.from(this.allowedFragments).find(f => f.name === name
-            || f.name === a_utils_1.A_CommonHelper.toPascalCase(name));
+            || f.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name));
         if (fragment)
             return fragment;
         // If not found in current scope, check parent scope
@@ -291,24 +300,28 @@ class A_Scope {
         }
         throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
-    // base definition
     resolve(
     /**
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
      */
     param1, param2) {
         switch (true) {
-            case Array.isArray(param1): {
-                return param1.map(c => this.resolveOnce(c, param2)).filter(Boolean);
+            case A_TypeGuards_helper_1.A_TypeGuards.isArray(param1): {
+                return param1.map(c => {
+                    if (A_TypeGuards_helper_1.A_TypeGuards.isString(c))
+                        return this.resolveByName(c);
+                    else
+                        return this.resolveOnce(c, param2);
+                }).filter(Boolean);
             }
-            case typeof param1 === 'function': {
+            case A_TypeGuards_helper_1.A_TypeGuards.isFunction(param1): {
                 return this.resolveOnce(param1, param2);
             }
-            case typeof param1 === 'string': {
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1): {
                 return this.resolveByName(param1);
             }
             default: {
-                throw new a_utils_1.A_Error(`Invalid parameter provided to resolve method: ${param1} in scope ${this.name}`);
+                throw new A_Error_class_1.A_Error(`Invalid parameter provided to resolve method: ${param1} in scope ${this.name}`);
             }
         }
     }
@@ -317,28 +330,34 @@ class A_Scope {
     // -------------------------------------INTERNAL RESOLVERS-------------------------------------------
     // --------------------------------------------------------------------------------------------------
     // ==================================================================================================
-    resolveByName(name) {
+    /**
+     * This method is used internally to resolve a component, fragment or entity by its constructor name
+     *
+     * [!] Note that this method checks for the component, fragment or entity in the current scope and all parent scopes
+     *
+     * @param name  - name of the component, fragment or entity to resolve (constructor name for components and fragments, static entity property for entities, static code property for commands)
+     * @returns
+     */
+    resolveByName(
+    /**
+     * Provide the name of the component, fragment or entity to resolve
+     */
+    name) {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(c => c.name === name
-            || c.name === a_utils_1.A_CommonHelper.toPascalCase(name));
+            || c.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name));
         if (component)
             return this.resolveOnce(component);
         // 2) Check entities
         const entity = Array.from(this.allowedEntities).find(e => e.name === name
-            || e.name === a_utils_1.A_CommonHelper.toPascalCase(name)
+            || e.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name)
             || e.entity === name
-            || e.entity === a_utils_1.A_CommonHelper.toKebabCase(name));
+            || e.entity === A_Formatter_helper_1.A_FormatterHelper.toKebabCase(name));
         if (entity)
             return this.resolveOnce(entity);
-        // 3) Check commands
-        const command = Array.from(this.allowedCommands).find(c => c.code === name
-            || c.name === a_utils_1.A_CommonHelper.toPascalCase(name)
-            || c.code === a_utils_1.A_CommonHelper.toKebabCase(name));
-        if (command)
-            return this.resolveOnce(command);
-        // 4) Check fragments
+        // 3) Check fragments
         const fragment = Array.from(this.allowedFragments).find(f => f.name === name
-            || f.name === a_utils_1.A_CommonHelper.toPascalCase(name));
+            || f.name === A_Formatter_helper_1.A_FormatterHelper.toPascalCase(name));
         if (fragment)
             return this.resolveOnce(fragment);
         // If not found in current scope, check parent scope
@@ -355,24 +374,21 @@ class A_Scope {
      * @returns
      */
     resolveOnce(component, instructions) {
-        if (this.isScopeConstructor(component))
+        if (A_TypeGuards_helper_1.A_TypeGuards.isScopeConstructor(component))
             component;
         if (typeof component == 'function' && component.name === 'A_Scope')
             component;
         switch (true) {
-            case this.isEntityConstructor(component): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(component): {
                 return this.resolveEntity(component, instructions);
             }
-            case this.isFragmentConstructor(component): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isFragmentConstructor(component): {
                 return this.resolveFragment(component);
             }
-            case this.isCommandConstructor(component): {
-                return this.resolveCommand(component);
-            }
-            case this.isScopeConstructor(component): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isScopeConstructor(component): {
                 return this.resolveScope(component);
             }
-            case this.isComponentConstructor(component): {
+            case A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(component): {
                 return this.resolveComponent(component);
             }
             default:
@@ -428,7 +444,7 @@ class A_Scope {
              */
             case !!query.aseid
                 && typeof query.aseid === 'object'
-                && query.aseid instanceof a_utils_1.ASEID
+                && query.aseid instanceof ASEID_class_1.ASEID
                 && this._entities.has(query.aseid.toString()):
                 {
                     return this._entities.get(query.aseid.toString());
@@ -515,7 +531,7 @@ class A_Scope {
             // 2) In case the component available but does NOT exist in the scope
             case this.allowedComponents.has(component) && !this._components.has(component): {
                 const componentMeta = A_Context_class_1.A_Context.meta(component);
-                const argsMeta = componentMeta.get(A_Component_types_1.A_TYPES__ComponentMetaKey.INJECTIONS);
+                const argsMeta = componentMeta.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.INJECTIONS);
                 const resolvedArgs = ((argsMeta === null || argsMeta === void 0 ? void 0 : argsMeta.get('constructor')) || [])
                     .map(arg => {
                     if ('instructions' in arg) {
@@ -530,8 +546,8 @@ class A_Scope {
                 return this._components.get(component);
             }
             // 3) In case when there's a component that is inherited from the required component
-            case !this.allowedComponents.has(component) && Array.from(this.allowedComponents).some(el => a_utils_1.A_CommonHelper.isInheritedFrom(el, component)): {
-                const found = Array.from(this.allowedComponents).find(el => a_utils_1.A_CommonHelper.isInheritedFrom(el, component));
+            case !this.allowedComponents.has(component) && Array.from(this.allowedComponents).some(el => A_Common_helper_1.A_CommonHelper.isInheritedFrom(el, component)): {
+                const found = Array.from(this.allowedComponents).find(el => A_Common_helper_1.A_CommonHelper.isInheritedFrom(el, component));
                 return this.resolveComponent(found);
             }
             // 4) In case when the component is not available in the scope but the _parent is available
@@ -540,22 +556,6 @@ class A_Scope {
             }
             default:
                 throw new Error(`Component ${component.name} not found in the scope ${this.name}`);
-        }
-    }
-    /**
-     * Should be similar to resolveEntity but for commands
-     *
-     * @param command
-     */
-    resolveCommand(command) {
-        const found = this.commands.find(e => e instanceof command);
-        switch (true) {
-            case !!found:
-                return found;
-            case !found && !!this._parent:
-                return this._parent.resolveCommand(command);
-            default:
-                throw new Error(`Command ${command.name} not found in the scope ${this.name}`);
         }
     }
     register(param1) {
@@ -568,14 +568,6 @@ class A_Scope {
                 if (!this.allowedComponents.has(param1.constructor))
                     this.allowedComponents.add(param1.constructor);
                 this._components.set(param1.constructor, param1);
-                A_Context_class_1.A_Context.register(this, param1);
-                break;
-            }
-            // 2) In case when it's a A-Command instance
-            case param1 instanceof A_Command_class_1.A_Command: {
-                if (!this.allowedCommands.has(param1.constructor))
-                    this.allowedCommands.add(param1.constructor);
-                this._commands.set(param1.constructor.code, param1);
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
@@ -595,33 +587,43 @@ class A_Scope {
                 A_Context_class_1.A_Context.register(this, param1);
                 break;
             }
+            // 5) In case when it's a A-Error instance
+            case param1 instanceof A_Error_class_1.A_Error: {
+                if (!this.allowedErrors.has(param1.constructor))
+                    this.allowedErrors.add(param1.constructor);
+                // A_Context.register(this, param1);
+                break;
+            }
             // ------------------------------------------
             // ------------ Constructors ----------------
             // ------------------------------------------
-            // 5) In case when it's a A-Component constructor
-            case this.isComponentConstructor(param1): {
+            // 6) In case when it's a A-Component constructor
+            case A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(param1): {
                 if (!this.allowedComponents.has(param1))
                     this.allowedComponents.add(param1);
                 break;
             }
-            // 6) In case when it's a A-Command constructor
-            case this.isCommandConstructor(param1): {
-                if (!this.allowedCommands.has(param1))
-                    this.allowedCommands.add(param1);
-                break;
-            }
-            // 7) In case when it's a A-Fragment constructor
-            case this.isFragmentConstructor(param1): {
+            // 8) In case when it's a A-Fragment constructor
+            case A_TypeGuards_helper_1.A_TypeGuards.isFragmentConstructor(param1): {
                 if (!this.allowedFragments.has(param1))
                     this.allowedFragments.add(param1);
                 break;
             }
-            // 8) In case when it's a A-Entity constructor
-            case this.isEntityConstructor(param1): {
+            // 9) In case when it's a A-Entity constructor
+            case A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(param1): {
                 if (!this.allowedEntities.has(param1))
                     this.allowedEntities.add(param1);
                 break;
             }
+            // 10) In case when it's a A-Error constructor
+            case A_TypeGuards_helper_1.A_TypeGuards.isErrorConstructor(param1): {
+                if (!this.allowedErrors.has(param1))
+                    this.allowedErrors.add(param1);
+                break;
+            }
+            // ------------------------------------------
+            // ------------ Invalid Cases ----------------
+            // ------------------------------------------
             default:
                 if (param1 instanceof A_Entity_class_1.A_Entity)
                     throw new Error(`Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);
@@ -650,70 +652,13 @@ class A_Scope {
     // --------------------Scope Type Check Helpers---------------------------
     //==========================================================================
     /**
-     * Type guard to check if the constructor is of type A_Component
-     *
-     * @param ctor
-     * @returns
-     */
-    isComponentConstructor(ctor) {
-        return typeof ctor === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(ctor, A_Component_class_1.A_Component);
-    }
-    /**
-     * Type guard to check if the constructor is of type A_Command
-     *
-     * @param ctor
-     * @returns
-     */
-    isCommandConstructor(ctor) {
-        return typeof ctor === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(ctor, A_Command_class_1.A_Command);
-    }
-    /**
-     * Type guard to check if the constructor is of type A_Fragment
-     *
-     * @param ctor
-     * @returns
-     */
-    isFragmentConstructor(ctor) {
-        return typeof ctor === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(ctor, A_Fragment_class_1.A_Fragment);
-    }
-    /**
-     * Type guard to check if the constructor is of type A_Entity
-     *
-     * @param ctor
-     * @returns
-     */
-    isEntityConstructor(ctor) {
-        return typeof ctor === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(ctor, A_Entity_class_1.A_Entity);
-    }
-    /**
-     * Type guard to check if the constructor is of type A_Scope
-     *
-     * @param ctor
-     * @returns
-     */
-    isScopeConstructor(ctor) {
-        return typeof ctor === 'function' && a_utils_1.A_CommonHelper.isInheritedFrom(ctor, A_Scope);
-    }
-    // -------------------------------------------------------------------------------
-    // --------------------Scope Allowed Type Check Helpers---------------------------
-    // -------------------------------------------------------------------------------
-    /**
      * Type guard to check if the constructor is of type A_Component and is allowed in the scope
      *
      * @param ctor
      * @returns
      */
     isAllowedComponent(ctor) {
-        return this.isComponentConstructor(ctor) && this.allowedComponents.has(ctor);
-    }
-    /**
-     * Type guard to check if the constructor is of type A_Command and is allowed in the scope
-     *
-     * @param ctor
-     * @returns
-     */
-    isAllowedCommand(ctor) {
-        return this.isCommandConstructor(ctor) && this.allowedCommands.has(ctor);
+        return A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(ctor) && this.allowedComponents.has(ctor);
     }
     /**
      * Type guard to check if the constructor is of type A_Entity and is allowed in the scope
@@ -722,7 +667,7 @@ class A_Scope {
      * @returns
      */
     isAllowedEntity(ctor) {
-        return this.isEntityConstructor(ctor) && this.allowedEntities.has(ctor);
+        return A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(ctor) && this.allowedEntities.has(ctor);
     }
     /**
      * Type guard to check if the constructor is of type A_Fragment and is allowed in the scope
@@ -731,7 +676,16 @@ class A_Scope {
      * @returns
      */
     isAllowedFragment(ctor) {
-        return this.isFragmentConstructor(ctor) && this.allowedFragments.has(ctor);
+        return A_TypeGuards_helper_1.A_TypeGuards.isFragmentConstructor(ctor) && this.allowedFragments.has(ctor);
+    }
+    /**
+     * Type guard to check if the constructor is of type A_Error and is allowed in the scope
+     *
+     * @param ctor
+     * @returns
+     */
+    isAllowedError(ctor) {
+        return A_TypeGuards_helper_1.A_TypeGuards.isErrorConstructor(ctor) && this.allowedErrors.has(ctor);
     }
     // ==========================================================================
     // --------------------DEBUG & Helpers Methods--------------------------------

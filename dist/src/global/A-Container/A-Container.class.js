@@ -11,28 +11,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Container = void 0;
 const A_Context_class_1 = require("../A-Context/A-Context.class");
-/**
- * This class should combine Components to achieve the goal withing Concept
- *
- * Container is a direct container that should be "run" to make Concept work.
- * So because of that Container can be:
- * - HTTP Server
- * - BASH Script
- * - Database Connection
- * - Microservice
- * - etc.
- */
+const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
 class A_Container {
+    /**
+     * Name of the container
+     */
     get name() {
         return this.config.name || this.constructor.name;
     }
-    get Scope() {
+    /**
+     * Returns the scope where the container is registered
+     */
+    get scope() {
         return A_Context_class_1.A_Context.scope(this);
     }
     /**
-     * Creates a new instance of A_Container
+     * This class should combine Components to achieve the goal withing Concept
      *
-     * @param config
+     * Container is a direct container that should be "run" to make Concept work.
+     * So because of that Container can be:
+     * - HTTP Server
+     * - BASH Script
+     * - Database Connection
+     * - Microservice
+     * - etc.
+     *
+     * @param config - Configuration of the container that will be used to run it.
      */
     constructor(
     /**
@@ -40,57 +44,32 @@ class A_Container {
      */
     config) {
         this.config = config;
-        A_Context_class_1.A_Context.allocate(this, Object.assign({ name: this.name }, config));
-    }
-    call(feature_1) {
-        return __awaiter(this, arguments, void 0, function* (feature, scope = this.Scope) {
-            if (scope && !scope.isInheritedFrom(this.Scope)) {
-                scope = scope.inherit(this.Scope);
-            }
-            const newFeature = A_Context_class_1.A_Context.feature(this, feature, scope);
-            return yield newFeature.process();
-        });
+        A_Context_class_1.A_Context.allocate(this, this.config);
     }
     /**
-     * This method allows to get a feature Definition for the future reuse with custom Feature classes
+     * Calls the feature with the given name in the given scope
      *
-     * @param feature
-     */
-    feature(feature, scope = this.Scope) {
-        if (scope && !scope.isInheritedFrom(this.Scope)) {
-            scope = scope.inherit(this.Scope);
-        }
-        return A_Context_class_1.A_Context.featureDefinition(this, feature, scope);
-    }
-    // ==============================================================
-    // ======================= HOOKS ================================
-    // ==============================================================
-    /**
-     *  Before init hook to be used in inherited classes
+     * [!] Note: This method creates a new instance of the feature every time it is called
      *
-     * @returns
+     * @param feature - the name of the feature to call
+     * @param scope  - the scope in which to call the feature
+     * @returns  - void
      */
-    onBeforeInit() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return;
-        });
-    }
+    call(
     /**
-     * Main initialization method for the Container
+     * Name of the feature to call
      */
-    onInit() {
-        return __awaiter(this, void 0, void 0, function* () {
-            return;
-        });
-    }
+    feature, 
     /**
-     *  After init hook to be used in inherited classes
-     *
-     * @returns
+     * scope in which the feature will be executed
      */
-    onAfterInit() {
+    scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            return;
+            const newFeature = new A_Feature_class_1.A_Feature({
+                name: feature,
+                component: this
+            });
+            return yield newFeature.process(scope);
         });
     }
 }

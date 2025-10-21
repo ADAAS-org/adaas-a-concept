@@ -1,8 +1,8 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "../../decorators/A-Inject/A-Inject.decorator.types";
-import { A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A_Concept.types";
+import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
+import { A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A-Concept.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension } from "./A-Component.types";
-import { A_TYPES__A_DefineDecorator_Meta } from "../../decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__FeatureDefineDecoratorMeta } from "../A-Feature/A-Feature.types";
 export declare class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
     /**
      * Allows to get all the injections for a given handler
@@ -23,7 +23,7 @@ export declare class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
      *
      * @returns
      */
-    features(): Array<A_TYPES__A_DefineDecorator_Meta>;
+    features(): Array<A_TYPES__FeatureDefineDecoratorMeta>;
     /**
      * Returns a set of instructions to run proper methods in Component during A-Concept Stage
      *

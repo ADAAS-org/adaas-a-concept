@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_ContainerMeta = void 0;
 const A_Meta_class_1 = require("../A-Meta/A-Meta.class");
-const A_Container_types_1 = require("./A-Container.types");
+const A_Container_constants_1 = require("./A-Container.constants");
 class A_ContainerMeta extends A_Meta_class_1.A_Meta {
     /**
      * Allows to get all the injections for a given handler
@@ -11,7 +11,7 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
      * @returns
      */
     injections(handler) {
-        const injections = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.INJECTIONS);
+        const injections = this.get(A_Container_constants_1.A_TYPES__ContainerMetaKey.INJECTIONS);
         const args = (injections === null || injections === void 0 ? void 0 : injections.get(handler)) || [];
         return args;
     }
@@ -21,7 +21,7 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
      * @returns
      */
     features() {
-        const features = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.FEATURES);
+        const features = this.get(A_Container_constants_1.A_TYPES__ContainerMetaKey.FEATURES);
         return (features === null || features === void 0 ? void 0 : features.toArray().map(([, feature]) => feature)) || [];
     }
     /**
@@ -32,9 +32,8 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
      */
     abstractions(abstraction) {
         const steps = [];
-        const abstractions = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.ABSTRACTIONS);
-        const injections = this.get(A_Container_types_1.A_TYPES__ContainerMetaKey.INJECTIONS);
-        // const constructor = A_Context.component(this);
+        const abstractions = this.get(A_Container_constants_1.A_TYPES__ContainerMetaKey.ABSTRACTIONS);
+        const injections = this.get(A_Container_constants_1.A_TYPES__ContainerMetaKey.INJECTIONS);
         abstractions === null || abstractions === void 0 ? void 0 : abstractions
         // returns all extensions that match the feature
         .find(`CONCEPT_ABSTRACTION::${abstraction}`).forEach(([handler, extensions]) => {

@@ -1,11 +1,10 @@
-import { A_Command } from "../../../../adaas-a-utils/src/base/A-Command/A-Command.class";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Caller } from "./A_Caller.class";
 
 
-export type A_TYPES__CallerComponent = A_Container | A_Component | A_Command | A_Entity;
+export type A_TYPES__CallerComponent = A_Container | A_Component | A_Entity;
 
 
 // ============================================================================

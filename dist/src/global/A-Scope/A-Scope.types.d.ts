@@ -1,15 +1,23 @@
-import { A_Command } from "../A-Command/A-Command.class";
 import { A_Component } from "../A-Component/A-Component.class";
+import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
+import { A_Container } from "../A-Container/A-Container.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
+import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
+import { A_Caller } from "../A-Caller/A_Caller.class";
+import { A_Error } from "../A-Error/A_Error.class";
+import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types";
 import { A_Scope } from "./A-Scope.class";
-export type A_TYPES__AllowedComponentsConstructor<T = A_Component> = new (...args: any[]) => T;
-export type A_TYPES__AllowedEntitiesConstructor<T = A_Entity> = new (...args: any[]) => T;
-export type A_TYPES__AllowedFragmentsConstructor<T = A_Fragment> = new (...args: any[]) => T;
-export type A_TYPES__AllowedCommandsConstructor<T = A_Command> = new (...args: any[]) => T;
-export type A_TYPES__AllowedScopesConstructor<T = A_Scope> = new (...args: any[]) => T;
-export type A_TYPES__AllowedConstructors<T extends A_Component | A_Fragment | A_Entity | A_Command | A_Scope = any> = A_TYPES__AllowedComponentsConstructor<T> | A_TYPES__AllowedFragmentsConstructor<T> | A_TYPES__AllowedEntitiesConstructor<T> | A_TYPES__AllowedCommandsConstructor<T> | A_TYPES__AllowedScopesConstructor<T>;
-export type A_TYPES__ScopeConstructor<_ComponentType extends A_TYPES__AllowedComponentsConstructor[] = A_TYPES__AllowedComponentsConstructor[], _CommandType extends A_TYPES__AllowedCommandsConstructor[] = A_TYPES__AllowedCommandsConstructor[], _EntityType extends A_Entity[] = A_Entity[], _FragmentType extends A_Fragment[] = A_Fragment[]> = {
+/**
+ * Scope constructor type
+ * Uses the generic type T to specify the type of the Scope
+ */
+export type A_TYPES__Scope_Constructor<T = A_Scope> = new (...args: any[]) => T;
+/**
+ * Scope initialization type
+ */
+export type A_TYPES__Scope_Init<_ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> = {
     /**
      * Scope Name
      */
@@ -23,18 +31,45 @@ export type A_TYPES__ScopeConstructor<_ComponentType extends A_TYPES__AllowedCom
      */
     components: [..._ComponentType];
     /**
+     * A set of Errors available in the Scope
+     */
+    errors: [..._ErrorType];
+    /**
      * A set of Entities available in the Scope
      *
      */
-    entities: [..._EntityType];
-    /**
-     * A set of Commands available in the Scope
-     */
-    commands: [..._CommandType];
+    entities: [
+        ..._EntityType,
+        ...InstanceType<_EntityType[number]>[]
+    ];
 };
+/**
+ * Scope configuration type
+ */
 export type A_TYPES__ScopeConfig = {
     /**
      * Allows to define a parent to take dependencies from in case of the current scope does not have the required component
      */
     parent: A_Scope;
 };
+/**
+ * Scope serialized type
+ */
+export type A_TYPES__Scope_Serialized = {};
+/**
+ * A list of components that can have a scope associated with them
+ */
+export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
+/**
+ * A list of components that can be resolved by a scope
+ */
+export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Fragment;
+/**
+ * A list of components that are dependent on a scope and do not have their own scope
+ */
+export type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment;
+/**
+ * A list of components that are independent of a scope. They don't need a scope to be resolved
+ * Those components haven't scope dependent features.
+ */
+export type A_TYPES_ScopeIndependentComponents = A_Error | A_Scope | A_Caller;
