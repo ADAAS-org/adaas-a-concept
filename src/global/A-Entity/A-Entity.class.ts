@@ -143,48 +143,6 @@ export class A_Entity<
         return this.aseid.id;
     }
 
-    /**
-     * Extracts the concept from the ASEID
-     * concept is an application specific identifier from where the entity is coming from
-     */
-    get concept(): string {
-        return this.aseid.concept
-    }
-
-    /**
-     * Extracts the scope from the ASEID
-     * scope is the scope of the entity from concept
-     */
-    get scope(): string {
-        return this.aseid.scope;
-    }
-
-    /**
-     * Extracts the entity from the ASEID
-     * entity is the name of the entity from concept
-     * 
-     */
-    get entity(): string {
-        return this.aseid.entity;
-    }
-
-    /**
-     * Extracts the version from the ASEID
-     * version is the version of the entity
-     */
-
-    get version(): string | undefined {
-        return this.aseid.version;
-    }
-
-    /**
-     * Extracts the shard from the ASEID
-     * shard is the shard of the entity
-     */
-    get shard(): string | undefined {
-        return this.aseid.shard;
-    }
-
     // ====================================================================
     // ================== Constructor Helpers =============================
     // ====================================================================

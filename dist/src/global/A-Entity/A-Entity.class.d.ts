@@ -90,32 +90,6 @@ export declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_
      * ID is the unique identifier of the entity
      */
     get id(): string | number;
-    /**
-     * Extracts the concept from the ASEID
-     * concept is an application specific identifier from where the entity is coming from
-     */
-    get concept(): string;
-    /**
-     * Extracts the scope from the ASEID
-     * scope is the scope of the entity from concept
-     */
-    get scope(): string;
-    /**
-     * Extracts the entity from the ASEID
-     * entity is the name of the entity from concept
-     *
-     */
-    get entity(): string;
-    /**
-     * Extracts the version from the ASEID
-     * version is the version of the entity
-     */
-    get version(): string | undefined;
-    /**
-     * Extracts the shard from the ASEID
-     * shard is the shard of the entity
-     */
-    get shard(): string | undefined;
     protected isStringASEID(x: unknown): x is string;
     protected isASEIDInstance(x: unknown): x is ASEID;
     /**
