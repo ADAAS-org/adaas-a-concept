@@ -1,8 +1,6 @@
 import './test.setup';
-
-import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Concept } from "@adaas/a-concept/global/A-Concept/A_Concept.class";
+import { A_Concept } from "@adaas/a-concept/global/A-Concept/A-Concept.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
@@ -17,8 +15,8 @@ describe('A-Concept tests', () => {
     it('Should Allow to create a concept', async () => {
         const concept = new A_Concept({ name: 'TestConcept' });
         expect(concept).toBeInstanceOf(A_Concept);
-        expect(concept.Scope).toBeDefined();
-        expect(concept.Scope).toBeInstanceOf(A_Scope);
+        expect(concept.scope).toBeDefined();
+        expect(concept.scope).toBeInstanceOf(A_Scope);
     });
     it('Should allow to load a concept', async () => {
         const concept = new A_Concept({ name: 'TestConcept' });
@@ -36,7 +34,7 @@ describe('A-Concept tests', () => {
     it('Should allow to provide all base entities to the concept', async () => {
         A_Context.reset();
 
-        class MyCommand extends A_Command { }
+        class MyEntityA extends A_Entity { }
         class MyEntity extends A_Entity { }
         class MyComponent extends A_Component { }
         class MyContainer extends A_Container { }
@@ -44,24 +42,23 @@ describe('A-Concept tests', () => {
 
         const concept = new A_Concept({
             name: 'TestConcept',
-            commands: [MyCommand],
-            entities: [new MyEntity()],
+            entities: [new MyEntity(), MyEntityA],
             components: [MyComponent],
             containers: [new MyContainer({ name: 'test' })],
             fragments: [new MyContext({ name: 'test' })]
         });
 
 
-        expect(concept.Scope.resolveConstructor('MyCommand')).toBe(MyCommand);
-        expect(concept.Scope.resolve(MyEntity)).toBeInstanceOf(MyEntity);
-        expect(concept.Scope.resolve(MyComponent)).toBeInstanceOf(MyComponent);
-        expect(concept.Scope.resolve(MyContext)).toBeInstanceOf(MyContext);
+        expect(concept.scope.resolveConstructor('MyEntityA')).toBe(MyEntityA);
+        expect(concept.scope.resolve(MyEntity)).toBeInstanceOf(MyEntity);
+        expect(concept.scope.resolve(MyComponent)).toBeInstanceOf(MyComponent);
+        expect(concept.scope.resolve(MyContext)).toBeInstanceOf(MyContext);
     });
     it('Should allow to separate entities by containers', async () => {
         A_Context.reset();
 
-        class MyCommandA extends A_Command { }
-        class MyCommandB extends A_Command { }
+        class MyEntityA extends A_Entity { }
+        class MyEntityB extends A_Entity { }
         class MyComponentA extends A_Component { }
         class MyComponentB extends A_Component { }
         class MyContainer extends A_Container { }
@@ -69,14 +66,14 @@ describe('A-Concept tests', () => {
 
         const containerA = new MyContainer({
             name: 'test',
-            commands: [MyCommandA],
+            entities: [MyEntityA],
             components: [MyComponentA]
 
         });
 
         const containerB = new MyContainer({
             name: 'test2',
-            commands: [MyCommandB],
+            entities: [MyEntityB],
             components: [MyComponentB]
         })
 
@@ -95,18 +92,18 @@ describe('A-Concept tests', () => {
         const containerAScope = A_Context.scope(containerA)
         const containerBScope = A_Context.scope(containerB)
 
-        expect(containerAScope.resolveConstructor('MyCommandA')).toBe(MyCommandA);
+        expect(containerAScope.resolveConstructor('MyEntityA')).toBe(MyEntityA);
         expect(() => {
-            containerAScope.resolveConstructor('MyCommandB');
+            containerAScope.resolveConstructor('MyEntityB');
         }).toThrow();
 
-        expect(containerBScope.resolveConstructor('MyCommandB')).toBe(MyCommandB);
+        expect(containerBScope.resolveConstructor('MyEntityB')).toBe(MyEntityB);
         expect(() => {
-            containerBScope.resolveConstructor('MyCommandA');
+            containerBScope.resolveConstructor('MyEntityA');
         }).toThrow();
 
-        expect(concept.Scope.resolve(MyContext)).toEqual(sharedContext);
-        expect(concept.Scope.resolve(MyContext)).toEqual(sharedContext);
+        expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);
+        expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);
     });
 
 });

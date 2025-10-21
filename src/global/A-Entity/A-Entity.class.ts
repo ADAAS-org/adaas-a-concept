@@ -1,18 +1,15 @@
 import {
-    A_CommonHelper,
-    A_Error,
-    ASEID,
-    A_IdentityHelper
-} from "@adaas/a-utils";
-import {
-    A_TYPES__Entity_JSON,
-    A_TYPES__IEntity
+    A_TYPES__Entity_Serialized,
+    A_TYPES__Entity_Init,
+    A_TYPES__IEntity,
 } from "./A-Entity.types";
-import { A_CONSTANTS__DEFAULT_ERRORS } from "@adaas/a-utils/dist/src/constants/errors.constants";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
-
+import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { ASEID } from "../ASEID/ASEID.class";
+import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
+import { A_Entity_Error } from "./A-Entity.error";
+import { A_Feature } from "../A-Feature/A-Feature.class";
 
 
 /**
@@ -23,31 +20,27 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/e
  * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
 export class A_Entity<
-    _ConstructorType = any,
-    _SerializedType extends A_TYPES__Entity_JSON = A_TYPES__Entity_JSON
+    _ConstructorType extends A_TYPES__Entity_Init = A_TYPES__Entity_Init,
+    _SerializedType extends A_TYPES__Entity_Serialized = A_TYPES__Entity_Serialized
 >
     implements A_TYPES__IEntity {
-
 
     // ====================================================================
     // ================== Static A-Entity Information ============================
     // ====================================================================
-
     /**
      * Entity Identifier that corresponds to the class name
      */
     static get entity(): string {
-        return A_CommonHelper.toKebabCase(this.name);
+        return A_FormatterHelper.toKebabCase(this.name);
     }
-
     /**
-     * DEFAULT Namespace of the entity from environment variable A_CONCEPT_NAMESPACE
+     * DEFAULT Concept Name (Application Name) of the entity from environment variable A_CONCEPT_NAME
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
-    static get namespace(): string {
-        return A_Context.root.name;
+    static get concept(): string {
+        return A_Context.concept;
     }
-
     /**
      * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE
      * [!] If environment variable is not set, it will default to 'core'
@@ -55,8 +48,10 @@ export class A_Entity<
      * [!] e.g. 'default', 'core', 'public', 'internal', etc
      */
     static get scope(): string {
-        return process && process.env ? process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_DEFAULT_SCOPE] || 'core' : 'core';
+        return A_Context.root.name;
     }
+
+
 
     // ====================================================================
     // ================== Instance A-Entity Information ====================
@@ -72,9 +67,9 @@ export class A_Entity<
      * [!] ASEID is immutable and should not be changed after the entity is created
      * 
      * [!] ASEID is composed of the following parts:
-     * - namespace: an application specific identifier from where the entity is coming from
-     * - scope: the scope of the entity from Application Namespace
-     * - entity: the name of the entity from Application Namespace
+     * - concept: an application specific identifier from where the entity is coming from
+     * - scope: the scope of the entity from concept
+     * - entity: the name of the entity from concept
      * - id: the unique identifier of the entity
      *
      * [!] For more information about ASEID, please refer to the ASEID class documentation]
@@ -97,7 +92,7 @@ export class A_Entity<
     )
     /**
      * Create a new A_entity instance from Aseid instance
-     * e.g. new ASEID({namespace: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
+     * e.g. new ASEID({concept: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
      * 
      * @param aseid 
      */
@@ -149,16 +144,16 @@ export class A_Entity<
     }
 
     /**
-     * Extracts the namespace from the ASEID
-     * namespace is an application specific identifier from where the entity is coming from
+     * Extracts the concept from the ASEID
+     * concept is an application specific identifier from where the entity is coming from
      */
-    get namespace(): string {
-        return this.aseid.namespace
+    get concept(): string {
+        return this.aseid.concept
     }
 
     /**
      * Extracts the scope from the ASEID
-     * scope is the scope of the entity from Application Namespace
+     * scope is the scope of the entity from concept
      */
     get scope(): string {
         return this.aseid.scope;
@@ -166,7 +161,7 @@ export class A_Entity<
 
     /**
      * Extracts the entity from the ASEID
-     * entity is the name of the entity from Application Namespace
+     * entity is the name of the entity from concept
      * 
      */
     get entity(): string {
@@ -283,7 +278,7 @@ export class A_Entity<
         }
 
         // none of the above -> throw consistent error
-        throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
+        throw new A_Entity_Error(A_Entity_Error.ValidationError, 'Unable to determine A-Entity constructor initialization method. Please check the provided parameters.');
     }
 
 
@@ -297,19 +292,14 @@ export class A_Entity<
      */
     async call(
         feature: string,
-        scope: A_Scope = A_Context.scope(this)
+        scope?: A_Scope
     ) {
-        //  scope can be completely custom without relation to the entity scope
-        //  or it can be inherited from the entity scope
-        // [!Not Now!] however, each feature should create own scope regardless of the passed scope
-        //  to avoid any possible side effects
-        if (scope && !scope.isInheritedFrom(A_Context.scope(this))) {
-            scope = scope.inherit(A_Context.scope(this));
-        }
+        const newFeature = new A_Feature({
+            name: feature,
+            component: this
+        });
 
-        const newFeature = A_Context.feature(this, feature, scope);
-
-        return await newFeature.process();
+        return await newFeature.process(scope);
     }
 
 
@@ -354,13 +344,10 @@ export class A_Entity<
      * @param aseid 
      */
     fromASEID(aseid: string | ASEID): void {
-        if (typeof aseid === 'string' && ASEID.isASEID(aseid)) {
-            this.aseid = new ASEID(aseid);
-        } else if (aseid instanceof ASEID) {
+        if (aseid instanceof ASEID)
             this.aseid = aseid;
-        } else {
-            throw new A_Error(A_CONSTANTS__DEFAULT_ERRORS.INCORRECT_A_ENTITY_CONSTRUCTOR);
-        }
+        else
+            this.aseid = new ASEID(aseid);
     }
 
     /**
@@ -373,7 +360,7 @@ export class A_Entity<
      */
     fromUndefined(): void {
         this.aseid = new ASEID({
-            namespace: (this.constructor as typeof A_Entity).namespace,
+            concept: (this.constructor as typeof A_Entity).concept,
             scope: (this.constructor as typeof A_Entity).scope,
             entity: (this.constructor as typeof A_Entity).entity,
             id: A_IdentityHelper.generateTimeId()
@@ -391,7 +378,7 @@ export class A_Entity<
      */
     fromNew(newEntity: _ConstructorType): void {
         this.aseid = new ASEID({
-            namespace: (this.constructor as typeof A_Entity).namespace,
+            concept: (this.constructor as typeof A_Entity).concept,
             scope: (this.constructor as typeof A_Entity).scope,
             entity: (this.constructor as typeof A_Entity).entity,
             id: A_IdentityHelper.generateTimeId()

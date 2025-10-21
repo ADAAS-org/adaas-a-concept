@@ -1,11 +1,9 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
-import { A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
+import { A_TYPES__ContainerMeta, } from "./A-Container.types";
+import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/global/A-Inject/A-Inject.types";
+import { A_TYPES__ConceptAbstraction, A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A-Concept.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
-import {
-    A_TYPES__ContainerMeta,
-    A_TYPES__ContainerMetaKey
-} from "./A-Container.types";
-import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__ContainerMetaKey } from "./A-Container.constants";
+import { A_TYPES__FeatureDefineDecoratorMeta } from "../A-Feature/A-Feature.types";
 
 
 
@@ -34,7 +32,7 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
      * 
      * @returns 
      */
-    features(): Array<A_TYPES__A_DefineDecorator_Meta> {
+    features(): Array<A_TYPES__FeatureDefineDecoratorMeta> {
 
         const features = this.get(A_TYPES__ContainerMetaKey.FEATURES);
 
@@ -50,14 +48,12 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
      * @returns 
      */
     abstractions(
-        abstraction: A_TYPES__ConceptStage
+        abstraction: A_TYPES__ConceptAbstraction    
     ): A_TYPES__ConceptAbstractionMeta[] {
         const steps: A_TYPES__ConceptAbstractionMeta[] = [];
 
         const abstractions = this.get(A_TYPES__ContainerMetaKey.ABSTRACTIONS);
         const injections = this.get(A_TYPES__ContainerMetaKey.INJECTIONS);
-
-        // const constructor = A_Context.component(this);
 
 
         abstractions

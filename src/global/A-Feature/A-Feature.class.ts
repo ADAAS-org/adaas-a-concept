@@ -1,14 +1,22 @@
-import { A_Context } from "../A-Context/A-Context.class";
-import { A_Feature_Define } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Define.decorator";
-import { A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature-Extend.decorator";
-import { A_TYPES__FeatureConstructor, A_TYPES__FeatureState, } from "./A-Feature.types";
-import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
-import { A_TYPES__A_Feature_Extend } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import {
+    A_TYPES__Feature_Init,
+    A_TYPES__Feature_InitWithComponent,
+    A_TYPES__Feature_InitWithTemplate,
+    A_TYPES__FeatureAvailableComponents,
+    A_TYPES__FeatureState,
+} from "./A-Feature.types";
+import { A_Feature_Define } from "@adaas/a-concept/global/A-Feature/A-Feature-Define.decorator";
+import { A_Feature_Extend } from "@adaas/a-concept/global/A-Feature/A-Feature-Extend.decorator";
 import { A_Stage } from "../A-Stage/A-Stage.class";
-import { StepsManager } from "@adaas/a-concept/helpers/StepsManager.class";
-import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_StepsManager } from "@adaas/a-concept/helpers/A_StepsManager.class";
 import { A_StageError } from "../A-Stage/A-Stage.error";
-import { A_FeatureCaller } from "./A-FeatureCaller.class";
+import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_FeatureError } from "./A-Feature.error";
+import { A_Context } from "../A-Context/A-Context.class";
+import { A_Caller } from "../A-Caller/A_Caller.class";
+import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_Component } from "../A-Component/A-Component.class";
+
 
 /**
  * A_Feature is representing a feature that can be executed across multiple components
@@ -18,9 +26,11 @@ import { A_FeatureCaller } from "./A-FeatureCaller.class";
  * across the different, distributed components
  * 
  */
-export class A_Feature {
+export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> {
 
-
+    // =============================================================================
+    // --------------------------- Static Methods ---------------------------------
+    // =============================================================================
     /**
      * Define a new A-Feature
      */
@@ -28,80 +38,131 @@ export class A_Feature {
         return A_Feature_Define;
     }
 
-
     /**
      * Extend an existing A-Feature
      */
-    static get Extend(): A_TYPES__A_Feature_Extend {
+    static get Extend(): typeof A_Feature_Extend {
         return A_Feature_Extend;
     }
-
-
-    // protected scope: A_Scope
-    protected stages: Array<A_Stage> = [];
+    // =============================================================================
+    // --------------------------- Internal Properties ----------------------------
+    // =============================================================================
+    /**
+     * The name of the Feature
+     */
+    protected _name!: string;
+    /**
+     * List of stages that are part of this Feature
+     */
+    protected _stages: Array<A_Stage> = [];
+    /**
+     * The Stage currently being processed
+     */
     protected _current?: A_Stage;
-    protected _caller!: A_FeatureCaller;
+    /**
+     * Actual Index of the current Stage being processed
+     */
     protected _index: number = 0;
-    protected SM: StepsManager;
+    /**
+     * Steps Manager to organize the steps into stages
+     */
+    protected _SM!: A_StepsManager;
+    /**
+     * The Caller that initiated the Feature call
+     */
+    protected _caller!: A_Caller<T>;
+    /**
+     * The current state of the Feature
+     */
+    protected _state: A_TYPES__FeatureState = A_TYPES__FeatureState.INITIALIZED;
+    /**
+     * The error that caused the Feature to be interrupted
+     */
+    protected _error?: A_FeatureError
 
-    state: A_TYPES__FeatureState = A_TYPES__FeatureState.INITIALIZED;
-
-    result?: any
-    error?: A_Error
-
-    readonly name: string;
-    readonly Scope!: A_Scope;
 
 
+    /**
+     * A-Feature is a pipeline distributed by multiple components that can be easily attached or detached from the scope. 
+     * Feature itself does not have scope, but attached to the caller who dictates how feature should be processed. 
+     * 
+     * Comparing to A-Command Feature does not store any state except statuses for better analysis. 
+     * 
+     * [!] Note: If A-Feature should have result use A-Fragment 
+     * 
+     * @param params 
+     */
     constructor(
-        params: A_TYPES__FeatureConstructor
+        /**
+         * Feature Initialization parameters
+         */
+        params: A_TYPES__Feature_Init<T>
     ) {
-        this.name = params.name || this.constructor.name;
-        this.Scope = params.scope
+        this.validateParams(params);
 
-        this.SM = new StepsManager(params.steps);
-
-        this.stages = this.SM.toStages(this);
-
-        this._current = this.stages[0];
-
-        this._caller = new A_FeatureCaller(params.caller);
+        const initializer = this.getInitializer(params);
+        // the returned initializer is already bound to `this` (we used .bind(this)),
+        // so calling it will run the appropriate logic on this instance:
+        initializer.call(this, params);
     }
 
 
+    /**
+     * The name of the Feature
+     */
+    get name(): string { return this._name; }
+    /**
+     * The error that caused the Feature to be interrupted
+     */
+    get error(): A_FeatureError | undefined { return this._error; }
+    /**
+     * The current state of the Feature
+     */
+    get state(): A_TYPES__FeatureState { return this._state; }
+    /**
+     * Sets the current state of the Feature
+     */
+    get index(): number { return this._index; }
     /**
      * Returns the current A-Feature Stage
-     * 
      */
-    get stage(): A_Stage | undefined {
-        return this._current;
-    }
-
-
-    get Caller(): A_FeatureCaller {
-        return this._caller;
-    }
-
+    get stage(): A_Stage | undefined { return this._current; }
+    /**
+     * The Caller that initiated the Feature call
+     */
+    get caller(): A_Caller<T> { return this._caller; }
+    /**
+     * The Scope allocated for the Feature Execution
+     */
+    get scope(): A_Scope { return A_Context.scope(this); }
 
     /**
-     * Custom iterator to iterate over the steps of the feature
+     * This method checks if the A-Feature is done
+     * 
+     * @returns 
+     */
+    get isDone(): boolean {
+        return !this.stage
+            || this._index >= this._stages.length
+            || this.state === A_TYPES__FeatureState.COMPLETED
+            || this.state === A_TYPES__FeatureState.INTERRUPTED;
+    }
+    /**
+     * Iterator to iterate over the steps of the feature
      * 
      * @returns 
      */
     [Symbol.iterator](): Iterator<A_Stage, any> {
         return {
-            // Custom next method
             next: (): IteratorResult<A_Stage, any> => {
-                if (!this.isDone()) {
-
-                    this._current = this.stages[this._index];
+                if (!this.isDone) {
+                    this._current = this._stages[this._index];
 
                     return {
                         value: this._current,
                         done: false
                     };
                 } else {
-
                     this._current = undefined; // Reset current on end
 
                     return {
@@ -113,122 +174,218 @@ export class A_Feature {
         };
     }
 
-
-
-
+    // ============================================================================
+    // ------------------------ Initialization Methods ----------------------------
+    // ============================================================================
     /**
-     * This method checks if the A-Feature is done
+     * Validates the provided parameters for A-Feature initialization
      * 
+     * @param params 
+     */
+    protected validateParams(
+        params: A_TYPES__Feature_Init<T>
+    ) {
+        if (!params || typeof params !== 'object') {
+            throw new A_FeatureError(
+                A_FeatureError.FeatureInitializationError,
+                `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+            );
+        }
+    }
+    /**
+     * Returns the appropriate initializer method based on the provided parameters
+     * 
+     * @param params 
      * @returns 
      */
-    isDone(): boolean {
-        return !this.stage
-            || this._index >= this.stages.length
-            || this.state === A_TYPES__FeatureState.COMPLETED
-            || this.state === A_TYPES__FeatureState.FAILED;
+    protected getInitializer(
+        params: A_TYPES__Feature_Init<T>
+    ): (param1: any) => void | (() => void) {
+
+        switch (true) {
+            case 'component' in params:
+                return this.fromComponent;
+
+            case 'template' in params:
+                return this.fromTemplate;
+            default:
+                throw new A_FeatureError(
+                    A_FeatureError.FeatureInitializationError,
+                    `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+                );
+        }
+    }
+    /**
+     * Initializes the A-Feature from the provided template
+     * 
+     * @param params 
+     */
+    protected fromTemplate(
+        params: A_TYPES__Feature_InitWithTemplate
+    ) {
+        if (!params.template || !Array.isArray(params.template)) {
+            throw new A_FeatureError(
+                A_FeatureError.FeatureInitializationError,
+                `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template).slice(0, 100)}...`
+            );
+        }
+
+        if (!params.scope || !(params.scope instanceof A_Scope)) {
+            throw new A_FeatureError(
+                A_FeatureError.FeatureInitializationError,
+                `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope).slice(0, 100)}...`
+            );
+        }
+
+        // 1) save feature name
+        this._name = params.name;
+
+        // 2) get scope from where feature is called
+        const componentScope = params.scope;
+
+        // 3) create caller wrapper for the simple injection of the caller component
+        //   - Just to prevent issues with undefined caller in features without component
+        //   - TODO: maybe would be better to allow passing caller in params?
+        this._caller = new A_Caller<T>(new A_Component() as T);
+
+        // 4) allocate new scope for the feature
+        const scope = A_Context.allocate(this);
+
+        // 5) ensure that the scope of the caller component is inherited by the feature scope
+        scope.inherit(componentScope);
+
+        // 6) create steps manager to organize steps into stages
+        this._SM = new A_StepsManager(params.template);
+
+        // 7) create stages from the steps
+        this._stages = this._SM.toStages(this);
+
+        // 8) set the first stage as current
+        this._current = this._stages[0];
+    }
+    /**
+     * Initializes the A-Feature from the provided component
+     * 
+     * @param params 
+     */
+    protected fromComponent(
+        params: A_TYPES__Feature_InitWithComponent<T>
+    ) {
+        if (!params.component || !A_TypeGuards.isAllowedForFeatureDefinition(params.component)) {
+            throw new A_FeatureError(
+                A_FeatureError.FeatureInitializationError,
+                `Invalid A-Feature component provided of type: ${typeof params.component} with value: ${JSON.stringify(params.component).slice(0, 100)}...`
+            );
+        }
+
+        // 1) save feature name
+        this._name = params.name;
+
+        // 2) get scope from where feature is called
+        const componentScope = A_Context.scope(params.component);
+
+        // 3) create caller wrapper for the simple injection of the caller component
+        this._caller = new A_Caller<T>(params.component);
+
+        // 4) allocate new scope for the feature
+        const scope = A_Context.allocate(this);
+
+        // 5) ensure that the scope of the caller component is inherited by the feature scope
+        scope.inherit(componentScope);
+
+        // 6) retrieve the template from the context
+        const template = A_Context.featureTemplate(this._name, this._caller.component, scope);
+
+        // 7) create steps manager to organize steps into stages
+        this._SM = new A_StepsManager(template);
+
+        // 8) create stages from the steps
+        this._stages = this._SM.toStages(this);
+
+        // 9) set the first stage as current
+        this._current = this._stages[0];
     }
 
 
+    // ============================================================================
+    // ----------------------- Main Processing Methods ----------------------------
+    // ============================================================================
+    /**
+     * This method processes the feature by executing all the stages
+     * 
+     */
+    async process(
+        /**
+         * Optional scope to be used to resolve the steps dependencies
+         * If not provided, the scope of the caller component will be used
+         */
+        scope?: A_Scope,
+    ) {
+        if (this.isDone)
+            return;
 
+        this._state = A_TYPES__FeatureState.PROCESSING;
+
+        for (const stage of this._stages) {
+            await stage.process(scope);
+        }
+
+        return await this.completed();
+    }
     /**
      * This method moves the feature to the next stage
      * 
      * @param stage 
      */
     next(stage) {
-        const stageIndex = this.stages.indexOf(stage);
+        const stageIndex = this._stages.indexOf(stage);
 
         this._index = stageIndex + 1;
 
-        if (this._index >= this.stages.length) {
+        if (this._index >= this._stages.length) {
             this.completed();
         }
     }
-
-
     /**
      * This method marks the feature as completed and returns the result
      * Uses to interrupt or end the feature processing
      * 
-     * The result of the feature is a Scope Fragments
-     * 
      * @param result 
      * @returns 
      */
-    async completed<T extends any>(): Promise<T> {
-
-        this.result = this.Scope.toJSON();
-
-        this.state = A_TYPES__FeatureState.COMPLETED;
-
-        return this.result;
+    async completed(): Promise<void> {
+        this._state = A_TYPES__FeatureState.COMPLETED;
     }
-
-
     /**
      * This method marks the feature as failed and throws an error
      * Uses to interrupt or end the feature processing
      * 
      * @param error 
      */
-    async failed(
-        error: Error | A_Error | unknown
+    async interrupt(
+        /**
+         * The reason of feature interruption
+         */
+        reason?: string | A_StageError | Error
     ) {
-        this.error = error as A_Error;
-        this.state = A_TYPES__FeatureState.FAILED;
-
-
-        await this.errorHandler(error);
-    }
-
-
-    /**
-     * This method processes the feature by executing all the stages
-     * 
-     */
-    async process(
-        scope?: A_Scope
-    ) {
-        // console.log('Processing feature:', this.name);
-
-        if (this.isDone()) {
-            return this.result;
-        }
-
-        try {
-            this.state = A_TYPES__FeatureState.PROCESSING;
-
-            for (const stage of this.stages) {
-                // console.log('Processing stage:', stage.name);
-
-                await stage.process();
-
-                // console.log('Stage processed:', stage.name, 'Status:', stage.status);
-            }
-
-
-            return await this.completed();
-
-
-        } catch (error) {
-
-            return await this.failed(error);
-        }
-
-    }
-
-
-    protected async errorHandler(error: Error | A_Error | unknown) {
-
         switch (true) {
-            case error instanceof A_StageError:
-                return; // Do nothing, already handled in the stage
+            case A_TypeGuards.isString(reason):
+                this._error = new A_FeatureError(A_FeatureError.Interruption, reason);
+                break;
 
-            case error instanceof A_Error:
-                throw error;
+            case A_TypeGuards.isErrorInstance(reason):
+                this._error = new A_FeatureError({
+                    code: A_FeatureError.Interruption,
+                    message: reason.message,
+                    description: reason.description,
+                    originalError: reason
+                });
+                break;
 
             default:
-                throw error;
+                break;
         }
+
+        this._state = A_TYPES__FeatureState.INTERRUPTED;
     }
 }

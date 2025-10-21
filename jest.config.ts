@@ -14,6 +14,7 @@ const config: Config.InitialOptions = {
         "@adaas/a-concept/helpers/(.*)": ["<rootDir>/src/helpers/$1"],
         "@adaas/a-concept/decorators/(.*)": ["<rootDir>/src/decorators/$1"],
         "@adaas/a-concept/base/(.*)": ["<rootDir>/src/base/$1"],
+        "@adaas/a-concept/utils/(.*)": ["<rootDir>/src/utils/$1"]
     }
 
 };

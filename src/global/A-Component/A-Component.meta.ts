@@ -1,13 +1,12 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
-import { A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptStage } from "../A-Concept/A_Concept.types";
+import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/global/A-Inject/A-Inject.types";
+import { A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A-Concept.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
-import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey } from "./A-Component.types";
-import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__ComponentMeta, A_TYPES__ComponentMetaExtension } from "./A-Component.types";
+import { A_TYPES__ComponentMetaKey } from "./A-Component.constants";
+import { A_TYPES__FeatureDefineDecoratorMeta } from "../A-Feature/A-Feature.types";
 
 
 export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
-
-
 
     /**
      * Allows to get all the injections for a given handler
@@ -25,8 +24,6 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
         return args;
     }
 
-
-
     /**
      * Allows to get all the extensions for a given feature
      * 
@@ -39,7 +36,6 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
         const steps: A_TYPES__ComponentMetaExtension[] = [];
 
         const extensions = this.get(A_TYPES__ComponentMetaKey.EXTENSIONS);
-        const injections = this.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
         extensions
             // returns all extensions that match the feature
@@ -62,14 +58,12 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
         return steps;
     }
 
-
-
     /**
      * Returns all features defined in the Component
      * 
      * @returns 
      */
-    features(): Array<A_TYPES__A_DefineDecorator_Meta> {
+    features(): Array<A_TYPES__FeatureDefineDecoratorMeta> {
 
         const features = this.get(A_TYPES__ComponentMetaKey.FEATURES);
 
@@ -77,7 +71,6 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
             // returns all extensions that match the feature
             .map(([, feature]) => feature) || [];
     }
-
 
     /**
      * Returns a set of instructions to run proper methods in Component during A-Concept Stage
@@ -92,9 +85,6 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
 
         const abstractions = this.get(A_TYPES__ComponentMetaKey.ABSTRACTIONS);
         const injections = this.get(A_TYPES__ComponentMetaKey.INJECTIONS);
-
-        // const constructor = A_Context.component(this);
-
 
         abstractions
             // returns all extensions that match the feature

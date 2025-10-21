@@ -1,7 +1,7 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types";
 import { A_Meta } from "../A-Meta/A-Meta.class";
-import { A_TYPES__EntityMeta, A_TYPES__EntityMetaKey } from "./A-Entity.types";
-import { A_TYPES__A_DefineDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types";
+import { A_TYPES__EntityMeta } from "./A-Entity.types";
+import { A_TYPES__EntityMetaKey } from "./A-Entity.constants";
+import { A_TYPES__FeatureDefineDecoratorMeta } from "../A-Feature/A-Feature.types";
 
 
 export class A_EntityMeta extends A_Meta<A_TYPES__EntityMeta> {
@@ -11,7 +11,7 @@ export class A_EntityMeta extends A_Meta<A_TYPES__EntityMeta> {
      * 
      * @returns 
      */
-    features(): Array<A_TYPES__A_DefineDecorator_Meta> {
+    features(): Array<A_TYPES__FeatureDefineDecoratorMeta> {
 
         const features = this.get(A_TYPES__EntityMetaKey.FEATURES);
 

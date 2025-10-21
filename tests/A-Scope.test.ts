@@ -1,10 +1,14 @@
 import './test.setup';
 
-import { A_Command } from "@adaas/a-concept/global/A-Command/A-Command.class";
+import { A_Command } from "@adaas/a-concept/base/A-Command/A-Command.class";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
+import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
+import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
+import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
+import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
-import { ASEID } from "@adaas/a-utils";
+import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
 
 jest.retryTimes(0);
 
@@ -54,7 +58,7 @@ describe('A-Scope tests', () => {
         const parentScope = new A_Scope({ name: 'ParentScope' });
         const childScope = new A_Scope({ name: 'ChildScope' });
 
-        childScope.parent(parentScope);
+        childScope.inherit(parentScope);
 
         const component = new A_Component();
         parentScope.register(component);
@@ -68,7 +72,7 @@ describe('A-Scope tests', () => {
             public bar!: string;
             fromNew(newEntity: { bar: string; }): void {
                 this.aseid = new ASEID({
-                    namespace: 'default',
+                    concept: 'default',
                     scope: 'default',
                     entity: 'entity-a',
                     id: Math.floor(Math.random() * 1000000000).toString(),
@@ -92,7 +96,7 @@ describe('A-Scope tests', () => {
             public bar!: string;
             fromNew(newEntity: { bar: string; }): void {
                 this.aseid = new ASEID({
-                    namespace: 'default',
+                    concept: 'default',
                     scope: 'default',
                     entity: 'entity-a',
                     id: Math.floor(Math.random() * 1000000000).toString(),
@@ -116,7 +120,7 @@ describe('A-Scope tests', () => {
             public foo!: string;
             fromNew(newEntity: { foo: string; }): void {
                 this.aseid = new ASEID({
-                    namespace: 'default',
+                    concept: 'default',
                     scope: 'default',
                     entity: 'entity-a',
                     id: Math.floor(Math.random() * 1000000000).toString(),
@@ -137,7 +141,7 @@ describe('A-Scope tests', () => {
             public foo!: string;
             fromNew(newEntity: { foo: string; }): void {
                 this.aseid = new ASEID({
-                    namespace: 'default',
+                    concept: 'default',
                     scope: 'default',
                     entity: 'entity-a',
                     id: Math.floor(Math.random() * 1000000000).toString(),
@@ -184,7 +188,9 @@ describe('A-Scope tests', () => {
         expect(resolved3).toBe(MyEntity);
 
         expect(() => {
-            scope.resolveConstructor<MyEntity>('my__entity');
+            const res = scope.resolveConstructor<MyEntity>('mya__entity');
+
+            console.log('RESOLVED:::: ', res)
         }).toThrow();
 
         const instance = new resolved();
@@ -193,36 +199,58 @@ describe('A-Scope tests', () => {
         expect(instance.foo).toBe('bar');
 
     });
-    it('Should allow to resolve A-Command by classname', async () => {
-        class MyCommand extends A_Command<{ foo: string }, { bar: string }> {
+    it('Should allow to resolve A-Entity by classname', async () => {
+        class MyEntity extends A_Entity<{ foo: string }> {
             public foo!: string;
 
-            fromNew(newCommand: { foo: string; }): void {
-                super.fromNew(newCommand);
-                this.foo = newCommand.foo;
+            fromNew(newEntity: { foo: string; }): void {
+                super.fromNew(newEntity);
+                this.foo = newEntity.foo;
             }
 
         }
 
         const scope = new A_Scope({ name: 'TestScope' });
-        scope.register(MyCommand);
+        scope.register(MyEntity);
 
-        const resolved = scope.resolveConstructor<MyCommand>('my-command');
-        const resolved2 = scope.resolveConstructor<MyCommand>('my_command');
-        const resolved3 = scope.resolveConstructor<MyCommand>('MyCommand');
-        expect(resolved).toBe(MyCommand);
-        expect(resolved2).toBe(MyCommand);
-        expect(resolved3).toBe(MyCommand);
+        const resolved = scope.resolveConstructor<MyEntity>('my-entity');
+        const resolved2 = scope.resolveConstructor<MyEntity>('my_entity');
+        const resolved3 = scope.resolveConstructor<MyEntity>('MyEntity');
+        expect(resolved).toBe(MyEntity);
+        expect(resolved2).toBe(MyEntity);
+        expect(resolved3).toBe(MyEntity);
 
         expect(() => {
-            scope.resolveConstructor<MyCommand>('my--command');
+            scope.resolveConstructor<MyEntity>('myS-entity');
         }).toThrow();
 
 
         const instance = new resolved({ foo: 'bar' });
 
-        expect(instance).toBeInstanceOf(MyCommand);
+        expect(instance).toBeInstanceOf(MyEntity);
         expect(instance.foo).toBe('bar');
 
+    });
+
+    it('Should provide a proper inheritance chain', async () => {
+        class customContainer extends A_Container { }
+        class customEntity extends A_Entity { }
+
+        const container = new customContainer({ name: 'CustomContainer', entities: [customEntity] })
+
+        const concept = new A_Concept({
+            containers: [container],
+        });
+
+        // root scope
+        expect(concept.scope).toBe(A_Context.root);
+        // root -> container.scope
+        expect(container.scope.parent).toBe(concept.scope);
+        const feature = new A_Feature({
+            name: 'test',
+            component: container
+        });
+        //  root -> container.scope -> feature.scope
+        expect(feature.scope.parent).toBe(container.scope);
     });
 });

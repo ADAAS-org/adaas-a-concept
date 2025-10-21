@@ -1,24 +1,50 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator.types"
-import { A_Fragment } from "../A-Fragment/A-Fragment.class"
+import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/global/A-Inject/A-Inject.types"
 import { A_Meta } from "../A-Meta/A-Meta.class"
-import { A_TYPES__A_DefineDecorator_Meta, A_TYPES__A_ExtendDecorator_BehaviorConfig, A_TYPES__A_ExtendDecorator_Meta } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
-import { A_TYPES__ConceptAbstraction, A_TYPES__ConceptAbstractionMeta } from "../A-Concept/A_Concept.types"
-import { A_TYPES__ContainerMeta_FeatureItem } from "../A-Container/A-Container.types"
-
-export type A_TYPES__ComponentConstructor<_Exports extends Array<String> = any> = {
-    exports: _Exports,
-}
-
-export type A_TYPES__ComponentCallParams<T extends string> = {
-    name: T,
-    fragments: Array<A_Fragment>,
-    components: Array<{ new(...args: any[]): any }>
-}
+import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types"
+import { A_Component } from "./A-Component.class"
+import { A_TYPES__ComponentMetaKey } from "./A-Component.constants"
+import { A_TYPES__FeatureDefineDecoratorMeta, A_TYPES__FeatureExtendDecoratorBehaviorConfig, A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types"
 
 
+
+
+
+
+// ============================================================================
+// --------------------------- Primary Types ----------------------------------
+// ============================================================================
+/**
+ * Component constructor type
+ * Uses the generic type T to specify the type of the component
+ */
+export type A_TYPES__Component_Constructor<T = A_Component> = new (...args: any[]) => T;
+/**
+ * Component initialization type
+ */
+export type A_TYPES__Component_Init = any;
+/**
+ * Component serialized type
+ */
+export type A_TYPES__Component_Serialized = {
+    /**
+     * The ASEID of the component
+     */
+    aseid: string
+};
+
+
+
+// ============================================================================
+// --------------------------- Meta Types -------------------------------------
+// ============================================================================
+/**
+ * Component meta type
+ */
 export type A_TYPES__ComponentMeta = {
+    /**
+     * Extensions applied to the component per handler
+     */
     [A_TYPES__ComponentMetaKey.EXTENSIONS]: A_Meta<{
-
         /**
          * Where Key the regexp for what to apply the extension
          * A set of container names or a wildcard, or a regexp
@@ -26,20 +52,22 @@ export type A_TYPES__ComponentMeta = {
          *
          * Where value is the extension instructions
          */
-        [Key: string]: A_TYPES__A_ExtendDecorator_Meta[]
+        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[]
     }>,
-
-
+    /**
+     * Features defined on the component per handler
+     */
     [A_TYPES__ComponentMetaKey.FEATURES]: A_Meta<{
         /**
          * Where Key is the name of the feature
          * 
          * Where value is the list of features
          */
-        [Key: string]: A_TYPES__A_DefineDecorator_Meta
+        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta
     }>
-
-
+    /**
+     * Injections defined on the component per handler
+     */
     [A_TYPES__ComponentMetaKey.INJECTIONS]: A_Meta<{
         /**
          * Where Key is the name of the injection
@@ -48,7 +76,9 @@ export type A_TYPES__ComponentMeta = {
          */
         [Key: string]: A_TYPES__A_InjectDecorator_Meta
     }>
-
+    /**
+     *  Abstractions extended by the component per handler
+     */
     [A_TYPES__ComponentMetaKey.ABSTRACTIONS]: A_Meta<{
         /**
          * Where Key is the name of the stage
@@ -59,12 +89,7 @@ export type A_TYPES__ComponentMeta = {
     }>
 }
 
-export enum A_TYPES__ComponentMetaKey {
-    EXTENSIONS = 'a-component-extensions',
-    FEATURES = 'a-component-features',
-    INJECTIONS = 'a-component-injections',
-    ABSTRACTIONS = 'a-component-abstractions',
-}
+
 
 export type A_TYPES__ComponentMetaExtension = {
     /**
@@ -75,6 +100,6 @@ export type A_TYPES__ComponentMetaExtension = {
      * The name of the handler that will be used to apply the extension
      */
     handler: string,
-} & A_TYPES__A_ExtendDecorator_BehaviorConfig
+} & A_TYPES__FeatureExtendDecoratorBehaviorConfig
 
 

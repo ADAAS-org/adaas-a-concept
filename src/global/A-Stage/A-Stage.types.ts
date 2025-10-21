@@ -1,8 +1,6 @@
-import { A_Component } from "../A-Component/A-Component.class"
 import { A_Container } from "../A-Container/A-Container.class"
-import { A_TYPES__A_ExtendDecorator_BehaviorConfig } from "@adaas/a-concept/decorators/A-Feature/A-Feature.decorator.types"
-import { A_TYPES__ScopeConfig, A_TYPES__ScopeConstructor } from "../A-Scope/A-Scope.types"
-import { A_Scope } from "../A-Scope/A-Scope.class"
+import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types"
+import { A_TYPES__FeatureExtendDecoratorBehaviorConfig } from "../A-Feature/A-Feature.types"
 
 
 
@@ -40,22 +38,6 @@ export enum A_TYPES__A_Stage_Status {
      */
     INITIALIZED = 'INITIALIZED',
     /**
-     * The stage has been reset
-     */
-    // RESET = 'RESET',
-    /**
-     * The stage has been resumed
-     */
-    // RESUMED = 'RESUMED',
-    /**
-     * The stage has been suspended
-     */
-    // SUSPENDED = 'SUSPENDED',
-    /**
-     * The stage has been terminated
-     */
-    // TERMINATED = 'TERMINATED',
-    /**
      * The stage has been aborted
      */
     ABORTED = 'ABORTED'
@@ -63,17 +45,14 @@ export enum A_TYPES__A_Stage_Status {
 
 
 export type A_TYPES__A_StageStep = {
-
     /**
      * The component to be called
      */
-    component: typeof A_Component | A_Container | string
-
+    component: A_TYPES__Component_Constructor | A_Container | string
     /**
      * The method to be called on the component
      */
     handler: string,
-
     /**
      * Original Feature Extension name
      * 
@@ -82,7 +61,7 @@ export type A_TYPES__A_StageStep = {
      */
     name: string,
 
-} & A_TYPES__A_ExtendDecorator_BehaviorConfig
+} & A_TYPES__FeatureExtendDecoratorBehaviorConfig
 
 
 

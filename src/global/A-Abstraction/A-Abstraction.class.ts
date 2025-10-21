@@ -1,47 +1,81 @@
-import { A_Abstraction_Extend } from "@adaas/a-concept/decorators/A-Abstraction/A-Abstraction-Extend.decorator";
+import { A_Abstraction_Extend } from "@adaas/a-concept/global/A-Abstraction/A-Abstraction-Extend.decorator";
 import { A_Feature } from "../A-Feature/A-Feature.class";
-import { A_TYPES__A_AbstractionConstructor, A_TYPES__AbstractionState } from "./A-Abstraction.types";
-import { A_Error, A_TYPES__Required } from "@adaas/a-utils";
+import { A_TYPES__Abstraction_Init } from "./A-Abstraction.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+
 
 
 export class A_Abstraction {
 
-    public name: string;
-    protected features: A_Feature[] = [];
+    /**
+     * The name of the Abstraction e.g. 'deploy', 'start', 'test', etc.
+     */
+    protected _name: string;
+    /**
+     * List of features that are part of this Abstraction
+     */
+    protected _features: A_Feature[] = [];
+    /**
+     * The Feature currently being processed
+     */
     protected _current?: A_Feature;
+    /**
+     * Actual Index of the current Feature being processed
+     */
     protected _index: number = 0;
 
-    state: A_TYPES__AbstractionState = A_TYPES__AbstractionState.INITIALIZED;
-    error?: A_Error
-
-
-    readonly Scope!: A_Scope;
 
     /**
-     * Define a new A-Abstraction
+     * Allows to extends A-Abstraction with additional methods
      */
     static get Extend(): typeof A_Abstraction_Extend {
         return A_Abstraction_Extend;
     }
 
-
+    /**
+     * A-Abstraction is an object that is common for any application. 
+     * By providing components and creating abstraction extensions it's possible to create a unique behavior of the whole solution.
+     * 
+     * Every application has basic abstractions like 'start', 'stop', 'deploy', 'test', etc. 
+     * They can be easily extended with additional logic from both containers and components.
+     * 
+     * 
+     * @param params 
+     */
     constructor(
         /**
          * Parameters to define the A-Abstraction
          */
-        params: A_TYPES__A_AbstractionConstructor
+        params: A_TYPES__Abstraction_Init
     ) {
-        this.name = params.name;
-        
-        this.features = params.features.map(def => new A_Feature(def));
+        this._name = params.name;
 
-        this._current = this.features[0];
+        this._features = params.containers.map(container => {
+            return new A_Feature({ name: this._name, component: container, })
+        });
+
+        this._current = this._features[0];
     }
 
-
+    /**
+     * Returns the name of the Abstraction
+     */
+    get name(): string { return this._name; }
+    /**
+     * Returns the current Feature being processed
+     */
     get feature(): A_Feature | undefined {
         return this._current;
+    }
+    /**
+     * This method checks if the A-Feature is done
+     * 
+     * @returns 
+     */
+    get isDone(): boolean {
+        return !this.feature
+            || this._index >= this._features.length
+
     }
 
 
@@ -49,9 +83,9 @@ export class A_Abstraction {
         return {
             // Custom next method
             next: (): IteratorResult<A_Feature, any> => {
-                if (!this.isDone()) {
+                if (!this.isDone) {
 
-                    this._current = this.features[this._index];
+                    this._current = this._features[this._index];
 
                     return {
                         value: this._current,
@@ -71,68 +105,40 @@ export class A_Abstraction {
     }
 
     /**
-     * This method moves the feature to the next stage
+     * This method moves the Abstraction processing to the next Feature in the list
      * 
      * @param stage 
      */
     next(stage) {
-        const stageIndex = this.features.indexOf(stage);
+        if (this._index >= this._features.length) {
+            return;
+        }
+
+        const stageIndex = this._features.indexOf(stage);
 
         this._index = stageIndex + 1;
-
-        if (this._index >= this.features.length) {
-            this.completed();
-        }
     }
 
-    async completed(): Promise<void> {
-        this.state = A_TYPES__AbstractionState.COMPLETED;
-    }
 
 
     /**
-     * This method marks the feature as failed and throws an error
-     * Uses to interrupt or end the feature processing
-     * 
-     * @param error 
-     */
-    async failed(
-        error: Error | A_Error | unknown
-    ): Promise<void> {
-        this.error = error as A_Error;
-        this.state = A_TYPES__AbstractionState.FAILED;
-    }
-
-
-    /**
-     * This method checks if the A-Feature is done
+     * Allows to process all stages of the Abstraction
      * 
      * @returns 
      */
-    isDone(): boolean {
-        return !this.feature
-            || this._index >= this.features.length
-            || this.state === A_TYPES__AbstractionState.COMPLETED
-            || this.state === A_TYPES__AbstractionState.FAILED;
-    }
-
-
-    async process() {
-        if (this.isDone())
+    async process(
+        /**
+         * Allows to override the scope in which the Abstraction will be processed
+         * 
+         */
+        scope?: A_Scope
+    ) {
+        if (this.isDone)
             return;
-        try {
-            this.state = A_TYPES__AbstractionState.PROCESSING;
 
-            for (const feature of this.features) {
+        for (const feature of this._features) {
 
-                await feature.process();
-            }
-
-            await this.completed();
-
-        } catch (error) {
-            await this.failed(error);
+            await feature.process(scope);
         }
-
     }
 }

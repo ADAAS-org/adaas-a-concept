@@ -4,7 +4,7 @@
  * [!] Meta can be different depending on the type of input data
  */
 export class A_Meta<
-    _StorageItems extends Record<string, any>
+    _StorageItems extends Record<string, any> = any
 // _StorageItems extends Record<string, Map<string | Symbol, any> | Array<any> | A_TYPES__Dictionary<any>>
 > implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
 

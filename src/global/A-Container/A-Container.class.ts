@@ -1,120 +1,79 @@
-import { A_TYPES__ContainerConstructor } from "./A-Container.types";
-import { A_TYPES__Required } from "@adaas/a-utils";
 import { A_Context } from "../A-Context/A-Context.class";
+import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_Scope } from "../A-Scope/A-Scope.class";
-import { A_TYPES__FeatureCallParams, A_TYPES__FeatureConstructor } from "../A-Feature/A-Feature.types";
+import { A_TYPES__Container_Init } from "./A-Container.types";
 
 
 
-/**
- * This class should combine Components to achieve the goal withing Concept
- * 
- * Container is a direct container that should be "run" to make Concept work. 
- * So because of that Container can be:
- * - HTTP Server
- * - BASH Script
- * - Database Connection
- * - Microservice
- * - etc.
- */
 export class A_Container {
-    protected readonly config!: Partial<A_TYPES__ContainerConstructor<any>>;
 
     /**
-     * Promise that will be resolved when the container is ready to be used.
+     * Configuration of the container that will be used to run it.
      */
-    ready!: Promise<void>;
-
+    protected readonly config!: Partial<A_TYPES__Container_Init>;
+    /**
+     * Name of the container
+     */
     get name() {
         return this.config.name || this.constructor.name;
     }
-
-    get Scope(): A_Scope {
+    /**
+     * Returns the scope where the container is registered
+     */
+    get scope(): A_Scope {
         return A_Context.scope(this);
     }
 
 
     /**
-     * Creates a new instance of A_Container
+     * This class should combine Components to achieve the goal withing Concept
      * 
-     * @param config 
+     * Container is a direct container that should be "run" to make Concept work. 
+     * So because of that Container can be:
+     * - HTTP Server
+     * - BASH Script
+     * - Database Connection
+     * - Microservice
+     * - etc.
+     * 
+     * @param config - Configuration of the container that will be used to run it.
      */
     constructor(
         /**
          * Configuration of the container that will be used to run it.
          */
-        config: Partial<A_TYPES__ContainerConstructor<any>>
+        config: Partial<A_TYPES__Container_Init>
     ) {
         this.config = config;
 
-        A_Context.allocate(this, {
-            name: this.name,
-            ...config
-        });
+        A_Context.allocate(this, this.config);
     }
 
 
+    /**
+     * Calls the feature with the given name in the given scope
+     * 
+     * [!] Note: This method creates a new instance of the feature every time it is called
+     * 
+     * @param feature - the name of the feature to call
+     * @param scope  - the scope in which to call the feature
+     * @returns  - void
+     */
     async call(
+        /**
+         * Name of the feature to call
+         */
         feature: string,
-        scope: A_Scope = this.Scope
+        /**
+         * scope in which the feature will be executed
+         */
+        scope?: A_Scope
     ) {
+        const newFeature = new A_Feature({
+            name: feature,
+            component: this
+        });
 
-        if (scope && !scope.isInheritedFrom(this.Scope)) {
-            scope = scope.inherit(this.Scope);
-        }
-
-
-        const newFeature = A_Context.feature(this, feature, scope);
-
-        return await newFeature.process();
+        return await newFeature.process(scope);
     }
-
-
-    /**
-     * This method allows to get a feature Definition for the future reuse with custom Feature classes
-     * 
-     * @param feature 
-     */
-    feature(
-        feature: string,
-        scope: A_Scope = this.Scope
-    ) {
-
-        if (scope && !scope.isInheritedFrom(this.Scope)) {
-            scope = scope.inherit(this.Scope);
-        }
-
-        return A_Context.featureDefinition(this, feature, scope);
-    }
-
-
-    // ==============================================================
-    // ======================= HOOKS ================================
-    // ==============================================================
-
-    /**
-     *  Before init hook to be used in inherited classes
-     * 
-     * @returns 
-     */
-    protected async onBeforeInit() {
-        return;
-    }
-
-    /**
-     * Main initialization method for the Container
-     */
-    protected async onInit() {
-        return;
-    }
-
-    /**
-     *  After init hook to be used in inherited classes
-     * 
-     * @returns 
-     */
-    protected async onAfterInit() {
-        return;
-    }
-
 }

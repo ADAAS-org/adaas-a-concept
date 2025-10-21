@@ -1,45 +1,51 @@
 import './test.setup';
 
-import { A_Inject } from "@adaas/a-concept/decorators/A-Inject/A-Inject.decorator";
+import { A_Inject } from "@adaas/a-concept/global/A-Inject/A-Inject.decorator";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
-import { A_FeatureCaller } from "@adaas/a-concept/global/A-Feature/A-FeatureCaller.class";
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
+import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
+import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 
 jest.retryTimes(0);
 
 describe('A-Feature tests', () => {
-    it('Should Allow to create a feature from undefined', async () => {
+    it('Should Allow to create a feature from component', async () => {
+        const testComponent = new A_Component()
+        A_Context.root.register(testComponent);
+
         const feature = new A_Feature({
-            name: 'TestFeature',
-            scope: new A_Scope({ name: 'TestScope' }),
-            steps: [],
-            caller: new A_Component()
+            name: 'testFeature',
+            component: testComponent,
         });
+
+        expect(feature).toBeInstanceOf(A_Feature);
+        expect(feature.scope.parent).toBe(A_Context.root);
+
     });
     it('Should Allow to create a feature with steps', async () => {
+        const template = [
+            {
+                name: 'A_Component.testHandler',
+                component: A_Component,
+                handler: 'testHandler',
+            }
+        ]
+
         const feature = new A_Feature({
-            name: 'TestFeature',
-            scope: new A_Scope({ name: 'TestScope' }),
-            steps: [
-                {
-                    name: 'A_Component.testHandler',
-                    component: A_Component,
-                    handler: 'testHandler',
-                    behavior: 'sync',
-                    before: [],
-                    after: []
-                }
-            ],
-            caller: new A_Component()
+            name: 'testFeature',
+            scope: new A_Scope(),
+            template
         });
+
+        expect(feature).toBeInstanceOf(A_Feature);
     });
     it('Should be possible to execute a feature with steps as a template on the component', async () => {
         // 1) create a base component with some feature
         class MyExtendedComponent extends A_Component {
 
             async testHandler(
-                @A_Inject(A_FeatureCaller) caller: MyComponent
+                @A_Inject(A_Caller) caller: MyComponent
             ) {
                 caller.sum = 2;
             }
@@ -58,6 +64,11 @@ describe('A-Feature tests', () => {
                     behavior: 'sync',
                     before: [],
                     after: []
+                },
+                {
+                    name: 'MyExtendedComponent.testHandler',
+                    component: MyExtendedComponent,
+                    handler: 'testHandler'
                 }]
             })
             async testHandler() { }
@@ -81,12 +92,12 @@ describe('A-Feature tests', () => {
         expect(myComponent.sum).toBe(2);
 
     });
-   it('Should be possible to execute a feature with steps as a template on the component with string component declaration', async () => {
+    it('Should be possible to execute a feature with steps as a template on the component with string component declaration', async () => {
         // 1) create a base component with some feature
         class MyExtendedComponent2 extends A_Component {
 
             async testHandler(
-                @A_Inject(A_FeatureCaller) caller: MyComponent2
+                @A_Inject(A_Caller) caller: MyComponent2
             ) {
                 caller.sum = 2;
             }
@@ -128,6 +139,4 @@ describe('A-Feature tests', () => {
         expect(myComponent.sum).toBe(2);
 
     });
-
-
 });

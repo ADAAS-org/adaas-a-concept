@@ -35,7 +35,8 @@
       "@adaas/a-concept/types/*": ["src/types/*"],
       "@adaas/a-concept/helpers/*": ["src/helpers/*"],
       "@adaas/a-concept/decorators/*": ["src/decorators/*"],
-      "@adaas/a-concept/base/*": ["src/base/*"]
+      "@adaas/a-concept/base/*": ["../adaas-a-utils/src/base/*"],
+      "@adaas/a-concept/utils/*": ["src/utils/*"]
     },
     "lib": [
       "dom",
@@ -50,7 +51,7 @@
     "tests/**/*", 
     "examples/**/*", 
     "index.ts"  
-  ],
+, "../adaas-a-utils/src/base"  ],
   "exclude": [
     "node_modules/**/*",
     "dist/**/*",
