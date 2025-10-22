@@ -1,4 +1,4 @@
-import { A_TYPES__ScopeConfig, A_TYPES__Scope_Init, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeResolvableComponents } from './A-Scope.types';
+import { A_TYPES__ScopeConfig, A_TYPES__Scope_Init, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeResolvableComponents, A_TYPES__ScopeLinkedConstructors } from './A-Scope.types';
 import { A_TYPES__A_InjectDecorator_EntityInjectionInstructions, A_TYPES__InjectableConstructors } from "../A-Inject/A-Inject.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Component } from "../A-Component/A-Component.class";
@@ -308,6 +308,11 @@ export declare class A_Scope<_ComponentType extends A_TYPES__Component_Construct
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
      */
     param1: A_TYPES__InjectableConstructors): T | Array<T>;
+    resolve<T extends A_TYPES__ScopeLinkedConstructors>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    param1: T): T | Array<T>;
     /**
      * This method is used internally to resolve a component, fragment or entity by its constructor name
      *
@@ -325,6 +330,7 @@ export declare class A_Scope<_ComponentType extends A_TYPES__Component_Construct
      * @returns
      */
     private resolveOnce;
+    private resolveIssuer;
     /**
      * This method is used internally to resolve a single entity from the scope based on the provided instructions
      *

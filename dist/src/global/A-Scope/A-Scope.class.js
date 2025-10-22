@@ -247,6 +247,11 @@ class A_Scope {
                 found = this.isAllowedFragment(ctor);
                 break;
             }
+            // check scope issuer 
+            case this.issuer().constructor === ctor: {
+                found = true;
+                break;
+            }
         }
         if (!found && !!this._parent)
             return this._parent.has(ctor);
@@ -374,11 +379,16 @@ class A_Scope {
      * @returns
      */
     resolveOnce(component, instructions) {
+        if (!component || !this.has(component))
+            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${component} not found in the scope`);
         if (A_TypeGuards_helper_1.A_TypeGuards.isScopeConstructor(component))
             component;
         if (typeof component == 'function' && component.name === 'A_Scope')
             component;
         switch (true) {
+            case A_TypeGuards_helper_1.A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
+                return this.resolveIssuer(component);
+            }
             case A_TypeGuards_helper_1.A_TypeGuards.isEntityConstructor(component): {
                 return this.resolveEntity(component, instructions);
             }
@@ -392,8 +402,18 @@ class A_Scope {
                 return this.resolveComponent(component);
             }
             default:
-                throw new Error(`Injected Component ${component} not found in the scope`);
+                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${component} not found in the scope`);
         }
+    }
+    resolveIssuer(ctor) {
+        const isCurrent = ctor === this.issuer().constructor;
+        if (isCurrent) {
+            return this.issuer();
+        }
+        if (!!this._parent) {
+            return this._parent.resolveIssuer(ctor);
+        }
+        throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Issuer ${ctor.name} not found in the scope ${this.name}`);
     }
     /**
      * This method is used internally to resolve a single entity from the scope based on the provided instructions
@@ -423,7 +443,7 @@ class A_Scope {
                     case !found && !!this._parent:
                         return this._parent.resolveEntity(entity, instructions);
                     default:
-                        throw new Error(`Entity ${entity.name} not found in the scope ${this.name}`);
+                        throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Entity ${entity.name} not found in the scope ${this.name}`);
                 }
             }
             /**

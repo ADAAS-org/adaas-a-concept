@@ -61,7 +61,7 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
         const injections = this.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.INJECTIONS);
         abstractions === null || abstractions === void 0 ? void 0 : abstractions
         // returns all extensions that match the feature
-        .find(abstraction).forEach(([handler, extensions]) => {
+        .find(`CONCEPT_ABSTRACTION::${abstraction}`).forEach(([handler, extensions]) => {
             extensions.forEach(extension => {
                 const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
                 steps.push(Object.assign(Object.assign({}, extension), { 

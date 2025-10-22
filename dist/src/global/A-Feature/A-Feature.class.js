@@ -162,7 +162,7 @@ class A_Feature {
      */
     getInitializer(params) {
         switch (true) {
-            case 'component' in params:
+            case !('template' in params):
                 return this.fromComponent;
             case 'template' in params:
                 return this.fromTemplate;
@@ -179,17 +179,19 @@ class A_Feature {
         if (!params.template || !Array.isArray(params.template)) {
             throw new A_Feature_error_1.A_FeatureError(A_Feature_error_1.A_FeatureError.FeatureInitializationError, `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template).slice(0, 100)}...`);
         }
-        if (!params.scope || !(params.scope instanceof A_Scope_class_1.A_Scope)) {
+        if (!params.component && (!params.scope || !(params.scope instanceof A_Scope_class_1.A_Scope))) {
             throw new A_Feature_error_1.A_FeatureError(A_Feature_error_1.A_FeatureError.FeatureInitializationError, `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope).slice(0, 100)}...`);
         }
         // 1) save feature name
         this._name = params.name;
         // 2) get scope from where feature is called
-        const componentScope = params.scope;
+        const componentScope = params.component
+            ? A_Context_class_1.A_Context.scope(params.component)
+            : params.scope;
         // 3) create caller wrapper for the simple injection of the caller component
         //   - Just to prevent issues with undefined caller in features without component
         //   - TODO: maybe would be better to allow passing caller in params?
-        this._caller = new A_Caller_class_1.A_Caller(new A_Component_class_1.A_Component());
+        this._caller = new A_Caller_class_1.A_Caller(params.component || new A_Component_class_1.A_Component());
         // 4) allocate new scope for the feature
         const scope = A_Context_class_1.A_Context.allocate(this);
         // 5) ensure that the scope of the caller component is inherited by the feature scope

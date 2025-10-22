@@ -36,6 +36,7 @@ import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
 import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types";
+import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 
 
 
@@ -577,7 +578,7 @@ export class A_Context {
         /**
          * Provide the scope that dictates which components are active and can provide extensions for the feature.
          */
-        scope: A_Scope
+        scope: A_Scope = this.scope(component)
     ): Array<A_TYPES__A_StageStep> {
         // name for error messages
         const componentName = (component as any)?.constructor?.name || String(component);
@@ -643,18 +644,22 @@ export class A_Context {
         const steps: A_TYPES__A_StageStep[] = [];
 
         // We need to get all components that has extensions for the feature in component
-        for (const [component, meta] of instance._metaStorage) {
+        for (const [cmp, meta] of instance._metaStorage) {
             // Just try to make sure that component not only Indexed but also presented in scope
-            if (scope.has(component) && A_TypeGuards.isComponentMetaInstance(meta))
+            if (scope.has(cmp) && (
+                A_TypeGuards.isComponentMetaInstance(meta)
+                || A_TypeGuards.isContainerMetaInstance(meta)
+            )) {
                 // Get all extensions for the feature
                 meta
                     .extensions(callName)
                     .forEach((declaration) => {
                         steps.push({
-                            component,
+                            component: cmp,
                             ...declaration
                         });
                     });
+            }
         }
 
         return steps;
@@ -729,15 +734,11 @@ export class A_Context {
         /**
          * Provide the abstraction stage to get the definition for.
          */
-        abstraction: A_TYPES__ConceptAbstraction,
+        abstraction: A_TYPES__ConceptAbstractions,
         /**
          * Provide the component to get the abstraction definition from.
          */
         component: A_TYPES__FeatureAvailableComponents,
-        /**
-         * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-         */
-        scope: A_Scope
     ): Array<A_TYPES__A_StageStep> {
         // name for error messages
         const componentName = (component as any)?.constructor?.name || String(component);
@@ -761,7 +762,7 @@ export class A_Context {
             // ...this.abstractionDefinition(abstraction, component),
 
             // 2) Get all extensions for the abstraction from other components in the scope
-            ...this.abstractionExtensions(abstraction, component, scope)
+            ...this.abstractionExtensions(abstraction, component)
         ];
 
         return steps;
@@ -775,15 +776,11 @@ export class A_Context {
         /**
          * Provide the abstraction name to get the definition for.
          */
-        abstraction: A_TYPES__ConceptAbstraction,
+        abstraction: A_TYPES__ConceptAbstractions,
         /**
          * Provide the component to get the abstraction definition from.
          */
         component: A_TYPES__FeatureAvailableComponents,
-        /**
-         * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-         */
-        scope: A_Scope
     ): Array<A_TYPES__A_StageStep> {
         const instance = this.getInstance();
         // name for error messages
@@ -805,23 +802,27 @@ export class A_Context {
                     `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`
                 );
 
-        const callName = `${component.constructor.name}.${abstraction}`;
-
         const steps: A_TYPES__A_StageStep[] = [];
 
+        const scope = this.scope(component);
+
         // We need to get all components that has extensions for the feature in component
-        for (const [component, meta] of instance._metaStorage) {
+        for (const [cmp, meta] of instance._metaStorage) {
             // Just try to make sure that component not only Indexed but also presented in scope
-            if (scope.has(component) && A_TypeGuards.isComponentMetaInstance(meta))
+            if (scope.has(cmp) && (
+                A_TypeGuards.isComponentMetaInstance(meta)
+                || A_TypeGuards.isContainerMetaInstance(meta)
+            )) {
                 // Get all extensions for the feature
                 meta
-                    .abstractions(callName)
+                    .abstractions(abstraction)
                     .forEach((declaration) => {
                         steps.push({
-                            component,
+                            component: cmp,
                             ...declaration
                         });
                     });
+            }
         }
 
         return steps;

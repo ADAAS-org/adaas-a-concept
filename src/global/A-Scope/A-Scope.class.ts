@@ -3,7 +3,8 @@ import {
     A_TYPES__Scope_Init,
     A_TYPES__ScopeLinkedComponents,
     A_TYPES__ScopeResolvableComponents,
-    A_TYPES__Scope_Constructor
+    A_TYPES__Scope_Constructor,
+    A_TYPES__ScopeLinkedConstructors
 } from './A-Scope.types'
 import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
@@ -401,6 +402,11 @@ export class A_Scope<
 
                 break;
             }
+            // check scope issuer 
+            case this.issuer().constructor === ctor: {
+                found = true;
+                break;
+            }
         }
 
         if (!found && !!this._parent)
@@ -575,6 +581,13 @@ export class A_Scope<
         param1: A_TYPES__InjectableConstructors,
 
     ): T | Array<T>
+    resolve<T extends A_TYPES__ScopeLinkedConstructors>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: T,
+
+    ): T | Array<T>
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
@@ -593,7 +606,7 @@ export class A_Scope<
             }
 
             case A_TypeGuards.isFunction(param1): {
-                return this.resolveOnce(param1, param2);
+                return this.resolveOnce(param1, param2) as T;
             }
 
             case A_TypeGuards.isString(param1): {
@@ -665,33 +678,66 @@ export class A_Scope<
      * @param instructions 
      * @returns 
      */
-    private resolveOnce<T extends A_Component | A_Fragment | A_Entity | A_Scope>(
-        component: unknown,
+    private resolveOnce(
+        component: any,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): T | Array<T> {
+    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> {
+
+        if (!component || !this.has(component))
+            throw new A_ScopeError(
+                A_ScopeError.ResolutionError,
+                `Injected Component ${component} not found in the scope`
+            );
 
         if (A_TypeGuards.isScopeConstructor(component))
             component
 
-        if (typeof component == 'function' && (component as any).name === 'A_Scope')
+        if (typeof component == 'function' && component.name === 'A_Scope')
             component
 
+
+
+
         switch (true) {
+            case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
+                return this.resolveIssuer(component);
+            }
             case A_TypeGuards.isEntityConstructor(component): {
-                return this.resolveEntity(component, instructions) as T | Array<T>;
+                return this.resolveEntity(component, instructions);
             }
             case A_TypeGuards.isFragmentConstructor(component): {
-                return this.resolveFragment(component) as T;
+                return this.resolveFragment(component);
             }
             case A_TypeGuards.isScopeConstructor(component): {
-                return this.resolveScope(component) as T;
+                return this.resolveScope(component);
             }
             case A_TypeGuards.isComponentConstructor(component): {
-                return this.resolveComponent(component) as T;
+                return this.resolveComponent(component);
             }
             default:
-                throw new Error(`Injected Component ${component} not found in the scope`);
+                throw new A_ScopeError(
+                    A_ScopeError.ResolutionError,
+                    `Injected Component ${component} not found in the scope`
+                );
         }
+    }
+
+    private resolveIssuer(
+        ctor: A_TYPES__ScopeLinkedConstructors
+    ): A_TYPES__ScopeLinkedComponents {
+        const isCurrent = ctor === this.issuer().constructor;
+
+        if (isCurrent) {
+            return this.issuer();
+        }
+        if (!!this._parent) {
+            return this._parent.resolveIssuer(ctor);
+        }
+
+        throw new A_ScopeError(
+            A_ScopeError.ResolutionError,
+            `Issuer ${ctor.name} not found in the scope ${this.name}`
+        );
     }
 
     /**
@@ -706,7 +752,7 @@ export class A_Scope<
     private resolveEntity<T extends A_Entity>(
         entity: A_TYPES__Entity_Constructor<T>,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
-    ): T | Array<T> | undefined {
+    ): T | Array<T> {
 
         const query = instructions?.query || {} as Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>;
         const count = instructions?.pagination?.count || 1;
@@ -729,7 +775,10 @@ export class A_Scope<
                         return this._parent.resolveEntity(entity, instructions);
 
                     default:
-                        throw new Error(`Entity ${entity.name} not found in the scope ${this.name}`);
+                        throw new A_ScopeError(
+                            A_ScopeError.ResolutionError,
+                            `Entity ${entity.name} not found in the scope ${this.name}`
+                        );
                 }
             }
             /**

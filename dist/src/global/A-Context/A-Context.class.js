@@ -310,7 +310,7 @@ class A_Context {
     /**
      * Provide the scope that dictates which components are active and can provide extensions for the feature.
      */
-    scope) {
+    scope = this.scope(component)) {
         var _a;
         // name for error messages
         const componentName = ((_a = component === null || component === void 0 ? void 0 : component.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(component);
@@ -370,15 +370,17 @@ class A_Context {
         const callName = `${component.constructor.name}.${name}`;
         const steps = [];
         // We need to get all components that has extensions for the feature in component
-        for (const [component, meta] of instance._metaStorage) {
+        for (const [cmp, meta] of instance._metaStorage) {
             // Just try to make sure that component not only Indexed but also presented in scope
-            if (scope.has(component) && A_TypeGuards_helper_1.A_TypeGuards.isComponentMetaInstance(meta))
+            if (scope.has(cmp) && (A_TypeGuards_helper_1.A_TypeGuards.isComponentMetaInstance(meta)
+                || A_TypeGuards_helper_1.A_TypeGuards.isContainerMetaInstance(meta))) {
                 // Get all extensions for the feature
                 meta
                     .extensions(callName)
                     .forEach((declaration) => {
-                    steps.push(Object.assign({ component }, declaration));
+                    steps.push(Object.assign({ component: cmp }, declaration));
                 });
+            }
         }
         return steps;
     }
@@ -447,11 +449,7 @@ class A_Context {
     /**
      * Provide the component to get the abstraction definition from.
      */
-    component, 
-    /**
-     * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-     */
-    scope) {
+    component) {
         var _a;
         // name for error messages
         const componentName = ((_a = component === null || component === void 0 ? void 0 : component.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(component);
@@ -468,7 +466,7 @@ class A_Context {
             // [!] No abstraction Definitions -> They are limited to Concept Abstractions ONLY
             // ...this.abstractionDefinition(abstraction, component),
             // 2) Get all extensions for the abstraction from other components in the scope
-            ...this.abstractionExtensions(abstraction, component, scope)
+            ...this.abstractionExtensions(abstraction, component)
         ];
         return steps;
     }
@@ -483,11 +481,7 @@ class A_Context {
     /**
      * Provide the component to get the abstraction definition from.
      */
-    component, 
-    /**
-     * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-     */
-    scope) {
+    component) {
         var _a;
         const instance = this.getInstance();
         // name for error messages
@@ -500,18 +494,20 @@ class A_Context {
         // Check if the parameter is allowed for feature definition
         if (!A_TypeGuards_helper_1.A_TypeGuards.isAllowedForAbstractionDefinition(component))
             throw new A_Context_error_1.A_ContextError(A_Context_error_1.A_ContextError.InvalidAbstractionExtensionParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
-        const callName = `${component.constructor.name}.${abstraction}`;
         const steps = [];
+        const scope = this.scope(component);
         // We need to get all components that has extensions for the feature in component
-        for (const [component, meta] of instance._metaStorage) {
+        for (const [cmp, meta] of instance._metaStorage) {
             // Just try to make sure that component not only Indexed but also presented in scope
-            if (scope.has(component) && A_TypeGuards_helper_1.A_TypeGuards.isComponentMetaInstance(meta))
+            if (scope.has(cmp) && (A_TypeGuards_helper_1.A_TypeGuards.isComponentMetaInstance(meta)
+                || A_TypeGuards_helper_1.A_TypeGuards.isContainerMetaInstance(meta))) {
                 // Get all extensions for the feature
                 meta
-                    .abstractions(callName)
+                    .abstractions(abstraction)
                     .forEach((declaration) => {
-                    steps.push(Object.assign({ component }, declaration));
+                    steps.push(Object.assign({ component: cmp }, declaration));
                 });
+            }
         }
         return steps;
     }

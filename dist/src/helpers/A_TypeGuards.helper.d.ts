@@ -16,7 +16,7 @@ import { A_Scope } from "../global/A-Scope/A-Scope.class";
 import { A_TYPES__Caller_Constructor } from "../global/A-Caller/A_Caller.types";
 import { A_Error } from "../global/A-Error/A_Error.class";
 import { A_TYPES__AbstractionAvailableComponents } from "../global/A-Abstraction/A-Abstraction.types";
-import { A_TYPES__Scope_Constructor } from "../global/A-Scope/A-Scope.types";
+import { A_TYPES__Scope_Constructor, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeLinkedConstructors } from "../global/A-Scope/A-Scope.types";
 import { A_TYPES__InjectableTargets } from "../global/A-Inject/A-Inject.types";
 export declare class A_TypeGuards {
     /**
@@ -189,6 +189,8 @@ export declare class A_TypeGuards {
      * @returns
      */
     static isEntityMetaInstance(instance: any): instance is A_EntityMeta;
+    static isConstructorAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedConstructors;
+    static isInstanceAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedComponents;
     static isConstructorAvailableForAbstraction(target: any): target is A_TYPES__AbstractionAvailableComponents;
     static isTargetAvailableForInjection(target: any): target is A_TYPES__InjectableTargets;
     static isAllowedForFeatureCall(param: any): param is A_TYPES__FeatureAvailableComponents;

@@ -129,7 +129,7 @@ export declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A
      *
      * @param params
      */
-    protected fromTemplate(params: A_TYPES__Feature_InitWithTemplate): void;
+    protected fromTemplate(params: A_TYPES__Feature_InitWithTemplate<T>): void;
     /**
      * Initializes the A-Feature from the provided component
      *

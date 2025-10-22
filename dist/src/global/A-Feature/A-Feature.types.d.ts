@@ -16,7 +16,7 @@ export type A_TYPES__Feature_Constructor<T = A_Feature> = new (...args: any[]) =
 /**
  * Feature initialization type
  */
-export type A_TYPES__Feature_Init<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> = A_TYPES__Feature_InitWithComponent<T> | A_TYPES__Feature_InitWithTemplate;
+export type A_TYPES__Feature_Init<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> = A_TYPES__Feature_InitWithComponent<T> | A_TYPES__Feature_InitWithTemplate<T>;
 /**
  * Feature initialization type using component
  */
@@ -36,7 +36,7 @@ export type A_TYPES__Feature_InitWithComponent<T extends A_TYPES__FeatureAvailab
 /**
  * Feature initialization type using template
  */
-export type A_TYPES__Feature_InitWithTemplate = {
+export type A_TYPES__Feature_InitWithTemplate<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> = {
     /**
      * Feature Name
      */
@@ -47,6 +47,13 @@ export type A_TYPES__Feature_InitWithTemplate = {
      * [!] Important for proper scoping.
      */
     scope: A_Scope;
+    /**
+     * The component from where the feature is calling. It's important for proper scoping.
+     * Based on the component would be retrieved connected components, entities and containers.
+     *
+     * [!] Could be Container, Entity, Component or Command
+     */
+    component?: T;
     /**
      * Optional Feature template to be used instead of building it from decorators
      */

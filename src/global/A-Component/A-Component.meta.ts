@@ -88,7 +88,7 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
 
         abstractions
             // returns all extensions that match the feature
-            ?.find(abstraction)
+            ?.find(`CONCEPT_ABSTRACTION::${abstraction}`)
             .forEach(([handler, extensions]) => {
                 extensions.forEach(extension => {
                     const args = injections?.get(extension.handler) || [];

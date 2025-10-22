@@ -203,7 +203,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     ): (param1: any) => void | (() => void) {
 
         switch (true) {
-            case 'component' in params:
+            case !('template' in params):
                 return this.fromComponent;
 
             case 'template' in params:
@@ -221,7 +221,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @param params 
      */
     protected fromTemplate(
-        params: A_TYPES__Feature_InitWithTemplate
+        params: A_TYPES__Feature_InitWithTemplate<T>
     ) {
         if (!params.template || !Array.isArray(params.template)) {
             throw new A_FeatureError(
@@ -230,7 +230,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             );
         }
 
-        if (!params.scope || !(params.scope instanceof A_Scope)) {
+        if (!params.component && (!params.scope || !(params.scope instanceof A_Scope))) {
             throw new A_FeatureError(
                 A_FeatureError.FeatureInitializationError,
                 `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope).slice(0, 100)}...`
@@ -241,12 +241,14 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         this._name = params.name;
 
         // 2) get scope from where feature is called
-        const componentScope = params.scope;
+        const componentScope = params.component
+            ? A_Context.scope(params.component)
+            : params.scope as A_Scope;
 
         // 3) create caller wrapper for the simple injection of the caller component
         //   - Just to prevent issues with undefined caller in features without component
         //   - TODO: maybe would be better to allow passing caller in params?
-        this._caller = new A_Caller<T>(new A_Component() as T);
+        this._caller = new A_Caller<T>(params.component || new A_Component() as T);
 
         // 4) allocate new scope for the feature
         const scope = A_Context.allocate(this);

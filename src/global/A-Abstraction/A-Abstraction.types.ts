@@ -1,4 +1,5 @@
 import { A_Component } from "../A-Component/A-Component.class";
+import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__FeatureExtendDecoratorConfig } from "../A-Feature/A-Feature.types";
@@ -21,7 +22,7 @@ export type A_TYPES__Abstraction_Init = {
     /**
      * Name of the A-Abstraction
      */
-    name: string,
+    name: A_TYPES__ConceptAbstractions,
     /**
      * Features that compose the A-Abstraction
      */

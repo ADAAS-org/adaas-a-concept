@@ -2,6 +2,8 @@ import { A_Abstraction_Extend } from "@adaas/a-concept/global/A-Abstraction/A-Ab
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__Abstraction_Init } from "./A-Abstraction.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_Context } from "../A-Context/A-Context.class";
+import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 
 
 
@@ -10,7 +12,7 @@ export class A_Abstraction {
     /**
      * The name of the Abstraction e.g. 'deploy', 'start', 'test', etc.
      */
-    protected _name: string;
+    protected _name: A_TYPES__ConceptAbstractions;
     /**
      * List of features that are part of this Abstraction
      */
@@ -51,7 +53,15 @@ export class A_Abstraction {
         this._name = params.name;
 
         this._features = params.containers.map(container => {
-            return new A_Feature({ name: this._name, component: container, })
+            const template = A_Context.abstractionTemplate(
+                this._name,
+                container
+            );
+            return new A_Feature({
+                name: this._name,
+                component: container,
+                template
+            })
         });
 
         this._current = this._features[0];

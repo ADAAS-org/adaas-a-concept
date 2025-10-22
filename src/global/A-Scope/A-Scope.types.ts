@@ -9,6 +9,8 @@ import { A_Caller } from "../A-Caller/A_Caller.class"
 import { A_Error } from "../A-Error/A_Error.class"
 import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types"
 import { A_Scope } from "./A-Scope.class"
+import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types"
+import { A_TYPES__Feature_Constructor } from "../A-Feature/A-Feature.types"
 
 
 // ============================================================================
@@ -68,8 +70,10 @@ export type A_TYPES__ScopeConfig = {
 export type A_TYPES__Scope_Serialized = {}
 
 
-
-
+/**
+ * 
+ */
+export type A_TYPES__ScopeLinkedConstructors = A_TYPES__Container_Constructor | A_TYPES__Feature_Constructor;
 /**
  * A list of components that can have a scope associated with them
  */
@@ -77,7 +81,7 @@ export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
 /**
  * A list of components that can be resolved by a scope
  */
-export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity 
+export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */

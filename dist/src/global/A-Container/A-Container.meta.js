@@ -51,6 +51,31 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
         });
         return steps;
     }
+    /**
+     * Allows to get all the extensions for a given feature
+     *
+     * @param feature
+     * @returns
+     */
+    extensions(feature) {
+        const steps = [];
+        const extensions = this.get(A_Container_constants_1.A_TYPES__ContainerMetaKey.EXTENSIONS);
+        extensions === null || extensions === void 0 ? void 0 : extensions
+        // returns all extensions that match the feature
+        .find(feature).forEach(([handler, extensions]) => {
+            extensions.forEach(extension => {
+                steps.push({
+                    // component: constructor,
+                    name: extension.name,
+                    handler: extension.handler,
+                    behavior: extension.behavior,
+                    before: extension.before || [],
+                    after: extension.after || []
+                });
+            });
+        });
+        return steps;
+    }
 }
 exports.A_ContainerMeta = A_ContainerMeta;
 //# sourceMappingURL=A-Container.meta.js.map

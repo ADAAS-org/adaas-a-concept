@@ -62,10 +62,10 @@ export function A_Abstraction_Extend(
         const meta: A_ContainerMeta | A_ComponentMeta = A_Context.meta(target);
 
         switch (true) {
-            case A_TypeGuards.isContainerConstructor(target):
+            case A_TypeGuards.isContainerConstructor(target) || A_TypeGuards.isContainerInstance(target):
                 metaKey = A_TYPES__ContainerMetaKey.ABSTRACTIONS
                 break;
-            case A_TypeGuards.isComponentConstructor(target):
+            case A_TypeGuards.isComponentConstructor(target) || A_TypeGuards.isComponentInstance(target):
                 metaKey = A_TYPES__ComponentMetaKey.ABSTRACTIONS
                 break;
         }
@@ -78,10 +78,11 @@ export function A_Abstraction_Extend(
         // Set the metadata of the method to define a custom Stage with name
         const existedMetaValue = existedMeta.get(name) || [];
 
+        const setName = `CONCEPT_ABSTRACTION::${name}`;
 
         // Add the new method to the metadata
         existedMetaValue.push({
-            name,
+            name: setName,
             handler: propertyKey,
             before: config.before || [],
             after: config.after || [],
@@ -89,7 +90,7 @@ export function A_Abstraction_Extend(
         });
 
         // Set the metadata of the method to define a custom Feature with name
-        existedMeta.set(name, existedMetaValue);
+        existedMeta.set(setName, existedMetaValue);
 
 
         //  Update the metadata of the container with the new Stage definition

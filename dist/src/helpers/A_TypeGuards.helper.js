@@ -248,9 +248,17 @@ class A_TypeGuards {
     // ==========================================================================
     // ========================= SPECIAL Type Guards =============================
     // ===========================================================================
-    static isConstructorAvailableForAbstraction(target) {
+    static isConstructorAllowedForScopeAllocation(target) {
         return A_TypeGuards.isContainerConstructor(target)
-            || A_TypeGuards.isComponentConstructor(target);
+            || A_TypeGuards.isFeatureConstructor(target);
+    }
+    static isInstanceAllowedForScopeAllocation(target) {
+        return A_TypeGuards.isContainerInstance(target)
+            || A_TypeGuards.isFeatureInstance(target);
+    }
+    static isConstructorAvailableForAbstraction(target) {
+        return A_TypeGuards.isContainerInstance(target)
+            || A_TypeGuards.isComponentInstance(target);
     }
     static isTargetAvailableForInjection(target) {
         return A_TypeGuards.isComponentConstructor(target)

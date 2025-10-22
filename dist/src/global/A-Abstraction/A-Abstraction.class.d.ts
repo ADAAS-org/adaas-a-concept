@@ -2,11 +2,12 @@ import { A_Abstraction_Extend } from "./A-Abstraction-Extend.decorator";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__Abstraction_Init } from "./A-Abstraction.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
+import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 export declare class A_Abstraction {
     /**
      * The name of the Abstraction e.g. 'deploy', 'start', 'test', etc.
      */
-    protected _name: string;
+    protected _name: A_TYPES__ConceptAbstractions;
     /**
      * List of features that are part of this Abstraction
      */

@@ -39,10 +39,10 @@ config = {}) {
         let metaKey;
         const meta = A_Context_class_1.A_Context.meta(target);
         switch (true) {
-            case A_TypeGuards_helper_1.A_TypeGuards.isContainerConstructor(target):
+            case A_TypeGuards_helper_1.A_TypeGuards.isContainerConstructor(target) || A_TypeGuards_helper_1.A_TypeGuards.isContainerInstance(target):
                 metaKey = A_Container_constants_1.A_TYPES__ContainerMetaKey.ABSTRACTIONS;
                 break;
-            case A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(target):
+            case A_TypeGuards_helper_1.A_TypeGuards.isComponentConstructor(target) || A_TypeGuards_helper_1.A_TypeGuards.isComponentInstance(target):
                 metaKey = A_Component_constants_1.A_TYPES__ComponentMetaKey.ABSTRACTIONS;
                 break;
         }
@@ -50,16 +50,17 @@ config = {}) {
         const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();
         // Set the metadata of the method to define a custom Stage with name
         const existedMetaValue = existedMeta.get(name) || [];
+        const setName = `CONCEPT_ABSTRACTION::${name}`;
         // Add the new method to the metadata
         existedMetaValue.push({
-            name,
+            name: setName,
             handler: propertyKey,
             before: config.before || [],
             after: config.after || [],
             behavior: config.behavior || 'sync'
         });
         // Set the metadata of the method to define a custom Feature with name
-        existedMeta.set(name, existedMetaValue);
+        existedMeta.set(setName, existedMetaValue);
         //  Update the metadata of the container with the new Stage definition
         A_Context_class_1.A_Context
             .meta(target)

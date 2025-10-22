@@ -25,7 +25,7 @@ import { A_TYPES__Caller_Constructor } from "../global/A-Caller/A_Caller.types";
 import { A_Error } from "../global/A-Error/A_Error.class";
 import { A_CommonHelper } from "./A_Common.helper";
 import { A_TYPES__AbstractionAvailableComponents } from "../global/A-Abstraction/A-Abstraction.types";
-import { A_TYPES__Scope_Constructor } from "../global/A-Scope/A-Scope.types";
+import { A_TYPES__Scope_Constructor, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeLinkedConstructors } from "../global/A-Scope/A-Scope.types";
 import { A_TYPES__InjectableTargets } from "../global/A-Inject/A-Inject.types";
 
 
@@ -273,9 +273,18 @@ export class A_TypeGuards {
     // ==========================================================================
     // ========================= SPECIAL Type Guards =============================
     // ===========================================================================
-    static isConstructorAvailableForAbstraction(target: any): target is A_TYPES__AbstractionAvailableComponents {
+    static isConstructorAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedConstructors {
         return A_TypeGuards.isContainerConstructor(target)
-            || A_TypeGuards.isComponentConstructor(target);
+            || A_TypeGuards.isFeatureConstructor(target);
+    }
+    static isInstanceAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedComponents {
+        return A_TypeGuards.isContainerInstance(target)
+            || A_TypeGuards.isFeatureInstance(target);
+    }
+
+    static isConstructorAvailableForAbstraction(target: any): target is A_TYPES__AbstractionAvailableComponents {
+        return A_TypeGuards.isContainerInstance(target)
+            || A_TypeGuards.isComponentInstance(target);
     }
 
 

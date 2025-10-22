@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_Abstraction = void 0;
 const A_Abstraction_Extend_decorator_1 = require("./A-Abstraction-Extend.decorator");
 const A_Feature_class_1 = require("../A-Feature/A-Feature.class");
+const A_Context_class_1 = require("../A-Context/A-Context.class");
 class A_Abstraction {
     /**
      * Allows to extends A-Abstraction with additional methods
@@ -44,7 +45,12 @@ class A_Abstraction {
         this._index = 0;
         this._name = params.name;
         this._features = params.containers.map(container => {
-            return new A_Feature_class_1.A_Feature({ name: this._name, component: container, });
+            const template = A_Context_class_1.A_Context.abstractionTemplate(this._name, container);
+            return new A_Feature_class_1.A_Feature({
+                name: this._name,
+                component: container,
+                template
+            });
         });
         this._current = this._features[0];
     }

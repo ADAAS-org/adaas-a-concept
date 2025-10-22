@@ -17,7 +17,7 @@ import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
-import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types";
+import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 export declare class A_Context {
     /**
      * Default name of the application from environment variable A_CONCEPT_NAME
@@ -250,7 +250,7 @@ export declare class A_Context {
     /**
      * Provide the scope that dictates which components are active and can provide extensions for the feature.
      */
-    scope: A_Scope): Array<A_TYPES__A_StageStep>;
+    scope?: A_Scope): Array<A_TYPES__A_StageStep>;
     /**
      * Returns all extensions for the specific feature in the specific component within the provided scope.
      * Scope dictates which components are active and can provide extensions for the feature.
@@ -304,28 +304,20 @@ export declare class A_Context {
     /**
      * Provide the abstraction stage to get the definition for.
      */
-    abstraction: A_TYPES__ConceptAbstraction, 
+    abstraction: A_TYPES__ConceptAbstractions, 
     /**
      * Provide the component to get the abstraction definition from.
      */
-    component: A_TYPES__FeatureAvailableComponents, 
-    /**
-     * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-     */
-    scope: A_Scope): Array<A_TYPES__A_StageStep>;
+    component: A_TYPES__FeatureAvailableComponents): Array<A_TYPES__A_StageStep>;
     static abstractionExtensions(
     /**
      * Provide the abstraction name to get the definition for.
      */
-    abstraction: A_TYPES__ConceptAbstraction, 
+    abstraction: A_TYPES__ConceptAbstractions, 
     /**
      * Provide the component to get the abstraction definition from.
      */
-    component: A_TYPES__FeatureAvailableComponents, 
-    /**
-     * Provide the scope that dictates which components are active and can provide extensions for the abstraction.
-     */
-    scope: A_Scope): Array<A_TYPES__A_StageStep>;
+    component: A_TYPES__FeatureAvailableComponents): Array<A_TYPES__A_StageStep>;
     /**
      * Resets the Context to its initial state.
      */
