@@ -15,7 +15,7 @@ export class A_Container {
      * Name of the container
      */
     get name() {
-        return this.config.name || this.constructor.name;
+        return this.config?.name || this.constructor.name;
     }
     /**
      * Returns the scope where the container is registered

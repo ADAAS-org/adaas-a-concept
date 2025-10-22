@@ -17,7 +17,8 @@ class A_Container {
      * Name of the container
      */
     get name() {
-        return this.config.name || this.constructor.name;
+        var _a;
+        return ((_a = this.config) === null || _a === void 0 ? void 0 : _a.name) || this.constructor.name;
     }
     /**
      * Returns the scope where the container is registered
