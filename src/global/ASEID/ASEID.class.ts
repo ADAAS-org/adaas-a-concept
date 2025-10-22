@@ -19,7 +19,7 @@ export class ASEID {
     /**
      * ASEID Regular Expression
      */
-    static readonly regexp: RegExp = new RegExp(`^[a-z|A-Z|0-9|-]+@[a-z|A-Z|0-9|-]+:[a-z|A-Z|0-9|-]+:[a-z|A-Z|0-9|-|\\.]+(@v[0-9|\\.]+|@lts)?$`)
+    static readonly regexp: RegExp = new RegExp(`^[a-z|A-Z|0-9|-]+@[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\\.|-]+(@v[0-9|\\.]+|@lts)?$`)
     /**
      * Tests if the identity string is an ASEID
      * 
@@ -27,9 +27,7 @@ export class ASEID {
      * @returns 
      */
     static isASEID(identity: string): boolean {
-        return this.regexp.test(
-            identity
-        )
+        return this.regexp.test(identity)
     }
 
 

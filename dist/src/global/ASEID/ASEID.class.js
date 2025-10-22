@@ -163,5 +163,5 @@ exports.ASEID = ASEID;
 /**
  * ASEID Regular Expression
  */
-ASEID.regexp = new RegExp(`^[a-z|A-Z|0-9|-]+@[a-z|A-Z|0-9|-]+:[a-z|A-Z|0-9|-]+:[a-z|A-Z|0-9|-|\\.]+(@v[0-9|\\.]+|@lts)?$`);
+ASEID.regexp = new RegExp(`^[a-z|A-Z|0-9|-]+@[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\\.|-]+(@v[0-9|\\.]+|@lts)?$`);
 //# sourceMappingURL=ASEID.class.js.map

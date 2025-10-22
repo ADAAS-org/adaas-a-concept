@@ -155,12 +155,7 @@ describe('A-Entity tests', () => {
             public foo!: string;
 
             fromNew(newEntity: { foo: string; }): void {
-                this.aseid = new ASEID({
-                    concept: 'default',
-                    scope: 'default',
-                    entity: 'entity-a',
-                    id: Math.floor(Math.random() * 1000000000).toString(),
-                });
+                super.fromNew(newEntity);
                 this.foo = newEntity.foo;
             }
 
