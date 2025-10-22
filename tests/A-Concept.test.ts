@@ -105,5 +105,27 @@ describe('A-Concept tests', () => {
         expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);
         expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);
     });
+     it('Should allow to register multiple containers', async () => {
+        A_Context.reset();
+
+        class MyContainerA extends A_Container { }
+        class MyContainerB extends A_Container { }
+
+        const containerA = new MyContainerA({ name: 'ContainerA' });
+        const containerB = new MyContainerB({ name: 'ContainerB' });
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                containerA,
+                containerB
+            ]
+        });
+
+        expect(containerA.scope.resolve(MyContainerA)).toBeInstanceOf(MyContainerA);
+        expect(containerB.scope.resolve(MyContainerB)).toBeInstanceOf(MyContainerB);   
+
+     })
+     
 
 });

@@ -7,6 +7,7 @@ import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.cla
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
 import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
+import { A_Fragment } from '@adaas/a-concept/global/A-Fragment/A-Fragment.class';
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
 
@@ -252,5 +253,40 @@ describe('A-Scope tests', () => {
         });
         //  root -> container.scope -> feature.scope
         expect(feature.scope.parent).toBe(container.scope);
+    });
+
+    it('Should correctly resolve all dependencies', async () => {
+        class fragmentA extends A_Fragment { }
+        class fragmentB extends A_Fragment { }
+
+        class componentA extends A_Component { }
+        class componentB extends A_Component { }
+
+        class customContainer extends A_Container { }
+        class customEntity extends A_Entity { }
+
+
+        const container = new customContainer({
+            name: 'CustomContainer',
+            entities: [customEntity, new customEntity()],
+            components: [componentA, componentB],
+            fragments: [new fragmentA(), new fragmentB()]
+        })
+
+        expect(container).toBeInstanceOf(customContainer);
+        const scope = container.scope;
+
+        expect(scope.resolve(componentA)).toBeInstanceOf(componentA);
+        expect(scope.resolve(componentB)).toBeInstanceOf(componentB);
+
+        const resolvedFragmentA = scope.resolve(fragmentA);
+        const resolvedFragmentB = scope.resolve(fragmentB);
+
+        expect(resolvedFragmentA).toBeInstanceOf(fragmentA);
+        expect(resolvedFragmentB).toBeInstanceOf(fragmentB);
+
+        expect(scope.resolve(customEntity)).toBeInstanceOf(customEntity);
+
+
     });
 });

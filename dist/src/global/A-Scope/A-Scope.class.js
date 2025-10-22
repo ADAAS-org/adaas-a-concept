@@ -254,7 +254,12 @@ class A_Scope {
             }
         }
         if (!found && !!this._parent)
-            return this._parent.has(ctor);
+            try {
+                return this._parent.has(ctor);
+            }
+            catch (error) {
+                return false;
+            }
         return found;
     }
     /**

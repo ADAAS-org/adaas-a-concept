@@ -410,7 +410,11 @@ export class A_Scope<
         }
 
         if (!found && !!this._parent)
-            return this._parent.has(ctor as any);
+            try {
+                return this._parent.has(ctor as any);
+            } catch (error) {
+                return false;
+            }
 
 
         return found;
