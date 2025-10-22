@@ -298,7 +298,7 @@ class A_Scope {
         if (!!this._parent) {
             return this._parent.resolveConstructor(name);
         }
-        throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
+        throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
     resolve(
     /**

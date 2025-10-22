@@ -7,6 +7,7 @@ export class A_ScopeError extends A_Error {
 
     static readonly ConstructorError = 'Unable to construct A-Scope instance';
 
+    static readonly ResolutionError = 'A-Scope Resolution Error';
 
     static readonly CircularInheritanceError = 'A-Scope Circular Inheritance Error';
 

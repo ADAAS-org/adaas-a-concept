@@ -498,7 +498,10 @@ export class A_Scope<
             return this._parent.resolveConstructor(name) as any;
         }
 
-        throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
+        throw new A_ScopeError(
+            A_ScopeError.ResolutionError,
+            `Component or Entity with name ${name} not found in the scope ${this.name}`
+        );
     }
 
 
@@ -561,9 +564,9 @@ export class A_Scope<
          */
         instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
     ): Array<T>
-    resolve(
+    resolve<T extends A_TYPES__ScopeResolvableComponents>(
         constructorName: string
-    ): A_TYPES__ScopeResolvableComponents
+    ): T
     // base definition
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         /**

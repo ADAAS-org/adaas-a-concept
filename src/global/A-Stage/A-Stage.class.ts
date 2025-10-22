@@ -11,7 +11,6 @@ import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_TYPES__ScopeResolvableComponents } from "../A-Scope/A-Scope.types";
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
-import { A_TYPES__InjectableConstructors } from "@adaas/a-concept/global/A-Inject/A-Inject.types";
 
 
 

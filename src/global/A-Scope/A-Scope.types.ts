@@ -77,7 +77,7 @@ export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
 /**
  * A list of components that can be resolved by a scope
  */
-export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Fragment
+export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity 
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */

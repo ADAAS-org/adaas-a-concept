@@ -1,6 +1,6 @@
 import './test.setup';
 
-import { A_Command } from "@adaas/a-concept/base/A-Command/A-Command.class";
+import { A_Command } from "@adaas/a-concept/base/A-Command/A-Command.entity";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';

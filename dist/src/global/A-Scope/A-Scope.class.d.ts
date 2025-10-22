@@ -302,7 +302,7 @@ export declare class A_Scope<_ComponentType extends A_TYPES__Component_Construct
      * Provide optional instructions to find a specific entity or a set of entities
      */
     instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
-    resolve(constructorName: string): A_TYPES__ScopeResolvableComponents;
+    resolve<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): T;
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
     /**
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
