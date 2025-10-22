@@ -9,6 +9,8 @@ export class A_ScopeError extends A_Error {
 
     static readonly ResolutionError = 'A-Scope Resolution Error';
 
+    static readonly RegistrationError = 'A-Scope Registration Error';
+
     static readonly CircularInheritanceError = 'A-Scope Circular Inheritance Error';
 
 }

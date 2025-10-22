@@ -8,5 +8,6 @@ exports.A_ScopeError = A_ScopeError;
 A_ScopeError.InitializationError = 'A-Scope Initialization Error';
 A_ScopeError.ConstructorError = 'Unable to construct A-Scope instance';
 A_ScopeError.ResolutionError = 'A-Scope Resolution Error';
+A_ScopeError.RegistrationError = 'A-Scope Registration Error';
 A_ScopeError.CircularInheritanceError = 'A-Scope Circular Inheritance Error';
 //# sourceMappingURL=A-Scope.error.js.map

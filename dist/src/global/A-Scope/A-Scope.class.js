@@ -380,7 +380,7 @@ class A_Scope {
         if (!!this._parent) {
             return this._parent.resolveByName(name);
         }
-        throw new Error(`Component or Entity with name ${name} not found in the scope ${this.name}`);
+        throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Component or Entity with name ${name} not found in the scope ${this.name}`);
     }
     /**
      * This method is used internally to resolve a single component, fragment or entity from the scope
@@ -390,8 +390,9 @@ class A_Scope {
      * @returns
      */
     resolveOnce(component, instructions) {
+        const componentName = A_TypeGuards_helper_1.A_TypeGuards.isFunction(component) ? component.name : component.constructor.name || String(component);
         if (!component || !this.has(component))
-            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${component} not found in the scope`);
+            throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${componentName} not found in the scope`);
         if (A_TypeGuards_helper_1.A_TypeGuards.isScopeConstructor(component))
             component;
         if (typeof component == 'function' && component.name === 'A_Scope')
@@ -413,7 +414,7 @@ class A_Scope {
                 return this.resolveComponent(component);
             }
             default:
-                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${component} not found in the scope`);
+                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Injected Component ${componentName} not found in the scope`);
         }
     }
     resolveIssuer(ctor) {
@@ -532,7 +533,7 @@ class A_Scope {
             case !fragmentInstancePresented && !!this._parent:
                 return this._parent.resolveFragment(fragment);
             default:
-                throw new Error(`Fragment ${fragment.name} not found in the scope ${this.name}`);
+                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Fragment ${fragment.name} not found in the scope ${this.name}`);
         }
     }
     /**
@@ -586,10 +587,11 @@ class A_Scope {
                 return this._parent.resolveComponent(component);
             }
             default:
-                throw new Error(`Component ${component.name} not found in the scope ${this.name}`);
+                throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.ResolutionError, `Component ${component.name} not found in the scope ${this.name}`);
         }
     }
     register(param1) {
+        var _a;
         switch (true) {
             // ------------------------------------------
             // ------------ Instances ----------------
@@ -657,11 +659,13 @@ class A_Scope {
             // ------------------------------------------
             default:
                 if (param1 instanceof A_Entity_class_1.A_Entity)
-                    throw new Error(`Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);
+                    throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.RegistrationError, `Entity with ASEID ${param1.aseid.toString()} is already registered in the scope ${this.name}`);
                 else if (param1 instanceof A_Fragment_class_1.A_Fragment)
-                    throw new Error(`Fragment ${param1.constructor.name} is already registered in the scope ${this.name}`);
-                else
-                    throw new Error(`Cannot register ${param1} in the scope ${this.name}`);
+                    throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.RegistrationError, `Fragment ${param1.constructor.name} is already registered in the scope ${this.name}`);
+                else {
+                    const componentName = A_TypeGuards_helper_1.A_TypeGuards.isFunction(param1) ? param1.name : ((_a = param1 === null || param1 === void 0 ? void 0 : param1.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(param1);
+                    throw new A_Scope_error_1.A_ScopeError(A_Scope_error_1.A_ScopeError.RegistrationError, `Cannot register ${componentName} in the scope ${this.name}`);
+                }
         }
     }
     /**
