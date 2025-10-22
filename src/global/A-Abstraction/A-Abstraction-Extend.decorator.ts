@@ -69,6 +69,7 @@ export function A_Abstraction_Extend(
                 metaKey = A_TYPES__ComponentMetaKey.ABSTRACTIONS
                 break;
         }
+        const setName = `CONCEPT_ABSTRACTION::${name}`;
 
         // Get the existed metadata or create a new one
         const existedMeta: A_Meta<{
@@ -76,9 +77,7 @@ export function A_Abstraction_Extend(
         }> = meta.get(metaKey) || new A_Meta();
 
         // Set the metadata of the method to define a custom Stage with name
-        const existedMetaValue = existedMeta.get(name) || [];
-
-        const setName = `CONCEPT_ABSTRACTION::${name}`;
+        const existedMetaValue = existedMeta.get(setName) || [];
 
         // Add the new method to the metadata
         existedMetaValue.push({

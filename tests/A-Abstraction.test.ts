@@ -3,7 +3,6 @@ import './test.setup'
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { A_ScopeError } from '@adaas/a-concept/global/A-Scope/A-Scope.error';
 
 jest.retryTimes(0);
 
@@ -150,5 +149,110 @@ describe('A-Abstraction Tests', () => {
         expect(containerA._test).toBe(5);
         expect(containerB._test).toBe(1);
     })
-    
+    it('Should execute abstraction in a proper order', async () => {
+        A_Context.reset();
+
+        const order: string[] = [];
+
+        class MyContainerA extends A_Container {
+
+            @A_Concept.Load()
+            async step1() {
+                order.push('step1');
+            }
+
+            @A_Concept.Load()
+            async step2() {
+                order.push('step2');
+            }
+        }
+        class MyContainerB extends A_Container {
+
+            @A_Concept.Load()
+            async step3() {
+                order.push('step3');
+            }
+
+            @A_Concept.Load()
+            async step4() {
+                order.push('step4');
+            }
+        }
+
+
+        const containerA = new MyContainerA({ name: 'ContainerA' });
+        const containerB = new MyContainerB({ name: 'ContainerB' });
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                containerA,
+                containerB
+            ]
+        });
+
+        await concept.load();
+
+        expect(order).toEqual(['step1', 'step2', 'step3', 'step4']);
+    })
+    it('Should execute abstraction in order with dependencies', async () => {
+        A_Context.reset();
+
+        const order: string[] = [];
+
+        class MyContainerA extends A_Container {
+
+            @A_Concept.Load()
+            async step1() {
+                order.push('step1');
+            }
+
+            @A_Concept.Load({
+                after: ['MyComponentA.step3']
+            })
+            async step2() {
+                order.push('step2');
+            }
+        }
+
+        class MyComponentA extends A_Component {
+
+            @A_Concept.Load()
+            async step3() {
+                order.push('step3');
+            }
+        }
+
+
+        class MyContainerB extends A_Container {
+
+            @A_Concept.Load()
+            async step4() {
+                order.push('step4');
+            }
+
+            @A_Concept.Load({
+                before: ['MyContainerB.step4']
+            })
+            async step5() {
+                order.push('step5');
+            }
+        }
+
+
+        const containerA = new MyContainerA({ name: 'ContainerA', components: [MyComponentA] });
+        const containerB = new MyContainerB({ name: 'ContainerB' });
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                containerA,
+                containerB
+            ]
+        });
+
+        await concept.load();
+
+        expect(order).toEqual(['step1', 'step3', 'step2', 'step5', 'step4']);
+    })
 });
