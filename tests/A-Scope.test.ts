@@ -289,8 +289,6 @@ describe('A-Scope tests', () => {
     });
 
     it('Should resolve inherited components', async () => {
-
-
         class componentA extends A_Component { }
         class componentB extends componentA { }
 
@@ -310,4 +308,22 @@ describe('A-Scope tests', () => {
         expect(scope.resolve(componentB)).toBeInstanceOf(componentB);
 
     });
+
+    it('Should be able to resolve itself', async () => {
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+        const resolved = scope.resolve(A_Scope);
+        expect(resolved).toBe(scope);
+    });
+    it('Should be able to resolve scope issuer', async () => {
+
+        const container = new A_Container();
+
+        const resolved = container.scope.resolve(A_Container);
+        expect(resolved).toBe(container);
+
+        expect(container.scope.issuer()).toBe(container);
+    });
+
 });

@@ -364,27 +364,31 @@ export class A_Scope<
         let found = false;
 
         switch (true) {
-            // 1) Check by string name.  
+            // 1) Check if it's a Scope. It's always true since it returns itself
+            case A_TypeGuards.isScopeConstructor(ctor):
+                return true;
+
+            // 2) Check by string name.  
             case typeof ctor === 'string': {
-                // 1.1 Check if it's a component name
+                // 2.1 Check if it's a component name
                 const possibleComponent = Array.from(this.allowedComponents).find(c => c.name === ctor);
                 if (possibleComponent) found = true;
 
-                // 1.2 Check if it's a fragment name
+                // 2.2 Check if it's a fragment name
                 const possibleFragment = Array.from(this.allowedFragments).find(f => f.name === ctor);
                 if (possibleFragment) found = true;
 
-                // 1.4 Check if it's an entity name or entity static entity property
+                // 2.3 Check if it's an entity name or entity static entity property
                 const possibleEntity = Array.from(this.allowedEntities).find(e => e.name === ctor);
                 if (possibleEntity) found = true;
 
-                // 1.5 If not found in current scope, check parent scope
+                // 2.4 If not found in current scope, check parent scope
                 if (!!this._parent)
                     return this._parent.has(ctor);
 
                 return false;
             }
-            // 2) Check if it's a Component
+            // 3) Check if it's a Component
             case A_TypeGuards.isComponentConstructor(ctor): {
                 found = this.isAllowedComponent(ctor)
                     || !![...this.allowedComponents]
@@ -392,7 +396,7 @@ export class A_Scope<
 
                 break;
             }
-            // 3) Check if it's an Entity
+            // 4) Check if it's an Entity
             case A_TypeGuards.isEntityConstructor(ctor): {
                 found = this.isAllowedEntity(ctor)
                     || !![...this.allowedEntities]
@@ -400,7 +404,7 @@ export class A_Scope<
 
                 break;
             }
-            // 4) Check if it's a Fragment
+            // 5) Check if it's a Fragment
             case A_TypeGuards.isFragmentConstructor(ctor): {
                 found = this.isAllowedFragment(ctor)
                     || !![...this.allowedFragments]
@@ -408,14 +412,14 @@ export class A_Scope<
 
                 break;
             }
-
-            // check scope issuer 
+            // 6) Check scope issuer
             case this.issuer().constructor === ctor: {
                 found = true;
                 break;
             }
         }
 
+        // 7) Check parent scope in case not found
         if (!found && !!this._parent)
             try {
                 return this._parent.has(ctor as any);
@@ -596,7 +600,7 @@ export class A_Scope<
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: T,
+        param1: InstanceType<T>,
 
     ): T | Array<T>
     resolve<T extends A_TYPES__ScopeResolvableComponents>(

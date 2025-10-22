@@ -312,7 +312,7 @@ export declare class A_Scope<_ComponentType extends A_TYPES__Component_Construct
     /**
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
      */
-    param1: T): T | Array<T>;
+    param1: InstanceType<T>): T | Array<T>;
     /**
      * This method is used internally to resolve a component, fragment or entity by its constructor name
      *
