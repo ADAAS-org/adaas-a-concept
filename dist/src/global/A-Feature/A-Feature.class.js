@@ -297,7 +297,7 @@ class A_Feature {
                 case A_TypeGuards_helper_1.A_TypeGuards.isErrorInstance(reason):
                     this._error = new A_Feature_error_1.A_FeatureError({
                         code: A_Feature_error_1.A_FeatureError.Interruption,
-                        message: reason.message,
+                        title: reason.title,
                         description: reason.description,
                         originalError: reason
                     });

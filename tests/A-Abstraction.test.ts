@@ -3,6 +3,7 @@ import './test.setup'
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
+import { A_ScopeError } from '@adaas/a-concept/global/A-Scope/A-Scope.error';
 
 jest.retryTimes(0);
 
@@ -109,5 +110,45 @@ describe('A-Abstraction Tests', () => {
         expect(containerB._test).toBe(1);
 
     })
-});
+    it('Should allow to define an async abstraction extension', async () => {
+        A_Context.reset();
 
+        class MyContainerA extends A_Container {
+            _test: number = 0
+
+            @A_Concept.Load()
+            async myMethod() {
+                this._test = 5;
+            }
+        }
+        class MyContainerB extends A_Container {
+            _test: number = 0
+
+            @A_Concept.Load()
+            myMethod() {
+                this._test++;
+            }
+        }
+
+
+        const containerA = new MyContainerA({ name: 'ContainerA' });
+        const containerB = new MyContainerB({ name: 'ContainerB' });
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                containerA,
+                containerB
+            ]
+        });
+
+        await concept.load();
+
+        expect(containerA.scope.resolve(MyContainerA)).toBeInstanceOf(MyContainerA);
+        expect(containerB.scope.resolve(MyContainerB)).toBeInstanceOf(MyContainerB);
+
+        expect(containerA._test).toBe(5);
+        expect(containerB._test).toBe(1);
+    })
+    
+});

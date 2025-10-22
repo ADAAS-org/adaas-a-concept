@@ -24,6 +24,10 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
      */
     protected _aseid: ASEID;
     /**
+     * Title of the error
+     */
+    protected _title: string;
+    /**
      * Possible Scope if needed to identify the error by it's execution environment
      */
     protected _scope?: string;
@@ -99,7 +103,7 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
     /**
      * Error message
      */
-    message: string, 
+    title: string, 
     /**
      * Detailed description of the error
      */
@@ -109,13 +113,18 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
      */
     get aseid(): ASEID;
     /**
-     * Returns an Error message what is a brief title of the error
+     * Returns the title of the error
      *
      * Example: 'User not found', 'Validation error', 'Unauthorized access', etc.
      *
-     * [!] Note: This message should be short and concise, less than 60 characters
-     * [!] Note: If message exceeds 60 characters, there would be an error thrown
-     * [!] Note: This message is intended to be human-readable and can be displayed in UI or logs
+     * [!] Note: This title should be short and concise, less than 60 characters
+     * [!] Note: If title exceeds 60 characters, there would be an error thrown
+     * [!] Note: This title is intended to be human-readable and can be displayed in UI or logs
+     */
+    get title(): string;
+    /**
+     * Returns an Error message what is a brief title of the error
+     *
      */
     get message(): string;
     /**
@@ -182,7 +191,7 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
      * @param param1
      * @returns
      */
-    protected getInitializer(param1: _ConstructorType | Error | string | any): (param1: any, param2: any) => void | (() => void);
+    protected getInitializer(param1: _ConstructorType | Error | string | any, param2?: string): (param1: any, param2: any) => void | (() => void);
     /**
      * Initializes the A_Error instance from a standard Error object.
      *
@@ -190,12 +199,13 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
      */
     protected fromError(error: Error): void;
     /**
-     * Initializes the A_Error instance from a string message and optional description.
+     * Initializes the A_Error instance from a message.
      *
-     * @param message
+     * @param title
      * @param description
      */
-    protected fromString(message: string, description?: string): void;
+    protected fromMessage(message: string): void;
+    fromTitle(title: string, description: string): void;
     /**
      * Initializes the A_Error instance from a constructor parameters object.
      *
@@ -210,10 +220,10 @@ export declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TY
      */
     toJSON(): _SerializedType;
     /**
-     * Checks if the provided message exceeds 60 characters.
+     * Checks if the provided title exceeds 60 characters.
      * If it does, throws a validation A_Error.
      *
-     * @param message
+     * @param title
      */
-    protected validateMessage(message: string): void;
+    protected validateTitle(title: string): void;
 }

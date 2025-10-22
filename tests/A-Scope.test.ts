@@ -286,7 +286,28 @@ describe('A-Scope tests', () => {
         expect(resolvedFragmentB).toBeInstanceOf(fragmentB);
 
         expect(scope.resolve(customEntity)).toBeInstanceOf(customEntity);
+    });
 
+    it('Should resolve inherited components', async () => {
+
+
+        class componentA extends A_Component { }
+        class componentB extends componentA { }
+
+        class customContainer extends A_Container { }
+
+        const container = new customContainer({
+            name: 'CustomContainer',
+            components: [componentB],
+        })
+        expect(container.scope.has(componentB)).toBe(true);
+        expect(container.scope.has(componentA)).toBe(true);
+
+        expect(container).toBeInstanceOf(customContainer);
+        const scope = container.scope;
+
+        expect(scope.resolve(componentA)).toBeInstanceOf(componentB);
+        expect(scope.resolve(componentB)).toBeInstanceOf(componentB);
 
     });
 });

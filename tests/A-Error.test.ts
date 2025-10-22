@@ -2,6 +2,7 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/e
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Error } from "@adaas/a-concept/global/A-Error/A_Error.class";
 import { A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION } from "@adaas/a-concept/global/A-Error/A_Error.constants";
+import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
 
 jest.retryTimes(0);
 
@@ -13,7 +14,8 @@ describe('A-Error Tests', () => {
 
         expect(error).toBeDefined();
         expect(error.message).toBe('Test error');
-        expect(error.code).toBe('test-error');
+        expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
+        expect(error.code).toBe(A_FormatterHelper.toKebabCase(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR));
         expect(error.type).toBe('a-error');
     });
 
@@ -24,7 +26,8 @@ describe('A-Error Tests', () => {
 
         expect(error).toBeDefined();
         expect(error.message).toBe('Original error');
-        expect(error.code).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
+        expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
+        expect(error.code).toBe(A_FormatterHelper.toKebabCase(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR));
         expect(error.type).toBe('a-error');
         expect(error.originalError).toBe(originalError);
     });
@@ -36,7 +39,8 @@ describe('A-Error Tests', () => {
 
         expect(error).toBeDefined();
         expect(error).toBe(originalError);
-        expect(error.message).toBe('Original A_Error');
+        expect(error.title).toBe('Original A_Error');
+        expect(error.message).toBe('[Original A_Error]: This is the original error');
         expect(error.code).toBe('original-a-error');
         expect(error.type).toBe('a-error');
         expect(error.description).toBe('This is the original error');
@@ -48,13 +52,14 @@ describe('A-Error Tests', () => {
         const originalError = new A_Error('Original A_Error', 'This is the original error');
         const error = new A_Error({
             code: 'test-code',
-            message: 'Custom error message',
+            title: 'Custom error message',
             description: 'This is a custom error description',
             originalError
         });
 
         expect(error).toBeDefined();
-        expect(error.message).toBe('Custom error message');
+        expect(error.title).toBe('Custom error message');
+        expect(error.message).toBe('[Custom error message]: This is a custom error description');
         expect(error.code).toBe('test-code');
         expect(error.type).toBe('a-error');
         expect(error.description).toBe('This is a custom error description');
@@ -66,11 +71,12 @@ describe('A-Error Tests', () => {
         const originalError = new A_Error('Original A_Error', 'This is the original error');
 
         const error = new A_Error({
-            message: 'Custom error message',
+            title: 'Custom error message',
             originalError: originalError
         });
 
         expect(error).toBeDefined();
+        expect(error.title).toBe('Custom error message');
         expect(error.message).toBe('Custom error message');
         expect(error.code).toBe('custom-error-message');
         expect(error.type).toBe('a-error');
@@ -84,20 +90,26 @@ describe('A-Error Tests', () => {
         const error = new MyError('Test inherited error');
 
         expect(error).toBeDefined();
+        expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
+        expect(error.code).toBe(A_FormatterHelper.toKebabCase(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR));
         expect(error.message).toBe('Test inherited error');
-        expect(error.code).toBe('test-inherited-error');
         expect(error.type).toBe('my-error');
     });
 
     it('It should be possible to serialize  an A_Error instance', async () => {
 
         const originalError = new A_Error('Original A_Error', 'This is the original error');
+
+        expect(originalError.title).toBe('Original A_Error');
+
+
         const error = new A_Error(originalError);
 
         const serialized = error.toJSON();
 
         expect(serialized).toBeDefined();
-        expect(serialized.message).toBe('Original A_Error');
+        expect(serialized.title).toBe('Original A_Error');
+        expect(serialized.message).toBe('[Original A_Error]: This is the original error');
         expect(serialized.code).toBe('original-a-error');
         expect(serialized.type).toBe('a-error');
         expect(serialized.scope).toBe('root');
@@ -115,7 +127,8 @@ describe('A-Error Tests', () => {
 
         expect(error).toBeDefined();
         expect(error.message).toBe('Test error in custom concept and scope');
-        expect(error.code).toBe('test-error-in-custom-concept-and-scope');
+        expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
+        expect(error.code).toBe(A_FormatterHelper.toKebabCase(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR));
         expect(error.type).toBe('a-error');
         expect(error.aseid.concept).toBe('my-project');
         expect(error.aseid.scope).toBe('my-scope');

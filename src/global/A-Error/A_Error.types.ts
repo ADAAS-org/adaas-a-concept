@@ -15,12 +15,11 @@ export type A_TYPES__Error_Constructor<T = A_Error> = new (...args: any[]) => T;
  */
 export type A_TYPES__Error_Init = {
     /**
-     * Error message
+     * Error title
      * 
      * A short description of the error 
      */
-    message: string;
-
+    title: string;
 
     /**
      * Error code representing the type of error
@@ -65,6 +64,10 @@ export type A_TYPES__Error_Serialized = {
      * ASEID of the error
      */
     aseid: string,
+    /**
+     * A brief title of the error
+     */
+    title: string,
     /**
      * Error message
      */

@@ -6,6 +6,7 @@ const A_Formatter_helper_1 = require("../../helpers/A_Formatter.helper");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_TypeGuards_helper_1 = require("../../helpers/A_TypeGuards.helper");
 const ASEID_class_1 = require("../ASEID/ASEID.class");
+const env_constants_1 = require("../../constants/env.constants");
 class A_Error extends Error {
     // ====================================================================
     // ================== Static A-Error Information ======================
@@ -36,25 +37,28 @@ class A_Error extends Error {
     }
     constructor(param1, param2) {
         //  to prevent errors accumulation in the stack trace it returns the original error if provided param1 is A_Error
-        if (param1 instanceof A_Error) {
-            return param1;
+        switch (true) {
+            case param1 instanceof A_Error:
+                return param1;
+            case param1 instanceof Error:
+                super(param1.message);
+                break;
+            case A_TypeGuards_helper_1.A_TypeGuards.isConstructorType(param1) && 'description' in param1:
+                super(`[${param1.title}]: ${param1.description}`);
+                break;
+            case A_TypeGuards_helper_1.A_TypeGuards.isConstructorType(param1) && !('description' in param1):
+                super(param1.title);
+                break;
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1) && !param2:
+                super(param1);
+                break;
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1) && !!param2:
+                super(`[${param1}]: ${param2}`);
+                break;
+            default:
+                throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'Invalid parameters provided to A_Error constructor');
         }
-        else if (A_TypeGuards_helper_1.A_TypeGuards.isConstructorType(param1)) {
-            super(param1.message);
-        }
-        else if (param1 instanceof Error) {
-            super(param1.message);
-        }
-        else if (A_TypeGuards_helper_1.A_TypeGuards.isString(param1)) {
-            super(param1);
-        }
-        else {
-            console.log('INVALID PARAMS PROVIDED TO A_ERROR CONSTRUCTOR: ', param1);
-            throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'Invalid parameters provided to A_Error constructor');
-        }
-        // check message length
-        this.validateMessage(this.message);
-        const initializer = this.getInitializer(param1);
+        const initializer = this.getInitializer(param1, param2);
         // the returned initializer is already bound to `this` (we used .bind(this)),
         // so calling it will run the appropriate logic on this instance:
         initializer.call(this, param1, param2);
@@ -69,13 +73,20 @@ class A_Error extends Error {
         return this._aseid;
     }
     /**
-     * Returns an Error message what is a brief title of the error
+     * Returns the title of the error
      *
      * Example: 'User not found', 'Validation error', 'Unauthorized access', etc.
      *
-     * [!] Note: This message should be short and concise, less than 60 characters
-     * [!] Note: If message exceeds 60 characters, there would be an error thrown
-     * [!] Note: This message is intended to be human-readable and can be displayed in UI or logs
+     * [!] Note: This title should be short and concise, less than 60 characters
+     * [!] Note: If title exceeds 60 characters, there would be an error thrown
+     * [!] Note: This title is intended to be human-readable and can be displayed in UI or logs
+     */
+    get title() {
+        return this._title;
+    }
+    /**
+     * Returns an Error message what is a brief title of the error
+     *
      */
     get message() {
         return super.message;
@@ -91,7 +102,7 @@ class A_Error extends Error {
      * [!] Note: If not provided would be used a kebab-case message of the error
      */
     get code() {
-        return this._code || A_Formatter_helper_1.A_FormatterHelper.toKebabCase(this.message);
+        return this._code || A_Formatter_helper_1.A_FormatterHelper.toKebabCase(this.title);
     }
     /**
      * Returns the type of the error which corresponds to the static entity of the class
@@ -141,7 +152,7 @@ class A_Error extends Error {
      * [!] Note: This description is intended to provide more context about the error and can be used for debugging or logging purposes
      */
     get description() {
-        return this._description || process.env.A_ERROR_DEFAULT_DESCRIPTION || A_Error_constants_1.A_CONSTANTS__ERROR_DESCRIPTION;
+        return this._description || process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION] || A_Error_constants_1.A_CONSTANTS__ERROR_DESCRIPTION;
     }
     /**
      * Returns the original error if any
@@ -159,10 +170,12 @@ class A_Error extends Error {
      * @param param1
      * @returns
      */
-    getInitializer(param1) {
+    getInitializer(param1, param2) {
         switch (true) {
-            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1):
-                return this.fromString;
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1) && !param2:
+                return this.fromMessage;
+            case A_TypeGuards_helper_1.A_TypeGuards.isString(param1) && !!param2:
+                return this.fromTitle;
             case param1 instanceof Error:
                 return this.fromError;
             case A_TypeGuards_helper_1.A_TypeGuards.isConstructorType(param1):
@@ -179,32 +192,42 @@ class A_Error extends Error {
      * @param error
      */
     fromError(error) {
-        this._code = A_Error_constants_1.A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR;
+        this._title = A_Error_constants_1.A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR;
         this._aseid = new ASEID_class_1.ASEID({
             concept: this.constructor.concept,
             scope: this.constructor.scope,
             entity: this.constructor.entity,
             id: this.code
         });
-        this._description = 'If you see this error please let us know.';
         this._originalError = error;
     }
     /**
-     * Initializes the A_Error instance from a string message and optional description.
+     * Initializes the A_Error instance from a message.
      *
-     * @param message
+     * @param title
      * @param description
      */
-    fromString(message, description) {
-        this._code = A_Formatter_helper_1.A_FormatterHelper.toKebabCase(message);
-        this._scope = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(description) ? description.name : undefined;
+    fromMessage(message) {
+        this._title = A_Error_constants_1.A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR;
         this._aseid = new ASEID_class_1.ASEID({
             concept: this.constructor.concept,
             scope: this._scope || this.constructor.scope,
             entity: this.constructor.entity,
             id: this.code
         });
-        this._description = A_TypeGuards_helper_1.A_TypeGuards.isString(description) ? description : undefined;
+        this._link = undefined;
+        this._originalError = undefined;
+    }
+    fromTitle(title, description) {
+        this.validateTitle(title);
+        this._title = title;
+        this._description = description;
+        this._aseid = new ASEID_class_1.ASEID({
+            concept: this.constructor.concept,
+            scope: this._scope || this.constructor.scope,
+            entity: this.constructor.entity,
+            id: this.code
+        });
         this._link = undefined;
         this._originalError = undefined;
     }
@@ -214,6 +237,8 @@ class A_Error extends Error {
      * @param params
      */
     fromConstructor(params) {
+        this.validateTitle(params.title);
+        this._title = params.title;
         this._code = params.code;
         this._scope = params.scope ? (A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(params.scope) ? params.scope.name : params.scope) : undefined;
         this._aseid = new ASEID_class_1.ASEID({
@@ -236,6 +261,7 @@ class A_Error extends Error {
         var _a;
         return {
             aseid: this.aseid.toString(),
+            title: this.title,
             code: this.code,
             type: this.type,
             message: this.message,
@@ -249,19 +275,22 @@ class A_Error extends Error {
     // ----------------------- PROTECTED HELPERS --------------------------------
     // --------------------------------------------------------------------------
     /**
-     * Checks if the provided message exceeds 60 characters.
+     * Checks if the provided title exceeds 60 characters.
      * If it does, throws a validation A_Error.
      *
-     * @param message
+     * @param title
      */
-    validateMessage(message) {
-        if (message.length > 60) {
-            throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'A-Error message exceeds 60 characters limit.');
+    validateTitle(title) {
+        if (title.length > 60) {
+            throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'A-Error title exceeds 60 characters limit.');
         }
-        if (message.length === 0) {
-            throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'A-Error message cannot be empty.');
+        if (title.length === 0) {
+            throw new A_Error(A_Error_constants_1.A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR, 'A-Error title cannot be empty.');
         }
     }
 }
 exports.A_Error = A_Error;
+// message = title + description for better printing in the console
+// description = detailed information about the error
+// code = kebabcase (title)
 //# sourceMappingURL=A_Error.class.js.map

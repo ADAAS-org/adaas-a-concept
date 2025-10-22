@@ -378,7 +378,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             case A_TypeGuards.isErrorInstance(reason):
                 this._error = new A_FeatureError({
                     code: A_FeatureError.Interruption,
-                    message: reason.message,
+                    title: reason.title,
                     description: reason.description,
                     originalError: reason
                 });

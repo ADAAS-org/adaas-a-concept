@@ -322,6 +322,6 @@ export class A_TypeGuards {
      * @returns 
      */
     static isConstructorType<T extends A_TYPES__Error_Init>(param: any): param is T {
-        return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "message" in param;
+        return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "title" in param;
     }
 }

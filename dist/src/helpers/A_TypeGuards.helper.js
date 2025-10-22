@@ -289,7 +289,7 @@ class A_TypeGuards {
      * @returns
      */
     static isConstructorType(param) {
-        return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "message" in param;
+        return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "title" in param;
     }
 }
 exports.A_TypeGuards = A_TypeGuards;

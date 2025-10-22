@@ -386,22 +386,29 @@ export class A_Scope<
             }
             // 2) Check if it's a Component
             case A_TypeGuards.isComponentConstructor(ctor): {
-                found = this.isAllowedComponent(ctor);
+                found = this.isAllowedComponent(ctor)
+                    || !![...this.allowedComponents]
+                        .find(c => A_CommonHelper.isInheritedFrom(c, ctor));
 
                 break;
             }
             // 3) Check if it's an Entity
             case A_TypeGuards.isEntityConstructor(ctor): {
-                found = this.isAllowedEntity(ctor);
+                found = this.isAllowedEntity(ctor)
+                    || !![...this.allowedEntities]
+                        .find(e => A_CommonHelper.isInheritedFrom(e, ctor));
 
                 break;
             }
             // 4) Check if it's a Fragment
             case A_TypeGuards.isFragmentConstructor(ctor): {
-                found = this.isAllowedFragment(ctor);
+                found = this.isAllowedFragment(ctor)
+                    || !![...this.allowedFragments]
+                        .find(f => A_CommonHelper.isInheritedFrom(f, ctor));
 
                 break;
             }
+
             // check scope issuer 
             case this.issuer().constructor === ctor: {
                 found = true;
