@@ -42,7 +42,7 @@ class A_Container {
     /**
      * Configuration of the container that will be used to run it.
      */
-    config) {
+    config = {}) {
         this.config = config;
         A_Context_class_1.A_Context.allocate(this, this.config);
     }

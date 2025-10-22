@@ -30,7 +30,7 @@ export declare class A_Container {
     /**
      * Configuration of the container that will be used to run it.
      */
-    config: Partial<A_TYPES__Container_Init>);
+    config?: Partial<A_TYPES__Container_Init>);
     /**
      * Calls the feature with the given name in the given scope
      *

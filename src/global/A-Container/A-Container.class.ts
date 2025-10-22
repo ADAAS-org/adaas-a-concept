@@ -42,7 +42,7 @@ export class A_Container {
         /**
          * Configuration of the container that will be used to run it.
          */
-        config: Partial<A_TYPES__Container_Init>
+        config: Partial<A_TYPES__Container_Init> = {}
     ) {
         this.config = config;
 
