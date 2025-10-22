@@ -517,7 +517,6 @@ class A_Context {
     static reset() {
         const instance = A_Context.getInstance();
         instance._registry = new WeakMap();
-        instance._metaStorage = new Map();
         let name = 'root';
         if (A_Context.environment === 'server')
             name = process.env[env_constants_1.A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE] || 'root';

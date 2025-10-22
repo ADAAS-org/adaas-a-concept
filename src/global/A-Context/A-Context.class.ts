@@ -837,7 +837,6 @@ export class A_Context {
         const instance = A_Context.getInstance();
 
         instance._registry = new WeakMap();
-        instance._metaStorage = new Map();
 
         let name = 'root';
 
