@@ -1,3 +1,4 @@
+import { A_Error } from "../global/A-Error/A_Error.class";
 import { A_Feature } from "../global/A-Feature/A-Feature.class";
 import { A_TYPES__FeatureDefineDecoratorTemplateItem } from "../global/A-Feature/A-Feature.types";
 import { A_Stage } from "../global/A-Stage/A-Stage.class";
@@ -46,30 +47,36 @@ export class A_StepsManager {
 
         // Add directed edges based on 'before' and 'after'
         this.entities.forEach(entity => {
-            const { name, before = [], after = [] } = entity;
+            const entityId = this.ID(entity);
+            const { before = [], after = [] } = entity;
 
             // Add edges for 'before' dependencies
+            // If entity should execute before targets, then targets depend on entity
+            // So we add edges: target -> entity (target depends on entity)
             before.forEach(dep => {
                 const targets = this.matchEntities(dep);
                 targets.forEach(target => {
                     if (!this.graph.has(target)) this.graph.set(target, new Set());
-                    this.graph.get(target)!.add(name); // target -> name (target should be before name)
+                    this.graph.get(target)!.add(entityId); // target depends on entity
                 });
             });
 
-            // Add edges for 'after' dependencies
+            // Add edges for 'after' dependencies  
+            // If entity should execute after sources, then entity depends on sources
+            // So we add edges: entity -> source (entity depends on source)
             after.forEach(dep => {
                 const sources = this.matchEntities(dep);
+
                 sources.forEach(source => {
-                    if (!this.graph.has(name)) this.graph.set(name, new Set());
-                    this.graph.get(name)!.add(source); // name -> source (name should be before source)
+                    if (!this.graph.has(entityId)) this.graph.set(entityId, new Set());
+                    this.graph.get(entityId)!.add(source); // entity depends on source
                 });
             });
         });
     }
 
     // Match entities by name or regex
-    private matchEntities(pattern) {
+    private matchEntities(pattern: string): string[] {
         const regex = new RegExp(`^${pattern}$`);
         return this.entities
             .filter(entity => regex.test(this.ID(entity)))
@@ -77,8 +84,8 @@ export class A_StepsManager {
     }
 
     // Topological sort with cycle detection
-    private visit(node) {
-        if (this.tempMark.has(node)) throw new Error("Circular dependency detected");
+    private visit(node: string): void {
+        if (this.tempMark.has(node)) throw new A_Error("Circular dependency detected");
 
         if (!this.visited.has(node)) {
             this.tempMark.add(node);

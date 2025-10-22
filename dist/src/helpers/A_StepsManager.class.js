@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.A_TmpStage = exports.A_StepsManager = void 0;
+const A_Error_class_1 = require("../global/A-Error/A_Error.class");
 const A_Stage_class_1 = require("../global/A-Stage/A-Stage.class");
 class A_StepsManager {
     constructor(entities) {
@@ -23,23 +24,28 @@ class A_StepsManager {
         this.entities.forEach(entity => this.graph.set(this.ID(entity), new Set()));
         // Add directed edges based on 'before' and 'after'
         this.entities.forEach(entity => {
-            const { name, before = [], after = [] } = entity;
+            const entityId = this.ID(entity);
+            const { before = [], after = [] } = entity;
             // Add edges for 'before' dependencies
+            // If entity should execute before targets, then targets depend on entity
+            // So we add edges: target -> entity (target depends on entity)
             before.forEach(dep => {
                 const targets = this.matchEntities(dep);
                 targets.forEach(target => {
                     if (!this.graph.has(target))
                         this.graph.set(target, new Set());
-                    this.graph.get(target).add(name); // target -> name (target should be before name)
+                    this.graph.get(target).add(entityId); // target depends on entity
                 });
             });
-            // Add edges for 'after' dependencies
+            // Add edges for 'after' dependencies  
+            // If entity should execute after sources, then entity depends on sources
+            // So we add edges: entity -> source (entity depends on source)
             after.forEach(dep => {
                 const sources = this.matchEntities(dep);
                 sources.forEach(source => {
-                    if (!this.graph.has(name))
-                        this.graph.set(name, new Set());
-                    this.graph.get(name).add(source); // name -> source (name should be before source)
+                    if (!this.graph.has(entityId))
+                        this.graph.set(entityId, new Set());
+                    this.graph.get(entityId).add(source); // entity depends on source
                 });
             });
         });
@@ -54,7 +60,7 @@ class A_StepsManager {
     // Topological sort with cycle detection
     visit(node) {
         if (this.tempMark.has(node))
-            throw new Error("Circular dependency detected");
+            throw new A_Error_class_1.A_Error("Circular dependency detected");
         if (!this.visited.has(node)) {
             this.tempMark.add(node);
             (this.graph.get(node) || []).forEach(neighbor => this.visit(neighbor));
