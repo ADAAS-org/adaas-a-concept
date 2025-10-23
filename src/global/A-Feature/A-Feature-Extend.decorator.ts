@@ -136,14 +136,26 @@ export function A_Feature_Extend(
 
         const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
 
-        // Add the new method to the metadata
-        existedMetaValue.push({
+        const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
+
+        const extension = {
             name: targetRegexp.source,
             handler: propertyKey,
             behavior,
             before,
             after
-        });
+        }
+
+        if (existedIndex !== -1){
+            // Update the existing method in the metadata
+            existedMetaValue[existedIndex] = extension;
+        }else{
+            // Add the new method to the metadata
+            existedMetaValue.push(extension);
+        }
+
+        // Add the new method to the metadata
+        existedMetaValue.push();
 
         // Set the metadata of the method to define a custom Feature with name
         existedMeta.set(targetRegexp.source, existedMetaValue);

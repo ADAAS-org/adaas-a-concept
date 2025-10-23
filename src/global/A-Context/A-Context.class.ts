@@ -662,8 +662,46 @@ export class A_Context {
             }
         }
 
-        return steps;
+        return instance.filterToMostDerived(scope, steps);
     }
+
+
+    /**
+     * method helps to filter steps in a way that only the most derived classes are kept.
+     * 
+     * @param scope 
+     * @param items 
+     * @returns 
+     */
+    private filterToMostDerived(
+        scope: A_Scope,
+        items: A_TYPES__A_StageStep[]): Array<A_TYPES__A_StageStep> {
+        return items.filter(item => {
+            const currentClass = typeof item.component === 'string'
+                ? scope.resolveConstructor(item.component)
+                : A_TypeGuards.isContainerInstance(item.component)
+                    ? item.component.constructor : item.component;
+
+            // Check if this class is parent of any other in the list
+            const isParentOfAnother = items.some(other => {
+                if (other === item) return false;
+
+                const otherClass = typeof other.component === 'string'
+                    ? scope.resolveConstructor(other.component)
+                    : A_TypeGuards.isContainerInstance(other.component)
+                        ? other.component.constructor
+                        : other.component;
+
+
+                return currentClass.prototype.isPrototypeOf(otherClass.prototype);
+            });
+
+            // Keep only classes that are not parent of any other
+            return !isParentOfAnother;
+        });
+    }
+
+
     /**
      * This method returns the feature template definition without any extensions.
      * It can be used to retrieve the base template for a feature before any modifications are applied.
@@ -825,9 +863,8 @@ export class A_Context {
             }
         }
 
-        return steps;
+        return instance.filterToMostDerived(scope, steps);
     }
-
 
 
     /**

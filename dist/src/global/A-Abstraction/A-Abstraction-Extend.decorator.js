@@ -51,14 +51,22 @@ config = {}) {
         const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();
         // Set the metadata of the method to define a custom Stage with name
         const existedMetaValue = existedMeta.get(setName) || [];
-        // Add the new method to the metadata
-        existedMetaValue.push({
+        const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
+        const abstraction = {
             name: setName,
             handler: propertyKey,
             before: config.before || [],
             after: config.after || [],
             behavior: config.behavior || 'sync'
-        });
+        };
+        if (existedIndex !== -1) {
+            // Update the existing method in the metadata
+            existedMetaValue[existedIndex] = abstraction;
+        }
+        else {
+            // Add the new method to the metadata
+            existedMetaValue.push(abstraction);
+        }
         // Set the metadata of the method to define a custom Feature with name
         existedMeta.set(setName, existedMetaValue);
         //  Update the metadata of the container with the new Stage definition

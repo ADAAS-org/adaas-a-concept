@@ -3,6 +3,7 @@ import './test.setup'
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
+import { A_Scope } from '@adaas/a-concept/global/A-Scope/A-Scope.class';
 
 jest.retryTimes(0);
 
@@ -255,4 +256,69 @@ describe('A-Abstraction Tests', () => {
 
         expect(order).toEqual(['step1', 'step3', 'step2', 'step5', 'step4']);
     })
+    it('Should inherit abstraction extensions', async () => {
+        const executionOrder: string[] = [];
+
+        // 1) create a base component with some abstraction
+        class My_Component extends A_Component {
+
+            @A_Concept.Load()
+            async feature1() {
+                executionOrder.push('stepOne');
+            }
+        }
+
+
+        class My_Child_Component extends My_Component { }
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                new A_Container({
+                    name: 'TestContainer',
+                    components: [My_Child_Component],
+                })
+            ]
+        });
+
+        await concept.load();
+
+        expect(executionOrder).toEqual(['stepOne']);
+    });
+    it('Should allow to override abstraction extensions', async () => {
+        const executionOrder: string[] = [];
+
+        // 1) create a base component with some abstraction
+        class My_Component extends A_Component {
+
+            @A_Concept.Load()
+            async feature1() {
+                executionOrder.push('stepOne');
+            }
+        }
+
+
+        class My_Child_Component extends My_Component {
+            @A_Concept.Load()
+            async feature1() {
+                // do nothing
+                executionOrder.push('stepTwo');
+
+            }
+        }
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [
+                new A_Container({
+                    name: 'TestContainer',
+                    components: [My_Child_Component],
+                })
+            ]
+        });
+
+        await concept.load();
+
+        expect(executionOrder).toEqual(['stepTwo']);
+    });
 });

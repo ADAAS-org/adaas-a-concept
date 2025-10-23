@@ -57,14 +57,24 @@ function A_Feature_Extend(param1) {
             throw new A_Feature_error_1.A_FeatureError(A_Feature_error_1.A_FeatureError.FeatureExtensionError, `A-Feature-Extend cannot be used on the method "${propertyKey}" because it is already defined as a Feature with "invoke" set to true. Please remove the A-Feature-Extend decorator or set "invoke" to false in the A-Feature decorator.`);
         }
         const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
-        // Add the new method to the metadata
-        existedMetaValue.push({
+        const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
+        const extension = {
             name: targetRegexp.source,
             handler: propertyKey,
             behavior,
             before,
             after
-        });
+        };
+        if (existedIndex !== -1) {
+            // Update the existing method in the metadata
+            existedMetaValue[existedIndex] = extension;
+        }
+        else {
+            // Add the new method to the metadata
+            existedMetaValue.push(extension);
+        }
+        // Add the new method to the metadata
+        existedMetaValue.push();
         // Set the metadata of the method to define a custom Feature with name
         existedMeta.set(targetRegexp.source, existedMetaValue);
         //  Update the metadata of the container with the new Feature definition

@@ -274,6 +274,14 @@ export declare class A_Context {
      */
     scope: A_Scope): Array<A_TYPES__A_StageStep>;
     /**
+     * method helps to filter steps in a way that only the most derived classes are kept.
+     *
+     * @param scope
+     * @param items
+     * @returns
+     */
+    private filterToMostDerived;
+    /**
      * This method returns the feature template definition without any extensions.
      * It can be used to retrieve the base template for a feature before any modifications are applied.
      *
