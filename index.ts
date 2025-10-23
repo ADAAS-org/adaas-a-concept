@@ -2,6 +2,7 @@
 // ============================= Export Framework Components =======================================
 // =================================================================================================
 export * from './src/constants/env.constants';
+export * from './src/types/A_Common.types';
 
 // ---------------------- Major Components ----------------------
 export { A_Context } from './src/global/A-Context/A-Context.class';
@@ -76,3 +77,4 @@ export { A_FormatterHelper } from './src/helpers/A_Formatter.helper';
 export { A_IdentityHelper, A_ID_TYPES__TimeId_Parts } from './src/helpers/A_Identity.helper';
 // export { A_StepsManager } from './src/helpers/A_StepsManager.class';
 export { A_TypeGuards } from './src/helpers/A_TypeGuards.helper';
+

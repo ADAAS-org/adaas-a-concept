@@ -126,6 +126,7 @@ class A_Feature {
             next: () => {
                 if (!this.isDone) {
                     this._current = this._stages[this._index];
+                    this._index++;
                     return {
                         value: this._current,
                         done: false
@@ -248,7 +249,7 @@ class A_Feature {
             if (this.isDone)
                 return;
             this._state = A_Feature_types_1.A_TYPES__FeatureState.PROCESSING;
-            for (const stage of this._stages) {
+            for (const stage of this) {
                 yield stage.process(scope);
             }
             return yield this.completed();

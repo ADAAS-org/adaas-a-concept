@@ -1,4 +1,5 @@
 export * from './src/constants/env.constants';
+export * from './src/types/A_Common.types';
 export { A_Context } from './src/global/A-Context/A-Context.class';
 export * from './src/global/A-Context/A-Context.types';
 export { A_Concept } from './src/global/A-Concept/A-Concept.class';

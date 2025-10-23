@@ -19,6 +19,7 @@ exports.A_TypeGuards = exports.A_IdentityHelper = exports.A_FormatterHelper = ex
 // ============================= Export Framework Components =======================================
 // =================================================================================================
 __exportStar(require("./src/constants/env.constants"), exports);
+__exportStar(require("./src/types/A_Common.types"), exports);
 // ---------------------- Major Components ----------------------
 var A_Context_class_1 = require("./src/global/A-Context/A-Context.class");
 Object.defineProperty(exports, "A_Context", { enumerable: true, get: function () { return A_Context_class_1.A_Context; } });

@@ -157,6 +157,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             next: (): IteratorResult<A_Stage, any> => {
                 if (!this.isDone) {
                     this._current = this._stages[this._index];
+                    this._index++;
 
                     return {
                         value: this._current,
@@ -328,7 +329,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         this._state = A_TYPES__FeatureState.PROCESSING;
 
-        for (const stage of this._stages) {
+        for (const stage of this) {
             await stage.process(scope);
         }
 

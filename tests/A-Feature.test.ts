@@ -228,4 +228,57 @@ describe('A-Feature tests', () => {
         // 5) check the results
         expect(executionOrder).toEqual(['stepTwo', 'stepOne']);
     });
+
+    it('Should allow to define a feature', async () => {
+        const executionOrder: string[] = [];
+
+        // 1) create a base component with some feature
+        class My_Component extends A_Component {
+
+
+            @A_Feature.Define({ invoke: true })
+            @A_Feature.Extend({
+                name: 'myFeature',
+            })
+            async feature1(
+                @A_Inject(A_Component) component: A_Component
+            ) { }
+
+            @A_Feature.Extend({
+                name: 'feature1',
+            })
+            async feature1Extension() {
+                executionOrder.push('stepOne');
+            }
+
+            @A_Feature.Define()
+            async feature2() {
+               await this.call('feature2');
+            }
+
+            @A_Feature.Extend({
+                name: 'feature2',
+            })
+            async feature2Extension() {
+                executionOrder.push('stepTwo');
+            }
+
+        }
+
+
+        // 2) create a running scope 
+        const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
+
+        // 3) create an instance of the component from the scope
+        const myComponent = scope.resolve(My_Component);
+        expect(myComponent).toBeInstanceOf(My_Component);
+
+        // 4) call the feature caller to execute the feature
+        await myComponent.feature1(new A_Component());
+
+        await myComponent.feature2();
+
+        // 5) check the results
+        expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
+    });
 });
