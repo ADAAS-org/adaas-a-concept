@@ -186,7 +186,12 @@ class A_Scope {
      * @returns
      */
     issuer() {
-        return A_Context_class_1.A_Context.issuer(this);
+        try {
+            return A_Context_class_1.A_Context.issuer(this);
+        }
+        catch (error) {
+            return undefined;
+        }
     }
     /**
      * This method is used to inherit from a parent scope
@@ -211,6 +216,7 @@ class A_Scope {
         return this;
     }
     has(ctor) {
+        var _a;
         let found = false;
         switch (true) {
             // 1) Check if it's a Scope. It's always true since it returns itself
@@ -257,7 +263,7 @@ class A_Scope {
                 break;
             }
             // 6) Check scope issuer
-            case this.issuer().constructor === ctor: {
+            case ((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor) === ctor: {
                 found = true;
                 break;
             }
@@ -422,7 +428,8 @@ class A_Scope {
         }
     }
     resolveIssuer(ctor) {
-        const isCurrent = ctor === this.issuer().constructor;
+        var _a;
+        const isCurrent = ctor === ((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor);
         if (isCurrent) {
             return this.issuer();
         }

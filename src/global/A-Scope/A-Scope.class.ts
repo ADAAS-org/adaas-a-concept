@@ -278,8 +278,12 @@ export class A_Scope<
      * 
      * @returns 
      */
-    issuer<T extends A_TYPES__ScopeLinkedComponents>(): T {
-        return A_Context.issuer(this) as T;
+    issuer<T extends A_TYPES__ScopeLinkedComponents>(): T | undefined {
+        try {
+            return A_Context.issuer(this) as T;
+        } catch (error) {
+            return undefined;
+        }
     }
 
 
@@ -413,7 +417,7 @@ export class A_Scope<
                 break;
             }
             // 6) Check scope issuer
-            case this.issuer().constructor === ctor: {
+            case this.issuer()?.constructor === ctor: {
                 found = true;
                 break;
             }
@@ -743,10 +747,10 @@ export class A_Scope<
     private resolveIssuer(
         ctor: A_TYPES__ScopeLinkedConstructors
     ): A_TYPES__ScopeLinkedComponents {
-        const isCurrent = ctor === this.issuer().constructor;
+        const isCurrent = ctor === this.issuer()?.constructor;
 
         if (isCurrent) {
-            return this.issuer();
+            return this.issuer()!;
         }
         if (!!this._parent) {
             return this._parent.resolveIssuer(ctor);

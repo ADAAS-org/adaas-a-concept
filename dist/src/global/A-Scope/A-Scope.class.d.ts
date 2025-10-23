@@ -175,7 +175,7 @@ export declare class A_Scope<_ComponentType extends A_TYPES__Component_Construct
      *
      * @returns
      */
-    issuer<T extends A_TYPES__ScopeLinkedComponents>(): T;
+    issuer<T extends A_TYPES__ScopeLinkedComponents>(): T | undefined;
     /**
      * This method is used to inherit from a parent scope
      *
