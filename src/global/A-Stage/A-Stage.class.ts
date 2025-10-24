@@ -28,7 +28,7 @@ export class A_Stage {
     /**
      * Possible errors during stage processing
      */
-    private _error?: Error | A_Error | any;
+    private _error?: A_Error;
     /**
      * Indicates the current status of the stage
      */
@@ -67,12 +67,37 @@ export class A_Stage {
         return this.toString();
     }
     /**
+     * Returns the definition of the stage
+     */
+    get definition(): A_TYPES__A_StageStep {
+        return this._definition;
+    }
+    /**
      * Returns the current status of the stage
      */
     get status(): A_TYPES__A_Stage_Status {
         return this._status;
     }
-
+    /**
+     * Returns the feature that owns this stage
+     */
+    get feature(): A_Feature {
+        return this._feature;
+    }
+    /**
+     * Returns true if the stage is processed (completed, failed, or skipped)
+     */
+    get isProcessed(): boolean {
+        return this._status === A_TYPES__A_Stage_Status.COMPLETED
+            || this._status === A_TYPES__A_Stage_Status.FAILED
+            || this._status === A_TYPES__A_Stage_Status.SKIPPED;
+    }
+    /**
+     * Returns the error of the stage
+     */
+    get error(): A_Error | undefined {
+        return this._error;
+    }
 
     /**
      * Resolves the arguments of the step
@@ -205,7 +230,7 @@ export class A_Stage {
 
         const targetScope = A_TypeGuards.isScopeInstance(scope)
             ? scope
-            : A_Context.scope(this._feature);
+            : this._feature.scope;
 
         if (!this._processed)
             this._processed = new Promise<void>(
@@ -253,7 +278,7 @@ export class A_Stage {
     protected failed(
         error: Error | A_Error | any
     ) {
-        this._error = error;
+        this._error = new A_Error(error);
 
         this._status = A_TYPES__A_Stage_Status.FAILED;
     }

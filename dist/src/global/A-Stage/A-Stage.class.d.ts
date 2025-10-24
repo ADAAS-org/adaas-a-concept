@@ -45,9 +45,25 @@ export declare class A_Stage {
      */
     get name(): string;
     /**
+     * Returns the definition of the stage
+     */
+    get definition(): A_TYPES__A_StageStep;
+    /**
      * Returns the current status of the stage
      */
     get status(): A_TYPES__A_Stage_Status;
+    /**
+     * Returns the feature that owns this stage
+     */
+    get feature(): A_Feature;
+    /**
+     * Returns true if the stage is processed (completed, failed, or skipped)
+     */
+    get isProcessed(): boolean;
+    /**
+     * Returns the error of the stage
+     */
+    get error(): A_Error | undefined;
     /**
      * Resolves the arguments of the step
      *
