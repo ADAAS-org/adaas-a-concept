@@ -74,10 +74,14 @@ export function A_Abstraction_Extend(
         // Get the existed metadata or create a new one
         const existedMeta: A_Meta<{
             [Key: string]: A_TYPES__ConceptAbstraction[];
-        }> = meta.get(metaKey) || new A_Meta();
+        }> = meta.get(metaKey) ?
+                new A_Meta().from(meta.get(metaKey))
+                : new A_Meta();
 
         // Set the metadata of the method to define a custom Stage with name
-        const existedMetaValue = existedMeta.get(setName) || [];
+        const existedMetaValue = [
+            ...(existedMeta.get(setName) || [])
+        ];
 
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
 

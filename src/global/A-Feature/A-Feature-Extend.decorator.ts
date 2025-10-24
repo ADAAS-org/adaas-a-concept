@@ -131,10 +131,12 @@ export function A_Feature_Extend(
 
 
         // Get the existed metadata or create a new one
-        const existedMeta = A_Context
+        const meta = A_Context
             .meta(target)
-            .get(A_TYPES__ComponentMetaKey.EXTENSIONS)
-            || new A_Meta();
+
+        const existedMeta = meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)
+            ? new A_Meta().from(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)!)
+            : new A_Meta();
 
         if (existedDefinitions
             && existedDefinitions.size()
@@ -147,7 +149,9 @@ export function A_Feature_Extend(
             );
         }
 
-        const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
+        const existedMetaValue = [
+            ...(existedMeta.get(targetRegexp.source) || [])
+        ];
 
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
 

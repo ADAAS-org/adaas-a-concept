@@ -48,9 +48,13 @@ config = {}) {
         }
         const setName = `CONCEPT_ABSTRACTION::${name}`;
         // Get the existed metadata or create a new one
-        const existedMeta = meta.get(metaKey) || new A_Meta_class_1.A_Meta();
+        const existedMeta = meta.get(metaKey) ?
+            new A_Meta_class_1.A_Meta().from(meta.get(metaKey))
+            : new A_Meta_class_1.A_Meta();
         // Set the metadata of the method to define a custom Stage with name
-        const existedMetaValue = existedMeta.get(setName) || [];
+        const existedMetaValue = [
+            ...(existedMeta.get(setName) || [])
+        ];
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
         const abstraction = {
             name: setName,

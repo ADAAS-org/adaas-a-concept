@@ -54,17 +54,20 @@ function A_Feature_Extend(param1) {
             .meta(target)
             .get(A_Component_constants_1.A_TYPES__ComponentMetaKey.FEATURES);
         // Get the existed metadata or create a new one
-        const existedMeta = A_Context_class_1.A_Context
-            .meta(target)
-            .get(A_Component_constants_1.A_TYPES__ComponentMetaKey.EXTENSIONS)
-            || new A_Meta_class_1.A_Meta();
+        const meta = A_Context_class_1.A_Context
+            .meta(target);
+        const existedMeta = meta.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.EXTENSIONS)
+            ? new A_Meta_class_1.A_Meta().from(meta.get(A_Component_constants_1.A_TYPES__ComponentMetaKey.EXTENSIONS))
+            : new A_Meta_class_1.A_Meta();
         if (existedDefinitions
             && existedDefinitions.size()
             && existedDefinitions.has(propertyKey)
             && existedDefinitions.get(propertyKey).invoke) {
             throw new A_Feature_error_1.A_FeatureError(A_Feature_error_1.A_FeatureError.FeatureExtensionError, `A-Feature-Extend cannot be used on the method "${propertyKey}" because it is already defined as a Feature with "invoke" set to true. Please remove the A-Feature-Extend decorator or set "invoke" to false in the A-Feature decorator.`);
         }
-        const existedMetaValue = existedMeta.get(targetRegexp.source) || [];
+        const existedMetaValue = [
+            ...(existedMeta.get(targetRegexp.source) || [])
+        ];
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
         const extension = {
             name: targetRegexp.source,
