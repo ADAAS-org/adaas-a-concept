@@ -417,7 +417,7 @@ export class A_Scope<
                 break;
             }
             // 6) Check scope issuer
-            case this.issuer()?.constructor === ctor: {
+            case this.issuer()?.constructor === ctor || A_CommonHelper.isInheritedFrom(ctor, this.issuer()?.constructor): {
                 found = true;
                 break;
             }
@@ -747,9 +747,10 @@ export class A_Scope<
     private resolveIssuer(
         ctor: A_TYPES__ScopeLinkedConstructors
     ): A_TYPES__ScopeLinkedComponents {
-        const isCurrent = ctor === this.issuer()?.constructor;
 
-        if (isCurrent) {
+        if (
+            this.issuer()?.constructor === ctor
+            || A_CommonHelper.isInheritedFrom(ctor, this.issuer()?.constructor)) {
             return this.issuer()!;
         }
         if (!!this._parent) {

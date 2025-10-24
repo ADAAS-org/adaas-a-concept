@@ -216,7 +216,7 @@ class A_Scope {
         return this;
     }
     has(ctor) {
-        var _a;
+        var _a, _b;
         let found = false;
         switch (true) {
             // 1) Check if it's a Scope. It's always true since it returns itself
@@ -263,7 +263,7 @@ class A_Scope {
                 break;
             }
             // 6) Check scope issuer
-            case ((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor) === ctor: {
+            case ((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor) === ctor || A_Common_helper_1.A_CommonHelper.isInheritedFrom(ctor, (_b = this.issuer()) === null || _b === void 0 ? void 0 : _b.constructor): {
                 found = true;
                 break;
             }
@@ -428,9 +428,9 @@ class A_Scope {
         }
     }
     resolveIssuer(ctor) {
-        var _a;
-        const isCurrent = ctor === ((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor);
-        if (isCurrent) {
+        var _a, _b;
+        if (((_a = this.issuer()) === null || _a === void 0 ? void 0 : _a.constructor) === ctor
+            || A_Common_helper_1.A_CommonHelper.isInheritedFrom(ctor, (_b = this.issuer()) === null || _b === void 0 ? void 0 : _b.constructor)) {
             return this.issuer();
         }
         if (!!this._parent) {
