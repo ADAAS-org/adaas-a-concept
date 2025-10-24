@@ -417,10 +417,14 @@ export class A_Scope<
                 break;
             }
             // 6) Check scope issuer
-            case this.issuer()?.constructor === ctor || A_CommonHelper.isInheritedFrom(ctor, this.issuer()?.constructor): {
-                found = true;
-                break;
-            }
+            case this.issuer()
+                && (this.issuer()!.constructor === ctor
+                    || A_CommonHelper.isInheritedFrom(this.issuer()!.constructor, ctor
+                    )
+                ): {
+                    found = true;
+                    break;
+                }
         }
 
         // 7) Check parent scope in case not found
@@ -748,10 +752,14 @@ export class A_Scope<
         ctor: A_TYPES__ScopeLinkedConstructors
     ): A_TYPES__ScopeLinkedComponents {
 
-        if (
-            this.issuer()?.constructor === ctor
-            || A_CommonHelper.isInheritedFrom(ctor, this.issuer()?.constructor)) {
-            return this.issuer()!;
+        const issuer = this.issuer();
+
+        if (issuer
+            && (
+                issuer.constructor === ctor
+                || A_CommonHelper.isInheritedFrom(issuer?.constructor, ctor)
+            )) {
+            return issuer!;
         }
         if (!!this._parent) {
             return this._parent.resolveIssuer(ctor);
