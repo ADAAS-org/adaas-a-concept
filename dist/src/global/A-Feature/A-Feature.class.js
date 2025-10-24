@@ -13,7 +13,7 @@ exports.A_Feature = void 0;
 const A_Feature_types_1 = require("./A-Feature.types");
 const A_Feature_Define_decorator_1 = require("./A-Feature-Define.decorator");
 const A_Feature_Extend_decorator_1 = require("./A-Feature-Extend.decorator");
-const A_StepsManager_class_1 = require("../../helpers/A_StepsManager.class");
+const A_StepManager_class_1 = require("../A-StepManager/A-StepManager.class");
 const A_TypeGuards_helper_1 = require("../../helpers/A_TypeGuards.helper");
 const A_Feature_error_1 = require("./A-Feature.error");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
@@ -198,7 +198,7 @@ class A_Feature {
         // 5) ensure that the scope of the caller component is inherited by the feature scope
         scope.inherit(componentScope);
         // 6) create steps manager to organize steps into stages
-        this._SM = new A_StepsManager_class_1.A_StepsManager(params.template);
+        this._SM = new A_StepManager_class_1.A_StepsManager(params.template);
         // 7) create stages from the steps
         this._stages = this._SM.toStages(this);
         // 8) set the first stage as current
@@ -226,7 +226,7 @@ class A_Feature {
         // 6) retrieve the template from the context
         const template = A_Context_class_1.A_Context.featureTemplate(this._name, this._caller.component, scope);
         // 7) create steps manager to organize steps into stages
-        this._SM = new A_StepsManager_class_1.A_StepsManager(template);
+        this._SM = new A_StepManager_class_1.A_StepsManager(template);
         // 8) create stages from the steps
         this._stages = this._SM.toStages(this);
         // 9) set the first stage as current
@@ -308,6 +308,10 @@ class A_Feature {
             }
             this._state = A_Feature_types_1.A_TYPES__FeatureState.INTERRUPTED;
         });
+    }
+    toString() {
+        var _a, _b;
+        return `A-Feature(${((_b = (_a = this.caller.component) === null || _a === void 0 ? void 0 : _a.constructor) === null || _b === void 0 ? void 0 : _b.name) || 'Unknown'}::${this.name})`;
     }
 }
 exports.A_Feature = A_Feature;

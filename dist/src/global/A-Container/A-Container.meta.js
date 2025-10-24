@@ -45,7 +45,8 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
                     args,
                     before: extension.before,
                     behavior: extension.behavior,
-                    after: extension.after
+                    after: extension.after,
+                    throwOnError: extension.throwOnError,
                 });
             });
         });
@@ -70,7 +71,8 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
                     handler: extension.handler,
                     behavior: extension.behavior,
                     before: extension.before || [],
-                    after: extension.after || []
+                    after: extension.after || [],
+                    throwOnError: extension.throwOnError || true,
                 });
             });
         });

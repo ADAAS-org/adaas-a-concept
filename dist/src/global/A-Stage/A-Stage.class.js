@@ -13,43 +13,42 @@ exports.A_Stage = void 0;
 const A_Stage_types_1 = require("./A-Stage.types");
 const A_Context_class_1 = require("../A-Context/A-Context.class");
 const A_Stage_error_1 = require("./A-Stage.error");
+const A_Error_class_1 = require("../A-Error/A_Error.class");
 const A_TypeGuards_helper_1 = require("../../helpers/A_TypeGuards.helper");
 class A_Stage {
     /**
-     * A_Stage is a set of A_Functions within A_Feature that should be run in a specific order.
-     * Each stage may contain one or more functions.
-     * [!] That always run in parallel (in NodeJS asynchronously), independently of each other.
+     * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
+     * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
      *
      * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
      */
-    constructor(feature, steps = []) {
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
+    constructor(
+    /**
+     * The feature that owns this stage
+     */
+    feature, 
+    /**
+     * The step definitions of the stage
+     */
+    step) {
+        /**
+         * Indicates the current status of the stage
+         */
+        this._status = A_Stage_types_1.A_TYPES__A_Stage_Status.INITIALIZED;
         this._feature = feature;
-        this._steps = steps;
+        this._definition = step;
     }
+    /**
+     * Returns the name of the stage
+     */
     get name() {
         return this.toString();
     }
-    get before() {
-        return this._steps.reduce((acc, step) => ([
-            ...acc,
-            ...step.before
-        ]), []);
-    }
-    get after() {
-        return this._steps.reduce((acc, step) => ([
-            ...acc,
-            ...step.after
-        ]), []);
-    }
-    get steps() {
-        return this._steps;
-    }
-    get asyncSteps() {
-        return this._steps.filter(step => step.behavior === 'async');
-    }
-    get syncSteps() {
-        return this._steps.filter(step => step.behavior === 'sync');
+    /**
+     * Returns the current status of the stage
+     */
+    get status() {
+        return this._status;
     }
     /**
      * Resolves the arguments of the step
@@ -92,22 +91,12 @@ class A_Stage {
         });
     }
     /**
-     * Adds a step to the stage
-     *
-     * @param step
-     * @returns
-     */
-    add(step) {
-        this._steps.push(step);
-        return this;
-    }
-    /**
      * Resolves the component of the step
      *
      * @param step
      * @returns
      */
-    getStepInstance(scope, step) {
+    getStepComponent(scope, step) {
         const { component, handler } = step;
         let instance;
         switch (true) {
@@ -135,79 +124,69 @@ class A_Stage {
      */
     callStepHandler(step, scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const instance = yield this.getStepInstance(scope, step);
+            // 1) Resolve component
+            const component = yield this.getStepComponent(scope, step);
+            // 2) Resolve arguments
             const callArgs = yield this.getStepArgs(scope, step);
-            return yield instance[step.handler](...callArgs);
+            // 3) Call handler
+            return yield component[step.handler](...callArgs);
         });
     }
     skip() {
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.SKIPPED;
+        this._status = A_Stage_types_1.A_TYPES__A_Stage_Status.SKIPPED;
     }
+    /**
+     * This method processes the stage by executing all the steps
+     *
+     * @param scope - Scope to be used to resolve the steps dependencies
+     */
     process(
     /**
      * Scope to be used to resolve the steps dependencies
      */
-    param1, 
-    /**
-     * Extra parameters to control the steps processing
-     */
-    param2) {
+    scope) {
         return __awaiter(this, void 0, void 0, function* () {
-            const scope = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(param1)
-                ? param1
+            const targetScope = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(scope)
+                ? scope
                 : A_Context_class_1.A_Context.scope(this._feature);
-            const params = A_TypeGuards_helper_1.A_TypeGuards.isScopeInstance(param1)
-                ? param2
-                : param1;
-            if (!this.processed)
-                this.processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+            if (!this._processed)
+                this._processed = new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                     try {
-                        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.PROCESSING;
-                        if ((params === null || params === void 0 ? void 0 : params.steps) && params.steps.length) {
-                            params.steps.forEach(step => this.add(step));
+                        this._status = A_Stage_types_1.A_TYPES__A_Stage_Status.PROCESSING;
+                        if (this._definition.behavior === 'sync') {
+                            // in case we have to wait for the result
+                            yield this.callStepHandler(this._definition, targetScope);
                         }
-                        const syncSteps = this.syncSteps.filter((params === null || params === void 0 ? void 0 : params.filter) || (() => true));
-                        const asyncSteps = this.asyncSteps.filter((params === null || params === void 0 ? void 0 : params.filter) || (() => true));
-                        // Run sync _steps
-                        yield Promise
-                            .all([
-                            // Run async _steps that are independent of each other
-                            ...asyncSteps.map(step => this.callStepHandler(step, scope)),
-                            // Run sync _steps that are dependent on each other
-                            new Promise((r, j) => __awaiter(this, void 0, void 0, function* () {
-                                try {
-                                    for (const step of syncSteps) {
-                                        // console.log(' - -> Processing stage step:', step.handler, ' with Regexp: ', step.name);
-                                        yield this.callStepHandler(step, scope);
-                                        // console.log(' - -> Finished processing stage step:', step.handler);
-                                    }
-                                    return r();
-                                }
-                                catch (error) {
-                                    return j(error);
-                                }
-                            }))
-                        ]);
+                        else {
+                            // in case we don't have to wait for the result
+                            this.callStepHandler(this._definition, targetScope);
+                        }
                         this.completed();
                         return resolve();
                     }
                     catch (error) {
-                        this.failed(error);
-                        return reject(error);
+                        const wrappedError = new A_Error_class_1.A_Error(error);
+                        this.failed(wrappedError);
+                        if (this._definition.throwOnError) {
+                            return resolve();
+                        }
+                        else {
+                            return reject(wrappedError);
+                        }
                     }
                 }));
-            return this.processed;
+            return this._processed;
         });
     }
     // ==========================================
     // ============ Status methods =============
     // ==========================================
     completed() {
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.COMPLETED;
+        this._status = A_Stage_types_1.A_TYPES__A_Stage_Status.COMPLETED;
     }
     failed(error) {
         this._error = error;
-        this.status = A_Stage_types_1.A_TYPES__A_Stage_Status.FAILED;
+        this._status = A_Stage_types_1.A_TYPES__A_Stage_Status.FAILED;
     }
     // ==========================================
     // ============ Serialization ===============
@@ -228,22 +207,7 @@ class A_Stage {
      * @returns
      */
     toString() {
-        return [
-            this._feature.name,
-            '::a-stage:',
-            '[sync:',
-            this
-                .syncSteps
-                .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
-                .join(' -> '),
-            ']',
-            '[async:',
-            this
-                .asyncSteps
-                .map(s => typeof s.component === 'string' ? s.component : s.component.name + '.' + s.handler)
-                .join(' -> '),
-            ']'
-        ].join('');
+        return `A-Stage(${this._feature.name}::${this._definition.behavior}@${this._definition.handler})`;
     }
 }
 exports.A_Stage = A_Stage;

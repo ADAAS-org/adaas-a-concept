@@ -1,6 +1,5 @@
 import { A_Container } from "../A-Container/A-Container.class"
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types"
-import { A_TYPES__FeatureExtendDecoratorBehaviorConfig } from "../A-Feature/A-Feature.types"
 
 
 
@@ -43,6 +42,8 @@ export enum A_TYPES__A_Stage_Status {
     ABORTED = 'ABORTED'
 }
 
+export type A_TYPES_StageExecutionBehavior = 'async' | 'sync'
+
 
 export type A_TYPES__A_StageStep = {
     /**
@@ -61,11 +62,41 @@ export type A_TYPES__A_StageStep = {
      */
     name: string,
 
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig
+    /**
+     * In case its async it will be executed independently from the main thread.
+     * 
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
+     * 
+     */
+    behavior: A_TYPES_StageExecutionBehavior
+
+    /**
+     * Allows to define the order of the execution of the method.
+     * 
+     * [!] In case the method has circular dependencies it will Throw an error.
+     * 
+     */
+    before: string[]
+
+    /**
+     * Allows to define the order of the execution of the method.
+     * 
+     * [!] In case the method has circular dependencies it will Throw an error.
+     * 
+     */
+    after: string[],
+
+    /**
+     * Indicates whether to throw an error if the step fails.
+     * 
+     * [!] By default is true
+     */
+    throwOnError: boolean
+}
 
 
 
-export type A_TYPES__A_Stage_JSON = {
+export type A_TYPES__Stage_Serialized = {
 
     /**
      * The name of the stage

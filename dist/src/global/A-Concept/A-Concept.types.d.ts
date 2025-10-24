@@ -1,10 +1,10 @@
-import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Concept } from "./A-Concept.class";
-import { A_TYPES__FeatureExtendDecoratorBehaviorConfig } from "../A-Feature/A-Feature.types";
+import { A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
+import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
 /**
  * Concept constructor type
  * Uses the generic type T to specify the type of the concept
@@ -56,28 +56,11 @@ export type A_TYPES__Concept_Serialized = {};
  */
 export type A_TYPES__ConceptAbstractionMeta = {
     /**
-     * The name of original Extension Definition
-     */
-    name: string;
-    /**
-     * The name of the handler that will be used to apply the extension
-     */
-    handler: string;
-    /**
      * The arguments that will be passed to the handler
      */
     args: A_TYPES__A_InjectDecorator_Meta;
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
+} & A_TYPES__FeatureExtendDecoratorMeta;
 /**
  * Uses to define the extension that will be applied to the Concept
  */
-export type A_TYPES__ConceptAbstraction = {
-    /**
-     * The name of original Extension Definition
-     */
-    name: string;
-    /**
-     * The name of the handler that will be used to apply the extension
-     */
-    handler: string;
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
+export type A_TYPES__ConceptAbstraction = A_TYPES__FeatureExtendDecoratorMeta;

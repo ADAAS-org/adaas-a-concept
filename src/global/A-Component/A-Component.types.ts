@@ -3,7 +3,7 @@ import { A_Meta } from "../A-Meta/A-Meta.class"
 import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types"
 import { A_Component } from "./A-Component.class"
 import { A_TYPES__ComponentMetaKey } from "./A-Component.constants"
-import { A_TYPES__FeatureDefineDecoratorMeta, A_TYPES__FeatureExtendDecoratorBehaviorConfig, A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types"
+import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types"
 
 
 
@@ -91,15 +91,6 @@ export type A_TYPES__ComponentMeta = {
 
 
 
-export type A_TYPES__ComponentMetaExtension = {
-    /**
-     * The name of original Extension Definition
-     */
-    name: string,
-    /**
-     * The name of the handler that will be used to apply the extension
-     */
-    handler: string,
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig
+export type A_TYPES__ComponentMetaExtension = A_TYPES__FeatureExtendDecoratorMeta
 
 

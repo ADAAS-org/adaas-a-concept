@@ -81,18 +81,30 @@ export function A_Abstraction_Extend(
 
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
 
-        const abstraction =  {
+        const abstraction = {
             name: setName,
             handler: propertyKey,
-            before: config.before || [],
-            after: config.after || [],
-            behavior: config.behavior || 'sync'
+            behavior: config.behavior || 'sync',
+            throwOnError: config.throwOnError !== undefined ? config.throwOnError : true,
+
+            before: (config.before
+                ?.map(b =>
+                    b instanceof RegExp
+                        ? b.source
+                        : new RegExp(`^.*${b.replace(/\./g, '\\.')}$`).source)
+                || []),
+            after: (config.after
+                ?.map(a =>
+                    a instanceof RegExp
+                        ? a.source
+                        : new RegExp(`^.*${a.replace(/\./g, '\\.')}$`).source)
+                || []),
         }
 
-        if(existedIndex !== -1) {
+        if (existedIndex !== -1) {
             // Update the existing method in the metadata
             existedMetaValue[existedIndex] = abstraction;
-        }else{
+        } else {
             // Add the new method to the metadata
             existedMetaValue.push(abstraction);
         }

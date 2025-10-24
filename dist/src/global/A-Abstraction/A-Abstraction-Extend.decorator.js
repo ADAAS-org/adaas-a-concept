@@ -27,7 +27,7 @@ name,
  */
 config = {}) {
     return function (target, propertyKey, descriptor) {
-        var _a;
+        var _a, _b, _c;
         // for error messages
         const componentName = ((_a = target === null || target === void 0 ? void 0 : target.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(target) || 'UnknownComponent';
         if (!name)
@@ -55,9 +55,16 @@ config = {}) {
         const abstraction = {
             name: setName,
             handler: propertyKey,
-            before: config.before || [],
-            after: config.after || [],
-            behavior: config.behavior || 'sync'
+            behavior: config.behavior || 'sync',
+            throwOnError: config.throwOnError !== undefined ? config.throwOnError : true,
+            before: (((_b = config.before) === null || _b === void 0 ? void 0 : _b.map(b => b instanceof RegExp
+                ? b.source
+                : new RegExp(`^.*${b.replace(/\./g, '\\.')}$`).source))
+                || []),
+            after: (((_c = config.after) === null || _c === void 0 ? void 0 : _c.map(a => a instanceof RegExp
+                ? a.source
+                : new RegExp(`^.*${a.replace(/\./g, '\\.')}$`).source))
+                || []),
         };
         if (existedIndex !== -1) {
             // Update the existing method in the metadata

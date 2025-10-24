@@ -4,7 +4,7 @@ import { A_Meta } from "../A-Meta/A-Meta.class";
 import { A_TYPES__Scope_Init } from "../A-Scope/A-Scope.types";
 import { A_TYPES__ContainerMetaKey } from "./A-Container.constants";
 import { A_Container } from "./A-Container.class";
-import { A_TYPES__FeatureDefineDecoratorMeta, A_TYPES__FeatureExtendDecoratorBehaviorConfig, A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types";
+import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types";
 
 
 // ============================================================================
@@ -85,13 +85,4 @@ export type A_TYPES__ContainerMeta = {
 }
 
 
-export type A_TYPES__ContainerMetaExtension = {
-    /**
-     * The name of original Extension Definition
-     */
-    name: string,
-    /**
-     * The name of the handler that will be used to apply the extension
-     */
-    handler: string,
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig
+export type A_TYPES__ContainerMetaExtension = A_TYPES__FeatureExtendDecoratorMeta

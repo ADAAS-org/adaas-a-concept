@@ -1,4 +1,4 @@
-import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
+import { A_TYPES__A_StageStep, A_TYPES_StageExecutionBehavior } from "../A-Stage/A-Stage.types";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Component } from "../A-Component/A-Component.class";
@@ -169,22 +169,9 @@ export type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<
  */
 export type A_TYPES__FeatureExtendDecoratorTarget = A_Component;
 /**
- * Meta type for A_Extend decorator
- */
-export type A_TYPES__FeatureExtendDecoratorMeta = {
-    /**
-     * Original Feature Extension name
-     *
-     * [!] could be string or regex
-     */
-    name: string;
-    /**
-     * Actual method name in the class
-     */
-    handler: string;
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
-/**
  * Configuration type for A_Extend decorator
+ *
+ * This is an INPUT parameter provided by the user
  */
 export type A_TYPES__FeatureExtendDecoratorConfig = {
     /**
@@ -215,7 +202,52 @@ export type A_TYPES__FeatureExtendDecoratorConfig = {
      * ```
      */
     scope: Array<A_TYPES__FeatureExtendDecoratorScopeItem> | Partial<A_TYPES__FeatureExtendDecoratorScopeConfig>;
-} & A_TYPES__FeatureExtendDecoratorBehaviorConfig;
+    /**
+     * The behavior of the method.
+     * In case its async it will be executed independently from the main thread.
+     *
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
+     *
+     */
+    behavior: A_TYPES_StageExecutionBehavior;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] It applies for the following structure :'Component.methodName'
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     * Example:
+     * ```ts
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      before: ['Component1.methodName', /Component2\..+/]
+     *  })
+     * ```
+     */
+    before: Array<string | RegExp>;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] It applies for the following structure :'Component.methodName'
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     * Example:
+     * ```ts
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      before: ['Component1.methodName', /Component2\..+/]
+     *  })
+     * ```
+     *
+     */
+    after: Array<string | RegExp>;
+    /**
+     * Indicates whether to throw an error if the step fails.
+     *
+     * [!] By default is true
+     */
+    throwOnError: boolean;
+};
 /**
  * Scope item that can be used in A_Extend decorator configuration
  */
@@ -232,17 +264,21 @@ export type A_TYPES__FeatureExtendDecoratorScopeConfig = {
 /**
  * A single item that can be used in scope configuration
  */
-export type A_TYPES__FeatureExtendDecoratorScopeItem = {
-    new (...args: any[]): A_Container;
-} | {
-    new (...args: any[]): A_Entity;
-} | {
-    new (...args: any[]): A_Component;
-};
+export type A_TYPES__FeatureExtendDecoratorScopeItem = A_TYPES__Container_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Component_Constructor;
 /**
- * Behavior configuration for A_Extend decorator
+ * Meta type for A_Extend decorator
  */
-export type A_TYPES__FeatureExtendDecoratorBehaviorConfig = {
+export type A_TYPES__FeatureExtendDecoratorMeta = {
+    /**
+     * Original Feature Extension name
+     *
+     * [!] could be string or regex
+     */
+    name: string;
+    /**
+     * Actual method name in the class
+     */
+    handler: string;
     /**
      * The behavior of the method.
      * In case its async it will be executed independently from the main thread.
@@ -250,7 +286,7 @@ export type A_TYPES__FeatureExtendDecoratorBehaviorConfig = {
      * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
      *
      */
-    behavior: 'async' | 'sync';
+    behavior: A_TYPES_StageExecutionBehavior;
     /**
      * Allows to define the order of the execution of the method.
      *
@@ -265,4 +301,10 @@ export type A_TYPES__FeatureExtendDecoratorBehaviorConfig = {
      *
      */
     after: string[];
+    /**
+     * Indicates whether to throw an error if the step fails.
+     *
+     * [!] By default is true
+     */
+    throwOnError: boolean;
 };

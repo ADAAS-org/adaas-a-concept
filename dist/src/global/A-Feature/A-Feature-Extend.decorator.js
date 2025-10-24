@@ -9,7 +9,7 @@ const A_Component_constants_1 = require("../A-Component/A-Component.constants");
 const A_Feature_error_1 = require("./A-Feature.error");
 function A_Feature_Extend(param1) {
     return function (target, propertyKey, descriptor) {
-        var _a;
+        var _a, _b, _c;
         // for error messages
         const componentName = ((_a = target === null || target === void 0 ? void 0 : target.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(target) || 'Unknown';
         if (!A_TypeGuards_helper_1.A_TypeGuards.isAllowedForFeatureExtension(target))
@@ -20,6 +20,7 @@ function A_Feature_Extend(param1) {
         let after = [];
         let include = [];
         let exclude = [];
+        let throwOnError = true;
         switch (true) {
             case A_TypeGuards_helper_1.A_TypeGuards.isRegExp(param1):
                 targetRegexp = param1;
@@ -35,11 +36,18 @@ function A_Feature_Extend(param1) {
                 }
                 targetRegexp = buildTargetRegexp(param1, include, exclude, propertyKey);
                 behavior = param1.behavior || behavior;
-                before = param1.before || before;
-                after = param1.after || after;
+                throwOnError = param1.throwOnError !== undefined ? param1.throwOnError : throwOnError;
+                before = ((_b = param1.before) === null || _b === void 0 ? void 0 : _b.map(e => e instanceof RegExp
+                    ? e.source
+                    : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source))
+                    || before;
+                after = ((_c = param1.after) === null || _c === void 0 ? void 0 : _c.map(e => e instanceof RegExp
+                    ? e.source
+                    : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source))
+                    || after;
                 break;
             default:
-                targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
+                targetRegexp = new RegExp(`^.*${propertyKey.replace(/\./g, '\\.')}$`);
                 break;
         }
         const existedDefinitions = A_Context_class_1.A_Context
@@ -63,7 +71,8 @@ function A_Feature_Extend(param1) {
             handler: propertyKey,
             behavior,
             before,
-            after
+            after,
+            throwOnError
         };
         if (existedIndex !== -1) {
             // Update the existing method in the metadata

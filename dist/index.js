@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_TypeGuards = exports.A_IdentityHelper = exports.A_FormatterHelper = exports.A_CommonHelper = exports.A_Abstraction_Extend = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_ScopeError = exports.A_Scope = exports.A_StageError = exports.A_Stage = exports.A_FeatureError = exports.A_Feature = exports.ASEID_Error = exports.ASEID = exports.A_Error = exports.A_CallerError = exports.A_Caller = exports.A_AbstractionError = exports.A_Abstraction = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
+exports.A_TypeGuards = exports.A_StepManagerError = exports.A_StepsManager = exports.A_IdentityHelper = exports.A_FormatterHelper = exports.A_CommonHelper = exports.A_Abstraction_Extend = exports.A_Feature_Extend = exports.A_Feature_Define = exports.A_Inject = exports.A_Fragment = exports.A_Meta = exports.A_ScopeError = exports.A_Scope = exports.A_StageError = exports.A_Stage = exports.A_FeatureError = exports.A_Feature = exports.ASEID_Error = exports.ASEID = exports.A_Error = exports.A_CallerError = exports.A_Caller = exports.A_AbstractionError = exports.A_Abstraction = exports.A_Entity = exports.A_ComponentMeta = exports.A_Component = exports.A_ContainerMeta = exports.A_Container = exports.A_ConceptMeta = exports.A_Concept = exports.A_Context = void 0;
 // =================================================================================================
 // ============================= Export Framework Components =======================================
 // =================================================================================================
@@ -103,7 +103,10 @@ var A_Formatter_helper_1 = require("./src/helpers/A_Formatter.helper");
 Object.defineProperty(exports, "A_FormatterHelper", { enumerable: true, get: function () { return A_Formatter_helper_1.A_FormatterHelper; } });
 var A_Identity_helper_1 = require("./src/helpers/A_Identity.helper");
 Object.defineProperty(exports, "A_IdentityHelper", { enumerable: true, get: function () { return A_Identity_helper_1.A_IdentityHelper; } });
-// export { A_StepsManager } from './src/helpers/A_StepsManager.class';
+var A_StepManager_class_1 = require("./src/global/A-StepManager/A-StepManager.class");
+Object.defineProperty(exports, "A_StepsManager", { enumerable: true, get: function () { return A_StepManager_class_1.A_StepsManager; } });
+var A_StepManager_error_1 = require("./src/global/A-StepManager/A-StepManager.error");
+Object.defineProperty(exports, "A_StepManagerError", { enumerable: true, get: function () { return A_StepManager_error_1.A_StepManagerError; } });
 var A_TypeGuards_helper_1 = require("./src/helpers/A_TypeGuards.helper");
 Object.defineProperty(exports, "A_TypeGuards", { enumerable: true, get: function () { return A_TypeGuards_helper_1.A_TypeGuards; } });
 //# sourceMappingURL=index.js.map

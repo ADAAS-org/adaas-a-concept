@@ -69,7 +69,8 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
                         args,
                         before: extension.before,
                         behavior: extension.behavior,
-                        after: extension.after
+                        after: extension.after,
+                        throwOnError: extension.throwOnError,
                     });
 
                 });
@@ -104,7 +105,8 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
                         handler: extension.handler,
                         behavior: extension.behavior,
                         before: extension.before || [],
-                        after: extension.after || []
+                        after: extension.after || [],
+                        throwOnError: extension.throwOnError || true,
                     });
 
                 });

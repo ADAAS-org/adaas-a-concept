@@ -20,8 +20,8 @@
     "ext": "ts, js"
   },
   "scripts": {
-    "test": "jest",
-    "start": "nodemon ./tests/log.ts",
+    "test": "jest ",
+    "start": "nodemon ./tests/example-usage.ts",
     "example:simple": "nodemon ./examples/simple/concept.ts",
     "example:simple:trace": "node -r tsconfig-paths/register -r ts-node/register -r ./trace-require.js ./examples/simple/concept.ts",
     "example:http": "nodemon ./examples/simple-http-server/concept.ts",

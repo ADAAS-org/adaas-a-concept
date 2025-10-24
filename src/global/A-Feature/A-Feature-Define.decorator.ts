@@ -90,6 +90,7 @@ export function A_Feature_Define(
                     before: item.before || [],
                     after: item.after || [],
                     behavior: item.behavior || 'sync',
+                    throwOnError: true
                 })
             ) : [],
         });

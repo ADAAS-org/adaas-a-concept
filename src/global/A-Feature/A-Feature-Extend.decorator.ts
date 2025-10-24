@@ -1,4 +1,3 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
 import { A_TYPES__FeatureExtendDecoratorConfig, A_TYPES__FeatureExtendDecoratorDescriptor, A_TYPES__FeatureExtendDecoratorScopeItem, A_TYPES__FeatureExtendDecoratorTarget } from "./A-Feature.types";
@@ -79,6 +78,7 @@ export function A_Feature_Extend(
         let after: string[] = [];
         let include: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
         let exclude: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
+        let throwOnError: boolean = true;
 
 
 
@@ -102,12 +102,25 @@ export function A_Feature_Extend(
                 targetRegexp = buildTargetRegexp(param1, include, exclude, propertyKey);
 
                 behavior = param1.behavior || behavior;
-                before = param1.before || before;
-                after = param1.after || after;
+                throwOnError = param1.throwOnError !== undefined ? param1.throwOnError : throwOnError;
+
+                before = param1.before
+                    ?.map(e =>
+                        e instanceof RegExp
+                            ? e.source
+                            : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source)
+                    || before;
+                after = param1.after
+                    ?.map(e =>
+                        e instanceof RegExp
+                            ? e.source
+                            : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source)
+                    || after;
+
                 break;
 
             default:
-                targetRegexp = new RegExp(`^.*\\.${propertyKey}$`);
+                targetRegexp = new RegExp(`^.*${propertyKey.replace(/\./g, '\\.')}$`);
                 break;
         }
 
@@ -143,13 +156,14 @@ export function A_Feature_Extend(
             handler: propertyKey,
             behavior,
             before,
-            after
+            after,
+            throwOnError
         }
 
-        if (existedIndex !== -1){
+        if (existedIndex !== -1) {
             // Update the existing method in the metadata
             existedMetaValue[existedIndex] = extension;
-        }else{
+        } else {
             // Add the new method to the metadata
             existedMetaValue.push(extension);
         }

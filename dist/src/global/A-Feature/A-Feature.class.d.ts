@@ -2,7 +2,7 @@ import { A_TYPES__Feature_Init, A_TYPES__Feature_InitWithComponent, A_TYPES__Fea
 import { A_Feature_Define } from "./A-Feature-Define.decorator";
 import { A_Feature_Extend } from "./A-Feature-Extend.decorator";
 import { A_Stage } from "../A-Stage/A-Stage.class";
-import { A_StepsManager } from "../../helpers/A_StepsManager.class";
+import { A_StepsManager } from "../A-StepManager/A-StepManager.class";
 import { A_StageError } from "../A-Stage/A-Stage.error";
 import { A_FeatureError } from "./A-Feature.error";
 import { A_Caller } from "../A-Caller/A_Caller.class";
@@ -171,4 +171,5 @@ export declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A
      * The reason of feature interruption
      */
     reason?: string | A_StageError | Error): Promise<void>;
+    toString(): string;
 }

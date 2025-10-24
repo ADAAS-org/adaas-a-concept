@@ -48,7 +48,8 @@ export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
                         handler: extension.handler,
                         behavior: extension.behavior,
                         before: extension.before || [],
-                        after: extension.after || []
+                        after: extension.after || [],
+                        throwOnError: extension.throwOnError || true,
                     });
 
                 });

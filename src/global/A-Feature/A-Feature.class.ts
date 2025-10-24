@@ -8,7 +8,7 @@ import {
 import { A_Feature_Define } from "@adaas/a-concept/global/A-Feature/A-Feature-Define.decorator";
 import { A_Feature_Extend } from "@adaas/a-concept/global/A-Feature/A-Feature-Extend.decorator";
 import { A_Stage } from "../A-Stage/A-Stage.class";
-import { A_StepsManager } from "@adaas/a-concept/helpers/A_StepsManager.class";
+import { A_StepsManager } from "@adaas/a-concept/global/A-StepManager/A-StepManager.class";
 import { A_StageError } from "../A-Stage/A-Stage.error";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_FeatureError } from "./A-Feature.error";
@@ -390,5 +390,12 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         }
 
         this._state = A_TYPES__FeatureState.INTERRUPTED;
+    }
+
+
+
+
+    toString(): string {
+        return `A-Feature(${this.caller.component?.constructor?.name || 'Unknown'}::${this.name})`;
     }
 }

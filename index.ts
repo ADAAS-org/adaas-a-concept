@@ -75,6 +75,7 @@ export { A_Abstraction_Extend } from './src/global/A-Abstraction/A-Abstraction-E
 export { A_CommonHelper } from './src/helpers/A_Common.helper';
 export { A_FormatterHelper } from './src/helpers/A_Formatter.helper';
 export { A_IdentityHelper, A_ID_TYPES__TimeId_Parts } from './src/helpers/A_Identity.helper';
-// export { A_StepsManager } from './src/helpers/A_StepsManager.class';
+export { A_StepsManager } from './src/global/A-StepManager/A-StepManager.class';
+export { A_StepManagerError } from './src/global/A-StepManager/A-StepManager.error';
 export { A_TypeGuards } from './src/helpers/A_TypeGuards.helper';
 

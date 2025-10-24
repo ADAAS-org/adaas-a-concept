@@ -1,10 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.A_TmpStage = exports.A_StepsManager = void 0;
-const A_Error_class_1 = require("../global/A-Error/A_Error.class");
-const A_Stage_class_1 = require("../global/A-Stage/A-Stage.class");
+exports.A_StepsManager = void 0;
+const A_Stage_class_1 = require("../A-Stage/A-Stage.class");
+const A_StepManager_error_1 = require("./A-StepManager.error");
 class A_StepsManager {
     constructor(entities) {
+        this._isBuilt = false;
         this.entities = this.prepareSteps(entities);
         this.graph = new Map();
         this.visited = new Set();
@@ -13,13 +14,16 @@ class A_StepsManager {
     }
     prepareSteps(entities) {
         return entities.map(step => {
-            return Object.assign(Object.assign({}, step), { behavior: step.behavior || 'sync', before: step.before || [], after: step.after || [] });
+            return Object.assign(Object.assign({}, step), { behavior: step.behavior || 'sync', before: step.before || [], after: step.after || [], throwOnError: false });
         });
     }
     ID(step) {
         return `${typeof step.component === 'string' ? step.component : step.component.name}.${step.handler}`;
     }
     buildGraph() {
+        if (this._isBuilt)
+            return;
+        this._isBuilt = true;
         // Initialize graph nodes
         this.entities.forEach(entity => this.graph.set(this.ID(entity), new Set()));
         // Add directed edges based on 'before' and 'after'
@@ -30,7 +34,7 @@ class A_StepsManager {
             // If entity should execute before targets, then targets depend on entity
             // So we add edges: target -> entity (target depends on entity)
             before.forEach(dep => {
-                const targets = this.matchEntities(dep);
+                const targets = this.matchEntities(entityId, dep);
                 targets.forEach(target => {
                     if (!this.graph.has(target))
                         this.graph.set(target, new Set());
@@ -41,7 +45,7 @@ class A_StepsManager {
             // If entity should execute after sources, then entity depends on sources
             // So we add edges: entity -> source (entity depends on source)
             after.forEach(dep => {
-                const sources = this.matchEntities(dep);
+                const sources = this.matchEntities(entityId, dep);
                 sources.forEach(source => {
                     if (!this.graph.has(entityId))
                         this.graph.set(entityId, new Set());
@@ -51,87 +55,57 @@ class A_StepsManager {
         });
     }
     // Match entities by name or regex
-    matchEntities(pattern) {
-        const regex = new RegExp(`^${pattern}$`);
+    matchEntities(entityId, pattern) {
+        const regex = new RegExp(pattern);
         return this.entities
-            .filter(entity => regex.test(this.ID(entity)))
+            .filter(entity => regex.test(this.ID(entity)) && this.ID(entity) !== entityId)
             .map(entity => this.ID(entity));
     }
     // Topological sort with cycle detection
     visit(node) {
-        if (this.tempMark.has(node))
-            throw new A_Error_class_1.A_Error("Circular dependency detected");
+        if (this.tempMark.has(node)) {
+            return;
+            // TODO: maybe we have to keep this error but only for partial cases
+            throw new A_StepManager_error_1.A_StepManagerError(A_StepManager_error_1.A_StepManagerError.CircularDependencyError, `Circular dependency detected involving step: ${node}. Make sure that your 'before' and 'after' dependencies do not create cycles.`);
+        }
         if (!this.visited.has(node)) {
             this.tempMark.add(node);
             (this.graph.get(node) || []).forEach(neighbor => this.visit(neighbor));
             this.tempMark.delete(node);
             this.visited.add(node);
             this.sortedEntities.push(node);
+            // // Visit neighbors in stable order (preserving original order)
+            // const neighbors = Array.from(this.graph.get(node) || []);
+            // // neighbors.sort((a, b) => {
+            // //     const orderA = this.originalOrder.get(a) || 0;
+            // //     const orderB = this.originalOrder.get(b) || 0;
+            // //     return orderA - orderB;
+            // // });
+            // neighbors.forEach(neighbor => this.visit(neighbor));
+            // this.tempMark.delete(node);
+            // this.visited.add(node);
+            // this.sortedEntities.push(node);
         }
     }
-    // Sort the entities based on dependencies
-    toStages(feature) {
+    toSortedArray() {
         this.buildGraph();
         // Start topological sort
         this.entities.forEach(entity => {
             if (!this.visited.has(this.ID(entity)))
                 this.visit(this.ID(entity));
         });
-        const stages = [];
+        return this.sortedEntities;
+    }
+    // Sort the entities based on dependencies
+    toStages(feature) {
+        const sortedNames = this.toSortedArray();
         // Map sorted names back to entity objects
-        this.sortedEntities
+        return sortedNames
             .map(id => {
             const step = this.entities.find(entity => this.ID(entity) === id);
-            let stage = stages.find(stage => {
-                return stage.after.every(after => step.after.includes(after))
-                    && step.before.every(before => stage.after.includes(before));
-            });
-            if (!stage) {
-                stage = new A_TmpStage();
-                stages.push(stage);
-            }
-            stage.add(step);
+            return new A_Stage_class_1.A_Stage(feature, step);
         });
-        return stages.map(stage => new A_Stage_class_1.A_Stage(feature, stage.steps));
     }
 }
 exports.A_StepsManager = A_StepsManager;
-class A_TmpStage {
-    constructor(_steps = []) {
-        this.name = 'A_TmpStage';
-        this._steps = _steps;
-    }
-    get before() {
-        return this._steps.reduce((acc, step) => ([
-            ...acc,
-            ...step.before
-        ]), []);
-    }
-    get after() {
-        return this._steps.reduce((acc, step) => ([
-            ...acc,
-            ...step.after
-        ]), []);
-    }
-    get steps() {
-        return this._steps;
-    }
-    get asyncSteps() {
-        return this._steps.filter(step => step.behavior === 'async');
-    }
-    get syncSteps() {
-        return this._steps.filter(step => step.behavior === 'sync');
-    }
-    /**
-     * Adds a step to the stage
-     *
-     * @param step
-     * @returns
-     */
-    add(step) {
-        this._steps.push(step);
-        return this;
-    }
-}
-exports.A_TmpStage = A_TmpStage;
-//# sourceMappingURL=A_StepsManager.class.js.map
+//# sourceMappingURL=A-StepManager.class.js.map
