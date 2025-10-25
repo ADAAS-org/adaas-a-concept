@@ -39,15 +39,7 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
         .find(`CONCEPT_ABSTRACTION::${abstraction}`).forEach(([handler, extensions]) => {
             extensions.forEach(extension => {
                 const args = (injections === null || injections === void 0 ? void 0 : injections.get(extension.handler)) || [];
-                steps.push({
-                    name: extension.name,
-                    handler: extension.handler,
-                    args,
-                    before: extension.before,
-                    behavior: extension.behavior,
-                    after: extension.after,
-                    throwOnError: extension.throwOnError,
-                });
+                steps.push(Object.assign(Object.assign({}, extension), { args }));
             });
         });
         return steps;
@@ -70,9 +62,10 @@ class A_ContainerMeta extends A_Meta_class_1.A_Meta {
                     name: extension.name,
                     handler: extension.handler,
                     behavior: extension.behavior,
-                    before: extension.before || [],
-                    after: extension.after || [],
+                    before: extension.before || '',
+                    after: extension.after || '',
                     throwOnError: extension.throwOnError || true,
+                    override: ''
                 });
             });
         });

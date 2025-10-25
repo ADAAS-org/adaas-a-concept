@@ -76,7 +76,7 @@ export type A_TYPES__A_StageStep = {
      * [!] In case the method has circular dependencies it will Throw an error.
      * 
      */
-    before: string[]
+    before: string
 
     /**
      * Allows to define the order of the execution of the method.
@@ -84,7 +84,7 @@ export type A_TYPES__A_StageStep = {
      * [!] In case the method has circular dependencies it will Throw an error.
      * 
      */
-    after: string[],
+    after: string,
 
     /**
      * Indicates whether to throw an error if the step fails.
@@ -92,6 +92,11 @@ export type A_TYPES__A_StageStep = {
      * [!] By default is true
      */
     throwOnError: boolean
+
+    /**
+     * 
+     */
+    override: string
 }
 
 

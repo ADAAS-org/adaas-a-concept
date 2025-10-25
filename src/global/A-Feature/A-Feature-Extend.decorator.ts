@@ -74,8 +74,9 @@ export function A_Feature_Extend(
 
         let targetRegexp: RegExp;
         let behavior: 'sync' | 'async' = 'sync';
-        let before: string[] = [];
-        let after: string[] = [];
+        let before: string = '';
+        let after: string = '';
+        let override: string = '';
         let include: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
         let exclude: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
         let throwOnError: boolean = true;
@@ -104,19 +105,22 @@ export function A_Feature_Extend(
                 behavior = param1.behavior || behavior;
                 throwOnError = param1.throwOnError !== undefined ? param1.throwOnError : throwOnError;
 
-                before = param1.before
-                    ?.map(e =>
-                        e instanceof RegExp
-                            ? e.source
-                            : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source)
-                    || before;
-                after = param1.after
-                    ?.map(e =>
-                        e instanceof RegExp
-                            ? e.source
-                            : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source)
-                    || after;
+                before = A_TypeGuards.isArray(param1.before)
+                    ? new RegExp(`^${param1.before.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.before instanceof RegExp
+                        ? param1.before.source
+                        : ''
+                after = A_TypeGuards.isArray(param1.after)
+                    ? new RegExp(`^${param1.after.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.after instanceof RegExp
+                        ? param1.after.source
+                        : ''
 
+                override = A_TypeGuards.isArray(param1.override)
+                    ? new RegExp(`^${param1.override.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.override instanceof RegExp
+                        ? param1.override.source
+                        : ''
                 break;
 
             default:
@@ -161,7 +165,8 @@ export function A_Feature_Extend(
             behavior,
             before,
             after,
-            throwOnError
+            throwOnError,
+            override
         }
 
         if (existedIndex !== -1) {

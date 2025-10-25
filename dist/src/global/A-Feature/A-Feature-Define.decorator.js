@@ -51,7 +51,7 @@ function A_Feature_Define(config = {}) {
             name: `${target.constructor.name}.${name}`,
             handler: propertyKey,
             invoke: invoke,
-            template: config.template && config.template.length ? config.template.map(item => (Object.assign(Object.assign({}, item), { before: item.before || [], after: item.after || [], behavior: item.behavior || 'sync', throwOnError: true }))) : [],
+            template: config.template && config.template.length ? config.template.map(item => (Object.assign(Object.assign({}, item), { before: item.before || '', after: item.after || '', behavior: item.behavior || 'sync', throwOnError: true, override: item.override || '' }))) : [],
         });
         //  Update the metadata of the container with the new Feature definition
         A_Context_class_1.A_Context

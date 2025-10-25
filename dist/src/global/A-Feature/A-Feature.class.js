@@ -216,7 +216,7 @@ class A_Feature {
         // 1) save feature name
         this._name = params.name;
         // 2) get scope from where feature is called
-        const componentScope = A_Context_class_1.A_Context.scope(params.component);
+        const componentScope = params.scope ? params.scope : A_Context_class_1.A_Context.scope(params.component);
         // 3) create caller wrapper for the simple injection of the caller component
         this._caller = new A_Caller_class_1.A_Caller(params.component);
         // 4) allocate new scope for the feature

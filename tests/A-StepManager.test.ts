@@ -98,14 +98,14 @@ describe('A-StepManager tests', () => {
                 name: 'step5',
                 component: ComponentA,
                 handler: 'step5',
-                before: ['step2'],
-                after: ['step6']
+                before: /^.*\.*step2$/.source,
+                after: /^.*\.*step6$/.source
             },
             {
                 name: 'step6',
                 component: ComponentA,
                 handler: 'step6',
-                before: ['ComponentA.step2']
+                before: /^ComponentA\.step2$/.source
             },
         ]);
 
@@ -162,7 +162,7 @@ describe('A-StepManager tests', () => {
                 name: 'step6',
                 component: ComponentA,
                 handler: 'step6',
-                before: [new RegExp('.*').source],
+                before: /.*/.source,
             },
         ]);
 
@@ -213,13 +213,13 @@ describe('A-StepManager tests', () => {
                 name: 'step5',
                 component: ComponentA,
                 handler: 'step5',
-                before: [new RegExp('.*').source],
+                before: new RegExp('.*').source,
             },
             {
                 name: 'step6',
                 component: ComponentA,
                 handler: 'step6',
-                before: [new RegExp('.*').source],
+                before: new RegExp('.*').source,
             },
         ]);
 
@@ -276,8 +276,8 @@ describe('A-StepManager tests', () => {
                 name: 'test',
                 component: ComponentA,
                 handler: 'test',
-                before: [new RegExp('step(4|5)').source],
-                after: [new RegExp('step(1|2)').source],
+                before: /^.*\.step(4|5)$/.source,
+                after: /^.*\.step(1|2)$/.source,
             },
         ]);
 
@@ -326,8 +326,8 @@ describe('A-StepManager tests', () => {
                 name: 'inject',
                 component: ComponentA,
                 handler: 'inject',
-                before: [/ComponentB\.read.+/.source],
-                after: ['ComponentA.initialize']
+                before: /ComponentB\.read.+/ig.source,
+                after: 'ComponentA.initialize'
             },
         ]);
 
@@ -342,5 +342,54 @@ describe('A-StepManager tests', () => {
         ]);
     });
 
-    
+
+    it('Should allow to override steps by regexp', async () => {
+        class ComponentA extends A_Component {
+            async step1() { }
+            async step2() { }
+            async step3() { }
+            async step4() { }
+            async step5() { }
+            async test() { }
+        }
+
+        const sm = new A_StepsManager([
+            {
+                name: 'step1',
+                component: ComponentA,
+                handler: 'step1',
+            },
+            {
+                name: 'step2',
+                component: ComponentA,
+                handler: 'step2',
+            },
+            {
+                name: 'step3',
+                component: ComponentA,
+                handler: 'step3',
+                override: /^.*\.step(4|5)$/.source
+            },
+            {
+                name: 'step4',
+                component: ComponentA,
+                handler: 'step4',
+            },
+            {
+                name: 'step5',
+                component: ComponentA,
+                handler: 'step5',
+            }
+        ]);
+
+
+        const result = sm.toSortedArray();
+
+        expect(result).toEqual([
+            "ComponentA.step1",
+            "ComponentA.step2",
+            "ComponentA.step3",
+        ]);
+    });
+
 });

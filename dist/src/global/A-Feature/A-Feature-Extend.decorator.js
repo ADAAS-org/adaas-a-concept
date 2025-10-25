@@ -9,15 +9,16 @@ const A_Component_constants_1 = require("../A-Component/A-Component.constants");
 const A_Feature_error_1 = require("./A-Feature.error");
 function A_Feature_Extend(param1) {
     return function (target, propertyKey, descriptor) {
-        var _a, _b, _c;
+        var _a;
         // for error messages
         const componentName = ((_a = target === null || target === void 0 ? void 0 : target.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(target) || 'Unknown';
         if (!A_TypeGuards_helper_1.A_TypeGuards.isAllowedForFeatureExtension(target))
             throw new A_Feature_error_1.A_FeatureError(A_Feature_error_1.A_FeatureError.FeatureExtensionError, `A-Feature-Extend cannot be applied on the ${componentName} level`);
         let targetRegexp;
         let behavior = 'sync';
-        let before = [];
-        let after = [];
+        let before = '';
+        let after = '';
+        let override = '';
         let include = [];
         let exclude = [];
         let throwOnError = true;
@@ -37,14 +38,21 @@ function A_Feature_Extend(param1) {
                 targetRegexp = buildTargetRegexp(param1, include, exclude, propertyKey);
                 behavior = param1.behavior || behavior;
                 throwOnError = param1.throwOnError !== undefined ? param1.throwOnError : throwOnError;
-                before = ((_b = param1.before) === null || _b === void 0 ? void 0 : _b.map(e => e instanceof RegExp
-                    ? e.source
-                    : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source))
-                    || before;
-                after = ((_c = param1.after) === null || _c === void 0 ? void 0 : _c.map(e => e instanceof RegExp
-                    ? e.source
-                    : new RegExp(`^.*${e.replace(/\./g, '\\.')}$`).source))
-                    || after;
+                before = A_TypeGuards_helper_1.A_TypeGuards.isArray(param1.before)
+                    ? new RegExp(`^${param1.before.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.before instanceof RegExp
+                        ? param1.before.source
+                        : '';
+                after = A_TypeGuards_helper_1.A_TypeGuards.isArray(param1.after)
+                    ? new RegExp(`^${param1.after.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.after instanceof RegExp
+                        ? param1.after.source
+                        : '';
+                override = A_TypeGuards_helper_1.A_TypeGuards.isArray(param1.override)
+                    ? new RegExp(`^${param1.override.join('|').replace(/\./g, '\\.')}$`).source
+                    : param1.override instanceof RegExp
+                        ? param1.override.source
+                        : '';
                 break;
             default:
                 targetRegexp = new RegExp(`^.*${propertyKey.replace(/\./g, '\\.')}$`);
@@ -75,7 +83,8 @@ function A_Feature_Extend(param1) {
             behavior,
             before,
             after,
-            throwOnError
+            throwOnError,
+            override
         };
         if (existedIndex !== -1) {
             // Update the existing method in the metadata

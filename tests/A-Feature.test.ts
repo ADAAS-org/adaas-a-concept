@@ -63,8 +63,8 @@ describe('A-Feature tests', () => {
                     component: MyExtendedComponent,
                     handler: 'testHandler',
                     behavior: 'sync',
-                    before: [],
-                    after: []
+                    before: '',
+                    after: ''
                 },
                 {
                     name: 'MyExtendedComponent.testHandler',
@@ -115,8 +115,8 @@ describe('A-Feature tests', () => {
                     component: 'MyExtendedComponent2',
                     handler: 'testHandler',
                     behavior: 'sync',
-                    before: [],
-                    after: []
+                    before: '',
+                    after: ''
                 }]
             })
             async testHandler() { }

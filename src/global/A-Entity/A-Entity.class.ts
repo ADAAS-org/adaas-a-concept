@@ -254,7 +254,8 @@ export class A_Entity<
     ) {
         const newFeature = new A_Feature({
             name: feature,
-            component: this
+            component: this,
+            scope
         });
 
         return await newFeature.process(scope);

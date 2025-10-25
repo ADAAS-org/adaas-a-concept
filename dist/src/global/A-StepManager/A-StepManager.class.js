@@ -13,9 +13,8 @@ class A_StepsManager {
         this.sortedEntities = [];
     }
     prepareSteps(entities) {
-        return entities.map(step => {
-            return Object.assign(Object.assign({}, step), { behavior: step.behavior || 'sync', before: step.before || [], after: step.after || [], throwOnError: false });
-        });
+        return entities
+            .map(step => (Object.assign(Object.assign({}, step), { behavior: step.behavior || 'sync', before: step.before || '', after: step.after || '', override: step.override || '', throwOnError: false })));
     }
     ID(step) {
         return `${typeof step.component === 'string' ? step.component : step.component.name}.${step.handler}`;
@@ -24,34 +23,36 @@ class A_StepsManager {
         if (this._isBuilt)
             return;
         this._isBuilt = true;
+        // Filter override
+        this.entities = this.entities
+            .filter((step, i, self) => !self.some(s => s.override ? new RegExp(s.override).test(this.ID(step)) : false));
         // Initialize graph nodes
         this.entities.forEach(entity => this.graph.set(this.ID(entity), new Set()));
         // Add directed edges based on 'before' and 'after'
         this.entities.forEach(entity => {
             const entityId = this.ID(entity);
-            const { before = [], after = [] } = entity;
             // Add edges for 'before' dependencies
             // If entity should execute before targets, then targets depend on entity
             // So we add edges: target -> entity (target depends on entity)
-            before.forEach(dep => {
-                const targets = this.matchEntities(entityId, dep);
+            if (entity.before) {
+                const targets = this.matchEntities(entityId, entity.before);
                 targets.forEach(target => {
                     if (!this.graph.has(target))
                         this.graph.set(target, new Set());
                     this.graph.get(target).add(entityId); // target depends on entity
                 });
-            });
+            }
             // Add edges for 'after' dependencies  
             // If entity should execute after sources, then entity depends on sources
             // So we add edges: entity -> source (entity depends on source)
-            after.forEach(dep => {
-                const sources = this.matchEntities(entityId, dep);
+            if (entity.after) {
+                const sources = this.matchEntities(entityId, entity.after);
                 sources.forEach(source => {
                     if (!this.graph.has(entityId))
                         this.graph.set(entityId, new Set());
                     this.graph.get(entityId).add(source); // entity depends on source
                 });
-            });
+            }
         });
     }
     // Match entities by name or regex

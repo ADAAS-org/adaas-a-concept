@@ -158,7 +158,8 @@ class A_Entity {
         return __awaiter(this, void 0, void 0, function* () {
             const newFeature = new A_Feature_class_1.A_Feature({
                 name: feature,
-                component: this
+                component: this,
+                scope
             });
             return yield newFeature.process(scope);
         });

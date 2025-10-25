@@ -33,9 +33,10 @@ class A_ComponentMeta extends A_Meta_class_1.A_Meta {
                     name: extension.name,
                     handler: extension.handler,
                     behavior: extension.behavior,
-                    before: extension.before || [],
-                    after: extension.after || [],
+                    before: extension.before || '',
+                    after: extension.after || '',
                     throwOnError: extension.throwOnError || true,
+                    override: ''
                 });
             });
         });

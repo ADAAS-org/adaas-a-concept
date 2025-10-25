@@ -32,6 +32,12 @@ export type A_TYPES__Feature_InitWithComponent<T extends A_TYPES__FeatureAvailab
      * [!] Could be Container, Entity, Component or Command
      */
     component: T;
+    /**
+     * In case when Entity is not attached to the scope can be used to transparently show dependencies
+     *
+     *
+     */
+    scope?: A_Scope;
 };
 /**
  * Feature initialization type using template
@@ -220,11 +226,16 @@ export type A_TYPES__FeatureExtendDecoratorConfig = {
      * ```ts
      *  @A_Feature.Extend({
      *      name: 'load',
-     *      before: ['Component1.methodName', /Component2\..+/]
+     *      before: ['Component1.methodName', 'Component2.methodName2']
+     *  })
+     *  // OR
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      before: /Component2\..+/
      *  })
      * ```
      */
-    before: Array<string | RegExp>;
+    before: Array<string> | RegExp;
     /**
      * Allows to define the order of the execution of the method.
      *
@@ -235,18 +246,27 @@ export type A_TYPES__FeatureExtendDecoratorConfig = {
      * ```ts
      *  @A_Feature.Extend({
      *      name: 'load',
-     *      before: ['Component1.methodName', /Component2\..+/]
+     *      after: ['Component1.methodName', 'Component2.methodName2']
+     *  })
+     *  // OR
+     *  @A_Feature.Extend({
+     *      name: 'load',
+     *      after: /Component2\..+/
      *  })
      * ```
      *
      */
-    after: Array<string | RegExp>;
+    after: Array<string> | RegExp;
     /**
      * Indicates whether to throw an error if the step fails.
      *
      * [!] By default is true
      */
     throwOnError: boolean;
+    /**
+     * Allows to override particular steps in the feature sequence by provided names [Component].[Method] or by regexp
+     */
+    override: Array<string> | RegExp;
 };
 /**
  * Scope item that can be used in A_Extend decorator configuration
@@ -293,18 +313,22 @@ export type A_TYPES__FeatureExtendDecoratorMeta = {
      * [!] In case the method has circular dependencies it will Throw an error.
      *
      */
-    before: string[];
+    before: string;
     /**
      * Allows to define the order of the execution of the method.
      *
      * [!] In case the method has circular dependencies it will Throw an error.
      *
      */
-    after: string[];
+    after: string;
     /**
      * Indicates whether to throw an error if the step fails.
      *
      * [!] By default is true
      */
     throwOnError: boolean;
+    /**
+     * Allows to override particular steps in the feature sequence by provided names [Component].[Method] or by regexp
+     */
+    override: string;
 };

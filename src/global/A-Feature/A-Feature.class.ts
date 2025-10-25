@@ -285,7 +285,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         this._name = params.name;
 
         // 2) get scope from where feature is called
-        const componentScope = A_Context.scope(params.component);
+        const componentScope = params.scope ? params.scope : A_Context.scope(params.component);
 
         // 3) create caller wrapper for the simple injection of the caller component
         this._caller = new A_Caller<T>(params.component);

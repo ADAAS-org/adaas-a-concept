@@ -64,13 +64,8 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
                     const args = injections?.get(extension.handler) || [];
 
                     steps.push({
-                        name: extension.name,
-                        handler: extension.handler,
+                        ...extension,
                         args,
-                        before: extension.before,
-                        behavior: extension.behavior,
-                        after: extension.after,
-                        throwOnError: extension.throwOnError,
                     });
 
                 });
@@ -104,9 +99,11 @@ export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
                         name: extension.name,
                         handler: extension.handler,
                         behavior: extension.behavior,
-                        before: extension.before || [],
-                        after: extension.after || [],
+                        before: extension.before || '',
+                        after: extension.after || '',
                         throwOnError: extension.throwOnError || true,
+                        override: ''
+
                     });
 
                 });

@@ -91,18 +91,22 @@ export function A_Abstraction_Extend(
             behavior: config.behavior || 'sync',
             throwOnError: config.throwOnError !== undefined ? config.throwOnError : true,
 
-            before: (config.before
-                ?.map(b =>
-                    b instanceof RegExp
-                        ? b.source
-                        : new RegExp(`^.*${b.replace(/\./g, '\\.')}$`).source)
-                || []),
-            after: (config.after
-                ?.map(a =>
-                    a instanceof RegExp
-                        ? a.source
-                        : new RegExp(`^.*${a.replace(/\./g, '\\.')}$`).source)
-                || []),
+            before: A_TypeGuards.isArray(config.before)
+                ? new RegExp(`^${config.before.join('|').replace(/\./g, '\\.')}$`).source
+                : config.before instanceof RegExp
+                    ? config.before.source
+                    : '',
+            after: A_TypeGuards.isArray(config.after)
+                ? new RegExp(`^${config.after.join('|').replace(/\./g, '\\.')}$`).source
+                : config.after instanceof RegExp
+                    ? config.after.source
+                    : '',
+
+            override: A_TypeGuards.isArray(config.override)
+                ? new RegExp(`^${config.override.join('|').replace(/\./g, '\\.')}$`).source
+                : config.after instanceof RegExp
+                    ? config.after.source
+                    : '',
         }
 
         if (existedIndex !== -1) {

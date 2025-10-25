@@ -87,10 +87,12 @@ export function A_Feature_Define(
             template: config.template && config.template.length ? config.template.map(
                 item => ({
                     ...item,
-                    before: item.before || [],
-                    after: item.after || [],
+                    before: item.before || '',
+                    after: item.after || '',
                     behavior: item.behavior || 'sync',
-                    throwOnError: true
+                    throwOnError: true,
+                    override: item.override || ''
+
                 })
             ) : [],
         });

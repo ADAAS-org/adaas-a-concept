@@ -27,7 +27,7 @@ name,
  */
 config = {}) {
     return function (target, propertyKey, descriptor) {
-        var _a, _b, _c;
+        var _a;
         // for error messages
         const componentName = ((_a = target === null || target === void 0 ? void 0 : target.constructor) === null || _a === void 0 ? void 0 : _a.name) || String(target) || 'UnknownComponent';
         if (!name)
@@ -61,14 +61,21 @@ config = {}) {
             handler: propertyKey,
             behavior: config.behavior || 'sync',
             throwOnError: config.throwOnError !== undefined ? config.throwOnError : true,
-            before: (((_b = config.before) === null || _b === void 0 ? void 0 : _b.map(b => b instanceof RegExp
-                ? b.source
-                : new RegExp(`^.*${b.replace(/\./g, '\\.')}$`).source))
-                || []),
-            after: (((_c = config.after) === null || _c === void 0 ? void 0 : _c.map(a => a instanceof RegExp
-                ? a.source
-                : new RegExp(`^.*${a.replace(/\./g, '\\.')}$`).source))
-                || []),
+            before: A_TypeGuards_helper_1.A_TypeGuards.isArray(config.before)
+                ? new RegExp(`^${config.before.join('|').replace(/\./g, '\\.')}$`).source
+                : config.before instanceof RegExp
+                    ? config.before.source
+                    : '',
+            after: A_TypeGuards_helper_1.A_TypeGuards.isArray(config.after)
+                ? new RegExp(`^${config.after.join('|').replace(/\./g, '\\.')}$`).source
+                : config.after instanceof RegExp
+                    ? config.after.source
+                    : '',
+            override: A_TypeGuards_helper_1.A_TypeGuards.isArray(config.override)
+                ? new RegExp(`^${config.override.join('|').replace(/\./g, '\\.')}$`).source
+                : config.after instanceof RegExp
+                    ? config.after.source
+                    : '',
         };
         if (existedIndex !== -1) {
             // Update the existing method in the metadata
