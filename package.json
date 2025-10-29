@@ -2,10 +2,17 @@
   "name": "@adaas/a-concept",
   "version": "0.1.26",
   "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "nodemonConfig": {
     "ignore": [
       "**/*.test.ts",
@@ -26,7 +33,7 @@
     "example:simple": "nodemon ./examples/simple/concept.ts",
     "example:http": "nodemon ./examples/simple-http-server/concept.ts",
     "example:entity": "nodemon ./examples/entity/concept.ts",
-    "publish": "npm run test && npm run build && git add . && git commit -m \"new version created :: $(cat package.json | grep version | head -1  | awk -F: '{ print $2 }'  | sed 's/[\",]//g')\" && npm version patch && npm publish --access public",
+    "release": "npm run test && npm run build && git add . && git commit -m \"new version created :: $(cat package.json | grep version | head -1  | awk -F: '{ print $2 }'  | sed 's/[\",]//g')\" && npm version patch && npm publish --access public",
     "version": "echo git add .",
     "postversion": "git push --no-verify && git push --tags --no-verify && echo \"\n======Version Pushed Successfully=====\n\" ",
     "echo-version": "echo $npm_package_version",
