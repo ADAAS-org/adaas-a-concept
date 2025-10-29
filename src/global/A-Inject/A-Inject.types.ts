@@ -32,9 +32,11 @@ export type A_TYPES__A_InjectDecoratorReturn<T = any> = (
 
 export type A_TYPES__A_InjectDecorator_Meta = Array<{
     target: A_TYPES__InjectableConstructors
-} | {
-    target: A_TYPES__Entity_Constructor,
-    instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
+    require?: boolean
+    load?: string
+    defaultArgs?: any,
+    create?: boolean
+    instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>,
 }>;
 
 /**

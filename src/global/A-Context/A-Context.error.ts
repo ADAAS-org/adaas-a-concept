@@ -41,4 +41,8 @@ export class A_ContextError extends A_Error {
 
 
     static InvalidComponentParameterError = 'Invalid component provided';
+
+    static ComponentNotRegisteredError = 'Component not registered in the context';
+
+    static InvalidDeregisterParameterError = 'Invalid parameter provided to deregister component';
 }

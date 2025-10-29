@@ -201,4 +201,105 @@ export class A_CommonHelper {
         // For any other cases
         throw new Error('Unable to clone the object. Unsupported type.');
     }
+
+    /**
+     * Get a readable name for a component (string, class, function, React element, instance, etc.)
+     *
+     * Covers:
+     * - string tags ("div")
+     * - symbols (Symbol.for('xxx'))
+     * - functions and classes (with name or displayName)
+     * - React elements (object with `type`)
+     * - component instances (constructor.name)
+     * - objects with custom toString returning meaningful info
+     *
+     * Falls back to sensible defaults ("Unknown" / "Anonymous").
+     */
+    static getComponentName(component: any): string {
+        const UNKNOWN = 'Unknown';
+        const ANONYMOUS = 'Anonymous';
+
+        if (component === null || component === undefined) {
+            return UNKNOWN;
+        }
+
+        // Strings (HTML tags or explicit names)
+        if (typeof component === 'string') {
+            return component || UNKNOWN;
+        }
+
+        // Symbols
+        if (typeof component === 'symbol') {
+            try {
+                return component.toString();
+            } catch {
+                return UNKNOWN;
+            }
+        }
+
+        // Arrays - try to derive from first element
+        if (Array.isArray(component)) {
+            if (component.length === 0) return UNKNOWN;
+            return this.getComponentName(component[0]);
+        }
+
+        // Functions and classes
+        if (typeof component === 'function') {
+            const fnAny = component as any;
+            // Common React convention
+            if (fnAny.displayName) return String(fnAny.displayName);
+            if (fnAny.name) return String(fnAny.name);
+
+            // Try to extract a name from source if possible
+            try {
+                const src = Function.prototype.toString.call(component);
+                // class Foo { ... } or function foo() { ... } or foo => ...
+                const match = src.match(/^(?:class\s+([A-Za-z0-9_$]+)|function\s+([A-Za-z0-9_$]+)|([A-Za-z0-9_$]+)\s*=>)/);
+                if (match) {
+                    return match[1] || match[2] || match[3] || ANONYMOUS;
+                }
+            } catch {
+                // fallthrough
+            }
+            return ANONYMOUS;
+        }
+
+        // Objects (instances, React elements, plain objects)
+        if (typeof component === 'object') {
+            const objAny = component as any;
+
+            // React element: { type: ComponentOrString, props: ... }
+            if (objAny.type) {
+                return this.getComponentName(objAny.type);
+            }
+
+            // React forwardRef / memo wrappers often expose displayName
+            if (objAny.displayName) return String(objAny.displayName);
+            if (objAny.name) return String(objAny.name);
+
+            // Instance: use constructor name if available and not Object
+            if (objAny.constructor && objAny.constructor.name && objAny.constructor.name !== 'Object') {
+                return String(objAny.constructor.name);
+            }
+
+            // If object implements a meaningful toString, try it
+            try {
+                const s = objAny.toString();
+                if (typeof s === 'string' && s !== '[object Object]') {
+                    return s;
+                }
+            } catch {
+                // ignore
+            }
+
+            return ANONYMOUS;
+        }
+
+        // Fallback for other types
+        try {
+            return String(component);
+        } catch {
+            return UNKNOWN;
+        }
+    }
 }

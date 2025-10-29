@@ -4,6 +4,7 @@ import { A_TYPES__FeatureExtendDecoratorConfig, A_TYPES__FeatureExtendDecoratorD
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.constants";
 import { A_FeatureError } from "./A-Feature.error";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 
@@ -64,7 +65,7 @@ export function A_Feature_Extend(
         descriptor: A_TYPES__FeatureExtendDecoratorDescriptor
     ) {
         // for error messages
-        const componentName = (target as any)?.constructor?.name || String(target) || 'Unknown';
+        const componentName = A_CommonHelper.getComponentName(target)
 
         if (!A_TypeGuards.isAllowedForFeatureExtension(target))
             throw new A_FeatureError(

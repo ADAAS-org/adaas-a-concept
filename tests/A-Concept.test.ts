@@ -98,14 +98,13 @@ describe('A-Concept tests', () => {
         const containerBScope = A_Context.scope(containerB)
 
         expect(containerAScope.resolveConstructor('MyEntityA')).toBe(MyEntityA);
-        expect(() => {
-            containerAScope.resolveConstructor('MyEntityB');
-        }).toThrow();
+        const undefinedMyEntityB = containerAScope.resolveConstructor('MyEntityB');
+        expect(undefinedMyEntityB).toBeUndefined();
 
         expect(containerBScope.resolveConstructor('MyEntityB')).toBe(MyEntityB);
-        expect(() => {
-            containerBScope.resolveConstructor('MyEntityA');
-        }).toThrow();
+        const undefinedMyEntityA = containerBScope.resolveConstructor('MyEntityA');
+
+        expect(undefinedMyEntityA).toBeUndefined();
 
         expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);
         expect(concept.scope.resolve(MyContext)).toEqual(sharedContext);

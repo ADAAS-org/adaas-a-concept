@@ -14,6 +14,7 @@ import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A
 import { A_TYPES__ConceptAbstraction } from "@adaas/a-concept/global/A-Concept/A-Concept.types";
 import { A_AbstractionError } from "./A-Abstraction.error";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 /**
@@ -42,7 +43,7 @@ export function A_Abstraction_Extend(
         descriptor: A_TYPES__AbstractionDecoratorDescriptor
     ) {
         // for error messages
-        const componentName = (target as any)?.constructor?.name || String(target) || 'UnknownComponent';
+        const componentName = A_CommonHelper.getComponentName(target)
 
         if (!name)
             throw new A_AbstractionError(

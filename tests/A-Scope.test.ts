@@ -32,9 +32,10 @@ describe('A-Scope tests', () => {
         const resolved = scope.resolve(A_Component);
         expect(resolved).toBe(component);
     });
-    it('Should return an error when resolving a non-registered component', async () => {
+    it('Should return an undefined when resolving a non-registered component', async () => {
         const scope = new A_Scope({ name: 'TestScope' });
-        expect(() => scope.resolve(A_Component)).toThrowError();
+        const resolved = scope.resolve(A_Component);
+        expect(resolved).toBeUndefined();
     });
     it('Should allow to register and resolve a component with dependencies', async () => {
         class DependentComponent extends A_Component {
@@ -50,7 +51,7 @@ describe('A-Scope tests', () => {
         scope.register(component);
         scope.register(new DependentComponent(component));
 
-        const resolved = scope.resolve(DependentComponent);
+        const resolved = scope.resolve(DependentComponent)!;
         expect(resolved).toBeInstanceOf(DependentComponent);
         expect(resolved.dependency).toBe(component);
     });
@@ -188,11 +189,10 @@ describe('A-Scope tests', () => {
         expect(resolved2).toBe(MyEntity);
         expect(resolved3).toBe(MyEntity);
 
-        expect(() => {
-            const res = scope.resolveConstructor<MyEntity>('mya__entity');
+        const wrongConstructor = scope.resolveConstructor<MyEntity>('mya__entity');
 
-            console.log('RESOLVED:::: ', res)
-        }).toThrow();
+        expect(wrongConstructor).toBeUndefined();
+
 
         const instance = new resolved();
 
@@ -221,9 +221,9 @@ describe('A-Scope tests', () => {
         expect(resolved2).toBe(MyEntity);
         expect(resolved3).toBe(MyEntity);
 
-        expect(() => {
-            scope.resolveConstructor<MyEntity>('myS-entity');
-        }).toThrow();
+        const wrongConstructor = scope.resolveConstructor<MyEntity>('myS-entity');
+
+        expect(wrongConstructor).toBeUndefined();
 
 
         const instance = new resolved({ foo: 'bar' });

@@ -10,6 +10,7 @@ import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
     A_TYPES__A_InjectDecorator_EntityInjectionQuery,
     A_TYPES__InjectableConstructors,
+    A_TYPES__InjectableTargets,
 } from "@adaas/a-concept/global/A-Inject/A-Inject.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
@@ -267,6 +268,31 @@ export class A_Scope<
     protected initFragments(_fragments?: _FragmentType) { _fragments?.forEach(this.register.bind(this)); }
 
 
+    // ==========================================================================
+    // --------------------Scope Public Methods-----------------------------------
+    // ==========================================================================
+    /**
+     * This method is used to destroy the scope and all its registered components, fragments and entities
+     * 
+     * [!] This method deregisters all components, fragments and entities from the A-Context
+     * [!] This method also clears all internal registries and collections
+     */
+    destroy() {
+        this._components.forEach(component => A_Context.deregister(component));
+        this._fragments.forEach(fragment => A_Context.deregister(fragment));
+        this._entities.forEach(entity => A_Context.deregister(entity));
+
+        this._components.clear();
+        this._errors.clear();
+        this._fragments.clear();
+        this._entities.clear();
+
+        if (this.issuer()) {
+            A_Context.deallocate(this);
+        }
+    }
+
+
     /**
      * Returns the issuer of the scope, useful for debugging and tracking purposes
      * 
@@ -499,7 +525,7 @@ export class A_Scope<
          */
         name: string
     ): A_TYPES__Fragment_Constructor<T>
-    resolveConstructor<T extends A_TYPES__ScopeResolvableComponents>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> {
+    resolveConstructor<T extends A_TYPES__ScopeResolvableComponents>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
             c => c.name === name
@@ -527,10 +553,7 @@ export class A_Scope<
             return this._parent.resolveConstructor(name) as any;
         }
 
-        throw new A_ScopeError(
-            A_ScopeError.ResolutionError,
-            `Component or Entity with name ${name} not found in the scope ${this.name}`
-        );
+        return undefined;
     }
 
 
@@ -550,25 +573,25 @@ export class A_Scope<
          * Provide a component constructor to resolve its instance from the scope
          */
         component: A_TYPES__Component_Constructor<T>
-    ): T
+    ): T | undefined
     resolve<T extends A_TYPES__Component_Constructor[]>(
         /**
          * Provide an array of component constructors to resolve their instances from the scope
          */
         components: [...T]
-    ): Array<InstanceType<T[number]>>
+    ): Array<InstanceType<T[number]>> | undefined
     resolve<T extends A_Fragment>(
         /**
          * Provide a fragment constructor to resolve its instance from the scope
          */
         fragment: A_TYPES__Fragment_Constructor<T>
-    ): T
+    ): T | undefined
     resolve<T extends A_TYPES__Fragment_Constructor[]>(
         /**
          * Provide an array of fragment constructors to resolve their instances from the scope
          */
         fragments: [...T]
-    ): Array<InstanceType<T[number]>>
+    ): Array<InstanceType<T[number]>> | undefined
     resolve<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
@@ -582,7 +605,7 @@ export class A_Scope<
          * Provide an entity constructor to resolve its instance from the scope
          */
         scope: new (...args: any[]) => T
-    ): T
+    ): T | undefined
     resolve<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
@@ -595,7 +618,7 @@ export class A_Scope<
     ): Array<T>
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         constructorName: string
-    ): T
+    ): T | undefined
     // base definition
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         /**
@@ -603,21 +626,21 @@ export class A_Scope<
          */
         param1: A_TYPES__InjectableConstructors,
 
-    ): T | Array<T>
+    ): T | Array<T> | undefined
     resolve<T extends A_TYPES__ScopeLinkedConstructors>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
         param1: InstanceType<T>,
 
-    ): T | Array<T>
+    ): T | Array<T> | undefined
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
         param1: A_TYPES__InjectableConstructors | Array<A_TYPES__InjectableConstructors>,
         param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): T | Array<T> {
+    ): T | Array<T> | undefined {
         switch (true) {
             case A_TypeGuards.isArray(param1): {
                 return param1.map(c => {
@@ -637,7 +660,9 @@ export class A_Scope<
             }
 
             default: {
-                throw new A_Error(`Invalid parameter provided to resolve method: ${param1} in scope ${this.name}`);
+                throw new A_ScopeError(
+                    A_ScopeError.ResolutionError,
+                    `Invalid parameter provided to resolve method: ${param1} in scope ${this.name}`);
             }
         }
     }
@@ -663,7 +688,7 @@ export class A_Scope<
          * Provide the name of the component, fragment or entity to resolve
          */
         name: string
-    ): _EntityType[number] | InstanceType<_ComponentType[number]> | _FragmentType[number] {
+    ): _EntityType[number] | InstanceType<_ComponentType[number]> | _FragmentType[number] | undefined {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
             c => c.name === name
@@ -691,10 +716,7 @@ export class A_Scope<
             return this._parent.resolveByName(name) as any;
         }
 
-        throw new A_ScopeError(
-            A_ScopeError.ResolutionError,
-            `Component or Entity with name ${name} not found in the scope ${this.name}`
-        );
+        return undefined;
     }
 
     /**
@@ -707,22 +729,12 @@ export class A_Scope<
     private resolveOnce(
         component: any,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> {
+    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
 
-        const componentName = A_TypeGuards.isFunction(component) ? component.name : component.constructor.name || String(component);
-
+        const componentName = A_CommonHelper.getComponentName(component);
 
         if (!component || !this.has(component))
-            throw new A_ScopeError(
-                A_ScopeError.ResolutionError,
-                `Injected Component ${componentName} not found in the scope`
-            );
-
-        if (A_TypeGuards.isScopeConstructor(component))
-            component
-
-        if (typeof component == 'function' && component.name === 'A_Scope')
-            component
+            return undefined;
 
         switch (true) {
             case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
@@ -750,7 +762,7 @@ export class A_Scope<
 
     private resolveIssuer(
         ctor: A_TYPES__ScopeLinkedConstructors
-    ): A_TYPES__ScopeLinkedComponents {
+    ): A_TYPES__ScopeLinkedComponents | undefined {
 
         const issuer = this.issuer();
 
@@ -765,10 +777,7 @@ export class A_Scope<
             return this._parent.resolveIssuer(ctor);
         }
 
-        throw new A_ScopeError(
-            A_ScopeError.ResolutionError,
-            `Issuer ${ctor.name} not found in the scope ${this.name}`
-        );
+        return undefined;
     }
 
     /**
@@ -783,7 +792,7 @@ export class A_Scope<
     private resolveEntity<T extends A_Entity>(
         entity: A_TYPES__Entity_Constructor<T>,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
-    ): T | Array<T> {
+    ): T | Array<T> | undefined {
 
         const query = instructions?.query || {} as Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>;
         const count = instructions?.pagination?.count || 1;
@@ -806,10 +815,7 @@ export class A_Scope<
                         return this._parent.resolveEntity(entity, instructions);
 
                     default:
-                        throw new A_ScopeError(
-                            A_ScopeError.ResolutionError,
-                            `Entity ${entity.name} not found in the scope ${this.name}`
-                        );
+                        return undefined;
                 }
             }
             /**
@@ -884,7 +890,7 @@ export class A_Scope<
      * @param fragment 
      * @returns 
      */
-    private resolveFragment<T extends A_Fragment>(fragment: A_TYPES__Fragment_Constructor<T>): _FragmentType[number] {
+    private resolveFragment<T extends A_Fragment>(fragment: A_TYPES__Fragment_Constructor<T>): _FragmentType[number] | undefined {
         const fragmentInstancePresented = this._fragments.get(fragment);
 
         switch (true) {
@@ -895,10 +901,7 @@ export class A_Scope<
                 return this._parent.resolveFragment(fragment);
 
             default:
-                throw new A_ScopeError(
-                    A_ScopeError.ResolutionError,
-                    `Fragment ${fragment.name} not found in the scope ${this.name}`
-                );
+                return undefined;
         }
     }
     /**
@@ -916,7 +919,7 @@ export class A_Scope<
      * @param component 
      * @returns 
      */
-    private resolveComponent<T extends A_Component>(component: A_TYPES__Component_Constructor<T>): InstanceType<_ComponentType[number]> {
+    private resolveComponent<T extends A_Component>(component: A_TYPES__Component_Constructor<T>): InstanceType<_ComponentType[number]> | undefined {
 
         //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
         //  BUT: if it's not presented in _parent  we have to check for inheritance
@@ -935,15 +938,40 @@ export class A_Scope<
 
                 const resolvedArgs = (argsMeta?.get('constructor') || [])
                     .map(arg => {
-                        if ('instructions' in arg) {
+                        // for Error handling purposes
+                        const componentName = A_CommonHelper.getComponentName(arg.target)
+
+                        if ('instructions' in arg && !!arg.instructions) {
                             const { target, instructions } = arg
-                            return this.resolve(
-                                target,
-                                instructions
-                            );
+                            const dependency = this.resolve(target as any, instructions);
+                            if (!dependency)
+                                throw new A_ScopeError(
+                                    A_ScopeError.ResolutionError,
+                                    `Unable to resolve dependency ${componentName} for component ${component.name} in scope ${this.name}`
+                                );
+
+                            return dependency;
+                        } else {
+                            const { target, require, create, defaultArgs } = arg;
+
+                            let dependency = this.resolve(target as any);
+
+                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
+                                const newDependency = new target(...defaultArgs);
+
+                                this.register(newDependency);
+                                return newDependency;
+                            }
+
+                            if (require && !dependency) {
+                                throw new A_ScopeError(
+                                    A_ScopeError.ResolutionError,
+                                    `Unable to resolve required dependency ${componentName} for component ${component.name} in scope ${this.name}`
+                                );
+                            }
+
+                            return dependency;
                         }
-                        // TODO: Fix types mismatch here
-                        return this.resolve<T>(arg.target as any);
                     });
 
                 const newComponent = new component(...resolvedArgs)
@@ -1128,7 +1156,7 @@ export class A_Scope<
                         `Fragment ${param1.constructor.name} is already registered in the scope ${this.name}`
                     );
                 else {
-                    const componentName = A_TypeGuards.isFunction(param1) ? param1.name : param1?.constructor?.name || String(param1);
+                    const componentName = A_CommonHelper.getComponentName(param1);
 
                     throw new A_ScopeError(
                         A_ScopeError.RegistrationError,

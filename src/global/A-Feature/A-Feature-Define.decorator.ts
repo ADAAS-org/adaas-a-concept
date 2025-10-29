@@ -14,6 +14,7 @@ import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A
 import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.constants";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_FeatureError } from "./A-Feature.error";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 /**
  * A-Feature decorator
@@ -37,7 +38,7 @@ export function A_Feature_Define(
         descriptor: A_TYPES__FeatureDefineDecoratorDescriptor
     ) {
         // for error messages
-        const componentName = (target as any)?.constructor?.name || String(target) || 'Unknown';
+        const componentName = A_CommonHelper.getComponentName(target)
 
 
         if (!A_TypeGuards.isAllowedForFeatureDefinition(target))

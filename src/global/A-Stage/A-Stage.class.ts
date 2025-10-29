@@ -12,6 +12,7 @@ import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_TYPES__ScopeResolvableComponents } from "../A-Scope/A-Scope.types";
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 
@@ -141,11 +142,30 @@ export class A_Stage {
                         case A_TypeGuards.isFeatureConstructor(arg.target):
                             return this._feature;
 
-                        case A_TypeGuards.isEntityConstructor(arg.target) && 'instructions' in arg:
+                        case A_TypeGuards.isEntityConstructor(arg.target) && 'instructions' in arg && !!arg.instructions:
                             return scope.resolve(arg.target, arg.instructions)
 
-                        default:
+                        default: {
+                            const { target, require, create, defaultArgs } = arg;
+
+                            let dependency = scope.resolve(target as any);
+
+                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
+                                const newDependency = new target(...defaultArgs);
+
+                                scope.register(newDependency);
+                                return newDependency;
+                            }
+
+                            if (require && !dependency) {
+                                throw new A_StageError(
+                                    A_StageError.ArgumentsResolutionError,
+                                    `Unable to resolve required argument ${A_CommonHelper.getComponentName(arg.target)} for stage ${this.name} in scope ${scope.name}`
+                                );
+                            }
+
                             return scope.resolve(arg.target)
+                        }
                     }
                 })
             )

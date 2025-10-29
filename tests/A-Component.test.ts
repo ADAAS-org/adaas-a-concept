@@ -27,7 +27,7 @@ describe('A-Component tests', () => {
         A_Context.root.register(MyComponent);
         A_Context.root.register(DependentComponent);
 
-        const dependentComponent = A_Context.root.resolve(DependentComponent);
+        const dependentComponent = A_Context.root.resolve(DependentComponent)!;
 
         expect(dependentComponent.dependency).toBeInstanceOf(MyComponent);
     });

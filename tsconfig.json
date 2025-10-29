@@ -50,8 +50,8 @@
     "src/**/*",
     "tests/**/*", 
     "examples/**/*", 
-    "index.ts"  
-, "../adaas-a-utils/src/lib"  ],
+    "src/index.ts"  
+  ],
   "exclude": [
     "node_modules/**/*",
     "dist/**/*",

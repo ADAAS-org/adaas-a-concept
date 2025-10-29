@@ -315,6 +315,14 @@ export class A_TypeGuards {
             || A_TypeGuards.isComponentInstance(param);
     }
 
+    static isAllowedForDependencyDefaultCreation(param: any): param is A_TYPES__Entity_Constructor | A_TYPES__Component_Constructor {
+        return A_TypeGuards.isComponentConstructor(param)
+            || A_CommonHelper.isInheritedFrom(param, A_Component)
+            || A_TypeGuards.isEntityConstructor(param)
+            || A_CommonHelper.isInheritedFrom(param, A_Entity)
+
+    }
+
     /**
      * Allows to check if the provided param is of constructor type.
      * 

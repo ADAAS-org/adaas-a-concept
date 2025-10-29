@@ -1,5 +1,6 @@
 import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
+    A_TYPES__A_InjectDecorator_Meta,
     A_TYPES__A_InjectDecoratorReturn,
     A_TYPES__InjectableConstructors,
     A_TYPES__InjectableTargets
@@ -21,6 +22,7 @@ import { A_TYPES__Fragment_Constructor } from "@adaas/a-concept/global/A-Fragmen
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_TYPES__Scope_Constructor } from "@adaas/a-concept/global/A-Scope/A-Scope.types";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 /**
@@ -120,7 +122,7 @@ export function A_Inject(
         parameterIndex: number
     ) {
         // for Error handling purposes
-        const componentName = (target as any).name || (target.constructor && (target.constructor as any).name);
+        const componentName = A_CommonHelper.getComponentName(target)
 
         if (!A_TypeGuards.isTargetAvailableForInjection(target)) {
             throw new A_InjectError(
@@ -146,7 +148,7 @@ export function A_Inject(
         // get existing meta or create a new one
         const existedMeta = A_Context.meta(target).get(metaKey) || new A_Meta();
         // get existing injections for the method or create a new array
-        const paramsArray = existedMeta.get(method) || [];
+        const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
         paramsArray[parameterIndex] = {

@@ -5,6 +5,7 @@
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
   "nodemonConfig": {
     "ignore": [
       "**/*.test.ts",
@@ -23,16 +24,13 @@
     "test": "jest ",
     "start": "nodemon ./tests/example-usage.ts",
     "example:simple": "nodemon ./examples/simple/concept.ts",
-    "example:simple:trace": "node -r tsconfig-paths/register -r ts-node/register -r ./trace-require.js ./examples/simple/concept.ts",
     "example:http": "nodemon ./examples/simple-http-server/concept.ts",
     "example:entity": "nodemon ./examples/entity/concept.ts",
-    "example:http:trace": "node -r tsconfig-paths/register -r ts-node/register -r ./trace-require.js ./examples/simple-http-server/concept.ts",
     "publish": "npm run test && npm run build && git add . && git commit -m \"new version created :: $(cat package.json | grep version | head -1  | awk -F: '{ print $2 }'  | sed 's/[\",]//g')\" && npm version patch && npm publish --access public",
-    "preversion": "echo test",
     "version": "echo git add .",
     "postversion": "git push --no-verify && git push --tags --no-verify && echo \"\n======Version Pushed Successfully=====\n\" ",
     "echo-version": "echo $npm_package_version",
-    "build": "rm -rf ./dist && tsc --declaration --project tsconfig.build.json && tscpaths -p tsconfig.build.json -s ./ -o ./dist",
+    "build": "tsup --config tsup.config.ts",
     "test:simple": "nodemon ./examples/simple/concept.ts"
   },
   "repository": {
@@ -63,7 +61,8 @@
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "tscpaths": "^0.0.9"
+    "tscpaths": "^0.0.9",
+    "tsup": "^8.5.0"
   },
   "directories": {
     "doc": "docs",

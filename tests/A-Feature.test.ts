@@ -82,7 +82,7 @@ describe('A-Feature tests', () => {
         scope.register(MyComponent);
 
         // 4) create an instance of the component from the scope
-        const myComponent = scope.resolve(MyComponent);
+        const myComponent = scope.resolve(MyComponent)!;
         expect(myComponent).toBeInstanceOf(MyComponent);
         expect(myComponent.sum).toBe(0);
 
@@ -129,7 +129,7 @@ describe('A-Feature tests', () => {
         scope.register(MyComponent2);
 
         // 4) create an instance of the component from the scope
-        const myComponent = scope.resolve(MyComponent2);
+        const myComponent = scope.resolve(MyComponent2)!;
         expect(myComponent).toBeInstanceOf(MyComponent2);
         expect(myComponent.sum).toBe(0);
 
@@ -179,7 +179,7 @@ describe('A-Feature tests', () => {
         const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
 
         // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component);
+        const myComponent = scope.resolve(My_Component)!;
         expect(myComponent).toBeInstanceOf(My_Component);
 
         // 4) call the feature caller to execute the feature
@@ -220,7 +220,7 @@ describe('A-Feature tests', () => {
         const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
 
         // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component);
+        const myComponent = scope.resolve(My_Component)!;
         expect(myComponent).toBeInstanceOf(My_Component);
 
         // 4) call the feature caller to execute the feature
@@ -271,7 +271,7 @@ describe('A-Feature tests', () => {
         const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
 
         // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component);
+        const myComponent = scope.resolve(My_Component)!;
         expect(myComponent).toBeInstanceOf(My_Component);
 
         // 4) call the feature caller to execute the feature
@@ -313,7 +313,7 @@ describe('A-Feature tests', () => {
         const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
 
         // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Child_Component);
+        const myComponent = scope.resolve(My_Child_Component)!;
         expect(myComponent).toBeInstanceOf(My_Child_Component);
 
         await myComponent.feature1();
@@ -357,7 +357,7 @@ describe('A-Feature tests', () => {
         const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
 
         // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Child_Component);
+        const myComponent = scope.resolve(My_Child_Component)!;
         expect(myComponent).toBeInstanceOf(My_Child_Component);
 
         await myComponent.feature1();

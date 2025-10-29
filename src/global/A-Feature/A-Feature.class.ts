@@ -135,6 +135,12 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * The Scope allocated for the Feature Execution
      */
     get scope(): A_Scope { return A_Context.scope(this); }
+    /**
+     * The number of stages in the feature
+     */
+    get size(): number {
+        return this._stages.length;
+    }
 
     /**
      * This method checks if the A-Feature is done
@@ -357,7 +363,10 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @returns 
      */
     async completed(): Promise<void> {
+
         this._state = A_TYPES__FeatureState.COMPLETED;
+
+        this.scope.destroy();
     }
     /**
      * This method marks the feature as failed and throws an error
@@ -390,6 +399,8 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         }
 
         this._state = A_TYPES__FeatureState.INTERRUPTED;
+
+        this.scope.destroy();
     }
 
 

@@ -37,6 +37,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
 import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types";
 import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 
@@ -172,16 +173,18 @@ export class A_Context {
 
     ): A_Scope {
         // uses only for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = A_CommonHelper.getComponentName(component);
 
         const instance = this.getInstance();
 
         if (!component) throw new A_ContextError(
             A_ContextError.InvalidRegisterParameterError,
             `Unable to register component. Component cannot be null or undefined.`);
+
         if (!scope) throw new A_ContextError(
             A_ContextError.InvalidRegisterParameterError,
             `Unable to register component. Scope cannot be null or undefined.`);
+
         if (!this.isAllowedToBeRegistered(component)) throw new A_ContextError(
             A_ContextError.NotAllowedForScopeAllocationError,
             `Component ${componentName} is not allowed for scope allocation.`);
@@ -191,6 +194,32 @@ export class A_Context {
         return scope;
     }
 
+    /**
+     * Deregister method allows to deregister a component from the context.
+     * 
+     * @param component - Component to deregister from the context.
+     */
+    static deregister(
+        /**
+         * Provide a component that needs to be deregistered from the context.
+         */
+        component: A_TYPES_ScopeDependentComponents,
+    ): void {
+        // uses only for error messages
+        const componentName = A_CommonHelper.getComponentName(component);   
+
+        const instance = this.getInstance();
+
+        if (!component) throw new A_ContextError(
+            A_ContextError.InvalidDeregisterParameterError,
+            `Unable to deregister component. Component cannot be null or undefined.`);
+
+        if (!instance._scopeStorage.has(component)) throw new A_ContextError(
+            A_ContextError.ComponentNotRegisteredError,
+            `Unable to deregister component. Component ${componentName} is not registered.`);
+
+        instance._scopeStorage.delete(component);
+    }
 
     /**
      * Allocate method instantiates a new scope for the given component and registers it in the context.
@@ -231,7 +260,7 @@ export class A_Context {
         importing?: Partial<A_TYPES__Scope_Init & A_TYPES__ScopeConfig> | A_Scope
     ): A_Scope {
         // uses only for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = A_CommonHelper.getComponentName(component);
 
         // ---------------------------------------------------------------------
         // ----------------------Input Validation-------------------------------
@@ -264,6 +293,51 @@ export class A_Context {
 
         // 6) Return the newly created scope
         return newScope;
+    }
+
+    /**
+     * Deallocate method removes the scope allocation for the given component from the context.
+     * 
+     * @param component 
+     * @returns 
+     */
+    static deallocate(
+        /**
+         * A Scope that needs to be deallocated.
+         */
+        scope: A_Scope,
+    )
+    static deallocate(
+        /**
+         * Provide a component that needs to have its scope deallocated.
+         */
+        component: A_TYPES__ScopeLinkedComponents,
+    )
+    static deallocate(
+        /**
+         * Provide a component that needs to have its scope deallocated.
+         */
+        param1: A_TYPES__ScopeLinkedComponents | A_Scope,
+    ) {
+        const instance = this.getInstance();
+
+
+        const scope = A_TypeGuards.isScopeInstance(param1)
+            ? param1
+            : instance._registry.get(param1);
+
+        if (!scope) return;
+
+        try {
+            const component = A_TypeGuards.isComponentInstance(param1)
+                ? param1
+                : this.issuer(scope);
+
+            instance._registry.delete(component);
+            instance._scopeIssuers.delete(scope);
+        } catch (error) {
+            return
+        }
     }
 
 
@@ -338,7 +412,7 @@ export class A_Context {
     ): A_Meta<T> {
 
         // Get the component name for error messages
-        const componentName = (param1 as any)?.constructor?.name || String(param1);
+        const componentName = A_CommonHelper.getComponentName(param1);
         // Get the instance of the context
         const instance = this.getInstance();
 
@@ -581,7 +655,7 @@ export class A_Context {
         scope: A_Scope = this.scope(component)
     ): Array<A_TYPES__A_StageStep> {
         // name for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = A_CommonHelper.getComponentName(component);
 
         // Input validation
         if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
@@ -629,7 +703,7 @@ export class A_Context {
 
         const instance = this.getInstance();
         // name for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = A_CommonHelper.getComponentName(component);
 
         // Input validation
         if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
@@ -779,7 +853,7 @@ export class A_Context {
         component: A_TYPES__FeatureAvailableComponents,
     ): Array<A_TYPES__A_StageStep> {
         // name for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = (A_CommonHelper.getComponentName(component));
 
         // Input validation
         if (!component) throw new A_ContextError(
@@ -822,7 +896,7 @@ export class A_Context {
     ): Array<A_TYPES__A_StageStep> {
         const instance = this.getInstance();
         // name for error messages
-        const componentName = (component as any)?.constructor?.name || String(component);
+        const componentName = A_CommonHelper.getComponentName(component);
 
         // Input validation
         if (!component) throw new A_ContextError(
