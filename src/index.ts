@@ -14,7 +14,7 @@ export * from './global/A-Concept/A-Concept.types';
 
 export { A_Container } from './global/A-Container/A-Container.class';
 export { A_ContainerMeta } from './global/A-Container/A-Container.meta';
-export * from './global/A-Container/A-Container.class';
+export * from './global/A-Container/A-Container.types';
 
 export { A_Component } from './global/A-Component/A-Component.class';
 export { A_ComponentMeta } from './global/A-Component/A-Component.meta';
