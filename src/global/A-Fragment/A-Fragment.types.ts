@@ -20,9 +20,9 @@ export type A_TYPES__Fragment_Init = {
  */
 export type A_TYPES__Fragment_Serialized = {
     /**
-     * The ASEID of the fragment
+     * The Name of the fragment
      */
-    aseid: string
+    name: string
 };
 
 

@@ -1,4 +1,4 @@
-<img align="left" style="margin-right:40px; margin-bottom:80px;" width="200" height="200" src="./docs/a-concept-logo.png" alt="ADAAS Logo">
+<img align="left" style="margin-right:40px; margin-bottom:80px;" width="200" height="200" src="https://raw.githubusercontent.com/ADAAS-org/adaas-a-concept/main/docs/a-concept-logo.png" alt="A-Concept Logo">
 
 # A-Concept 
 
