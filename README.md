@@ -4,14 +4,14 @@
 
 🚀 A Paradigm Shift for Software Development in the Age of AI and  [Industry 5.0](https://research-and-innovation.ec.europa.eu/research-area/industrial-research-and-innovation/industry-50_en). 
 
-[![npm](https://img.shields.io/npm/v/@adaas/a-concept.svg)](https://www.npmjs.com/package/@adaas/a-concept)  
-[![Release](https://img.shields.io/github/release/ADAAS-org/adaas-a-concept.svg)](https://github.com/ADAAS-org/adaas-a-concept/releases)  
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://www.linkedin.com/in/your-profile/)  
-[![License](https://img.shields.io/badge/License-MIT-blue)](LICENSE)  
-[![Open Issues](https://img.shields.io/github/issues/ADAAS-org/adaas-a-concept.svg)](https://github.com/your-framework/repo/issues)  
-[![Documentation](https://img.shields.io/badge/Docs-Read-blue)](https://a-concept.com/docs)  
-<!-- [![Version](https://img.shields.io/badge/Version-1.0.0-green)](https://github.com/your-framework/repo/releases/tag/v1.0.0)   -->
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
 
+![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)
+![Version](https://img.shields.io/npm/v/@adaas/a-concept)
+![Downloads](https://img.shields.io/npm/dm/@adaas/a-concept)
+![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
 
 
 ---
@@ -164,4 +164,9 @@ Solution:
 A-Concept promotes a streamlined approach. By leveraging AI and rethinking team structures, we eliminate unnecessary rituals and focus on achieving results. This makes the development process leaner, faster, and more aligned with business goals.
 
 
+## License
 
+This project is licensed under the [Apache License 2.0](LICENSE).
+
+© 2025 ADAAS YAZILIM LİMİTED ŞİRKETİ All rights reserved.  
+All original code and concepts are the intellectual property of ADAAS YAZILIM LİMİTED ŞİRKETİ

@@ -2,9 +2,27 @@
   "name": "@adaas/a-concept",
   "version": "0.1.28",
   "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
+  "license": "Apache-2.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
+  "author": {
+    "name": "ADAAS YAZILIM LİMİTED ŞİRKETİ",
+    "email": "contact-us@adaas.org"
+  },
+  "homepage": "https://github.com/ADAAS-org/adaas-a-concept#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ADAAS-org/adaas-a-concept.git"
+  },
+  "keywords": [
+    "sdk",
+    "ai",
+    "rag"
+  ],
+  "bugs": {
+    "url": "https://github.com/ADAAS-org/adaas-a-concept/issues"
+  },
   "sideEffects": false,
   "exports": {
     ".": {
@@ -39,21 +57,6 @@
     "build": "tsup --config tsup.config.ts",
     "test:simple": "nodemon ./examples/simple/concept.ts"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ADAAS-org/adaas-adf-auth.git"
-  },
-  "keywords": [
-    "sdk",
-    "ai",
-    "rag"
-  ],
-  "author": "adaas.org",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/ADAAS-org/adaas-adf-auth/issues"
-  },
-  "homepage": "https://github.com/ADAAS-org/adaas-adf-auth#readme",
   "devDependencies": {
     "@types/chai": "^4.3.14",
     "@types/jest": "^29.5.12",
