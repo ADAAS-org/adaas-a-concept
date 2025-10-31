@@ -1,6 +1,3 @@
-import './test.setup';
-
-import { A_Command } from "@adaas/a-concept/base/A-Command/A-Command.entity";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
@@ -10,6 +7,7 @@ import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
 import { A_Fragment } from '@adaas/a-concept/global/A-Fragment/A-Fragment.class';
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
+import { A_Error } from '../src';
 
 jest.retryTimes(0);
 
@@ -322,6 +320,19 @@ describe('A-Scope tests', () => {
 
         const resolved = container.scope.resolve(A_Container);
         expect(resolved).toBe(container);
+
+        expect(container.scope.issuer()).toBe(container);
+    });
+
+    it('Should be able to resolve Error in scope', async () => {
+
+        const container = new A_Container();
+
+        container.scope.register(new A_Error('Test Error'));
+
+        const resolved = container.scope.resolve(A_Error);
+        expect(resolved).toBeInstanceOf(A_Error);
+        expect(resolved?.message).toBe('Test Error');
 
         expect(container.scope.issuer()).toBe(container);
     });

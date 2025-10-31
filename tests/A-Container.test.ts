@@ -1,5 +1,4 @@
 import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
-import './test.setup';
 import { A_Scope } from '@adaas/a-concept/global/A-Scope/A-Scope.class';
 
 

@@ -206,7 +206,7 @@ export class A_Context {
         component: A_TYPES_ScopeDependentComponents,
     ): void {
         // uses only for error messages
-        const componentName = A_CommonHelper.getComponentName(component);   
+        const componentName = A_CommonHelper.getComponentName(component);
 
         const instance = this.getInstance();
 
@@ -985,7 +985,8 @@ export class A_Context {
     static isAllowedToBeRegistered(param: any): param is A_TYPES_ScopeDependentComponents {
         return A_TypeGuards.isEntityInstance(param)
             || A_TypeGuards.isComponentInstance(param)
-            || A_TypeGuards.isFragmentInstance(param);
+            || A_TypeGuards.isFragmentInstance(param)
+            || A_TypeGuards.isErrorInstance(param);
     }
 
     /**

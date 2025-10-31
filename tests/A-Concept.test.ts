@@ -1,11 +1,9 @@
 import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
-import './test.setup';
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Concept } from "@adaas/a-concept/global/A-Concept/A-Concept.class";
 import { A_Container } from "@adaas/a-concept/global/A-Container/A-Container.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
-import { A_TYPES__Entity_Init, A_TYPES__Entity_Serialized } from '@adaas/a-concept/global/A-Entity/A-Entity.types';
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
 import { A_Inject } from '@adaas/a-concept/global/A-Inject/A-Inject.decorator';
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";

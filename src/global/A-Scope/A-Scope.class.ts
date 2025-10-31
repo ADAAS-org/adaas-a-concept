@@ -138,6 +138,12 @@ export class A_Scope<
      * [!] One component instance per scope
      */
     get components(): Array<InstanceType<_ComponentType[number]>> { return Array.from(this._components.values()) }
+    /**
+     * Returns an Array of errors registered in the scope
+     * 
+     * [!] One error per code
+     */
+    get errors(): Array<InstanceType<_ErrorType[number]>> { return Array.from(this._errors.values()) }
 
     /**
      * Returns the parent scope of the current scope
@@ -381,6 +387,12 @@ export class A_Scope<
          */
         fragment: A_TYPES__Fragment_Constructor<T>
     ): boolean
+    has<T extends A_Error>(
+        /**
+         * Provide an error constructor to check if it's available in the scope
+         */
+        error: A_TYPES__Error_Constructor<T>
+    ): boolean
     has(
         /**
          * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
@@ -412,7 +424,11 @@ export class A_Scope<
                 const possibleEntity = Array.from(this.allowedEntities).find(e => e.name === ctor);
                 if (possibleEntity) found = true;
 
-                // 2.4 If not found in current scope, check parent scope
+                // 2.4 Check if it's an error name
+                const possibleError = Array.from(this.allowedErrors).find(e => e.name === ctor);
+                if (possibleError) found = true;
+
+                // 2.5 If not found in current scope, check parent scope
                 if (!!this._parent)
                     return this._parent.has(ctor);
 
@@ -442,7 +458,17 @@ export class A_Scope<
 
                 break;
             }
-            // 6) Check scope issuer
+
+            // 6) Check if it's an Error
+            case A_TypeGuards.isErrorConstructor(ctor): {
+                found = this.isAllowedError(ctor)
+                    || !![...this.allowedErrors]
+                        .find(e => A_CommonHelper.isInheritedFrom(e, ctor));
+
+                break;
+            }
+
+            // 7) Check scope issuer
             case this.issuer()
                 && (this.issuer()!.constructor === ctor
                     || A_CommonHelper.isInheritedFrom(this.issuer()!.constructor, ctor
@@ -598,14 +624,7 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): T | undefined
-    resolve<T extends A_Scope>(
-        /**
-         * Uses only in case of resolving a single entity
-         * 
-         * Provide an entity constructor to resolve its instance from the scope
-         */
-        scope: new (...args: any[]) => T
-    ): T | undefined
+
     resolve<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
@@ -616,6 +635,22 @@ export class A_Scope<
          */
         instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
     ): Array<T>
+    resolve<T extends A_Scope>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        scope: A_TYPES__Scope_Constructor<T>
+    ): T | undefined
+    resolve<T extends A_Error>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        scope: A_TYPES__Error_Constructor<T>
+    ): T | undefined
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         constructorName: string
     ): T | undefined
@@ -688,7 +723,8 @@ export class A_Scope<
          * Provide the name of the component, fragment or entity to resolve
          */
         name: string
-    ): _EntityType[number] | InstanceType<_ComponentType[number]> | _FragmentType[number] | undefined {
+    ): _EntityType[number] | InstanceType<_ComponentType[number]> | _FragmentType[number] |
+        InstanceType<_ErrorType[number]> | undefined {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
             c => c.name === name
@@ -711,6 +747,15 @@ export class A_Scope<
         );
         if (fragment) return this.resolveOnce(fragment) as _FragmentType[number];
 
+        // 4) Check errors
+        const error = Array.from(this.allowedErrors).find(
+            e => e.name === name
+                || e.name === A_FormatterHelper.toPascalCase(name)
+                || (e as any).code === name
+                || (e as any).code === A_FormatterHelper.toKebabCase(name)
+        );
+        if (error) return this.resolveOnce(error) as InstanceType<_ErrorType[number]>;
+
         // If not found in current scope, check parent scope
         if (!!this._parent) {
             return this._parent.resolveByName(name) as any;
@@ -730,6 +775,7 @@ export class A_Scope<
         component: any,
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
+
 
         const componentName = A_CommonHelper.getComponentName(component);
 
@@ -751,6 +797,9 @@ export class A_Scope<
             }
             case A_TypeGuards.isComponentConstructor(component): {
                 return this.resolveComponent(component);
+            }
+            case A_TypeGuards.isErrorConstructor(component): {
+                return this.resolveError(component);
             }
             default:
                 throw new A_ScopeError(
@@ -883,7 +932,27 @@ export class A_Scope<
             }
         }
     }
+    /**
+     * This method is used internally to resolve a single error from the scope
+     * 
+     * @param error 
+     * @returns 
+     */
+    private resolveError<T extends A_Error>(error: A_TYPES__Error_Constructor<T>): T | undefined {
 
+        const found = this.errors.find(e => e instanceof error);
+
+        switch (true) {
+            case !!found:
+                return found as T;
+
+            case !found && !!this._parent:
+                return this._parent.resolveError(error);
+
+            default:
+                return undefined;
+        }
+    }
     /**
      * This method is used internally to resolve a single fragment from the scope
      * 
@@ -1079,7 +1148,7 @@ export class A_Scope<
                 break;
             }
             // 3) In case when it's a A-Entity instance
-            case param1 instanceof A_Entity && !this._entities.has(param1.aseid.toString()): {
+            case A_TypeGuards.isEntityInstance(param1) && !this._entities.has(param1.aseid.toString()): {
 
                 if (!this.allowedEntities.has(param1.constructor as _EntityType[number]))
                     this.allowedEntities.add(param1.constructor as _EntityType[number]);
@@ -1089,7 +1158,7 @@ export class A_Scope<
                 break;
             }
             // 4) In case when it's a A-Fragment instance
-            case param1 instanceof A_Fragment: {
+            case A_TypeGuards.isFragmentInstance(param1): {
 
                 if (!this.allowedFragments.has(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>))
                     this.allowedFragments.add(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
@@ -1104,11 +1173,16 @@ export class A_Scope<
                 break;
             }
             // 5) In case when it's a A-Error instance
-            case param1 instanceof A_Error: {
+            case A_TypeGuards.isErrorInstance(param1): {
                 if (!this.allowedErrors.has(param1.constructor as _ErrorType[number]))
                     this.allowedErrors.add(param1.constructor as _ErrorType[number]);
 
-                // A_Context.register(this, param1);
+                this._errors.set(
+                    param1.code,
+                    param1 as InstanceType<_ErrorType[number]>
+                );
+
+                A_Context.register(this, param1);
                 break;
             }
 

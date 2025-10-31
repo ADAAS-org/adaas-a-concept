@@ -5,6 +5,7 @@ import { A_TYPES__Entity_Constructor } from "@adaas/a-concept/global/A-Entity/A-
 import { A_TYPES__Feature_Constructor } from "@adaas/a-concept/global/A-Feature/A-Feature.types";
 import { A_TYPES__Fragment_Constructor } from "@adaas/a-concept/global/A-Fragment/A-Fragment.types";
 import { A_TYPES__Caller_Constructor } from "@adaas/a-concept/global/A-Caller/A_Caller.types";
+import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types";
 
 
 // ============================================================================
@@ -54,6 +55,7 @@ export type A_TYPES__InjectableConstructors = A_TYPES__Component_Constructor
     | A_TYPES__Feature_Constructor
     | A_TYPES__Caller_Constructor
     | A_TYPES__Fragment_Constructor
+    | A_TYPES__Error_Constructor
     | string;
 
 

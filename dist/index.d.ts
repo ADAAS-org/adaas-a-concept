@@ -1186,7 +1186,7 @@ declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Scope<A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<any, any>[]> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Fragment<any, any> | A_TYPES__ScopeResolvableComponents[] | undefined)[]>;
+    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Scope<A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<any, any>[]> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Fragment<any, any> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_TYPES__ScopeResolvableComponents[] | undefined)[]>;
     /**
      * Resolves the component of the step
      *
@@ -2698,7 +2698,7 @@ type A_TYPES__A_InjectDecorator_Meta = Array<{
  *
  */
 type A_TYPES__InjectableTargets = A_TYPES__Component_Constructor | InstanceType<A_TYPES__Component_Constructor> | InstanceType<A_TYPES__Container_Constructor>;
-type A_TYPES__InjectableConstructors = A_TYPES__Component_Constructor | A_TYPES__Container_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Feature_Constructor | A_TYPES__Caller_Constructor | A_TYPES__Fragment_Constructor | string;
+type A_TYPES__InjectableConstructors = A_TYPES__Component_Constructor | A_TYPES__Container_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Feature_Constructor | A_TYPES__Caller_Constructor | A_TYPES__Fragment_Constructor | A_TYPES__Error_Constructor | string;
 type A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T extends A_Entity = A_Entity> = {
     query: Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>;
     pagination: Partial<A_TYPES__A_InjectDecorator_EntityInjectionPagination>;
@@ -2793,6 +2793,12 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * [!] One component instance per scope
      */
     get components(): Array<InstanceType<_ComponentType[number]>>;
+    /**
+     * Returns an Array of errors registered in the scope
+     *
+     * [!] One error per code
+     */
+    get errors(): Array<InstanceType<_ErrorType[number]>>;
     /**
      * Returns the parent scope of the current scope
      *
@@ -2922,6 +2928,11 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Provide a fragment constructor to check if it's available in the scope
      */
     fragment: A_TYPES__Fragment_Constructor<T>): boolean;
+    has<T extends A_Error>(
+    /**
+     * Provide an error constructor to check if it's available in the scope
+     */
+    error: A_TYPES__Error_Constructor<T>): boolean;
     has(
     /**
      * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
@@ -2998,13 +3009,6 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): T | undefined;
-    resolve<T extends A_Scope>(
-    /**
-     * Uses only in case of resolving a single entity
-     *
-     * Provide an entity constructor to resolve its instance from the scope
-     */
-    scope: new (...args: any[]) => T): T | undefined;
     resolve<T extends A_Entity>(
     /**
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
@@ -3014,6 +3018,20 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Provide optional instructions to find a specific entity or a set of entities
      */
     instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
+    resolve<T extends A_Scope>(
+    /**
+     * Uses only in case of resolving a single entity
+     *
+     * Provide an entity constructor to resolve its instance from the scope
+     */
+    scope: A_TYPES__Scope_Constructor<T>): T | undefined;
+    resolve<T extends A_Error>(
+    /**
+     * Uses only in case of resolving a single entity
+     *
+     * Provide an entity constructor to resolve its instance from the scope
+     */
+    scope: A_TYPES__Error_Constructor<T>): T | undefined;
     resolve<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): T | undefined;
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
     /**
@@ -3053,6 +3071,13 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * @returns
      */
     private resolveEntity;
+    /**
+     * This method is used internally to resolve a single error from the scope
+     *
+     * @param error
+     * @returns
+     */
+    private resolveError;
     /**
      * This method is used internally to resolve a single fragment from the scope
      *
@@ -3269,11 +3294,11 @@ type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
 /**
  * A list of components that can be resolved by a scope
  */
-type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity;
+type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Error | A_Scope;
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */
-type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment;
+type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment | A_Error;
 /**
  * A list of components that are independent of a scope. They don't need a scope to be resolved
  * Those components haven't scope dependent features.
@@ -3845,6 +3870,13 @@ declare function A_Inject<T extends A_Scope>(
  * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
  */
 scope: A_TYPES__Scope_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_Error>(
+/***
+ * Provide the Error constructor that will be associated with the injection.
+ *
+ * [!] It returns an Instance of the Error what is executed.
+ */
+error: A_TYPES__Error_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
 declare function A_Inject<T extends A_Feature>(
 /**
  * Provide the Feature constructor that will be associated with the injection.

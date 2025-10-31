@@ -1,5 +1,3 @@
-import './test.setup';
-
 import { A_Inject } from "@adaas/a-concept/global/A-Inject/A-Inject.decorator";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";

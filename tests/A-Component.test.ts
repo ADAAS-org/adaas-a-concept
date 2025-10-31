@@ -1,6 +1,4 @@
 import { A_Inject } from '@adaas/a-concept/global/A-Inject/A-Inject.decorator';
-import './test.setup';
-
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';

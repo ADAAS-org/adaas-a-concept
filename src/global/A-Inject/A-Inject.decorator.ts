@@ -23,6 +23,8 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_TYPES__Scope_Constructor } from "@adaas/a-concept/global/A-Scope/A-Scope.types";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types";
+import { A_Error } from "../A-Error/A_Error.class";
 
 
 /**
@@ -43,6 +45,14 @@ export function A_Inject<T extends A_Scope>(
      * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
      */
     scope: A_TYPES__Scope_Constructor<T>
+): A_TYPES__A_InjectDecoratorReturn
+export function A_Inject<T extends A_Error>(
+    /***
+     * Provide the Error constructor that will be associated with the injection.
+     *
+     * [!] It returns an Instance of the Error what is executed.
+     */
+    error: A_TYPES__Error_Constructor<T>
 ): A_TYPES__A_InjectDecoratorReturn
 export function A_Inject<T extends A_Feature>(
     /**

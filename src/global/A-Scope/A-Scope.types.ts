@@ -81,11 +81,11 @@ export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
 /**
  * A list of components that can be resolved by a scope
  */
-export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity
+export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Error | A_Scope;
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */
-export type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment
+export type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment | A_Error;
 /**
  * A list of components that are independent of a scope. They don't need a scope to be resolved
  * Those components haven't scope dependent features.

@@ -1,4 +1,3 @@
-import './test.setup';
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { ASEID } from "@adaas/a-concept/global/ASEID/ASEID.class";

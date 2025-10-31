@@ -1,4 +1,3 @@
-import './test.setup'
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
 import { A_TYPES__DeepPartial } from "@adaas/a-concept/types/A_Common.types";
