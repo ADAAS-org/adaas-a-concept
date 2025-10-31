@@ -330,16 +330,30 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
          */
         scope?: A_Scope,
     ) {
-        if (this.isDone)
-            return;
+        try {
+            if (scope && !scope.isInheritedFrom(A_Context.scope(this)))
+                scope.inherit(A_Context.scope(this));
 
-        this._state = A_TYPES__FeatureState.PROCESSING;
 
-        for (const stage of this) {
-            await stage.process(scope);
+            if (this.isDone)
+                return;
+
+            this._state = A_TYPES__FeatureState.PROCESSING;
+
+            for (const stage of this) {
+                await stage.process(scope);
+            }
+
+            return await this.completed();
+        } catch (error) {
+            return await this.failed(new A_FeatureError({
+                title: A_FeatureError.FeatureProcessingError,
+                description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
+                stage: this.stage,
+                originalError: error
+            }));
         }
 
-        return await this.completed();
     }
     /**
      * This method moves the feature to the next stage
@@ -370,6 +384,22 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     }
     /**
      * This method marks the feature as failed and throws an error
+     * Uses to mark the feature as failed
+     * 
+     * @param error 
+     */
+    async failed(error: A_FeatureError) {
+
+        this._state = A_TYPES__FeatureState.FAILED;
+
+        this._error = error;
+
+        this.scope.destroy();
+
+        throw this._error;
+    }
+    /**
+     * This method marks the feature as failed and throws an error
      * Uses to interrupt or end the feature processing
      * 
      * @param error 
@@ -390,6 +420,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
                     code: A_FeatureError.Interruption,
                     title: reason.title,
                     description: reason.description,
+                    stage: this.stage,
                     originalError: reason
                 });
                 break;

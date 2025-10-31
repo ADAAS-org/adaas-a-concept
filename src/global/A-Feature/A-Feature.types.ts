@@ -9,6 +9,8 @@ import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types"
 import { A_Feature } from "./A-Feature.class"
 import { A_TYPES__Required } from "@adaas/a-concept/types/A_Common.types"
 import { A_Scope } from "../A-Scope/A-Scope.class"
+import { A_Stage } from "../A-Stage/A-Stage.class"
+import { A_TYPES__Error_Init } from "../A-Error/A_Error.types"
 
 
 // ============================================================================
@@ -99,7 +101,25 @@ export enum A_TYPES__FeatureState {
      * The feature has been interrupted
      */
     INTERRUPTED = "INTERRUPTED",
+    /**
+     * The feature has failed
+     */
+    FAILED = "FAILED"
 }
+
+// ===========================================================================
+// --------------------------- Error Types ------------------------------------
+// ===========================================================================
+
+export type A_TYPES__FeatureError_Init = {
+    /**
+     * Stage where the error occurred
+     */
+    stage?: A_Stage
+
+} & A_TYPES__Error_Init
+
+
 
 // ===========================================================================-
 // --------------------------- Available Types -------------------------------
