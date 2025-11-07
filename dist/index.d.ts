@@ -525,6 +525,17 @@ type A_TYPES__EntityMeta = {
          */
         [Key: string]: A_TYPES__FeatureDefineDecoratorMeta;
     }>;
+    /**
+     * Injections defined on the component per handler
+     */
+    [A_TYPES__EntityMetaKey.INJECTIONS]: A_Meta<{
+        /**
+         * Where Key is the name of the injection
+         *
+         * Where value is the list of injections
+         */
+        [Key: string]: A_TYPES__A_InjectDecorator_Meta;
+    }>;
 };
 
 /**
@@ -3426,6 +3437,13 @@ declare class A_EntityMeta extends A_Meta<A_TYPES__EntityMeta> {
      * @returns
      */
     features(): Array<A_TYPES__FeatureDefineDecoratorMeta>;
+    /**
+     * Allows to get all the injections for a given handler
+     *
+     * @param handler
+     * @returns
+     */
+    injections(handler: string): A_TYPES__A_InjectDecorator_Meta;
 }
 
 type A_TYPES__ContextEnvironment = 'server' | 'browser' | 'mobile' | 'desktop' | 'embedded' | 'unknown';
