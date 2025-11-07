@@ -153,7 +153,7 @@ export class A_Fragment<
      * }
      * ```
      */
-    get<K extends keyof _MetaItems>(param: K): _MetaItems[K] | undefined {
+    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined {
         return this._meta.get(param);
     }
 
@@ -169,7 +169,7 @@ export class A_Fragment<
      * fragment.set('role', 'admin');
      * ```
      */
-    set<K extends keyof _MetaItems>(param: K, value: _MetaItems[K]): void {
+    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void {
         this._meta.set(param, value);
     }
 
@@ -268,15 +268,15 @@ export class A_Fragment<
      * ```
      */
     clone(newName?: string): A_Fragment<_MetaItems, _SerializedType> {
-        const cloned = new (this.constructor as any)({ 
-            name: newName || `${this._name}_copy` 
+        const cloned = new (this.constructor as any)({
+            name: newName || `${this._name}_copy`
         });
-        
+
         // Copy all meta data
         this._meta.toArray().forEach(([key, value]) => {
             cloned.set(key, value);
         });
-        
+
         return cloned;
     }
 

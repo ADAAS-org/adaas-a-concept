@@ -2387,7 +2387,7 @@ declare class A_Fragment<_MetaItems extends Record<string, any> = any, _Serializ
      * }
      * ```
      */
-    get<K extends keyof _MetaItems>(param: K): _MetaItems[K] | undefined;
+    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined;
     /**
      * Stores a value in the fragment's meta.
      *
@@ -2400,7 +2400,7 @@ declare class A_Fragment<_MetaItems extends Record<string, any> = any, _Serializ
      * fragment.set('role', 'admin');
      * ```
      */
-    set<K extends keyof _MetaItems>(param: K, value: _MetaItems[K]): void;
+    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void;
     /**
      * Removes a specific key from the fragment's meta.
      *

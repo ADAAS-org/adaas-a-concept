@@ -1,4 +1,5 @@
 import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
+import { A_Scope } from "../src";
 
 jest.retryTimes(0);
 
@@ -182,7 +183,7 @@ describe('A-Fragment Tests', () => {
     });
 
     it('It Should be possible to create an inherited A_Fragment instance', async () => {
-        
+
         class CustomFragment extends A_Fragment<{ sessionId: string; timestamp: number }> {
             constructor() {
                 super({ name: 'CustomFragment' });
@@ -209,7 +210,7 @@ describe('A-Fragment Tests', () => {
     });
 
     it('It Should be possible to create a fragment with custom serialization', async () => {
-        
+
         class SessionFragment extends A_Fragment<
             { sessionId: string; timestamp: number },
             { name: string; sessionData: string }
@@ -286,5 +287,42 @@ describe('A-Fragment Tests', () => {
         expect(fragment.has('c')).toBe(true);
         expect(fragment.size()).toBe(2);
     });
+    it('It Should allow override get method correctly', async () => {
 
+        const scope = new A_Scope();
+
+        class CustomFragment<T extends string[]> extends A_Fragment<{
+            [key in T[number]]: any
+        }> {
+
+            constructor(properties: T) {
+                super({ name: 'CustomFragment' });
+                properties.forEach((prop) => {
+                    this.set(prop, `value_of_${prop}`);
+                });
+            }
+            get<K extends T[number]>(param: K): { [key in T[number]]: any; }[K] | undefined {
+                const originalValue = super.get(param);
+                if (originalValue !== undefined) {
+                    return `custom_${originalValue}`;
+                }
+                return undefined;
+            }
+
+
+        }
+
+
+        const fragment = new CustomFragment<['key1', 'key2']>(['key1', 'key2']);
+
+        scope.register(fragment);
+
+
+        expect(fragment.get('key1')).toBe('custom_value_of_key1');
+        expect(fragment.get('key2')).toBe('custom_value_of_key2');
+        expect(fragment.get('key3' as any)).toBeUndefined();
+
+        scope.destroy();
+
+    });
 });
