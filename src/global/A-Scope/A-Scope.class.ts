@@ -1082,11 +1082,11 @@ export class A_Scope<
          */
         component: A_TYPES__Component_Constructor<T>
     ): void
-    register(
+    register<T extends A_Component>(
         /**
          * Provide a command instance to register it in the scope
          */
-        component: A_Component
+        component: T
     ): void
     register<T extends A_Error>(
         /**
@@ -1094,11 +1094,11 @@ export class A_Scope<
          */
         error: A_TYPES__Error_Constructor<T>
     ): void
-    register(
+    register<T extends A_Error>(
         /**
          * Provide an error instance to register it in the scope
          */
-        error: A_Error
+        error: T
     ): void
     register<T extends A_Fragment>(
         /**
@@ -1106,11 +1106,11 @@ export class A_Scope<
          */
         fragment: A_TYPES__Fragment_Constructor<T>
     ): void
-    register(
+    register<T extends A_Fragment>(
         /**
          * Provide a fragment instance to register it in the scope
          */
-        fragment: A_Fragment
+        fragment: T
     ): void
     register<T extends A_Entity>(
         /**
@@ -1118,11 +1118,11 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): void
-    register(
+    register<T extends A_Entity>(
         /**
          * Provide an entity instance to register it in the scope
          */
-        entity: A_Entity
+        entity: T
     ): void
 
     register(

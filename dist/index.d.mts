@@ -3109,41 +3109,41 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Provide a component constructor to register it in the scope
      */
     component: A_TYPES__Component_Constructor<T>): void;
-    register(
+    register<T extends A_Component>(
     /**
      * Provide a command instance to register it in the scope
      */
-    component: A_Component): void;
+    component: T): void;
     register<T extends A_Error>(
     /**
      * Provide an error constructor to register it in the scope
      */
     error: A_TYPES__Error_Constructor<T>): void;
-    register(
+    register<T extends A_Error>(
     /**
      * Provide an error instance to register it in the scope
      */
-    error: A_Error): void;
+    error: T): void;
     register<T extends A_Fragment>(
     /**
      * Provide a command instance to register it in the scope
      */
     fragment: A_TYPES__Fragment_Constructor<T>): void;
-    register(
+    register<T extends A_Fragment>(
     /**
      * Provide a fragment instance to register it in the scope
      */
-    fragment: A_Fragment): void;
+    fragment: T): void;
     register<T extends A_Entity>(
     /**
      * Provide an entity constructor to register it in the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): void;
-    register(
+    register<T extends A_Entity>(
     /**
      * Provide an entity instance to register it in the scope
      */
-    entity: A_Entity): void;
+    entity: T): void;
     /**
      * This method is used to deregister the component from the scope
      *
