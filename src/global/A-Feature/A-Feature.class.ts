@@ -248,9 +248,22 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         this._name = params.name;
 
         // 2) get scope from where feature is called
-        const componentScope = params.component
-            ? A_Context.scope(params.component)
-            : params.scope as A_Scope;
+        // 2) get scope from where feature is called
+        let componentScope: A_Scope | undefined;
+        //  uses to extend a component scope if component is not registered in the context
+        let externalScope: A_Scope | undefined = params.scope;
+
+        try {
+            if (params.component)
+                componentScope = A_Context.scope(params.component);
+        } catch (error) {
+            if (!externalScope)
+                throw error;
+        }
+
+        if (componentScope && externalScope && !externalScope.isInheritedFrom(componentScope)) {
+            externalScope.inherit(componentScope);
+        }
 
         // 3) create caller wrapper for the simple injection of the caller component
         //   - Just to prevent issues with undefined caller in features without component
@@ -261,7 +274,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         const scope = A_Context.allocate(this);
 
         // 5) ensure that the scope of the caller component is inherited by the feature scope
-        scope.inherit(componentScope);
+        scope.inherit(componentScope || externalScope!);
 
         // 6) create steps manager to organize steps into stages
         this._SM = new A_StepsManager(params.template);
@@ -291,7 +304,20 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         this._name = params.name;
 
         // 2) get scope from where feature is called
-        const componentScope = params.scope ? params.scope : A_Context.scope(params.component);
+        let componentScope: A_Scope | undefined;
+        //  uses to extend a component scope if component is not registered in the context
+        let externalScope: A_Scope | undefined = params.scope;
+
+        try {
+            componentScope = A_Context.scope(params.component);
+        } catch (error) {
+            if (!externalScope)
+                throw error;
+        }
+
+        if (componentScope && externalScope && !externalScope.isInheritedFrom(componentScope)) {
+            externalScope.inherit(componentScope);
+        }
 
         // 3) create caller wrapper for the simple injection of the caller component
         this._caller = new A_Caller<T>(params.component);
@@ -300,7 +326,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         const scope = A_Context.allocate(this);
 
         // 5) ensure that the scope of the caller component is inherited by the feature scope
-        scope.inherit(componentScope);
+        scope.inherit(componentScope || externalScope!);
 
         // 6) retrieve the template from the context
         const template = A_Context.featureTemplate(this._name, this._caller.component, scope);

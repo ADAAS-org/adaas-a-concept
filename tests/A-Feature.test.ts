@@ -362,4 +362,61 @@ describe('A-Feature tests', () => {
 
         expect(executionOrder).toEqual(['stepOne', 'stepThree']);
     });
+
+    it('Should allow proceed with external scope', async () => {
+        const executionOrder: string[] = [];
+
+        class CustomComponent extends A_Component {
+
+            doSomething() {
+                executionOrder.push('customComponentAction');
+            }
+
+        }
+
+        // 1) create a base component with some feature
+        class ComponentA extends A_Component {
+
+            @A_Feature.Define({ invoke: false })
+            async feature1() {
+                const scope = new A_Scope({ name: 'ExternalScopeCaller', components: [CustomComponent] });
+
+                executionOrder.push('stepOne');
+
+                await this.call('feature1', scope);
+            }
+        }
+
+
+        class ComponentB extends A_Component {
+
+            @A_Feature.Extend({
+                name: 'feature1',
+            })
+            async feature1Extension(
+                @A_Inject(A_Scope) scope: A_Scope,
+                @A_Inject(CustomComponent) customComponent: CustomComponent
+            ) {
+                expect(customComponent).toBeInstanceOf(CustomComponent);
+                expect(customComponent.doSomething).toBeInstanceOf(Function);
+
+                executionOrder.push('stepThree');
+            }
+        }
+
+
+        // 2) create a running scope 
+        const scope = new A_Scope({ name: 'TestScope' , components: [ComponentA, ComponentB] });
+
+
+        // 3) create an instance of the component from the scope
+        const myComponent = scope.resolve(ComponentA)!;
+        expect(myComponent).toBeInstanceOf(ComponentA);
+
+        await myComponent.feature1();
+
+        expect(executionOrder).toEqual(['stepOne', 'stepThree']);
+    });
+
+    
 });
