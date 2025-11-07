@@ -307,7 +307,9 @@ export class A_TypeGuards {
     }
 
     static isAllowedForFeatureExtension(param: any): param is A_TYPES__FeatureExtendDecoratorTarget {
-        return A_TypeGuards.isComponentInstance(param);
+        return A_TypeGuards.isComponentInstance(param)
+            || A_TypeGuards.isContainerInstance(param)
+            || A_TypeGuards.isEntityInstance(param);
     }
 
     static isAllowedForAbstractionDefinition(param: any): param is A_TYPES__AbstractionAvailableComponents {

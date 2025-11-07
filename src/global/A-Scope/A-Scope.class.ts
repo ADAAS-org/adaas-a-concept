@@ -1241,7 +1241,135 @@ export class A_Scope<
     }
 
 
+    /**
+     * This method is used to deregister the component from the scope
+     * 
+     * @param fragment 
+     */
+    deregister<T extends A_Component>(
+        /**
+         * Provide a component constructor to deregister it in the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): void
+    deregister(
+        /**
+         * Provide a command instance to deregister it in the scope
+         */
+        component: A_Component
+    ): void
+    deregister<T extends A_Error>(
+        /**
+         * Provide an error constructor to deregister it in the scope
+         */
+        error: A_TYPES__Error_Constructor<T>
+    ): void
+    deregister(
+        /**
+         * Provide an error instance to deregister it in the scope
+         */
+        error: A_Error
+    ): void
+    deregister<T extends A_Fragment>(
+        /**
+         * Provide a command instance to deregister it in the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): void
+    deregister(
+        /**
+         * Provide a fragment instance to deregister it in the scope
+         */
+        fragment: A_Fragment
+    ): void
+    deregister<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to deregister it in the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): void
+    deregister(
+        /**
+         * Provide an entity instance to deregister it in the scope
+         */
+        entity: A_Entity
+    ): void
 
+    deregister(
+        param1: unknown
+    ): void {
+        switch (true) {
+            // ------------------------------------------
+            // ------------ Instances ----------------
+            // ------------------------------------------
+            // 1) In case when it's a A-Component instance
+            case param1 instanceof A_Component: {
+
+                this._components.delete(param1.constructor as _ComponentType[number]);
+                A_Context.deregister(param1);
+
+                break;
+            }
+            // 3) In case when it's a A-Entity instance
+            case A_TypeGuards.isEntityInstance(param1): {
+
+                this._entities.delete(param1.aseid.toString());
+                A_Context.deregister(param1);
+                break;
+            }
+            // 4) In case when it's a A-Fragment instance
+            case A_TypeGuards.isFragmentInstance(param1): {
+
+                this._fragments.delete(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
+                A_Context.deregister(param1);
+
+                break;
+            }
+            // 5) In case when it's a A-Error instance
+            case A_TypeGuards.isErrorInstance(param1): {
+
+                this._errors.delete(param1.code);
+                A_Context.deregister(param1);
+                break;
+            }
+
+            // ------------------------------------------
+            // ------------ Constructors ----------------
+            // ------------------------------------------
+            // 6) In case when it's a A-Component constructor
+            case A_TypeGuards.isComponentConstructor(param1): {
+                this.allowedComponents.delete(param1 as _ComponentType[number]);
+                break;
+            }
+            // 8) In case when it's a A-Fragment constructor
+            case A_TypeGuards.isFragmentConstructor(param1): {
+                this.allowedFragments.delete(param1 as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
+                break;
+            }
+            // 9) In case when it's a A-Entity constructor
+            case A_TypeGuards.isEntityConstructor(param1): {
+                this.allowedEntities.delete(param1 as _EntityType[number]);
+                break;
+            }
+            // 10) In case when it's a A-Error constructor
+            case A_TypeGuards.isErrorConstructor(param1): {
+                this.allowedErrors.delete(param1 as _ErrorType[number]);
+                break;
+            }
+
+            // ------------------------------------------
+            // ------------ Invalid Cases ----------------
+            // ------------------------------------------
+
+            default:
+                const componentName = A_CommonHelper.getComponentName(param1);
+
+                throw new A_ScopeError(
+                    A_ScopeError.DeregistrationError,
+                    `Cannot deregister ${componentName} from the scope ${this.name}`
+                );
+        }
+    }
 
     /**
      * This method is useful when you want to serialize the scope to JSON

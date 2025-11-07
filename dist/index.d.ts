@@ -1671,7 +1671,7 @@ type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<() => a
  *
  * [!] Can be applied only on A-Components
  */
-type A_TYPES__FeatureExtendDecoratorTarget = A_Component;
+type A_TYPES__FeatureExtendDecoratorTarget = A_Component | A_Container | A_Entity;
 /**
  * Configuration type for A_Extend decorator
  *
@@ -3145,6 +3145,51 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      */
     entity: A_Entity): void;
     /**
+     * This method is used to deregister the component from the scope
+     *
+     * @param fragment
+     */
+    deregister<T extends A_Component>(
+    /**
+     * Provide a component constructor to deregister it in the scope
+     */
+    component: A_TYPES__Component_Constructor<T>): void;
+    deregister(
+    /**
+     * Provide a command instance to deregister it in the scope
+     */
+    component: A_Component): void;
+    deregister<T extends A_Error>(
+    /**
+     * Provide an error constructor to deregister it in the scope
+     */
+    error: A_TYPES__Error_Constructor<T>): void;
+    deregister(
+    /**
+     * Provide an error instance to deregister it in the scope
+     */
+    error: A_Error): void;
+    deregister<T extends A_Fragment>(
+    /**
+     * Provide a command instance to deregister it in the scope
+     */
+    fragment: A_TYPES__Fragment_Constructor<T>): void;
+    deregister(
+    /**
+     * Provide a fragment instance to deregister it in the scope
+     */
+    fragment: A_Fragment): void;
+    deregister<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to deregister it in the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): void;
+    deregister(
+    /**
+     * Provide an entity instance to deregister it in the scope
+     */
+    entity: A_Entity): void;
+    /**
      * This method is useful when you want to serialize the scope to JSON
      *
      * [!] Note this is not a deep serialization, only the fragments are serialized
@@ -3784,6 +3829,7 @@ declare class A_ScopeError extends A_Error {
     static readonly ResolutionError = "A-Scope Resolution Error";
     static readonly RegistrationError = "A-Scope Registration Error";
     static readonly CircularInheritanceError = "A-Scope Circular Inheritance Error";
+    static readonly DeregistrationError = "A-Scope Deregistration Error";
 }
 
 /**

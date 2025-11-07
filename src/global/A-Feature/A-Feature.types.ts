@@ -232,7 +232,7 @@ export type A_TYPES__FeatureExtendDecoratorDescriptor =
  * 
  * [!] Can be applied only on A-Components
  */
-export type A_TYPES__FeatureExtendDecoratorTarget = A_Component
+export type A_TYPES__FeatureExtendDecoratorTarget = A_Component | A_Container | A_Entity
 
 /**
  * Configuration type for A_Extend decorator
