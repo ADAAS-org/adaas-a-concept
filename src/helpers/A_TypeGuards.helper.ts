@@ -291,7 +291,8 @@ export class A_TypeGuards {
     static isTargetAvailableForInjection(target: any): target is A_TYPES__InjectableTargets {
         return A_TypeGuards.isComponentConstructor(target)
             || A_TypeGuards.isComponentInstance(target)
-            || A_TypeGuards.isContainerInstance(target);
+            || A_TypeGuards.isContainerInstance(target)
+            || A_TypeGuards.isEntityInstance(target)
     }
 
     static isAllowedForFeatureCall(param: any): param is A_TYPES__FeatureAvailableComponents {
