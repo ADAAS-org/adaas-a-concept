@@ -403,6 +403,8 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @returns 
      */
     async completed(): Promise<void> {
+        if(this.isDone) return;
+
 
         this._state = A_TYPES__FeatureState.COMPLETED;
 
@@ -415,6 +417,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @param error 
      */
     async failed(error: A_FeatureError) {
+        if(this.isDone) return;
 
         this._state = A_TYPES__FeatureState.FAILED;
 

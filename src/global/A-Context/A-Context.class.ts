@@ -321,23 +321,20 @@ export class A_Context {
     ) {
         const instance = this.getInstance();
 
-
         const scope = A_TypeGuards.isScopeInstance(param1)
             ? param1
             : instance._registry.get(param1);
 
         if (!scope) return;
 
-        try {
-            const component = A_TypeGuards.isComponentInstance(param1)
-                ? param1
-                : this.issuer(scope);
+        const component = A_TypeGuards.isComponentInstance(param1)
+            ? param1
+            : this.issuer(scope);
 
+        if (component)
             instance._registry.delete(component);
+        if (scope)
             instance._scopeIssuers.delete(scope);
-        } catch (error) {
-            return
-        }
     }
 
 
@@ -520,7 +517,7 @@ export class A_Context {
          * Provide the scope to get its issuer.
          */
         scope: A_Scope
-    ): A_TYPES__ScopeLinkedComponents {
+    ): A_TYPES__ScopeLinkedComponents | undefined {
 
         const instance = this.getInstance();
 
@@ -529,10 +526,10 @@ export class A_Context {
             `Invalid parameter provided to get scope issuer. Parameter cannot be null or undefined.`
         );
 
-        if (!instance._scopeIssuers.has(scope)) throw new A_ContextError(
-            A_ContextError.ScopeNotFoundError,
-            `Invalid parameter provided to get scope issuer. Provided scope does not have an issuer registered.`
-        );
+        // if (!instance._scopeIssuers.has(scope)) throw new A_ContextError(
+        //     A_ContextError.ScopeNotFoundError,
+        //     `Invalid parameter provided to get scope issuer. Provided scope does not have an issuer registered.`
+        // );
 
         return instance._scopeIssuers.get(scope)!;
     }

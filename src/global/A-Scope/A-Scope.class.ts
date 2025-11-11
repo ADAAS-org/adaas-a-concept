@@ -294,6 +294,7 @@ export class A_Scope<
         this._entities.clear();
 
         if (this.issuer()) {
+
             A_Context.deallocate(this);
         }
     }
@@ -311,11 +312,7 @@ export class A_Scope<
      * @returns 
      */
     issuer<T extends A_TYPES__ScopeLinkedComponents>(): T | undefined {
-        try {
             return A_Context.issuer(this) as T;
-        } catch (error) {
-            return undefined;
-        }
     }
 
 

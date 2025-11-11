@@ -45,7 +45,7 @@
     "ext": "ts, js"
   },
   "scripts": {
-    "test": "jest ",
+    "test": "jest --detectOpenHandles",
     "start": "nodemon ./tests/example-usage.ts",
     "example:simple": "nodemon ./examples/simple/concept.ts",
     "example:http": "nodemon ./examples/simple-http-server/concept.ts",

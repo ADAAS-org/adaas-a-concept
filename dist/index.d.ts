@@ -3653,7 +3653,7 @@ declare class A_Context {
     /**
      * Provide the scope to get its issuer.
      */
-    scope: A_Scope): A_TYPES__ScopeLinkedComponents;
+    scope: A_Scope): A_TYPES__ScopeLinkedComponents | undefined;
     /**
      * Get the scope of the specific class or instance.
      *

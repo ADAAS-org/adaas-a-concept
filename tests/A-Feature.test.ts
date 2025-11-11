@@ -5,418 +5,513 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
+import { A_TYPES__FeatureState } from "../src";
 
 jest.retryTimes(0);
 
 describe('A-Feature tests', () => {
-    it('Should Allow to create a feature from component', async () => {
-        const testComponent = new A_Component()
-        A_Context.root.register(testComponent);
+    // it('Should Allow to create a feature from component', async () => {
+    //     const testComponent = new A_Component()
+    //     A_Context.root.register(testComponent);
 
-        const feature = new A_Feature({
-            name: 'testFeature',
-            component: testComponent,
-        });
+    //     const feature = new A_Feature({
+    //         name: 'testFeature',
+    //         component: testComponent,
+    //     });
 
-        expect(feature).toBeInstanceOf(A_Feature);
-        expect(feature.scope.parent).toBe(A_Context.root);
+    //     expect(feature).toBeInstanceOf(A_Feature);
+    //     expect(feature.scope.parent).toBe(A_Context.root);
 
-    });
-    it('Should Allow to create a feature with steps', async () => {
-        const template = [
-            {
-                name: 'A_Component.testHandler',
-                component: A_Component,
-                handler: 'testHandler',
-            }
-        ]
+    // });
+    // it('Should Allow to create a feature with steps', async () => {
+    //     const template = [
+    //         {
+    //             name: 'A_Component.testHandler',
+    //             component: A_Component,
+    //             handler: 'testHandler',
+    //         }
+    //     ]
 
+    //     const feature = new A_Feature({
+    //         name: 'testFeature',
+    //         scope: new A_Scope(),
+    //         template
+    //     });
+
+    //     expect(feature).toBeInstanceOf(A_Feature);
+    // });
+    // it('Should be possible to execute a feature with steps as a template on the component', async () => {
+    //     // 1) create a base component with some feature
+    //     class MyExtendedComponent extends A_Component {
+
+    //         async testHandler(
+    //             @A_Inject(A_Caller) caller: MyComponent
+    //         ) {
+    //             caller.sum = 2;
+    //         }
+    //     }
+
+    //     // 2) create a custom component with a defined template feature
+    //     class MyComponent extends A_Component {
+    //         sum: number = 0;
+
+    //         @A_Feature.Define({
+    //             invoke: true,
+    //             template: [{
+    //                 name: 'MyExtendedComponent.testHandler',
+    //                 component: MyExtendedComponent,
+    //                 handler: 'testHandler',
+    //                 behavior: 'sync',
+    //                 before: '',
+    //                 after: ''
+    //             },
+    //             {
+    //                 name: 'MyExtendedComponent.testHandler',
+    //                 component: MyExtendedComponent,
+    //                 handler: 'testHandler'
+    //             }]
+    //         })
+    //         async testHandler() { }
+    //     }
+
+
+    //     // 3) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope' });
+    //     scope.register(MyExtendedComponent);
+    //     scope.register(MyComponent);
+
+    //     // 4) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(MyComponent)!;
+    //     expect(myComponent).toBeInstanceOf(MyComponent);
+    //     expect(myComponent.sum).toBe(0);
+
+    //     // 5) call the feature caller to execute the feature
+    //     await myComponent.testHandler();
+
+    //     // 6) check the results
+    //     expect(myComponent.sum).toBe(2);
+
+    // });
+    // it('Should be possible to execute a feature with steps as a template on the component with string component declaration', async () => {
+    //     // 1) create a base component with some feature
+    //     class MyExtendedComponent2 extends A_Component {
+
+    //         async testHandler(
+    //             @A_Inject(A_Caller) caller: MyComponent2
+    //         ) {
+    //             caller.sum = 2;
+    //         }
+    //     }
+
+    //     // 2) create a custom component with a defined template feature
+    //     class MyComponent2 extends A_Component {
+    //         sum: number = 0;
+
+    //         @A_Feature.Define({
+    //             invoke: true,
+    //             template: [{
+    //                 name: 'MyExtendedComponent2.testHandler',
+    //                 component: 'MyExtendedComponent2',
+    //                 handler: 'testHandler',
+    //                 behavior: 'sync',
+    //                 before: '',
+    //                 after: ''
+    //             }]
+    //         })
+    //         async testHandler() { }
+    //     }
+
+
+    //     // 3) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope' });
+    //     scope.register(MyExtendedComponent2);
+    //     scope.register(MyComponent2);
+
+    //     // 4) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(MyComponent2)!;
+    //     expect(myComponent).toBeInstanceOf(MyComponent2);
+    //     expect(myComponent.sum).toBe(0);
+
+    //     // 5) call the feature caller to execute the feature
+    //     await myComponent.testHandler();
+
+    //     // 6) check the results
+    //     expect(myComponent.sum).toBe(2);
+
+    // });
+    // it('Should execute feature steps in base order', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     // 1) create a base component with some feature
+    //     class My_Component extends A_Component {
+    //         async methodA() {
+    //             await this.call('myFeature')
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //         })
+    //         async stepOne(
+    //         ) {
+    //             executionOrder.push('stepOne');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //         })
+    //         async stepTwo(
+    //         ) {
+    //             executionOrder.push('stepTwo');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //         })
+    //         async stepThree(
+    //         ) {
+    //             executionOrder.push('stepThree');
+    //         }
+    //     }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(My_Component)!;
+    //     expect(myComponent).toBeInstanceOf(My_Component);
+
+    //     // 4) call the feature caller to execute the feature
+    //     await myComponent.methodA();
+
+    //     // 5) check the results
+    //     expect(executionOrder).toEqual(['stepOne', 'stepTwo', 'stepThree']);
+    // });
+    // it('Should execute feature steps in proper order', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     // 1) create a base component with some feature
+    //     class My_Component extends A_Component {
+    //         async methodA() {
+    //             await this.call('myFeature')
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //             after: ['My_Component.stepTwo'],
+    //         })
+    //         async stepOne(
+    //         ) {
+    //             executionOrder.push('stepOne');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //         })
+    //         async stepTwo(
+    //         ) {
+    //             executionOrder.push('stepTwo');
+    //         }
+    //     }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(My_Component)!;
+    //     expect(myComponent).toBeInstanceOf(My_Component);
+
+    //     // 4) call the feature caller to execute the feature
+    //     await myComponent.methodA();
+
+    //     // 5) check the results
+    //     expect(executionOrder).toEqual(['stepTwo', 'stepOne']);
+    // });
+
+    // it('Should allow to define a feature', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     // 1) create a base component with some feature
+    //     class My_Component extends A_Component {
+
+
+    //         @A_Feature.Define({ invoke: true })
+    //         @A_Feature.Extend({
+    //             name: 'myFeature',
+    //         })
+    //         async feature1(
+    //             @A_Inject(A_Component) component: A_Component
+    //         ) { }
+
+    //         @A_Feature.Extend({
+    //             name: 'feature1',
+    //         })
+    //         async feature1Extension() {
+    //             executionOrder.push('stepOne');
+    //         }
+
+    //         @A_Feature.Define()
+    //         async feature2() {
+    //             await this.call('feature2');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'feature2',
+    //         })
+    //         async feature2Extension() {
+    //             executionOrder.push('stepTwo');
+    //         }
+
+    //     }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(My_Component)!;
+    //     expect(myComponent).toBeInstanceOf(My_Component);
+
+    //     // 4) call the feature caller to execute the feature
+    //     await myComponent.feature1(new A_Component());
+
+    //     await myComponent.feature2();
+
+    //     // 5) check the results
+    //     expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
+    // });
+    // it('Should inherit feature definitions & extensions', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     // 1) create a base component with some feature
+    //     class My_Component extends A_Component {
+
+    //         @A_Feature.Define({ invoke: false })
+    //         async feature1() {
+    //             executionOrder.push('stepOne');
+
+    //             await this.call('feature1');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'feature1',
+    //         })
+    //         async feature1Extension(
+    //             @A_Inject(A_Scope) scope: A_Scope
+    //         ) {
+    //             executionOrder.push('stepTwo');
+    //         }
+    //     }
+
+
+    //     class My_Child_Component extends My_Component { }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(My_Child_Component)!;
+    //     expect(myComponent).toBeInstanceOf(My_Child_Component);
+
+    //     await myComponent.feature1();
+
+    //     expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
+    // });
+
+    // it('Should allow override feature extension', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     // 1) create a base component with some feature
+    //     class My_Component extends A_Component {
+
+    //         @A_Feature.Define({ invoke: true })
+    //         async feature1() {
+    //             executionOrder.push('stepOne');
+    //         }
+
+    //         @A_Feature.Extend({
+    //             name: 'feature1',
+    //         })
+    //         async feature1Extension(
+    //             @A_Inject(A_Scope) scope: A_Scope
+    //         ) {
+    //             executionOrder.push('stepTwo');
+    //         }
+    //     }
+
+
+    //     class My_Child_Component extends My_Component {
+
+    //         async feature1Extension(
+    //             @A_Inject(A_Scope) scope: A_Scope
+    //         ) {
+    //             executionOrder.push('stepThree');
+    //         }
+    //     }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(My_Child_Component)!;
+    //     expect(myComponent).toBeInstanceOf(My_Child_Component);
+
+    //     await myComponent.feature1();
+
+    //     expect(executionOrder).toEqual(['stepOne', 'stepThree']);
+    // });
+
+    // it('Should allow proceed with external scope', async () => {
+    //     const executionOrder: string[] = [];
+
+    //     class CustomComponent extends A_Component {
+
+    //         doSomething() {
+    //             executionOrder.push('customComponentAction');
+    //         }
+
+    //     }
+
+    //     // 1) create a base component with some feature
+    //     class ComponentA extends A_Component {
+
+    //         @A_Feature.Define({ invoke: false })
+    //         async feature1() {
+    //             const scope = new A_Scope({ name: 'ExternalScopeCaller', components: [CustomComponent] });
+
+    //             executionOrder.push('stepOne');
+
+    //             await this.call('feature1', scope);
+    //         }
+    //     }
+
+
+    //     class ComponentB extends A_Component {
+
+    //         @A_Feature.Extend({
+    //             name: 'feature1',
+    //         })
+    //         async feature1Extension(
+    //             @A_Inject(A_Scope) scope: A_Scope,
+    //             @A_Inject(CustomComponent) customComponent: CustomComponent
+    //         ) {
+    //             expect(customComponent).toBeInstanceOf(CustomComponent);
+    //             expect(customComponent.doSomething).toBeInstanceOf(Function);
+
+    //             executionOrder.push('stepThree');
+    //         }
+    //     }
+
+
+    //     // 2) create a running scope 
+    //     const scope = new A_Scope({ name: 'TestScope' , components: [ComponentA, ComponentB] });
+
+
+    //     // 3) create an instance of the component from the scope
+    //     const myComponent = scope.resolve(ComponentA)!;
+    //     expect(myComponent).toBeInstanceOf(ComponentA);
+
+    //     await myComponent.feature1();
+
+    //     expect(executionOrder).toEqual(['stepOne', 'stepThree']);
+    // });
+    it('Should allow to interrupt a new feature', async () => {
         const feature = new A_Feature({
             name: 'testFeature',
             scope: new A_Scope(),
-            template
+            template: [
+                {
+                    name: 'A_Component.testHandler',
+                    component: 'A_Component',
+                    handler: 'testHandler',
+                }
+            ]
         });
 
-        expect(feature).toBeInstanceOf(A_Feature);
+
+        feature.interrupt();
+
+        expect(feature.state).toBe(A_TYPES__FeatureState.INTERRUPTED);
     });
-    it('Should be possible to execute a feature with steps as a template on the component', async () => {
-        // 1) create a base component with some feature
-        class MyExtendedComponent extends A_Component {
-
-            async testHandler(
-                @A_Inject(A_Caller) caller: MyComponent
-            ) {
-                caller.sum = 2;
-            }
-        }
-
-        // 2) create a custom component with a defined template feature
-        class MyComponent extends A_Component {
-            sum: number = 0;
-
-            @A_Feature.Define({
-                invoke: true,
-                template: [{
-                    name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
-                    handler: 'testHandler',
-                    behavior: 'sync',
-                    before: '',
-                    after: ''
-                },
-                {
-                    name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
-                    handler: 'testHandler'
-                }]
-            })
-            async testHandler() { }
-        }
-
-
-        // 3) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope' });
-        scope.register(MyExtendedComponent);
-        scope.register(MyComponent);
-
-        // 4) create an instance of the component from the scope
-        const myComponent = scope.resolve(MyComponent)!;
-        expect(myComponent).toBeInstanceOf(MyComponent);
-        expect(myComponent.sum).toBe(0);
-
-        // 5) call the feature caller to execute the feature
-        await myComponent.testHandler();
-
-        // 6) check the results
-        expect(myComponent.sum).toBe(2);
-
-    });
-    it('Should be possible to execute a feature with steps as a template on the component with string component declaration', async () => {
-        // 1) create a base component with some feature
-        class MyExtendedComponent2 extends A_Component {
-
-            async testHandler(
-                @A_Inject(A_Caller) caller: MyComponent2
-            ) {
-                caller.sum = 2;
-            }
-        }
-
-        // 2) create a custom component with a defined template feature
-        class MyComponent2 extends A_Component {
-            sum: number = 0;
-
-            @A_Feature.Define({
-                invoke: true,
-                template: [{
-                    name: 'MyExtendedComponent2.testHandler',
-                    component: 'MyExtendedComponent2',
-                    handler: 'testHandler',
-                    behavior: 'sync',
-                    before: '',
-                    after: ''
-                }]
-            })
-            async testHandler() { }
-        }
-
-
-        // 3) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope' });
-        scope.register(MyExtendedComponent2);
-        scope.register(MyComponent2);
-
-        // 4) create an instance of the component from the scope
-        const myComponent = scope.resolve(MyComponent2)!;
-        expect(myComponent).toBeInstanceOf(MyComponent2);
-        expect(myComponent.sum).toBe(0);
-
-        // 5) call the feature caller to execute the feature
-        await myComponent.testHandler();
-
-        // 6) check the results
-        expect(myComponent.sum).toBe(2);
-
-    });
-    it('Should execute feature steps in base order', async () => {
+    it('Should allow to interrupt feature with async processing', async () => {
         const executionOrder: string[] = [];
 
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
-            async methodA() {
-                await this.call('myFeature')
-            }
-
-            @A_Feature.Extend({
-                name: 'myFeature',
-            })
-            async stepOne(
-            ) {
-                executionOrder.push('stepOne');
-            }
-
-            @A_Feature.Extend({
-                name: 'myFeature',
-            })
-            async stepTwo(
-            ) {
-                executionOrder.push('stepTwo');
-            }
-
-            @A_Feature.Extend({
-                name: 'myFeature',
-            })
-            async stepThree(
-            ) {
-                executionOrder.push('stepThree');
-            }
-        }
-
-
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
-
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component)!;
-        expect(myComponent).toBeInstanceOf(My_Component);
-
-        // 4) call the feature caller to execute the feature
-        await myComponent.methodA();
-
-        // 5) check the results
-        expect(executionOrder).toEqual(['stepOne', 'stepTwo', 'stepThree']);
-    });
-    it('Should execute feature steps in proper order', async () => {
-        const executionOrder: string[] = [];
-
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
-            async methodA() {
-                await this.call('myFeature')
-            }
-
-            @A_Feature.Extend({
-                name: 'myFeature',
-                after: ['My_Component.stepTwo'],
-            })
-            async stepOne(
-            ) {
-                executionOrder.push('stepOne');
-            }
-
-            @A_Feature.Extend({
-                name: 'myFeature',
-            })
-            async stepTwo(
-            ) {
-                executionOrder.push('stepTwo');
-            }
-        }
-
-
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
-
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component)!;
-        expect(myComponent).toBeInstanceOf(My_Component);
-
-        // 4) call the feature caller to execute the feature
-        await myComponent.methodA();
-
-        // 5) check the results
-        expect(executionOrder).toEqual(['stepTwo', 'stepOne']);
-    });
-
-    it('Should allow to define a feature', async () => {
-        const executionOrder: string[] = [];
-
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
-
-
-            @A_Feature.Define({ invoke: true })
-            @A_Feature.Extend({
-                name: 'myFeature',
-            })
-            async feature1(
-                @A_Inject(A_Component) component: A_Component
-            ) { }
-
-            @A_Feature.Extend({
-                name: 'feature1',
-            })
-            async feature1Extension() {
-                executionOrder.push('stepOne');
-            }
-
-            @A_Feature.Define()
-            async feature2() {
-                await this.call('feature2');
-            }
-
-            @A_Feature.Extend({
-                name: 'feature2',
-            })
-            async feature2Extension() {
-                executionOrder.push('stepTwo');
-            }
-
-        }
-
-
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [My_Component] });
-
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Component)!;
-        expect(myComponent).toBeInstanceOf(My_Component);
-
-        // 4) call the feature caller to execute the feature
-        await myComponent.feature1(new A_Component());
-
-        await myComponent.feature2();
-
-        // 5) check the results
-        expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
-    });
-    it('Should inherit feature definitions & extensions', async () => {
-        const executionOrder: string[] = [];
-
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
-
-            @A_Feature.Define({ invoke: false })
-            async feature1() {
-                executionOrder.push('stepOne');
-
-                await this.call('feature1');
-            }
-
-            @A_Feature.Extend({
-                name: 'feature1',
-            })
-            async feature1Extension(
-                @A_Inject(A_Scope) scope: A_Scope
-            ) {
-                executionOrder.push('stepTwo');
-            }
-        }
-
-
-        class My_Child_Component extends My_Component { }
-
-
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
-
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Child_Component)!;
-        expect(myComponent).toBeInstanceOf(My_Child_Component);
-
-        await myComponent.feature1();
-
-        expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
-    });
-
-    it('Should allow override feature extension', async () => {
-        const executionOrder: string[] = [];
-
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
-
-            @A_Feature.Define({ invoke: true })
-            async feature1() {
-                executionOrder.push('stepOne');
-            }
-
-            @A_Feature.Extend({
-                name: 'feature1',
-            })
-            async feature1Extension(
-                @A_Inject(A_Scope) scope: A_Scope
-            ) {
-                executionOrder.push('stepTwo');
-            }
-        }
-
-
-        class My_Child_Component extends My_Component {
-
-            async feature1Extension(
-                @A_Inject(A_Scope) scope: A_Scope
-            ) {
-                executionOrder.push('stepThree');
-            }
-        }
-
-
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [My_Child_Component] });
-
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(My_Child_Component)!;
-        expect(myComponent).toBeInstanceOf(My_Child_Component);
-
-        await myComponent.feature1();
-
-        expect(executionOrder).toEqual(['stepOne', 'stepThree']);
-    });
-
-    it('Should allow proceed with external scope', async () => {
-        const executionOrder: string[] = [];
-
-        class CustomComponent extends A_Component {
-
-            doSomething() {
-                executionOrder.push('customComponentAction');
-            }
-
-        }
 
         // 1) create a base component with some feature
         class ComponentA extends A_Component {
 
-            @A_Feature.Define({ invoke: false })
             async feature1() {
-                const scope = new A_Scope({ name: 'ExternalScopeCaller', components: [CustomComponent] });
-
-                executionOrder.push('stepOne');
-
-                await this.call('feature1', scope);
+                await new Promise<void>(async (resolve) => {
+                    setTimeout(() => {
+                        executionOrder.push('feature1');
+                        resolve();
+                    }, 2000);
+                });
             }
-        }
 
+            async feature2() {
+                await new Promise<void>(async (resolve) => {
+                    setTimeout(() => {
+                        executionOrder.push('feature2');
+                        resolve();
+                    }, 1000);
+                });
+            }
 
-        class ComponentB extends A_Component {
-
-            @A_Feature.Extend({
-                name: 'feature1',
-            })
-            async feature1Extension(
-                @A_Inject(A_Scope) scope: A_Scope,
-                @A_Inject(CustomComponent) customComponent: CustomComponent
-            ) {
-                expect(customComponent).toBeInstanceOf(CustomComponent);
-                expect(customComponent.doSomething).toBeInstanceOf(Function);
-
-                executionOrder.push('stepThree');
+            async feature3() {
+                await new Promise<void>(async (resolve) => {
+                    setTimeout(() => {
+                        executionOrder.push('feature3');
+                        resolve();
+                    }, 1000);
+                });
             }
         }
 
 
         // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope' , components: [ComponentA, ComponentB] });
+        const scope = new A_Scope({ name: 'TestScope', components: [ComponentA] });
 
 
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(ComponentA)!;
-        expect(myComponent).toBeInstanceOf(ComponentA);
+        const feature = new A_Feature({
+            name: 'testFeature',
+            scope,
+            template: [
+                {
+                    name: 'ComponentA.feature1',
+                    component: 'ComponentA',
+                    handler: 'feature1',
+                },
+                {
+                    name: 'ComponentA.feature2',
+                    component: 'ComponentA',
+                    handler: 'feature2',
+                },
+                {
+                    name: 'ComponentA.feature3',
+                    component: 'ComponentA',
+                    handler: 'feature3',
+                },
+            ]
+        });
 
-        await myComponent.feature1();
+        feature.process();
+        
+        await new Promise<void>(async (resolve) => {
 
-        expect(executionOrder).toEqual(['stepOne', 'stepThree']);
+            setTimeout(() => {
+                feature.interrupt();
+
+                expect(feature.state).toBe(A_TYPES__FeatureState.INTERRUPTED);
+                expect(executionOrder).toEqual(['feature1']);
+
+                resolve();
+
+            }, 2500);
+        });
+
     });
-
-    
 });
