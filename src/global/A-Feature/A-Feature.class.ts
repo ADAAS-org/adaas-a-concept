@@ -441,6 +441,8 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     ) {
         if (this.isDone) return;
 
+        this._state = A_TYPES__FeatureState.INTERRUPTED;
+
         switch (true) {
             case A_TypeGuards.isString(reason):
                 this._error = new A_FeatureError(A_FeatureError.Interruption, reason);
@@ -460,7 +462,6 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
                 break;
         }
 
-        this._state = A_TYPES__FeatureState.INTERRUPTED;
 
         this.scope.destroy();
     }
