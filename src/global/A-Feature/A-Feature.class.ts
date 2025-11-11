@@ -149,8 +149,14 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      */
     get isDone(): boolean {
         return !this.stage
-            || this._index >= this._stages.length
-            || this.state === A_TYPES__FeatureState.COMPLETED
+            || this._index >= this._stages.length;
+    }
+    /**
+     * Indicates whether the feature has been processed (completed, failed, or interrupted)
+     */
+    get isProcessed(): boolean {
+        return this.state === A_TYPES__FeatureState.COMPLETED
+            || this.state === A_TYPES__FeatureState.FAILED
             || this.state === A_TYPES__FeatureState.INTERRUPTED;
     }
     /**
@@ -361,7 +367,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
                 scope.inherit(A_Context.scope(this));
 
 
-            if (this.isDone)
+            if (this.isProcessed)
                 return;
 
             this._state = A_TYPES__FeatureState.PROCESSING;
@@ -403,7 +409,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @returns 
      */
     async completed(): Promise<void> {
-        if (this.isDone) return;
+        if (this.isProcessed) return;
 
 
         this._state = A_TYPES__FeatureState.COMPLETED;
@@ -417,7 +423,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @param error 
      */
     async failed(error: A_FeatureError) {
-        if (this.isDone) return;
+        if (this.isProcessed) return;
 
         this._state = A_TYPES__FeatureState.FAILED;
 
@@ -439,7 +445,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
          */
         reason?: string | A_StageError | Error
     ) {
-        if (this.isDone) return;
+        if (this.isProcessed) return;
 
         this._state = A_TYPES__FeatureState.INTERRUPTED;
 

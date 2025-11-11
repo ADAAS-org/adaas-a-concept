@@ -1438,6 +1438,10 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     get isDone(): boolean;
     /**
+     * Indicates whether the feature has been processed (completed, failed, or interrupted)
+     */
+    get isProcessed(): boolean;
+    /**
      * Iterator to iterate over the steps of the feature
      *
      * @returns

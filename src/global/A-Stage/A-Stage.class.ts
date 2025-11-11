@@ -274,7 +274,6 @@ export class A_Stage {
 
                         this.failed(wrappedError);
 
-
                         if (this._definition.throwOnError) {
                             return resolve();
                         } else {

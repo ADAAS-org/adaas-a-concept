@@ -5,7 +5,7 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
-import { A_TYPES__FeatureState } from "../src";
+import { A_Error, A_TYPES__FeatureState } from "../src";
 
 jest.retryTimes(0);
 
@@ -90,6 +90,67 @@ describe('A-Feature tests', () => {
 
         // 6) check the results
         expect(myComponent.sum).toBe(2);
+
+    });
+
+
+    it('Should fail execution when error occurs', async () => {
+        // 1) create a base component with some feature
+        class MyExtendedComponent extends A_Component {
+
+            async testHandler(
+                @A_Inject(A_Caller) caller: MyComponent
+            ) {
+                throw new Error('Deliberate error in testHandler');
+            }
+        }
+
+        // 2) create a custom component with a defined template feature
+        class MyComponent extends A_Component {
+            sum: number = 0;
+
+            @A_Feature.Define({
+                invoke: true,
+                template: [{
+                    name: 'MyExtendedComponent.testHandler',
+                    component: MyExtendedComponent,
+                    handler: 'testHandler',
+                    behavior: 'sync',
+                    before: '',
+                    after: ''
+                },
+                {
+                    name: 'MyExtendedComponent.testHandler',
+                    component: MyExtendedComponent,
+                    handler: 'testHandler'
+                }]
+            })
+            async testHandler() { }
+        }
+
+
+        // 3) create a running scope 
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.register(MyExtendedComponent);
+        scope.register(MyComponent);
+
+        // 4) create an instance of the component from the scope
+        const myComponent = scope.resolve(MyComponent)!;
+        expect(myComponent).toBeInstanceOf(MyComponent);
+        expect(myComponent.sum).toBe(0);
+
+        // 5) call the feature caller to execute the feature
+        try {
+            await myComponent.testHandler();
+
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(Error);
+            expect((error as A_Error).originalError.message).toBe('Deliberate error in testHandler');
+        }
+
+        // 6) check the results
+        expect(myComponent.sum).toBe(0);
 
     });
     it('Should be possible to execute a feature with steps as a template on the component with string component declaration', async () => {
@@ -407,7 +468,7 @@ describe('A-Feature tests', () => {
 
 
         // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope' , components: [ComponentA, ComponentB] });
+        const scope = new A_Scope({ name: 'TestScope', components: [ComponentA, ComponentB] });
 
 
         // 3) create an instance of the component from the scope
