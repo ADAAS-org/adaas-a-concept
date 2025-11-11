@@ -404,7 +404,20 @@ export class A_Error<
 
         this._description = params.description;
         this._link = params.link;
-        this._originalError = params.originalError;
+        
+        // Handle originalError: if it's an A_Error, we should trace back to the root cause
+        // to avoid infinite nesting of A_Error instances
+        if (params.originalError instanceof A_Error) {
+            // Find the root original error by traversing the chain
+            let rootError = params.originalError;
+            while (rootError.originalError instanceof A_Error) {
+                rootError = rootError.originalError;
+            }
+            // Set the root cause as the original error
+            this._originalError = rootError.originalError || rootError;
+        } else {
+            this._originalError = params.originalError;
+        }
     }
 
     /**
