@@ -1,6 +1,6 @@
 {
   "name": "@adaas/a-concept",
-  "version": "0.1.42",
+  "version": "0.1.43",
   "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
   "license": "Apache-2.0",
   "main": "./dist/index.cjs",
