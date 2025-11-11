@@ -157,11 +157,15 @@ export class A_Error<
                 super(param1.message);
                 break;
 
-            case A_TypeGuards.isConstructorType<_ConstructorType>(param1) && 'description' in param1:
+            case A_TypeGuards.isErrorSerializedType<_SerializedType>(param1):
+                super(param1.message);
+                break;
+
+            case A_TypeGuards.isErrorConstructorType<_ConstructorType>(param1) && 'description' in param1:
                 super(`[${param1.title}]: ${param1.description}`);
                 break;
 
-            case A_TypeGuards.isConstructorType<_ConstructorType>(param1) && !('description' in param1):
+            case A_TypeGuards.isErrorConstructorType<_ConstructorType>(param1) && !('description' in param1):
                 super(param1.title);
                 break;
 
@@ -305,6 +309,7 @@ export class A_Error<
         param2?: string
     ): (param1: any, param2: any) => void | (() => void) {
         switch (true) {
+
             case A_TypeGuards.isString(param1) && !param2:
                 return this.fromMessage;
 
@@ -314,13 +319,13 @@ export class A_Error<
             case param1 instanceof Error:
                 return this.fromError;
 
+            case A_TypeGuards.isErrorSerializedType<_SerializedType>(param1):
+                return this.fromJSON;
 
-            case A_TypeGuards.isConstructorType<_ConstructorType>(param1):
+            case A_TypeGuards.isErrorConstructorType<_ConstructorType>(param1):
                 return this.fromConstructor;
 
             default: {
-                console.log('INVALID PARAMS PROVIDED TO A_ERROR CONSTRUCTOR: ', param1);
-
                 throw new A_Error(
                     A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR,
                     'Invalid parameters provided to A_Error constructor'
@@ -365,6 +370,23 @@ export class A_Error<
         this._link = undefined;
         this._originalError = undefined;
     }
+    /**
+     * Initializes the A_Error instance from a serialized object.
+     * 
+     * @param serialized
+     */
+    protected fromJSON(serialized: _SerializedType): void {
+        this._aseid = new ASEID(serialized.aseid);
+        super.message = serialized.message;
+        this._title = serialized.title;
+        this._code = serialized.code;
+        this._scope = serialized.scope;
+        this._description = serialized.description;
+        // Note: originalError is deserialized as message only
+        this._originalError = serialized.originalError ? new A_Error(serialized.originalError) : undefined;
+        this._link = serialized.link;
+    }
+
 
 
     fromTitle(title: string, description: string): void {
@@ -404,7 +426,7 @@ export class A_Error<
 
         this._description = params.description;
         this._link = params.link;
-        
+
         // Handle originalError: if it's an A_Error, we should trace back to the root cause
         // to avoid infinite nesting of A_Error instances
         if (params.originalError instanceof A_Error) {

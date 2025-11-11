@@ -5,7 +5,8 @@ import {
 } from "../global/A-Feature/A-Feature.types";
 import {
     A_TYPES__Error_Constructor,
-    A_TYPES__Error_Init
+    A_TYPES__Error_Init,
+    A_TYPES__Error_Serialized
 } from "../global/A-Error/A_Error.types";
 import { A_Component } from "../global/A-Component/A-Component.class";
 import { A_ComponentMeta } from "../global/A-Component/A-Component.meta";
@@ -27,6 +28,7 @@ import { A_CommonHelper } from "./A_Common.helper";
 import { A_TYPES__AbstractionAvailableComponents } from "../global/A-Abstraction/A-Abstraction.types";
 import { A_TYPES__Scope_Constructor, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeLinkedConstructors } from "../global/A-Scope/A-Scope.types";
 import { A_TYPES__InjectableTargets } from "../global/A-Inject/A-Inject.types";
+import { ASEID } from "../global/ASEID/ASEID.class";
 
 
 
@@ -332,7 +334,12 @@ export class A_TypeGuards {
      * @param param 
      * @returns 
      */
-    static isConstructorType<T extends A_TYPES__Error_Init>(param: any): param is T {
+    static isErrorConstructorType<T extends A_TYPES__Error_Init>(param: any): param is T {
         return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "title" in param;
+    }
+
+
+    static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T {
+        return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "aseid" in param && ASEID.isASEID(param.aseid);
     }
 }
