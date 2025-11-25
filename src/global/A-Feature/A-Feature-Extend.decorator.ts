@@ -5,6 +5,9 @@ import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.constants";
 import { A_FeatureError } from "./A-Feature.error";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
+import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.constants";
+import { A_Container } from "../A-Container/A-Container.class";
 
 
 
@@ -81,7 +84,20 @@ export function A_Feature_Extend(
         let include: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
         let exclude: Array<A_TYPES__FeatureExtendDecoratorScopeItem> = [];
         let throwOnError: boolean = true;
+        let metaKey;
 
+
+        switch (true) {
+            case A_TypeGuards.isEntityInstance(target):
+                metaKey = A_TYPES__EntityMetaKey.EXTENSIONS;
+                break;
+            case A_TypeGuards.isContainerInstance(target):
+                metaKey = A_TYPES__ContainerMetaKey.EXTENSIONS
+                break;
+            case A_TypeGuards.isComponentInstance(target):
+                metaKey = A_TYPES__ComponentMetaKey.EXTENSIONS
+                break;
+        }
 
 
         switch (true) {
@@ -130,17 +146,20 @@ export function A_Feature_Extend(
         }
 
 
+
+
+
         const existedDefinitions = A_Context
             .meta(target)
-            .get(A_TYPES__ComponentMetaKey.FEATURES);
+            .get(metaKey);
 
 
         // Get the existed metadata or create a new one
         const meta = A_Context
             .meta(target)
 
-        const existedMeta = meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)
-            ? new A_Meta().from(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)!)
+        const existedMeta = meta.get(metaKey)
+            ? new A_Meta().from(meta.get(metaKey)!)
             : new A_Meta();
 
         if (existedDefinitions
@@ -187,7 +206,7 @@ export function A_Feature_Extend(
         //  Update the metadata of the container with the new Feature definition
         A_Context
             .meta(target)
-            .set(A_TYPES__ComponentMetaKey.EXTENSIONS, existedMeta);
+            .set(metaKey, existedMeta);
     };
 }
 

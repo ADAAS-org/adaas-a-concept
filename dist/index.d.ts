@@ -73,7 +73,7 @@ type A_TYPES__ExtractProperties<T, P extends A_TYPES__Paths<T>[]> = A_TYPES__Uni
  *
  * [!] Meta can be different depending on the type of input data
  */
-declare class A_Meta<_StorageItems extends Record<string, any> = any> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+declare class A_Meta<_StorageItems extends Record<string, any> = any, _SerializedType extends Record<string, any> = Record<string, any>> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]>;
     /**
      * Method to get the iterator for the meta object
@@ -164,6 +164,14 @@ declare class A_Meta<_StorageItems extends Record<string, any> = any> implements
      */
     clear(): void;
     toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    protected recursiveToJSON(value: any): any;
+    /**
+     * Serializes the meta to a JSON object
+     * Uses internal storage to convert to JSON
+     *
+     * @returns
+     */
+    toJSON(): _SerializedType;
 }
 
 declare enum A_TYPES__ContainerMetaKey {
@@ -1203,7 +1211,7 @@ declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Scope<A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<any, any>[]> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Fragment<any, any> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_TYPES__ScopeResolvableComponents[] | undefined)[]>;
+    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Fragment<A_TYPES__Fragment_Serialized> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_TYPES__ScopeResolvableComponents[] | undefined)[]>;
     /**
      * Resolves the component of the step
      *
@@ -2221,7 +2229,7 @@ declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
     /**
      * The primary Root scope of the concept.
      */
-    get scope(): A_Scope<A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<any, any>[]>;
+    get scope(): A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]>;
     /**
      * Register a class or value in the concept scope.
      */
@@ -2313,18 +2321,12 @@ declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
  * }
  * ```
  */
-declare class A_Fragment<_MetaItems extends Record<string, any> = any, _SerializedType extends A_TYPES__Fragment_Serialized = A_TYPES__Fragment_Serialized & _MetaItems> {
+declare class A_Fragment<_SerializedType extends A_TYPES__Fragment_Serialized = A_TYPES__Fragment_Serialized> {
     /**
      * The unique identifier/name for this fragment instance.
      * Used for identification and debugging purposes.
      */
     protected _name: string;
-    /**
-     * Internal meta storage using A_Meta for type-safe key-value operations.
-     * This stores all the fragment's runtime data that can be accessed and modified
-     * throughout the execution pipeline.
-     */
-    protected _meta: A_Meta<_MetaItems>;
     /**
      * Creates a new A_Fragment instance.
      *
@@ -2357,147 +2359,6 @@ declare class A_Fragment<_MetaItems extends Record<string, any> = any, _Serializ
      * @returns The fragment name
      */
     get name(): string;
-    /**
-     * Gets direct access to the underlying Meta object for advanced meta operations.
-     *
-     * Use this when you need to perform bulk operations or access Meta-specific methods.
-     * For simple get/set operations, prefer using the direct methods on the fragment.
-     *
-     * @returns The Meta instance containing the fragment's meta
-     *
-     * @example
-     * ```typescript
-     * const fragment = new A_Fragment<{ users: string[], count: number }>();
-     *
-     * // Advanced operations using meta
-     * fragment.meta.setMultiple({
-     *   users: ['alice', 'bob'],
-     *   count: 2
-     * });
-     *
-     * // Get all keys
-     * const keys = fragment.meta.keys();
-     * ```
-     */
-    get meta(): A_Meta<_MetaItems>;
-    /**
-     * Checks if a specific meta key exists in the fragment.
-     *
-     * @param param - The key to check for existence
-     * @returns True if the key exists, false otherwise
-     *
-     * @example
-     * ```typescript
-     * if (fragment.has('userId')) {
-     *   console.log('User ID is set');
-     * }
-     * ```
-     */
-    has(param: keyof _MetaItems): boolean;
-    /**
-     * Retrieves a value from the fragment's meta.
-     *
-     * @param param - The key to retrieve
-     * @returns The value associated with the key, or undefined if not found
-     *
-     * @example
-     * ```typescript
-     * const userId = fragment.get('userId');
-     * if (userId) {
-     *   console.log(`Current user: ${userId}`);
-     * }
-     * ```
-     */
-    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined;
-    /**
-     * Stores a value in the fragment's meta.
-     *
-     * @param param - The key to store the value under
-     * @param value - The value to store
-     *
-     * @example
-     * ```typescript
-     * fragment.set('userId', '12345');
-     * fragment.set('role', 'admin');
-     * ```
-     */
-    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void;
-    /**
-     * Removes a specific key from the fragment's meta.
-     *
-     * @param param - The key to remove
-     *
-     * @example
-     * ```typescript
-     * fragment.drop('temporaryData');
-     * ```
-     */
-    drop(param: keyof _MetaItems): void;
-    /**
-     * Clears all data from the fragment's meta.
-     *
-     * Use with caution as this will remove all stored data in the fragment.
-     *
-     * @example
-     * ```typescript
-     * fragment.clear(); // All meta data is now gone
-     * ```
-     */
-    clear(): void;
-    /**
-     * Gets the number of items stored in the fragment's meta.
-     *
-     * @returns The count of stored meta items
-     *
-     * @example
-     * ```typescript
-     * console.log(`Fragment contains ${fragment.size()} items`);
-     * ```
-     */
-    size(): number;
-    /**
-     * Gets all keys currently stored in the fragment's meta.
-     *
-     * @returns Array of all meta keys
-     *
-     * @example
-     * ```typescript
-     * const keys = fragment.keys();
-     * console.log('Stored keys:', keys);
-     * ```
-     */
-    keys(): (keyof _MetaItems)[];
-    /**
-     * Sets multiple values at once in the fragment's meta.
-     *
-     * @param data - Object containing key-value pairs to set
-     *
-     * @example
-     * ```typescript
-     * fragment.setMultiple({
-     *   userId: '12345',
-     *   role: 'admin',
-     *   lastLogin: new Date()
-     * });
-     * ```
-     */
-    setMultiple(data: A_TYPES__DeepPartial<_MetaItems>): void;
-    /**
-     * Creates a shallow copy of the fragment with the same meta data.
-     *
-     * @param newName - Optional new name for the cloned fragment
-     * @returns A new fragment instance with copied meta
-     *
-     * @example
-     * ```typescript
-     * const original = new A_Fragment<{ data: string }>({ name: 'original' });
-     * original.set('data', 'test');
-     *
-     * const clone = original.clone('cloned');
-     * console.log(clone.get('data')); // 'test'
-     * ```
-     */
-    clone(newName?: string): A_Fragment<_MetaItems, _SerializedType>;
     /**
      * Serializes the fragment to a JSON-compatible object.
      *
@@ -2734,7 +2595,7 @@ type A_TYPES__A_InjectDecorator_EntityInjectionPagination = {
     from: 'start' | 'end';
 };
 
-declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
+declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
     /**
      * Scope Name uses for identification and logging purposes
      */
@@ -2743,6 +2604,12 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Parent scope reference, used for inheritance of components, fragments, entities and commands
      */
     protected _parent?: A_Scope;
+    /**
+     * Internal meta storage using A_Meta for type-safe key-value operations.
+     * This stores all the scope's runtime data that can be accessed and modified
+     * throughout the execution pipeline or within running containers.
+     */
+    protected _meta: A_Meta<_MetaItems>;
     /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
@@ -2780,6 +2647,10 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * Returns the name of the scope
      */
     get name(): string;
+    /**
+     * Returns the meta object of the scope
+     */
+    get meta(): A_Meta<_MetaItems, Record<string, any>>;
     /**
      * Returns a list of Constructors for A-Components that are available in the scope
      */
@@ -2903,6 +2774,34 @@ declare class A_Scope<_ComponentType extends A_TYPES__Component_Constructor[] = 
      * [!] This method also clears all internal registries and collections
      */
     destroy(): void;
+    /**
+     * Retrieves a value from the scope's meta.
+     *
+     * @param param - The key to retrieve
+     * @returns The value associated with the key, or undefined if not found
+     *
+     * @example
+     * ```typescript
+     * const userId = scope.get('userId');
+     * if (userId) {
+     *   console.log(`Current user: ${userId}`);
+     * }
+     * ```
+     */
+    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined;
+    /**
+     * Stores a value in the scope's meta.
+     *
+     * @param param - The key to store the value under
+     * @param value - The value to store
+     *
+     * @example
+     * ```typescript
+     * scope.set('userId', '12345');
+     * scope.set('role', 'admin');
+     * ```
+     */
+    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void;
     /**
      * Returns the issuer of the scope, useful for debugging and tracking purposes
      *

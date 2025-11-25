@@ -4,8 +4,8 @@
  * [!] Meta can be different depending on the type of input data
  */
 export class A_Meta<
-    _StorageItems extends Record<string, any> = any
-// _StorageItems extends Record<string, Map<string | Symbol, any> | Array<any> | A_TYPES__Dictionary<any>>
+    _StorageItems extends Record<string, any> = any,
+    _SerializedType extends Record<string, any> = Record<string, any>
 > implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
 
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]> = new Map();
@@ -191,5 +191,48 @@ export class A_Meta<
 
     toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
         return Array.from(this.meta.entries());
+    }
+
+
+    protected recursiveToJSON(value: any): any {
+        switch (true) {
+            case value instanceof A_Meta:
+                return value.toJSON();
+
+            case value instanceof Map:
+                const obj: Record<string, any> = {};
+                for (const [k, v] of value.entries()) {
+                    obj[String(k)] = this.recursiveToJSON(v);
+                }
+                return obj;
+
+            case Array.isArray(value):
+                return value.map((item) => this.recursiveToJSON(item));
+
+            case !!value && typeof value === 'object':
+                const res: Record<string, any> = {};
+                for (const [k, v] of Object.entries(value)) {
+                    res[k] = this.recursiveToJSON(v);
+                }
+                return res;
+
+            default:
+                return value;
+        }
+    }
+
+    /**
+     * Serializes the meta to a JSON object
+     * Uses internal storage to convert to JSON
+     * 
+     * @returns 
+     */
+    toJSON(): _SerializedType {
+        const json: Record<string, any> = {};
+
+        for (const [key, value] of this.meta.entries()) {
+            json[String(key)] = this.recursiveToJSON(value);
+        }
+        return json as _SerializedType;
     }
 }

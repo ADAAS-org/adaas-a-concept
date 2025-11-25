@@ -35,7 +35,6 @@ import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types
 import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
-import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types";
 import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 

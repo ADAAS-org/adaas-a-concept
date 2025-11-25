@@ -10,7 +10,6 @@ import {
     A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
     A_TYPES__A_InjectDecorator_EntityInjectionQuery,
     A_TYPES__InjectableConstructors,
-    A_TYPES__InjectableTargets,
 } from "@adaas/a-concept/global/A-Inject/A-Inject.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
@@ -27,11 +26,13 @@ import { A_TYPES__Component_Constructor } from '../A-Component/A-Component.types
 import { A_TYPES__Fragment_Constructor } from '../A-Fragment/A-Fragment.types';
 import { A_TYPES__Error_Constructor } from '../A-Error/A_Error.types';
 import { A_TYPES__ComponentMetaKey } from '../A-Component/A-Component.constants';
+import { A_Meta } from '../A-Meta/A-Meta.class';
 
 
 
 
 export class A_Scope<
+    _MetaItems extends Record<string, any> = any,
     _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[],
     _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[],
     _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[],
@@ -46,6 +47,12 @@ export class A_Scope<
      * Parent scope reference, used for inheritance of components, fragments, entities and commands
      */
     protected _parent?: A_Scope;
+    /**
+     * Internal meta storage using A_Meta for type-safe key-value operations.
+     * This stores all the scope's runtime data that can be accessed and modified
+     * throughout the execution pipeline or within running containers.
+     */
+    protected _meta: A_Meta<_MetaItems> = new A_Meta<_MetaItems>();
 
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -100,7 +107,10 @@ export class A_Scope<
      * Returns the name of the scope
      */
     get name() { return this._name }
-
+    /**
+     * Returns the meta object of the scope
+     */
+    get meta() { return this._meta }
     /**
      * Returns a list of Constructors for A-Components that are available in the scope
      */
@@ -301,6 +311,41 @@ export class A_Scope<
 
 
     /**
+     * Retrieves a value from the scope's meta.
+     * 
+     * @param param - The key to retrieve
+     * @returns The value associated with the key, or undefined if not found
+     * 
+     * @example
+     * ```typescript
+     * const userId = scope.get('userId');
+     * if (userId) {
+     *   console.log(`Current user: ${userId}`);
+     * }
+     * ```
+     */
+    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined {
+        return this._meta.get(param);
+    }
+
+    /**
+     * Stores a value in the scope's meta.
+     * 
+     * @param param - The key to store the value under
+     * @param value - The value to store
+     * 
+     * @example
+     * ```typescript
+     * scope.set('userId', '12345');
+     * scope.set('role', 'admin');
+     * ```
+     */
+    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void {
+        this._meta.set(param, value);
+    }
+
+
+    /**
      * Returns the issuer of the scope, useful for debugging and tracking purposes
      * 
      * Issuer can be:
@@ -312,7 +357,7 @@ export class A_Scope<
      * @returns 
      */
     issuer<T extends A_TYPES__ScopeLinkedComponents>(): T | undefined {
-            return A_Context.issuer(this) as T;
+        return A_Context.issuer(this) as T;
     }
 
 

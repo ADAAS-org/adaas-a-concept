@@ -35,6 +35,18 @@ describe('A-Scope tests', () => {
         const resolved = scope.resolve(A_Component);
         expect(resolved).toBeUndefined();
     });
+    it('Should be possible to set and get meta variables for scope', async () => {
+        const scope = new A_Scope<{ userId: string, role: string }>({ name: 'TestScope' });
+
+        scope.set('userId', '12345');
+        scope.set('role', 'admin');
+
+        const userId = scope.get('userId');
+        const role = scope.get('role');
+
+        expect(userId).toBe('12345');
+        expect(role).toBe('admin');
+    });
     it('Should allow to register and resolve a component with dependencies', async () => {
         class DependentComponent extends A_Component {
             constructor(
