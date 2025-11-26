@@ -25,6 +25,7 @@ export type A_TYPES__Scope_Constructor<T = A_Scope> = new (...args: any[]) => T;
  * Scope initialization type
  */
 export type A_TYPES__Scope_Init<
+    _MetaItems extends Record<string, any> = any,
     _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[],
     _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[],
     _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[],
@@ -54,6 +55,8 @@ export type A_TYPES__Scope_Init<
         ..._EntityType,
         ...InstanceType<_EntityType[number]>[]
     ];
+
+    meta: Partial<_MetaItems>;
 };
 /**
  * Scope configuration type

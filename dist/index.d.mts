@@ -2718,7 +2718,7 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     /**
      * A set of constructors that are allowed in the scope
      */
-    params: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, 
+    params: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>, 
     /**
      * Configuration options for the scope
      */
@@ -2729,8 +2729,8 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @param param1
      * @returns
      */
-    protected getInitializer(param1?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, param2?: Partial<A_TYPES__ScopeConfig>): (param1: any, param2: any) => void | (() => void);
-    protected defaultInitialized(params?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>, config?: Partial<A_TYPES__ScopeConfig>): void;
+    protected getInitializer(param1?: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>, param2?: Partial<A_TYPES__ScopeConfig>): (param1: any, param2: any) => void | (() => void);
+    protected defaultInitialized(params?: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>, config?: Partial<A_TYPES__ScopeConfig>): void;
     /**
      * This method is used to initialize the components in the scope
      * To save memory components are initialized only when they are requested
@@ -2768,6 +2768,14 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected initFragments(_fragments?: _FragmentType): void;
     /**
+     * This method is used to initialize the meta in the scope
+     *
+     * This method only sets the meta values in the scope in case they are not set yet
+     *
+     * @param _meta
+     */
+    protected initMeta(_meta?: Partial<_MetaItems>): void;
+    /**
      * This method is used to destroy the scope and all its registered components, fragments and entities
      *
      * [!] This method deregisters all components, fragments and entities from the A-Context
@@ -2788,7 +2796,7 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * }
      * ```
      */
-    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined;
+    get<K extends keyof _MetaItems>(param: K): _MetaItems[K] | undefined;
     /**
      * Stores a value in the scope's meta.
      *
@@ -2801,7 +2809,7 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * scope.set('role', 'admin');
      * ```
      */
-    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void;
+    set<K extends keyof _MetaItems>(param: K, value: _MetaItems[K]): void;
     /**
      * Returns the issuer of the scope, useful for debugging and tracking purposes
      *
@@ -3209,7 +3217,7 @@ type A_TYPES__Scope_Constructor<T = A_Scope> = new (...args: any[]) => T;
 /**
  * Scope initialization type
  */
-type A_TYPES__Scope_Init<_ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> = {
+type A_TYPES__Scope_Init<_MetaItems extends Record<string, any> = any, _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> = {
     /**
      * Scope Name
      */
@@ -3234,6 +3242,7 @@ type A_TYPES__Scope_Init<_ComponentType extends A_TYPES__Component_Constructor[]
         ..._EntityType,
         ...InstanceType<_EntityType[number]>[]
     ];
+    meta: Partial<_MetaItems>;
 };
 /**
  * Scope configuration type

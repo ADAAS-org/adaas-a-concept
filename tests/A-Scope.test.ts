@@ -47,6 +47,33 @@ describe('A-Scope tests', () => {
         expect(userId).toBe('12345');
         expect(role).toBe('admin');
     });
+    it('Should be possible to set meta via constructor', async () => {
+        const scope = new A_Scope<{ userId: string, role: string }>({
+            name: 'TestScope',
+            meta: {
+                userId: '12345',
+                role: 'admin'
+            }
+        });
+
+        const userId = scope.get('userId');
+        const role = scope.get('role');
+
+        expect(userId).toBe('12345');
+        expect(role).toBe('admin');
+    });
+    it('Should properly use types and generics', async () => {
+        const scope = new A_Scope<{ userId: string, role: { name: string } }>({ name: 'TestScope' });
+
+        scope.set('userId', '12345');
+        scope.set('role', { name: 'admin' });
+
+        const userId = scope.get('userId');
+        const role = scope.get('role');
+
+        expect(userId).toBe('12345');
+        expect(role).toEqual({ name: 'admin' });
+    });
     it('Should allow to register and resolve a component with dependencies', async () => {
         class DependentComponent extends A_Component {
             constructor(

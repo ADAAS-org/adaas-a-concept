@@ -184,14 +184,14 @@ export class A_Scope<
         /**
          * A set of constructors that are allowed in the scope
          */
-        params: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>,
+        params: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>,
         /**
          * Configuration options for the scope
          */
         config?: Partial<A_TYPES__ScopeConfig>
     )
     constructor(
-        param1?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>,
+        param1?: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>,
         param2?: Partial<A_TYPES__ScopeConfig>
     ) {
         const initializer = this.getInitializer(param1);
@@ -209,7 +209,7 @@ export class A_Scope<
      * @returns
      */
     protected getInitializer(
-        param1?: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>>,
+        param1?: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>>,
         param2?: Partial<A_TYPES__ScopeConfig>
     ): (param1: any, param2: any) => void | (() => void) {
         switch (true) {
@@ -226,7 +226,7 @@ export class A_Scope<
 
 
     protected defaultInitialized(
-        params: Partial<A_TYPES__Scope_Init<_ComponentType, _ErrorType, _EntityType, _FragmentType>> = {},
+        params: Partial<A_TYPES__Scope_Init<_MetaItems, _ComponentType, _ErrorType, _EntityType, _FragmentType>> = {},
         config: Partial<A_TYPES__ScopeConfig> = {}
     ) {
         this._name = params.name || this.constructor.name
@@ -235,6 +235,7 @@ export class A_Scope<
         this.initErrors(params.errors);
         this.initFragments(params.fragments);
         this.initEntities(params.entities);
+        this.initMeta(params.meta);
 
         if (config.parent) {
             this._parent = config.parent;
@@ -282,6 +283,20 @@ export class A_Scope<
      * @param _fragments 
      */
     protected initFragments(_fragments?: _FragmentType) { _fragments?.forEach(this.register.bind(this)); }
+    /**
+     * This method is used to initialize the meta in the scope
+     * 
+     * This method only sets the meta values in the scope in case they are not set yet
+     * 
+     * @param _meta 
+     */
+    protected initMeta(_meta?: Partial<_MetaItems>) {
+        if (_meta) {
+            Object.entries(_meta).forEach(([key, value]) => {
+                this._meta.set(key as keyof _MetaItems, value as _MetaItems[keyof _MetaItems]);
+            });
+        }
+    }
 
 
     // ==========================================================================
@@ -324,7 +339,7 @@ export class A_Scope<
      * }
      * ```
      */
-    get(param: keyof _MetaItems): _MetaItems[typeof param] | undefined {
+    get<K extends keyof _MetaItems>(param: K): _MetaItems[K] | undefined {
         return this._meta.get(param);
     }
 
@@ -340,7 +355,7 @@ export class A_Scope<
      * scope.set('role', 'admin');
      * ```
      */
-    set(param: keyof _MetaItems, value: _MetaItems[typeof param]): void {
+    set<K extends keyof _MetaItems>(param: K, value: _MetaItems[K]): void {
         this._meta.set(param, value);
     }
 
@@ -1538,4 +1553,3 @@ export class A_Scope<
         console.log(chain.join(' -> '));
     }
 }
-
