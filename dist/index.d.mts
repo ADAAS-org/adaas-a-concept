@@ -482,6 +482,11 @@ declare enum A_TYPES__EntityMetaKey {
     ABSTRACTIONS = "a-component-abstractions",
     INJECTIONS = "a-component-injections"
 }
+declare enum A_TYPES__EntityFeatures {
+    SAVE = "save",
+    DESTROY = "destroy",
+    LOAD = "load"
+}
 
 /**
  * Entity interface
@@ -2009,6 +2014,9 @@ declare enum A_TYPES__ConceptAbstractions {
      * Stop the concept.
      */
     Stop = "stop"
+}
+declare enum A_TYPES__ConceptMetaKey {
+    LIFECYCLE = "a-component-extensions"
 }
 
 /**
@@ -3735,9 +3743,38 @@ declare class A_Context {
     static isAllowedForMetaConstructor(param: any): param is A_TYPES__MetaLinkedComponentConstructors;
 }
 
+declare class A_ContextError extends A_Error {
+    static NotAllowedForScopeAllocationError: string;
+    static ComponentAlreadyHasScopeAllocatedError: string;
+    static InvalidMetaParameterError: string;
+    static InvalidScopeParameterError: string;
+    static ScopeNotFoundError: string;
+    static InvalidFeatureParameterError: string;
+    static InvalidFeatureDefinitionParameterError: string;
+    static InvalidFeatureTemplateParameterError: string;
+    static InvalidFeatureExtensionParameterError: string;
+    static InvalidAbstractionParameterError: string;
+    static InvalidAbstractionDefinitionParameterError: string;
+    static InvalidAbstractionTemplateParameterError: string;
+    static InvalidAbstractionExtensionParameterError: string;
+    static InvalidInjectionParameterError: string;
+    static InvalidExtensionParameterError: string;
+    static InvalidRegisterParameterError: string;
+    static InvalidComponentParameterError: string;
+    static ComponentNotRegisteredError: string;
+    static InvalidDeregisterParameterError: string;
+}
+
 declare class A_ConceptMeta extends A_Meta<any> {
     private containers;
     constructor(containers: Array<A_Container>);
+}
+
+declare class A_EntityError extends A_Error {
+    /**
+     * Error code for validation errors.
+     */
+    static readonly ValidationError = "A-Entity Validation Error";
 }
 
 declare class A_AbstractionError extends A_Error {
@@ -3753,6 +3790,12 @@ declare class A_CallerError extends A_Error {
      */
     static readonly CallerInitializationError = "Unable to initialize A-Caller";
 }
+
+declare const A_CONSTANTS__ERROR_CODES: {
+    readonly UNEXPECTED_ERROR: "A-Error Unexpected Error";
+    readonly VALIDATION_ERROR: "A-Error Validation Error";
+};
+declare const A_CONSTANTS__ERROR_DESCRIPTION = "If you see this error please let us know.";
 
 declare class ASEID_Error extends A_Error {
     static readonly ASEIDInitializationError = "ASEID Initialization Error";
@@ -3832,6 +3875,11 @@ declare class A_DependencyError extends A_Error {
     static readonly InvalidLoadTarget = "Invalid Load Target";
     static readonly InvalidLoadPath = "Invalid Load Path";
     static readonly InvalidDefaultTarget = "Invalid Default Target";
+}
+
+declare class A_InjectError extends A_Error {
+    static readonly InvalidInjectionTarget = "Invalid target for A-Inject decorator";
+    static readonly MissingInjectionTarget = "Missing target for A-Inject decorator";
 }
 
 /**
@@ -4212,4 +4260,4 @@ declare class A_TypeGuards {
     static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T;
 }
 
-export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_Meta, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_EntityInjectionInstructions, type A_TYPES__A_InjectDecorator_EntityInjectionPagination, type A_TYPES__A_InjectDecorator_EntityInjectionQuery, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, type A_TYPES__ConceptENVVariables, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, type A_TYPES__EntityMeta, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableConstructors, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__ScopeResolvableComponents, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_EntityInjectionInstructions, type A_TYPES__A_InjectDecorator_EntityInjectionPagination, type A_TYPES__A_InjectDecorator_EntityInjectionQuery, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableConstructors, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__ScopeResolvableComponents, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

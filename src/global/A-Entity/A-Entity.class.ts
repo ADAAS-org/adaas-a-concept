@@ -8,7 +8,7 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
 import { ASEID } from "../ASEID/ASEID.class";
 import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
-import { A_Entity_Error } from "./A-Entity.error";
+import { A_EntityError } from "./A-Entity.error";
 import { A_Feature } from "../A-Feature/A-Feature.class";
 
 
@@ -236,7 +236,7 @@ export class A_Entity<
         }
 
         // none of the above -> throw consistent error
-        throw new A_Entity_Error(A_Entity_Error.ValidationError, 'Unable to determine A-Entity constructor initialization method. Please check the provided parameters.');
+        throw new A_EntityError(A_EntityError.ValidationError, 'Unable to determine A-Entity constructor initialization method. Please check the provided parameters.');
     }
 
 
