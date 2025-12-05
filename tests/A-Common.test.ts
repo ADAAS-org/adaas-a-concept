@@ -1,6 +1,7 @@
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
 import { A_TYPES__DeepPartial } from "@adaas/a-concept/types/A_Common.types";
+import { A_FormatterHelper } from "../src";
 jest.retryTimes(0);
 
 describe('A-Common Tests', () => {
@@ -56,7 +57,7 @@ describe('A-Common Tests', () => {
             c: {
                 d: string
             },
-            bool:{
+            bool: {
                 a: boolean
             },
             f: (name: string) => string
@@ -69,7 +70,7 @@ describe('A-Common Tests', () => {
             c: {
                 d: 'd'
             },
-            bool:{
+            bool: {
                 a: true
             },
             f: (name: string) => { return name },
@@ -79,10 +80,10 @@ describe('A-Common Tests', () => {
         const t2: any = {
             e: 'foo',
             b: 'bb',
-            c:{
+            c: {
                 d: 'ddd'
             },
-            bool:{
+            bool: {
                 a: false
             },
             some: {
@@ -113,5 +114,59 @@ describe('A-Common Tests', () => {
         const timestamp = parts.timestamp.getTime();
         expect(timestamp).toBeLessThanOrEqual(now);
         expect(timestamp).toBeGreaterThan(now - 60000); // within the last minute
+    });
+
+    it('Should translate all strings to Pascal Case', async () => {
+        const testStrings = [
+            { input: 'hello-world', expected: 'HelloWorld' },
+            { input: 'FooBar', expected: 'FooBar' },
+            { input: 'foo_bar', expected: 'FooBar' },
+            { input: '   leading-trailing   ', expected: 'LeadingTrailing' },
+            { input: 'multiple--separators__here', expected: 'MultipleSeparatorsHere' },
+            { input: 'alreadyPascalCase', expected: 'AlreadyPascalCase' },
+            { input: 'single', expected: 'Single' },
+            { input: '', expected: '' },
+        ];
+
+        for (const { input, expected } of testStrings) {
+            const result = A_FormatterHelper.toPascalCase(input);
+            expect(result).toBe(expected);
+        }
+    });
+
+    it('Should translate all strings to Upper Snake Case', async () => {
+        const testStrings = [
+            { input: 'hello-world', expected: 'HELLO_WORLD' },
+            { input: 'FOO_BAR', expected: 'FOO_BAR' },
+            { input: 'fooBar', expected: 'FOO_BAR' },
+            { input: '   leadingTrailing   ', expected: 'LEADING_TRAILING' },
+            { input: 'multiple--separators__here', expected: 'MULTIPLE_SEPARATORS_HERE' },
+            { input: 'already_upper_snake_case', expected: 'ALREADY_UPPER_SNAKE_CASE' },
+            { input: 'single', expected: 'SINGLE' },
+            { input: '', expected: '' },
+        ];
+
+        for (const { input, expected } of testStrings) {
+            const result = A_FormatterHelper.toUpperSnakeCase(input);
+            expect(result).toBe(expected);
+        }
+    });
+
+    it('Should translate all strings to Kebab Case', async () => {
+        const testStrings = [
+            { input: 'hello-world', expected: 'hello-world' },
+            { input: 'fooBar', expected: 'foo-bar' },
+            { input: '   leadingTrailing   ', expected: 'leading-trailing' },
+            { input: 'kebab-case', expected: 'kebab-case' },
+            { input: 'multiple--separators__here', expected: 'multiple-separators-here' },
+            { input: 'already_kebab_case', expected: 'already-kebab-case' },
+            { input: 'single', expected: 'single' },
+            { input: '', expected: '' },
+        ];
+
+        for (const { input, expected } of testStrings) {
+            const result = A_FormatterHelper.toKebabCase(input);
+            expect(result).toBe(expected);
+        }
     });
 });

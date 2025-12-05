@@ -363,9 +363,10 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         scope?: A_Scope,
     ) {
         try {
-            if (scope && !scope.isInheritedFrom(A_Context.scope(this)))
-                scope.inherit(A_Context.scope(this));
-
+            // It seems like this is a bad idea to enforce scope inheritance here
+            // ---------------------------------------------------------------
+            // if (scope && !scope.isInheritedFrom(A_Context.scope(this)))
+            //     scope.inherit(A_Context.scope(this));
 
             if (this.isProcessed)
                 return;

@@ -36,6 +36,9 @@ export type A_TYPES__A_InjectDecorator_Meta = Array<{
     require?: boolean
     load?: string
     defaultArgs?: any,
+    parent?: {
+        layerOffset?: number
+    },
     create?: boolean
     instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>,
 }>;

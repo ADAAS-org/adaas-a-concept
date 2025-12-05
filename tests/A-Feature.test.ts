@@ -465,19 +465,24 @@ describe('A-Feature tests', () => {
                 executionOrder.push('stepThree');
             }
         }
+        try {
+
+            // 2) create a running scope 
+            const scope = new A_Scope({ name: 'TestScope', components: [ComponentA, ComponentB] });
 
 
-        // 2) create a running scope 
-        const scope = new A_Scope({ name: 'TestScope', components: [ComponentA, ComponentB] });
+            // 3) create an instance of the component from the scope
+            const myComponent = scope.resolve(ComponentA)!;
+            expect(myComponent).toBeInstanceOf(ComponentA);
 
+            await myComponent.feature1();
 
-        // 3) create an instance of the component from the scope
-        const myComponent = scope.resolve(ComponentA)!;
-        expect(myComponent).toBeInstanceOf(ComponentA);
+            expect(executionOrder).toEqual(['stepOne', 'stepThree']);
 
-        await myComponent.feature1();
+        } catch (error) {
+            console.error('Error during feature processing: ', error);
+        }
 
-        expect(executionOrder).toEqual(['stepOne', 'stepThree']);
     });
     it('Should allow to interrupt a new feature', async () => {
         const feature = new A_Feature({

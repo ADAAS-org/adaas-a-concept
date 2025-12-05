@@ -136,24 +136,39 @@ export class A_Stage {
                         case A_TypeGuards.isCallerConstructor(arg.target):
                             return this._feature.caller.component;
 
-                        case A_TypeGuards.isScopeConstructor(arg.target):
-                            return scope;
-
                         case A_TypeGuards.isFeatureConstructor(arg.target):
                             return this._feature;
 
-                        case A_TypeGuards.isEntityConstructor(arg.target) && 'instructions' in arg && !!arg.instructions:
-                            return scope.resolve(arg.target, arg.instructions)
-
                         default: {
-                            const { target, require, create, defaultArgs } = arg;
+                            const { target, require, create, defaultArgs, parent } = arg;
 
-                            let dependency = scope.resolve(target as any);
+
+                            let dependency;
+                            let targetScope = scope;
+
+                            if (parent && typeof parent.layerOffset === 'number') {
+                                let parentScope = scope.parent;
+
+                                let offset = parent.layerOffset;
+
+                                while (offset < -1 && parentScope) {
+                                    parentScope = parentScope.parent;
+                                    offset++;
+                                }
+
+                                if (parentScope) {
+                                    dependency = parentScope.resolve(target);
+                                    targetScope = parentScope;
+                                }
+
+                            } else {
+                                dependency = targetScope.resolve(target);
+                            }
 
                             if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
                                 const newDependency = new target(...defaultArgs);
 
-                                scope.register(newDependency);
+                                targetScope.register(newDependency);
                                 return newDependency;
                             }
 
@@ -164,7 +179,7 @@ export class A_Stage {
                                 );
                             }
 
-                            return scope.resolve(arg.target)
+                            return dependency;
                         }
                     }
                 })
@@ -192,11 +207,11 @@ export class A_Stage {
                 break;
 
             case A_TypeGuards.isString(component):
-                instance = scope.resolve(component);
+                instance = scope.resolve(component) || this.feature.scope.resolve(component);
                 break;
 
             default:
-                instance = scope.resolve(component);
+                instance = scope.resolve(component) || this.feature.scope.resolve(component);
                 break;
         }
 

@@ -13,9 +13,11 @@ export class A_FormatterHelper {
      */
     static toUpperSnakeCase(str: string): string {
         return str
-            .replace(/([a-z])([A-Z])/g, '$1_$2')  // Handle lowercase followed by uppercase
-            .replace(/[-\s]([A-Z])/g, '_$1')      // Handle non-alphabetical followed by uppercase
-            .replace(/-/g, '_')
+            .trim()
+            .replace(/([a-z])([A-Z])/g, '$1_$2')  // Handle camelCase
+            .replace(/[^a-zA-Z0-9]+/g, '_')       // Replace non-alphanumeric with underscores
+            .replace(/_+/g, '_')                  // Collapse multiple underscores
+            .replace(/^_|_$/g, '')                // Remove leading/trailing underscores
             .toUpperCase();
     }
     /**
@@ -25,7 +27,18 @@ export class A_FormatterHelper {
      * @returns 
      */
     static toCamelCase(str: string): string {
-        return str.toLowerCase().replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+        return str
+            .trim()
+            .replace(/[^a-zA-Z0-9]+/g, ' ')       // Replace non-alphanumeric with spaces
+            .split(' ')                           // Split by spaces
+            .filter(Boolean)                      // Remove empty items
+            .map((part, index) => {
+                if (index === 0) {
+                    return part.toLowerCase();
+                }
+                return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+            })
+            .join('');
     }
     /**
      * Convert string to PascalCase
@@ -34,8 +47,14 @@ export class A_FormatterHelper {
      * @returns 
      */
     static toPascalCase(str: string): string {
-        const camelCase = this.toCamelCase(str);
-        return camelCase.charAt(0).toUpperCase() + camelCase.slice(1);
+        return str
+            .trim()
+            .replace(/([a-z])([A-Z])/g, '$1 $2')  // Insert space before uppercase in camelCase
+            .replace(/[^a-zA-Z0-9]+/g, ' ')       // Replace non-alphanumeric with spaces
+            .split(' ')                           // Split by spaces
+            .filter(Boolean)                      // Remove empty items
+            .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+            .join('');
     }
     /**
      * Convert string to kebab-case
