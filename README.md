@@ -38,7 +38,7 @@
 
 ## 📖 Overview
 
-A-Concept is a modern framework created by the ADAAS R&D team to redefine how we design and develop software in the Industry 5.0 era. It combines:
+A-Concept is a modern framework created by the ADAAS R&D teams to redefine how we design and develop software in the Industry 5.0 era. It combines:
 
 1. **The A-Concept Paradigm**: A revolutionary architectural framework rooted in an enhanced C4 model, designed to bridge software design and actual development.
 
