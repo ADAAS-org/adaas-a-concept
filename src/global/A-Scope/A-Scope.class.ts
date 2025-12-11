@@ -1023,6 +1023,13 @@ export class A_Scope<
             case fragmentInstancePresented && this._fragments.has(fragment):
                 return fragmentInstancePresented;
 
+            // 3) In case when there's a component that is inherited from the required component
+            case !fragmentInstancePresented && Array.from(this._allowedFragments).some(el => A_CommonHelper.isInheritedFrom(el, fragment)): {
+                const found = Array.from(this._allowedFragments).find(el => A_CommonHelper.isInheritedFrom(el, fragment))!;
+
+                return this.resolveFragment(found);
+            }
+
             case !fragmentInstancePresented && !!this._parent:
                 return this._parent.resolveFragment(fragment);
 
