@@ -2914,6 +2914,28 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     name: string): A_TYPES__Fragment_Constructor<T>;
     /**
+     * This method should resolve all instances of the components, or entities within the scope, by provided parent class
+     * So in case of providing a base class it should return all instances that extends this base class
+     *
+     * @param component
+     */
+    resolveAll<T extends A_Component>(
+    /**
+     * Provide a component constructor to resolve its instance from the scope
+     */
+    component: A_TYPES__Component_Constructor<T>): Array<T>;
+    resolveAll<T extends A_Fragment>(
+    /**
+     * Provide a fragment constructor to resolve its instance from the scope
+     */
+    fragment: A_TYPES__Fragment_Constructor<T>): Array<T>;
+    resolveAll<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): Array<T>;
+    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): Array<T>;
+    /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
      * - A single component/fragment/entity by its constructor or name

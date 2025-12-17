@@ -375,5 +375,63 @@ describe('A-Scope tests', () => {
 
         expect(container.scope.issuer()).toBe(container);
     });
+    it('Should be able to resolve all Component of particular type from scope', async () => {
+
+        class BaseComponent extends A_Component { }
+        class ComponentA extends BaseComponent { }
+        class ComponentB extends BaseComponent { }
+        class ComponentC extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+        scope.register(ComponentA);
+        scope.register(ComponentB);
+        scope.register(ComponentC);
+
+        const resolvedComponents = scope.resolveAll<BaseComponent>(BaseComponent);
+
+        expect(resolvedComponents.length).toBe(2);
+        //  some of  resolvedComponents should be instances of ComponentA and ComponentB
+        expect(resolvedComponents.some(c => c instanceof ComponentA)).toBe(true)
+        expect(resolvedComponents.some(c => c instanceof ComponentB)).toBe(true)
+        //  should not contain class instance of ComponentC
+        expect(resolvedComponents.some(c => c instanceof ComponentC)).toBe(false)
+
+    });
+
+    it('Should be able to resolve all Component of particular type from all parent scopes as well with priority from current scope', async () => {
+
+        class BaseComponent extends A_Component { }
+        class ComponentA extends BaseComponent { }
+        class ComponentB extends BaseComponent { }
+        class ComponentC extends BaseComponent { }
+        class ComponentD extends A_Component { }
+
+        const parentScope = new A_Scope({ name: 'ParentScope' });
+        const childScope = new A_Scope({ name: 'ChildScope' });
+
+        childScope.inherit(parentScope);
+
+        parentScope.register(ComponentA);
+        parentScope.register(ComponentB);
+        childScope.register(ComponentC);
+        childScope.register(ComponentD);
+
+
+        const resolvedComponents = childScope.resolveAll<BaseComponent>(BaseComponent);
+
+        expect(resolvedComponents.length).toBe(3);
+
+        //  should not contain class instance of ComponentD
+        expect(resolvedComponents).not.toContain(ComponentD);
+
+        //  some of  resolvedComponents should be instances of ComponentA, ComponentB and ComponentC
+        expect(resolvedComponents.some(c => c instanceof ComponentA)).toBe(true)
+        expect(resolvedComponents.some(c => c instanceof ComponentB)).toBe(true)
+        expect(resolvedComponents.some(c => c instanceof ComponentC)).toBe(true)
+
+        //  the first element should be instance of ComponentC as it is registered in child scope
+        expect(resolvedComponents[0] instanceof ComponentC).toBe(true);
+    });
 
 });

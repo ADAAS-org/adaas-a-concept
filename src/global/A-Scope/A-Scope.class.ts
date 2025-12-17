@@ -641,6 +641,117 @@ export class A_Scope<
 
 
 
+
+    /**
+     * This method should resolve all instances of the components, or entities within the scope, by provided parent class
+     * So in case of providing a base class it should return all instances that extends this base class
+     * 
+     * @param component 
+     */
+    resolveAll<T extends A_Component>(
+        /**
+         * Provide a component constructor to resolve its instance from the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): Array<T>
+    resolveAll<T extends A_Fragment>(
+        /**
+         * Provide a fragment constructor to resolve its instance from the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): Array<T>
+    resolveAll<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): Array<T>
+    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(
+        constructorName: string
+    ): Array<T>
+    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__InjectableConstructors
+    ): Array<T> {
+        const results: Array<T> = [];
+
+        switch (true) {
+            // 1) if a parameter is a component constructor
+            case A_TypeGuards.isComponentConstructor(param1): {
+                // 1) Check components
+                this.allowedComponents.forEach(ctor => {
+                    if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+                        const instance = this.resolve<T>(ctor);
+                        if (instance) results.push(instance as T);
+                    }
+                });
+                break;
+            }
+            // 2) if a parameter is a fragment constructor
+            case A_TypeGuards.isFragmentConstructor(param1): {
+                // 2) Check fragments
+                this.allowedFragments.forEach(ctor => {
+                    if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+                        const instance = this.resolve(ctor);
+                        if (instance) results.push(instance as T);
+                    }
+                });
+                break;
+            }
+
+            case A_TypeGuards.isEntityConstructor(param1): {
+                // 3) Check entities
+                this.allowedEntities.forEach(ctor => {
+                    if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+                        const instance = this.resolve<T>(ctor);
+                        if (instance) results.push(instance as T);
+                    }
+                });
+                break;
+            }
+
+            case A_TypeGuards.isString(param1): {
+                // 4) Check by name
+                const ctor = this.resolveConstructor(param1);
+                if (!A_TypeGuards.isComponentConstructor(ctor)
+                    && !A_TypeGuards.isEntityConstructor(ctor)
+                    && !A_TypeGuards.isFragmentConstructor(ctor)
+                )
+                    throw new A_ScopeError(
+                        A_ScopeError.ResolutionError,
+                        `Unable to resolve all instances for name: ${param1} in scope ${this.name} as no matching component, entity or fragment constructor found`);
+
+
+                if (ctor) {
+                    const instances = this.resolveAll<T>(ctor as any);
+                    if (instances)
+                        results.push(...instances);
+                }
+                break;
+            }
+
+            default:
+                throw new A_ScopeError(
+                    A_ScopeError.ResolutionError,
+                    `Invalid parameter provided to resolveAll method: ${param1} in scope ${this.name}`);
+        }
+
+
+        const parentScope = this._parent;
+        
+        while (parentScope && parentScope.has(param1 as any)) {
+            const parentResults = parentScope.resolveAll<T>(param1 as any);
+            results.push(...parentResults);
+            break;
+        }
+        
+
+        return results;
+    }
+
+
     /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -758,6 +869,8 @@ export class A_Scope<
             }
         }
     }
+
+
 
 
 
