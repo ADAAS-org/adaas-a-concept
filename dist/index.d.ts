@@ -688,6 +688,15 @@ declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_TYPES__
      */
     protected getInitializer(props?: string | ASEID | _SerializedType | _ConstructorType): (props: any) => void | (() => void);
     /**
+     * Generates a new ASEID for the entity.
+     * It uses class definitions for concept, scope, and entity,
+     * and allows overriding any of these values.
+     *
+     * @param override
+     * @returns
+     */
+    protected generateASEID(override?: Partial<A_TYPES__ASEID_Constructor>): ASEID;
+    /**
      * Call a feature of the component with the provided scope
      *
      * [!] If the provided scope is not inherited from the entity scope, it will be inherited

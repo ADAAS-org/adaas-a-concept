@@ -10,6 +10,7 @@ import { ASEID } from "../ASEID/ASEID.class";
 import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
 import { A_EntityError } from "./A-Entity.error";
 import { A_Feature } from "../A-Feature/A-Feature.class";
+import { A_TYPES__ASEID_Constructor } from "../ASEID/ASEID.types";
 
 
 /**
@@ -239,6 +240,23 @@ export class A_Entity<
         throw new A_EntityError(A_EntityError.ValidationError, 'Unable to determine A-Entity constructor initialization method. Please check the provided parameters.');
     }
 
+    /**
+     * Generates a new ASEID for the entity. 
+     * It uses class definitions for concept, scope, and entity,
+     * and allows overriding any of these values.
+     * 
+     * @param override 
+     * @returns 
+     */
+    protected generateASEID(override?: Partial<A_TYPES__ASEID_Constructor>): ASEID {
+        return new ASEID({
+            concept: override?.concept || (this.constructor as typeof A_Entity).concept,
+            scope: override?.scope || (this.constructor as typeof A_Entity).scope,
+            entity: override?.entity || (this.constructor as typeof A_Entity).entity,
+            id: override?.id || A_IdentityHelper.generateTimeId()
+        });
+    }
+
 
     /**
      * Call a feature of the component with the provided scope
@@ -318,12 +336,8 @@ export class A_Entity<
      * @returns 
      */
     fromUndefined(): void {
-        this.aseid = new ASEID({
-            concept: (this.constructor as typeof A_Entity).concept,
-            scope: (this.constructor as typeof A_Entity).scope,
-            entity: (this.constructor as typeof A_Entity).entity,
-            id: A_IdentityHelper.generateTimeId()
-        });
+        this.aseid = this.generateASEID();
+        
         return;
     }
 
@@ -336,12 +350,7 @@ export class A_Entity<
      * @returns 
      */
     fromNew(newEntity: _ConstructorType): void {
-        this.aseid = new ASEID({
-            concept: (this.constructor as typeof A_Entity).concept,
-            scope: (this.constructor as typeof A_Entity).scope,
-            entity: (this.constructor as typeof A_Entity).entity,
-            id: A_IdentityHelper.generateTimeId()
-        });
+        this.aseid =  this.generateASEID();
 
         return;
     }
