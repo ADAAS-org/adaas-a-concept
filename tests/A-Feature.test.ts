@@ -5,7 +5,7 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
-import { A_Error, A_TYPES__FeatureState } from "../src";
+import { A_Entity, A_Error, A_TYPES__FeatureState } from "../src";
 
 jest.retryTimes(0);
 
@@ -582,4 +582,47 @@ describe('A-Feature tests', () => {
         });
 
     }, 5000);
+    it('Should allow to use extension if only parent class provided', async () => {
+        const executionResults: string[] = [];
+
+        class BaseEntity extends A_Entity {
+           async test() {
+                await this.call('myFeature');
+            }
+
+        }
+
+        class MyComponent extends A_Component {
+
+            @A_Feature.Extend({
+                name: 'myFeature',
+                scope: [BaseEntity]
+            })
+             testMethod() {
+                executionResults.push('testMethod');
+            }
+        }
+
+        class My_Entity extends BaseEntity {
+
+        }
+
+        const scope = new A_Scope({ name: 'TestScope', components: [MyComponent] });
+
+
+        const myEntity = new My_Entity({ name: 'MyEntityInstance' });
+        const baseEntity = new BaseEntity({ name: 'BaseEntityInstance' });
+
+
+        scope.register(myEntity);
+        scope.register(baseEntity);
+
+        await baseEntity.test();
+
+        expect(executionResults).toEqual(['testMethod']);
+
+        await myEntity.test();
+
+        expect(executionResults).toEqual(['testMethod', 'testMethod']);
+    });
 });

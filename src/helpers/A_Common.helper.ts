@@ -30,6 +30,68 @@ export class A_CommonHelper {
         return false;
     }
 
+
+    /**
+     * Get all parent classes of a given class
+     * 
+     * @param childClass 
+     * @returns 
+     */
+    static getParentClasses(childClass: any): any[] {
+
+        // first we need to check is that a constructor or instance
+        let current = typeof childClass === 'function'
+            ? Object.getPrototypeOf(childClass)
+            : Object.getPrototypeOf(childClass.constructor);
+
+        const parents = [] as any[];
+
+        // Traverse the prototype chain
+        while (current && current !== Function.prototype) {
+            parents.push(current);
+            current = Object.getPrototypeOf(current);
+        }
+        return parents;
+
+    }
+
+    /**
+     * Get the class inheritance chain as an array of class names
+     * 
+     * @param childClass 
+     * @returns 
+     */
+    static getClassInheritanceChain(childClass: any): any[] {
+
+        //  first we need to check is that a constructor or instance
+        let current = typeof childClass === 'function'
+            ? Object.getPrototypeOf(childClass)
+            : Object.getPrototypeOf(childClass.constructor);
+
+        //  then if input is instance we have to include its own class name
+        const chain = typeof childClass === 'function'
+            ? [childClass]
+            : [childClass.constructor];
+
+
+        // Traverse the prototype chain
+        while (current && current !== Function.prototype) {
+            chain.push(current);
+            current = Object.getPrototypeOf(current);
+        }
+        return chain;
+    }
+
+    /**
+     * Get the parent class of a given class
+     * 
+     * @param childClass 
+     * @returns 
+     */
+    static getParentClass(childClass: any): any {
+        return Object.getPrototypeOf(childClass);
+    }
+
     /**
      *  Omit properties from an object or array with nested objects
      * 

@@ -709,26 +709,33 @@ export class A_Context {
         if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
             throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
 
-        const callName = `${component.constructor.name}.${name}`;
+
+        const callNames = A_CommonHelper.getClassInheritanceChain(component)
+            .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
+            .map(c => `${c.name}.${name}`);
+
+        // const callName = `${component.constructor.name}.${name}`;
 
         const steps: A_TYPES__A_StageStep[] = [];
 
-        // We need to get all components that has extensions for the feature in component
-        for (const [cmp, meta] of instance._metaStorage) {
-            // Just try to make sure that component not only Indexed but also presented in scope
-            if (scope.has(cmp) && (
-                A_TypeGuards.isComponentMetaInstance(meta)
-                || A_TypeGuards.isContainerMetaInstance(meta)
-            )) {
-                // Get all extensions for the feature
-                meta
-                    .extensions(callName)
-                    .forEach((declaration) => {
-                        steps.push({
-                            component: cmp,
-                            ...declaration
+        for (const callName of callNames) {
+            // We need to get all components that has extensions for the feature in component
+            for (const [cmp, meta] of instance._metaStorage) {
+                // Just try to make sure that component not only Indexed but also presented in scope
+                if (scope.has(cmp) && (
+                    A_TypeGuards.isComponentMetaInstance(meta)
+                    || A_TypeGuards.isContainerMetaInstance(meta)
+                )) {
+                    // Get all extensions for the feature
+                    meta
+                        .extensions(callName)
+                        .forEach((declaration) => {
+                            steps.push({
+                                component: cmp,
+                                ...declaration
+                            });
                         });
-                    });
+                }
             }
         }
 

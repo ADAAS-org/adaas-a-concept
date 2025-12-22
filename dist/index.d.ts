@@ -4041,6 +4041,27 @@ declare class A_CommonHelper {
      */
     static isInheritedFrom(childClass: any, parentClass: any): boolean;
     /**
+     * Get all parent classes of a given class
+     *
+     * @param childClass
+     * @returns
+     */
+    static getParentClasses(childClass: any): any[];
+    /**
+     * Get the class inheritance chain as an array of class names
+     *
+     * @param childClass
+     * @returns
+     */
+    static getClassInheritanceChain(childClass: any): any[];
+    /**
+     * Get the parent class of a given class
+     *
+     * @param childClass
+     * @returns
+     */
+    static getParentClass(childClass: any): any;
+    /**
      *  Omit properties from an object or array with nested objects
      *
      * @param input
