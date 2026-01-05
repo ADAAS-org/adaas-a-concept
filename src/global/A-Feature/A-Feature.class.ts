@@ -474,6 +474,66 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     }
 
 
+    /**
+     * Allows to chain the feature to another feature. 
+     * In this case the parent feature scope (if new not provided), stages, caller will be used.
+     * 
+     * [!] Note: Chained feature will use the same caller as the parent feature.
+     * 
+     * @param feature 
+     */
+    chain(
+        /**
+         * A Feature to be chained
+         */
+        feature: A_Feature,
+        /**
+         * Optional scope to be used for the chained feature.
+         */
+        scope?: A_Scope
+    )
+    chain<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents>(
+        /**
+         * Component whose feature should be chained
+         */
+        component: A_TYPES__FeatureAvailableComponents,
+        /**
+         * A Feature Name to be chained
+         */
+        feature: string,
+        /**
+         * Optional scope to be used for the chained feature.
+         */
+        scope?: A_Scope
+    )
+    chain<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents>(
+        param1: A_TYPES__FeatureAvailableComponents | A_Feature,
+        param2?: string | A_Scope,
+        param3?: A_Scope
+    ) {
+        let feature: A_Feature;
+        let scope: A_Scope | undefined;
+
+        if (param1 instanceof A_Feature) {
+            feature = param1;
+            scope = param2 instanceof A_Scope ? param2 : undefined;
+        } else {
+            feature = new A_Feature({
+                name: param2 as string,
+                component: param1 as T
+            });
+            scope = param3 instanceof A_Scope ? param3 : undefined;
+        }
+
+        const featureScope = scope || this.scope;
+
+        // create new caller for the chained feature
+        feature._caller = this._caller;
+
+        return feature.process(featureScope);
+    }
+
+
 
 
     toString(): string {

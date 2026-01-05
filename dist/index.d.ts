@@ -1536,6 +1536,36 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      * The reason of feature interruption
      */
     reason?: string | A_StageError | Error): Promise<void>;
+    /**
+     * Allows to chain the feature to another feature.
+     * In this case the parent feature scope (if new not provided), stages, caller will be used.
+     *
+     * [!] Note: Chained feature will use the same caller as the parent feature.
+     *
+     * @param feature
+     */
+    chain(
+    /**
+     * A Feature to be chained
+     */
+    feature: A_Feature, 
+    /**
+     * Optional scope to be used for the chained feature.
+     */
+    scope?: A_Scope): any;
+    chain<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents>(
+    /**
+     * Component whose feature should be chained
+     */
+    component: A_TYPES__FeatureAvailableComponents, 
+    /**
+     * A Feature Name to be chained
+     */
+    feature: string, 
+    /**
+     * Optional scope to be used for the chained feature.
+     */
+    scope?: A_Scope): any;
     toString(): string;
 }
 

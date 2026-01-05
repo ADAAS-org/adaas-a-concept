@@ -586,7 +586,7 @@ describe('A-Feature tests', () => {
         const executionResults: string[] = [];
 
         class BaseEntity extends A_Entity {
-           async test() {
+            async test() {
                 await this.call('myFeature');
             }
 
@@ -598,7 +598,7 @@ describe('A-Feature tests', () => {
                 name: 'myFeature',
                 scope: [BaseEntity]
             })
-             testMethod() {
+            testMethod() {
                 executionResults.push('testMethod');
             }
         }
@@ -624,5 +624,46 @@ describe('A-Feature tests', () => {
         await myEntity.test();
 
         expect(executionResults).toEqual(['testMethod', 'testMethod']);
+    });
+    it('Should allow be possible to do a Feature Chaining without Caller Change', async () => {
+        const executionResults: string[] = [];
+
+        class Component_B extends A_Component {
+
+            @A_Feature.Extend()
+            featureB(
+                @A_Inject(A_Caller) caller: Component_A
+            ) {
+                executionResults.push('featureB');
+
+                expect(caller).toBeInstanceOf(Component_A);
+            }
+        }
+
+        class Component_A extends A_Component {
+
+            @A_Feature.Extend()
+            async featureA(
+                @A_Inject(A_Feature) feature: A_Feature,
+                @A_Inject(Component_B) compb: Component_B
+            ) {
+                executionResults.push('featureA');
+
+                await feature.chain(compb, 'featureB');
+            }
+        }
+
+
+
+        const scope = new A_Scope({ name: 'TestScope', components: [Component_A, Component_B] });
+
+
+        const compA = scope.resolve(Component_A)!;
+
+        await compA.call('featureA');
+
+        expect(executionResults).toEqual(['featureA', 'featureB']);
+
+
     });
 });
