@@ -433,5 +433,23 @@ describe('A-Scope tests', () => {
         //  the first element should be instance of ComponentC as it is registered in child scope
         expect(resolvedComponents[0] instanceof ComponentC).toBe(true);
     });
+    it('Should resolve all entities registered in the scope', async () => {
 
+        class MyEntity extends A_Entity { }
+
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+        scope.register(new MyEntity());
+        scope.register(new MyEntity());
+        scope.register(new MyEntity());
+
+        const resolvedEntities = scope.resolveAll<MyEntity>(MyEntity);
+
+        expect(resolvedEntities.length).toBe(3);
+        resolvedEntities.forEach(entity => {
+            expect(entity).toBeInstanceOf(MyEntity);
+        });
+
+    });
 });

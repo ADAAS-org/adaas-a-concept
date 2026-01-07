@@ -703,10 +703,9 @@ export class A_Scope<
 
             case A_TypeGuards.isEntityConstructor(param1): {
                 // 3) Check entities
-                this.allowedEntities.forEach(ctor => {
-                    if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
-                        const instance = this.resolve<T>(ctor);
-                        if (instance) results.push(instance as T);
+                this.entities.forEach(entity => {
+                    if (A_CommonHelper.isInheritedFrom(entity.constructor, param1)) {
+                        results.push(entity as T);
                     }
                 });
                 break;
@@ -740,13 +739,13 @@ export class A_Scope<
 
 
         const parentScope = this._parent;
-        
+
         while (parentScope && parentScope.has(param1 as any)) {
             const parentResults = parentScope.resolveAll<T>(param1 as any);
             results.push(...parentResults);
             break;
         }
-        
+
 
         return results;
     }
