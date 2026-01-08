@@ -2917,6 +2917,41 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     constructor: string): boolean;
     /**
+     * This method is used to check if the component is available in the scope
+     *
+     * [!] Note that this method checks for the component ONLY in the current scope
+     *
+     * @param component
+     * @returns
+     */
+    hasFlat<T extends A_Component>(
+    /**
+     * Provide a component constructor to check if it's available in the scope
+     */
+    component: A_TYPES__Component_Constructor<T>): boolean;
+    hasFlat<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to check if it's available in the scope
+     *
+     * [!] Note that entities are unique per aseid, so this method checks if there's at least one entity of the provided type in the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): boolean;
+    hasFlat<T extends A_Fragment>(
+    /**
+     * Provide a fragment constructor to check if it's available in the scope
+     */
+    fragment: A_TYPES__Fragment_Constructor<T>): boolean;
+    hasFlat<T extends A_Error>(
+    /**
+     * Provide an error constructor to check if it's available in the scope
+     */
+    error: A_TYPES__Error_Constructor<T>): boolean;
+    hasFlat(
+    /**
+     * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
+     */
+    constructor: string): boolean;
+    /**
      * Merges two scopes into a new one
      *
      * [!] Notes:
@@ -2956,6 +2991,8 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
      *
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     *
      * @param component
      */
     resolveAll<T extends A_Component>(
@@ -2974,6 +3011,30 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     entity: A_TYPES__Entity_Constructor<T>): Array<T>;
     resolveAll<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): Array<T>;
+    /**
+     * This method should resolve all instances of the components, or entities within the scope, by provided parent class
+     * So in case of providing a base class it should return all instances that extends this base class
+     *
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     *
+     * @param component
+     */
+    resolveFlatAll<T extends A_Component>(
+    /**
+     * Provide a component constructor to resolve its instance from the scope
+     */
+    component: A_TYPES__Component_Constructor<T>): Array<T>;
+    resolveFlatAll<T extends A_Fragment>(
+    /**
+     * Provide a fragment constructor to resolve its instance from the scope
+     */
+    fragment: A_TYPES__Fragment_Constructor<T>): Array<T>;
+    resolveFlatAll<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): Array<T>;
+    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): Array<T>;
     /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -3044,14 +3105,92 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     param1: InstanceType<T>): T | Array<T> | undefined;
     /**
+     * This polymorphic method allows to resolve/inject a component, fragment or entity from the scope
+     * Depending on the provided parameters it can resolve:
+     * - A single component/fragment/entity by its constructor or name
+     * - An array of components/fragments/entities by providing an array of constructors
+     * - An entity or an array of entities by providing the entity constructor and query instructions
+     *
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     *
+     * @param component
+     */
+    resolveFlat<T extends A_Component>(
+    /**
+     * Provide a component constructor to resolve its instance from the scope
+     */
+    component: A_TYPES__Component_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_TYPES__Component_Constructor[]>(
+    /**
+     * Provide an array of component constructors to resolve their instances from the scope
+     */
+    components: [...T]): Array<InstanceType<T[number]>> | undefined;
+    resolveFlat<T extends A_Fragment>(
+    /**
+     * Provide a fragment constructor to resolve its instance from the scope
+     */
+    fragment: A_TYPES__Fragment_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_TYPES__Fragment_Constructor[]>(
+    /**
+     * Provide an array of fragment constructors to resolve their instances from the scope
+     */
+    fragments: [...T]): Array<InstanceType<T[number]>> | undefined;
+    resolveFlat<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>, 
+    /**
+     * Provide optional instructions to find a specific entity or a set of entities
+     */
+    instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
+    resolveFlat<T extends A_Scope>(
+    /**
+     * Uses only in case of resolving a single entity
+     *
+     * Provide an entity constructor to resolve its instance from the scope
+     */
+    scope: A_TYPES__Scope_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_Error>(
+    /**
+     * Uses only in case of resolving a single entity
+     *
+     * Provide an entity constructor to resolve its instance from the scope
+     */
+    scope: A_TYPES__Error_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): T | undefined;
+    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    param1: A_TYPES__InjectableConstructors): T | Array<T> | undefined;
+    resolveFlat<T extends A_TYPES__ScopeLinkedConstructors>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    param1: InstanceType<T>): T | Array<T> | undefined;
+    /**
      * This method is used internally to resolve a component, fragment or entity by its constructor name
      *
      * [!] Note that this method checks for the component, fragment or entity in the current scope and all parent scopes
+     * [!!] Note: No parent scopes are checked
      *
      * @param name  - name of the component, fragment or entity to resolve (constructor name for components and fragments, static entity property for entities, static code property for commands)
      * @returns
      */
     private resolveByName;
+    /**
+     * Resolves a component, fragment or entity from the scope without checking parent scopes
+     *
+     * @param component
+     * @param instructions
+     */
+    private resolveFlatOnce;
     /**
      * This method is used internally to resolve a single component, fragment or entity from the scope
      *
@@ -3060,11 +3199,22 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @returns
      */
     private resolveOnce;
+    /**
+     * Resolves the issuer of the scope by provided constructor
+     *
+     * [!] Note that this method checks ONLY for the direct issuer of the scope
+     * [!!] No parent scopes are checked
+     *
+     *
+     * @param ctor
+     * @returns
+     */
     private resolveIssuer;
     /**
      * This method is used internally to resolve a single entity from the scope based on the provided instructions
      *
      * [!] Note that this method can return either a single entity or an array of entities depending on the instructions provided
+     * [!!] Note: No parent scopes are checked
      *
      * @param entity
      * @param instructions
@@ -3074,12 +3224,17 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     /**
      * This method is used internally to resolve a single error from the scope
      *
+     * [!] Note that errors are singleton instances within the scope
+     * [!!] No parent scopes are checked
+     *
      * @param error
      * @returns
      */
     private resolveError;
     /**
      * This method is used internally to resolve a single fragment from the scope
+     *
+     * [!] Note that this method checks for the fragment in the current scope and all parent scopes
      *
      * @param fragment
      * @returns
@@ -3094,6 +3249,8 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     private resolveScope;
     /**
      * This method is used internally to resolve a single component from the scope
+     *
+     * [!!] Note: No parent scopes are checked
      *
      * @param component
      * @returns

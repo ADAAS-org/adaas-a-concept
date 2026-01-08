@@ -452,4 +452,228 @@ describe('A-Scope tests', () => {
         });
 
     });
+    it('Should resolve entities from both current and parent scopes with resolveAll', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedEntities = scope.resolveAll<MyEntity_A>(MyEntity_A);
+
+        expect(resolvedEntities.length).toBe(2);
+        expect(resolvedEntities[0].name).toBe('Entity2');
+        expect(resolvedEntities[0]).toBeInstanceOf(MyEntity_A);
+        expect(resolvedEntities[1].name).toBe('Entity1');
+        expect(resolvedEntities[1]).toBeInstanceOf(MyEntity_B);
+    });
+
+    it('Should resolve entities from current scope only with resolveFlatAll', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedFlatEntities = scope.resolveFlatAll<MyEntity_A>(MyEntity_A);
+
+        expect(resolvedFlatEntities.length).toBe(1);
+        expect(resolvedFlatEntities[0].name).toBe('Entity2');
+        expect(resolvedFlatEntities[0]).toBeInstanceOf(MyEntity_A);
+    });
+
+    it('Should resolve base class entity from current scope with resolve', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedA = scope.resolve<MyEntity_A>(MyEntity_A);
+
+        expect(resolvedA).toBeDefined();
+        expect(resolvedA?.name).toBe('Entity2');
+        expect(resolvedA).toBeInstanceOf(MyEntity_A);
+        expect(resolvedA).not.toBeInstanceOf(MyEntity_B);
+    });
+
+    it('Should resolve derived class entity from parent scope with resolve', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedB = scope.resolve<MyEntity_B>(MyEntity_B);
+
+        expect(resolvedB).toBeDefined();
+        expect(resolvedB?.name).toBe('Entity1');
+        expect(resolvedB).toBeInstanceOf(MyEntity_B);
+    });
+
+    it('Should not resolve derived class entity from parent scope with resolveFlat', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedFlatB = scope.resolveFlat<MyEntity_A>(MyEntity_B);
+        expect(resolvedFlatB).toBeUndefined();
+    });
+
+    it('Should resolve entity by class name from current scope', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedByNameA = scope.resolve<MyEntity_A>('MyEntity_A');
+        expect(resolvedByNameA).toBeInstanceOf(MyEntity_A);
+        expect(resolvedByNameA?.name).toBe('Entity2');
+    });
+
+    it('Should resolve entity by class name from parent scope', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolvedByName = scope.resolve<MyEntity_B>('MyEntity_B');
+        expect(resolvedByName).toBeInstanceOf(MyEntity_B);
+        expect(resolvedByName?.name).toBe('Entity1');
+    });
+
+    it('Should not resolve entity by class name from parent scope with resolveFlat', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const parentScope = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        }).inherit(parentScope);
+
+        const resolveByNameFlat = scope.resolveFlat<MyEntity_A>('MyEntity_B');
+        expect(resolveByNameFlat).toBeUndefined();
+    });
 });

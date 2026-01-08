@@ -460,6 +460,63 @@ export class A_Scope<
         ctor: unknown
     ): boolean {
 
+        let found = this.hasFlat(ctor as any);
+        
+        if (!found && !!this._parent)
+            try {
+                return this._parent.has(ctor as any);
+            } catch (error) {
+                return false;
+            }
+
+        return found;
+    }
+
+
+    /**
+     * This method is used to check if the component is available in the scope
+     * 
+     * [!] Note that this method checks for the component ONLY in the current scope
+     * 
+     * @param component 
+     * @returns 
+     */
+    hasFlat<T extends A_Component>(
+        /**
+         * Provide a component constructor to check if it's available in the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): boolean
+    hasFlat<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to check if it's available in the scope
+         * 
+         * [!] Note that entities are unique per aseid, so this method checks if there's at least one entity of the provided type in the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): boolean
+    hasFlat<T extends A_Fragment>(
+        /**
+         * Provide a fragment constructor to check if it's available in the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): boolean
+    hasFlat<T extends A_Error>(
+        /**
+         * Provide an error constructor to check if it's available in the scope
+         */
+        error: A_TYPES__Error_Constructor<T>
+    ): boolean
+    hasFlat(
+        /**
+         * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
+         */
+        constructor: string
+    ): boolean
+    hasFlat(
+        ctor: unknown
+    ): boolean {
+
         let found = false;
 
         switch (true) {
@@ -468,7 +525,8 @@ export class A_Scope<
                 return true;
 
             // 2) Check by string name.  
-            case typeof ctor === 'string': {
+            case A_TypeGuards.isString(ctor): {
+
                 // 2.1 Check if it's a component name
                 const possibleComponent = Array.from(this.allowedComponents).find(c => c.name === ctor);
                 if (possibleComponent) found = true;
@@ -485,11 +543,7 @@ export class A_Scope<
                 const possibleError = Array.from(this.allowedErrors).find(e => e.name === ctor);
                 if (possibleError) found = true;
 
-                // 2.5 If not found in current scope, check parent scope
-                if (!!this._parent)
-                    return this._parent.has(ctor);
-
-                return false;
+                break;
             }
             // 3) Check if it's a Component
             case A_TypeGuards.isComponentConstructor(ctor): {
@@ -535,15 +589,6 @@ export class A_Scope<
                     break;
                 }
         }
-
-        // 7) Check parent scope in case not found
-        if (!found && !!this._parent)
-            try {
-                return this._parent.has(ctor as any);
-            } catch (error) {
-                return false;
-            }
-
 
         return found;
     }
@@ -646,6 +691,8 @@ export class A_Scope<
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
      * 
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     * 
      * @param component 
      */
     resolveAll<T extends A_Component>(
@@ -675,6 +722,68 @@ export class A_Scope<
          */
         param1: A_TYPES__InjectableConstructors
     ): Array<T> {
+
+        const results: Array<T> = [];
+
+        // 1) Resolve all in the current scope
+        const currentResults = this.resolveFlatAll<T>(param1 as any);
+        results.push(...currentResults);
+
+        // 2) Resolve all in the parent scope
+
+        let parentScope = this._parent;
+
+        while (parentScope && parentScope.has(param1 as any)) {
+            const parentResults = parentScope.resolveFlatAll<T>(param1 as any);
+            results.push(...parentResults);
+
+            // Move to the next parent scope
+            parentScope = parentScope._parent;
+        }
+
+
+        return results;
+    }
+
+
+
+
+    /**
+     * This method should resolve all instances of the components, or entities within the scope, by provided parent class
+     * So in case of providing a base class it should return all instances that extends this base class
+     * 
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     * 
+     * @param component 
+     */
+    resolveFlatAll<T extends A_Component>(
+        /**
+         * Provide a component constructor to resolve its instance from the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): Array<T>
+    resolveFlatAll<T extends A_Fragment>(
+        /**
+         * Provide a fragment constructor to resolve its instance from the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): Array<T>
+    resolveFlatAll<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): Array<T>
+    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(
+        constructorName: string
+    ): Array<T>
+    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__InjectableConstructors
+    ): Array<T> {
+
         const results: Array<T> = [];
 
         switch (true) {
@@ -704,6 +813,7 @@ export class A_Scope<
             case A_TypeGuards.isEntityConstructor(param1): {
                 // 3) Check entities
                 this.entities.forEach(entity => {
+
                     if (A_CommonHelper.isInheritedFrom(entity.constructor, param1)) {
                         results.push(entity as T);
                     }
@@ -738,17 +848,9 @@ export class A_Scope<
         }
 
 
-        const parentScope = this._parent;
-
-        while (parentScope && parentScope.has(param1 as any)) {
-            const parentResults = parentScope.resolveAll<T>(param1 as any);
-            results.push(...parentResults);
-            break;
-        }
-
-
         return results;
     }
+
 
 
     /**
@@ -843,29 +945,114 @@ export class A_Scope<
         param1: A_TYPES__InjectableConstructors | Array<A_TYPES__InjectableConstructors>,
         param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): T | Array<T> | undefined {
-        switch (true) {
-            case A_TypeGuards.isArray(param1): {
-                return param1.map(c => {
-                    if (A_TypeGuards.isString(c))
-                        return this.resolveByName(c);
-                    else
-                        return this.resolveOnce(c, param2);
-                }).filter(Boolean) as Array<T>;
-            }
 
-            case A_TypeGuards.isFunction(param1): {
-                return this.resolveOnce(param1, param2) as T;
-            }
 
-            case A_TypeGuards.isString(param1): {
-                return this.resolveByName(param1) as T;
-            }
+        if (A_TypeGuards.isArray(param1)) {
+            return param1.map(c => this.resolveOnce(c, param2)) as Array<T>;
+        } else {
+            return this.resolveOnce(param1, param2) as T;
+        }
+    }
 
-            default: {
-                throw new A_ScopeError(
-                    A_ScopeError.ResolutionError,
-                    `Invalid parameter provided to resolve method: ${param1} in scope ${this.name}`);
-            }
+
+    /**
+     * This polymorphic method allows to resolve/inject a component, fragment or entity from the scope
+     * Depending on the provided parameters it can resolve:
+     * - A single component/fragment/entity by its constructor or name
+     * - An array of components/fragments/entities by providing an array of constructors
+     * - An entity or an array of entities by providing the entity constructor and query instructions
+     * 
+     * [!] Applicable for the current scope ONLY, no parent scopes are checked
+     * 
+     * @param component 
+     */
+    resolveFlat<T extends A_Component>(
+        /**
+         * Provide a component constructor to resolve its instance from the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): T | undefined
+    resolveFlat<T extends A_TYPES__Component_Constructor[]>(
+        /**
+         * Provide an array of component constructors to resolve their instances from the scope
+         */
+        components: [...T]
+    ): Array<InstanceType<T[number]>> | undefined
+    resolveFlat<T extends A_Fragment>(
+        /**
+         * Provide a fragment constructor to resolve its instance from the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): T | undefined
+    resolveFlat<T extends A_TYPES__Fragment_Constructor[]>(
+        /**
+         * Provide an array of fragment constructors to resolve their instances from the scope
+         */
+        fragments: [...T]
+    ): Array<InstanceType<T[number]>> | undefined
+    resolveFlat<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): T | undefined
+
+    resolveFlat<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>,
+        /**
+         * Provide optional instructions to find a specific entity or a set of entities
+         */
+        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
+    ): Array<T>
+    resolveFlat<T extends A_Scope>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        scope: A_TYPES__Scope_Constructor<T>
+    ): T | undefined
+    resolveFlat<T extends A_Error>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        scope: A_TYPES__Error_Constructor<T>
+    ): T | undefined
+    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+        constructorName: string
+    ): T | undefined
+    // base definition
+    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__InjectableConstructors,
+
+    ): T | Array<T> | undefined
+    resolveFlat<T extends A_TYPES__ScopeLinkedConstructors>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: InstanceType<T>,
+
+    ): T | Array<T> | undefined
+    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__InjectableConstructors | Array<A_TYPES__InjectableConstructors>,
+        param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
+    ): T | Array<T | undefined> | undefined {
+
+        if (A_TypeGuards.isArray(param1)) {
+            return param1.map(c => this.resolveFlatOnce(c, param2)) as Array<T>;
+        } else {
+            return this.resolveFlatOnce(param1, param2) as T;
         }
     }
 
@@ -883,6 +1070,7 @@ export class A_Scope<
      * This method is used internally to resolve a component, fragment or entity by its constructor name
      * 
      * [!] Note that this method checks for the component, fragment or entity in the current scope and all parent scopes
+     * [!!] Note: No parent scopes are checked
      * 
      * @param name  - name of the component, fragment or entity to resolve (constructor name for components and fragments, static entity property for entities, static code property for commands)
      * @returns 
@@ -925,12 +1113,64 @@ export class A_Scope<
         );
         if (error) return this.resolveOnce(error) as InstanceType<_ErrorType[number]>;
 
-        // If not found in current scope, check parent scope
-        if (!!this._parent) {
-            return this._parent.resolveByName(name) as any;
+        return undefined;
+    }
+
+    /**
+     * Resolves a component, fragment or entity from the scope without checking parent scopes
+     * 
+     * @param component 
+     * @param instructions 
+     */
+    private resolveFlatOnce(
+        component: any,
+        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
+    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
+
+        let value: A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined = undefined;
+
+        const componentName = A_CommonHelper.getComponentName(component);
+
+        if (!component || !this.has(component))
+            return undefined;
+
+        switch (true) {
+            case A_TypeGuards.isString(component): {
+                value = this.resolveByName(component) as A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | undefined;
+                break;
+            }
+            case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
+                value = this.resolveIssuer(component);
+                break;
+            }
+            case A_TypeGuards.isEntityConstructor(component): {
+                value = this.resolveEntity(component, instructions);
+                break;
+            }
+            case A_TypeGuards.isFragmentConstructor(component): {
+                value = this.resolveFragment(component);
+                break;
+            }
+            case A_TypeGuards.isScopeConstructor(component): {
+                value = this.resolveScope(component);
+                break;
+            }
+            case A_TypeGuards.isComponentConstructor(component): {
+                value = this.resolveComponent(component);
+                break;
+            }
+            case A_TypeGuards.isErrorConstructor(component): {
+                value = this.resolveError(component);
+                break;
+            }
+            default:
+                throw new A_ScopeError(
+                    A_ScopeError.ResolutionError,
+                    `Injected Component ${componentName} not found in the scope`
+                );
         }
 
-        return undefined;
+        return value;
     }
 
     /**
@@ -945,39 +1185,28 @@ export class A_Scope<
         instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
     ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
 
+        const values = this.resolveFlatOnce(component, instructions);
 
-        const componentName = A_CommonHelper.getComponentName(component);
-
-        if (!component || !this.has(component))
-            return undefined;
-
-        switch (true) {
-            case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
-                return this.resolveIssuer(component);
-            }
-            case A_TypeGuards.isEntityConstructor(component): {
-                return this.resolveEntity(component, instructions);
-            }
-            case A_TypeGuards.isFragmentConstructor(component): {
-                return this.resolveFragment(component);
-            }
-            case A_TypeGuards.isScopeConstructor(component): {
-                return this.resolveScope(component);
-            }
-            case A_TypeGuards.isComponentConstructor(component): {
-                return this.resolveComponent(component);
-            }
-            case A_TypeGuards.isErrorConstructor(component): {
-                return this.resolveError(component);
-            }
-            default:
-                throw new A_ScopeError(
-                    A_ScopeError.ResolutionError,
-                    `Injected Component ${componentName} not found in the scope`
-                );
+        //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
+        //  That means that we should ensure that there's no components that are children of the required component
+        if (!values && !!this.parent) {
+            return this.parent.resolveOnce(component, instructions);
         }
+
+        return values;
     }
 
+
+    /**
+     * Resolves the issuer of the scope by provided constructor
+     * 
+     * [!] Note that this method checks ONLY for the direct issuer of the scope
+     * [!!] No parent scopes are checked
+     * 
+     * 
+     * @param ctor 
+     * @returns 
+     */
     private resolveIssuer(
         ctor: A_TYPES__ScopeLinkedConstructors
     ): A_TYPES__ScopeLinkedComponents | undefined {
@@ -991,9 +1220,7 @@ export class A_Scope<
             )) {
             return issuer!;
         }
-        if (!!this._parent) {
-            return this._parent.resolveIssuer(ctor);
-        }
+
 
         return undefined;
     }
@@ -1002,6 +1229,7 @@ export class A_Scope<
      * This method is used internally to resolve a single entity from the scope based on the provided instructions
      * 
      * [!] Note that this method can return either a single entity or an array of entities depending on the instructions provided
+     * [!!] Note: No parent scopes are checked  
      * 
      * @param entity 
      * @param instructions 
@@ -1023,18 +1251,7 @@ export class A_Scope<
              * [!!] In case when no entity found in the current scope, it tries to resolve it from the parent scope (if exists)
              */
             case !instructions: {
-                const found = this.entities.find(e => e instanceof entity);
-
-                switch (true) {
-                    case !!found:
-                        return found as T;
-
-                    case !found && !!this._parent:
-                        return this._parent.resolveEntity(entity, instructions);
-
-                    default:
-                        return undefined;
-                }
+                return this.entities.find(e => e instanceof entity) as T | undefined;
             }
             /**
              * 2) In case when aseid is provided in the query, we can directly get the entity from the map
@@ -1091,8 +1308,8 @@ export class A_Scope<
                             });
                     });
 
-                if (found.length === 0 && !!this._parent)
-                    return this._parent.resolveEntity(entity, instructions);
+                if (found.length === 0)
+                    return undefined;
 
                 if (count === 1)
                     return found[0] as T;
@@ -1104,26 +1321,20 @@ export class A_Scope<
     /**
      * This method is used internally to resolve a single error from the scope
      * 
+     * [!] Note that errors are singleton instances within the scope
+     * [!!] No parent scopes are checked
+     * 
      * @param error 
      * @returns 
      */
     private resolveError<T extends A_Error>(error: A_TYPES__Error_Constructor<T>): T | undefined {
 
-        const found = this.errors.find(e => e instanceof error);
-
-        switch (true) {
-            case !!found:
-                return found as T;
-
-            case !found && !!this._parent:
-                return this._parent.resolveError(error);
-
-            default:
-                return undefined;
-        }
+        return this.errors.find(e => e instanceof error) as T | undefined;
     }
     /**
      * This method is used internally to resolve a single fragment from the scope
+     * 
+     * [!] Note that this method checks for the fragment in the current scope and all parent scopes
      * 
      * @param fragment 
      * @returns 
@@ -1142,9 +1353,6 @@ export class A_Scope<
                 return this.resolveFragment(found);
             }
 
-            case !fragmentInstancePresented && !!this._parent:
-                return this._parent.resolveFragment(fragment);
-
             default:
                 return undefined;
         }
@@ -1158,17 +1366,18 @@ export class A_Scope<
     private resolveScope(scope: A_TYPES__Scope_Constructor): A_Scope {
         return this;
     }
+
     /**
      * This method is used internally to resolve a single component from the scope
+     * 
+     * [!!] Note: No parent scopes are checked  
      * 
      * @param component 
      * @returns 
      */
     private resolveComponent<T extends A_Component>(component: A_TYPES__Component_Constructor<T>): InstanceType<_ComponentType[number]> | undefined {
 
-        //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
-        //  BUT: if it's not presented in _parent  we have to check for inheritance
-        //  That means that we should ensure that there's no components that are children of the required component
+
         switch (true) {
             // 1) In case when the component is available and exists in the scope
             case this.allowedComponents.has(component) && this._components.has(component): {
@@ -1233,16 +1442,8 @@ export class A_Scope<
                 return this.resolveComponent(found);
             }
 
-            // 4) In case when the component is not available in the scope but the _parent is available
-            case !!this._parent: {
-                return this._parent.resolveComponent(component) as InstanceType<_ComponentType[number]>;
-            }
-
             default:
-                throw new A_ScopeError(
-                    A_ScopeError.ResolutionError,
-                    `Component ${component.name} not found in the scope ${this.name}`
-                );
+                return undefined;
         }
     }
 
