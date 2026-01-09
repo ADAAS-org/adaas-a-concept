@@ -2781,10 +2781,22 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     /**
      * This method is used to retrieve a parent scope at a specific level
      *
+     * [!] Note that if the level is out of bounds, undefined is returned
+     * [!!] Uses negative values for levels (e.g. -1 for immediate parent, -2 for grandparent, etc.)
+     *
      * @param level
      * @returns
      */
-    parentAtLevel(level: number): A_Scope | undefined;
+    parentOffset(
+    /**
+     * Level of the parent scope to retrieve
+     *
+     * Examples:
+     * - level 0 - immediate parent
+     * - level -1 - grandparent
+     * - level -2 - great-grandparent
+     */
+    layerOffset: number): A_Scope | undefined;
     /**
      * Determines which initializer method to use based on the type of the first parameter.
      *

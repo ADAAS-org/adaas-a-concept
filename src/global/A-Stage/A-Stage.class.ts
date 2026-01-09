@@ -155,7 +155,7 @@ export class A_Stage {
                                 }
                                 // 2) Parent resolution
                                 case parent && typeof parent.layerOffset === 'number': {
-                                    const targetParent = targetScope.parentAtLevel(parent.layerOffset);
+                                    const targetParent = targetScope.parentOffset(parent.layerOffset);
                                     if (!targetParent) {
                                         throw new A_StageError(
                                             A_StageError.ArgumentsResolutionError,

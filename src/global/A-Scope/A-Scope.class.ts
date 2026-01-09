@@ -214,20 +214,31 @@ export class A_Scope<
     /**
      * This method is used to retrieve a parent scope at a specific level
      * 
+     * [!] Note that if the level is out of bounds, undefined is returned
+     * [!!] Uses negative values for levels (e.g. -1 for immediate parent, -2 for grandparent, etc.)
+     * 
      * @param level 
      * @returns 
      */
-    parentAtLevel(level: number): A_Scope | undefined {
-        let currentParent = this._parent;
-        let currentLevel = 0;
-        while (currentParent) {
-            if (currentLevel === level) {
-                return currentParent;
-            }
-            currentParent = currentParent._parent;
-            currentLevel++;
+    parentOffset(
+        /**
+         * Level of the parent scope to retrieve
+         * 
+         * Examples:
+         * - level 0 - immediate parent
+         * - level -1 - grandparent
+         * - level -2 - great-grandparent
+         */
+        layerOffset: number
+    ): A_Scope | undefined {
+        let parentScope = this.parent;
+
+        while (layerOffset < -1 && parentScope) {
+            parentScope = parentScope.parent;
+            layerOffset++;
         }
-        return undefined;
+
+        return parentScope;
     }
 
 
@@ -1425,7 +1436,7 @@ export class A_Scope<
                         const componentName = A_CommonHelper.getComponentName(arg.target)
 
                         if ('instructions' in arg && !!arg.instructions) {
-                            const { target, instructions } = arg
+                            const { target, parent, flat, instructions } = arg
                             const dependency = this.resolve(target as any, instructions);
                             if (!dependency)
                                 throw new A_ScopeError(
@@ -1435,17 +1446,47 @@ export class A_Scope<
 
                             return dependency;
                         } else {
-                            const { target, require, create, defaultArgs } = arg;
+                            const { target, require, create, defaultArgs, parent, flat, } = arg;
 
-                            let dependency = this.resolve(target as any);
+                            let dependency;
 
-                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
-                                const newDependency = new target(...defaultArgs);
+                            // ----------------- Resolution Strategies -----------------
+                            switch (true) {
+                                // 1) Flat resolution
+                                case flat: {
+                                    dependency = this.resolveFlat(target);
+                                    break;
+                                }
+                                // 2) Parent resolution
+                                case parent && typeof parent.layerOffset === 'number': {
+                                    const targetParent = this.parentOffset(parent.layerOffset);
+                                    if(!targetParent) {
+                                        throw new A_ScopeError(
+                                            A_ScopeError.ResolutionError,
+                                            `Unable to resolve parent scope at offset ${parent.layerOffset} for dependency ${componentName} for component ${component.name} in scope ${this.name}`
+                                        );
+                                    }
+                                    dependency = targetParent.resolve(target);
 
-                                this.register(newDependency);
-                                return newDependency;
+                                    break;
+                                }
+                                // 3) Normal resolution
+                                default: {
+                                    dependency = this.resolve(target);
+                                    break;
+                                }
                             }
 
+                            // ----------------- Post-Resolution Actions -----------------
+
+                            // 1) Create default instance in case when allowed
+                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
+                                dependency = new target(...defaultArgs);
+
+                                this.register(dependency);
+                            }
+
+                            // 2) Throw error in case when required but not resolved
                             if (require && !dependency) {
                                 throw new A_ScopeError(
                                     A_ScopeError.ResolutionError,
@@ -1453,6 +1494,8 @@ export class A_Scope<
                                 );
                             }
 
+
+                            //  Finally, return the dependency (either resolved or undefined)
                             return dependency;
                         }
                     });
