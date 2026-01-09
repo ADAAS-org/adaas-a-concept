@@ -33,3 +33,9 @@ export type A_TYPES__A_Dependency_ParentDecoratorReturn<T = any> = (
     propertyKey: string | symbol | undefined,
     parameterIndex: number
 ) => void
+
+export type A_TYPES__A_Dependency_FlatDecoratorReturn<T = any> = (
+    target: T,
+    propertyKey: string | symbol | undefined,
+    parameterIndex: number
+) => void

@@ -1,4 +1,5 @@
 import { A_Dependency_Default } from "./A-Dependency-Default.decorator";
+import { A_Dependency_Flat } from "./A-Dependency-Flat.decorator";
 import { A_Dependency_Load } from "./A-Dependency-Load.decorator";
 import { A_Dependency_Parent } from "./A-Dependency-Parent.decorator";
 import { A_Dependency_Require } from "./A-Dependency-Require.decorator";
@@ -39,6 +40,16 @@ export class A_Dependency {
      */
     static get Parent(): typeof A_Dependency_Parent {
         return A_Dependency_Parent;
+    }
+
+    /**
+     * Allows to indicate that the dependency should be resolved in a flat manner
+     * Only in the same scope, without going up to parent scopes
+     * 
+     * @returns 
+     */
+    static get Flat(): typeof A_Dependency_Flat {
+        return A_Dependency_Flat;
     }
 
     protected _name: string;

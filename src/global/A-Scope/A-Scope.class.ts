@@ -200,6 +200,35 @@ export class A_Scope<
         initializer.call(this, param1, param2);
     }
 
+    /**
+     * Generator to iterate through all parent scopes
+     */
+    *parents(): Generator<A_Scope> {
+        let currentParent = this._parent;
+        while (currentParent) {
+            yield currentParent;
+            currentParent = currentParent._parent;
+        }
+    }
+
+    /**
+     * This method is used to retrieve a parent scope at a specific level
+     * 
+     * @param level 
+     * @returns 
+     */
+    parentAtLevel(level: number): A_Scope | undefined {
+        let currentParent = this._parent;
+        let currentLevel = 0;
+        while (currentParent) {
+            if (currentLevel === level) {
+                return currentParent;
+            }
+            currentParent = currentParent._parent;
+            currentLevel++;
+        }
+        return undefined;
+    }
 
 
     /**
@@ -461,7 +490,7 @@ export class A_Scope<
     ): boolean {
 
         let found = this.hasFlat(ctor as any);
-        
+
         if (!found && !!this._parent)
             try {
                 return this._parent.has(ctor as any);

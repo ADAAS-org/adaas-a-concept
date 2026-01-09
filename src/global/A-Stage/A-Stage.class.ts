@@ -140,29 +140,38 @@ export class A_Stage {
                             return this._feature;
 
                         default: {
-                            const { target, require, create, defaultArgs, parent } = arg;
+                            const { target, require, create, defaultArgs, parent, flat } = arg;
 
 
                             let dependency;
                             let targetScope = scope;
 
-                            if (parent && typeof parent.layerOffset === 'number') {
-                                let parentScope = scope.parent;
 
-                                let offset = parent.layerOffset;
-
-                                while (offset < -1 && parentScope) {
-                                    parentScope = parentScope.parent;
-                                    offset++;
+                            switch (true) {
+                                // 1) Flat resolution
+                                case flat: {
+                                    dependency = targetScope.resolveFlat(target);
+                                    break;
                                 }
+                                // 2) Parent resolution
+                                case parent && typeof parent.layerOffset === 'number': {
+                                    const targetParent = targetScope.parentAtLevel(parent.layerOffset);
+                                    if (!targetParent) {
+                                        throw new A_StageError(
+                                            A_StageError.ArgumentsResolutionError,
+                                            `Unable to resolve parent scope at layer offset ${parent.layerOffset} for argument ${A_CommonHelper.getComponentName(arg.target)} for stage ${this.name} in scope ${scope.name}`
+                                        );
+                                    }
+                                    dependency = targetParent.resolve(target);
+                                    targetScope = targetParent;
 
-                                if (parentScope) {
-                                    dependency = parentScope.resolve(target);
-                                    targetScope = parentScope;
+                                    break;
                                 }
-
-                            } else {
-                                dependency = targetScope.resolve(target);
+                                // 3) Normal resolution
+                                default: {
+                                    dependency = targetScope.resolve(target);
+                                    break;
+                                }
                             }
 
                             if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
