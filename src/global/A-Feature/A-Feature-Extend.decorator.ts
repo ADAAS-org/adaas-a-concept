@@ -153,7 +153,6 @@ export function A_Feature_Extend(
             .meta(target)
             .get(metaKey);
 
-
         // Get the existed metadata or create a new one
         const meta = A_Context
             .meta(target)
@@ -177,6 +176,23 @@ export function A_Feature_Extend(
             ...(existedMeta.get(targetRegexp.source) || [])
         ];
 
+        //  ensure that other regexps are preserved
+        for (const [key, handlers] of existedMeta.entries()) {
+
+            const indexInAnother = handlers.findIndex(item => item.handler === propertyKey);
+
+            //  if the same handler exists in another regexp, remove it
+            if (key !== targetRegexp.source && indexInAnother !== -1) {
+                handlers.splice(indexInAnother, 1);
+                //  if no handlers left for this regexp, remove the regexp entry
+                if (handlers.length === 0) {
+                    existedMeta.delete(key);
+                } else {
+                    existedMeta.set(key, handlers);
+                }
+            }
+        }
+
         const existedIndex = existedMetaValue.findIndex(item => item.handler === propertyKey);
 
         const extension = {
@@ -197,8 +213,7 @@ export function A_Feature_Extend(
             existedMetaValue.push(extension);
         }
 
-        // Add the new method to the metadata
-        existedMetaValue.push();
+
 
         // Set the metadata of the method to define a custom Feature with name
         existedMeta.set(targetRegexp.source, existedMetaValue);

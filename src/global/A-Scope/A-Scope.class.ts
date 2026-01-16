@@ -933,7 +933,16 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): T | undefined
-
+    resolve<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>,
+        /**
+         * Only Aseid Provided, in this case one entity will be returned
+         */
+        instructions: { query: { aseid: string | ASEID } }
+    ): T | undefined
     resolve<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
@@ -963,7 +972,7 @@ export class A_Scope<
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         constructorName: string
     ): T | undefined
-    // base definition
+    // ------------------------------------ base definition ------------------------------------
     resolve<T extends A_TYPES__ScopeResolvableComponents>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
@@ -1460,7 +1469,7 @@ export class A_Scope<
                                 // 2) Parent resolution
                                 case parent && typeof parent.layerOffset === 'number': {
                                     const targetParent = this.parentOffset(parent.layerOffset);
-                                    if(!targetParent) {
+                                    if (!targetParent) {
                                         throw new A_ScopeError(
                                             A_ScopeError.ResolutionError,
                                             `Unable to resolve parent scope at offset ${parent.layerOffset} for dependency ${componentName} for component ${component.name} in scope ${this.name}`

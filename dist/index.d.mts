@@ -3100,6 +3100,19 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     entity: A_TYPES__Entity_Constructor<T>, 
     /**
+     * Only Aseid Provided, in this case one entity will be returned
+     */
+    instructions: {
+        query: {
+            aseid: string | ASEID;
+        };
+    }): T | undefined;
+    resolve<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>, 
+    /**
      * Provide optional instructions to find a specific entity or a set of entities
      */
     instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;

@@ -666,4 +666,96 @@ describe('A-Feature tests', () => {
 
 
     });
+    it('Should override extensions meta for inherited method with the same name', async () => {
+
+        const resultChain: string[] = [];
+
+        class BaseComponent extends A_Component {
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [BaseComponent]
+            })
+            async test() {
+                resultChain.push('BaseComponent.test');
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [BaseComponent]
+            })
+            async test2() {
+                resultChain.push('BaseComponent.test2');
+            }
+        }
+
+
+        class ChildComponent_A extends BaseComponent {
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [ChildComponent_A]
+            })
+            async test() {
+                resultChain.push('ChildComponent_A.test');
+            }
+        }
+
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A] });
+
+        const extensionsMeta = A_Context.meta(ChildComponent_A).get(A_TYPES__ComponentMetaKey.EXTENSIONS)!.entries();
+
+        await testScope.resolve(ChildComponent_A)!.call('testFeature');
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'BaseComponent.test2'
+        ]);
+    })
+
+    it('Should properly define inheritance chain of the features', async () => {
+
+        const resultChain: string[] = [];
+
+        class BaseComponent extends A_Component {
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [BaseComponent]
+            })
+            async test() {
+                resultChain.push('BaseComponent.test');
+            }
+        }
+
+        class ChildComponent_A extends BaseComponent {
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [ChildComponent_A]
+            })
+            async test() {
+                resultChain.push('ChildComponent_A.test');
+            }
+        }
+
+        class ChildComponent_B extends BaseComponent {
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [ChildComponent_B]
+            })
+            async test() {
+                resultChain.push('ChildComponent_B.test');
+            }
+        }
+
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A, ChildComponent_B] });
+
+        await testScope.resolve(ChildComponent_A)!.call('testFeature');
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test'
+        ]);
+
+    })
 });

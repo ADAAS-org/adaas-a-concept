@@ -714,7 +714,10 @@ export class A_Context {
             .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
             .map(c => `${c.name}.${name}`);
 
-        // const callName = `${component.constructor.name}.${name}`;
+
+
+        // const callNames = [`${component.constructor.name}.${name}`];
+        // const callNames = [`BaseComponent.testFeature`];
 
         const steps: A_TYPES__A_StageStep[] = [];
 
