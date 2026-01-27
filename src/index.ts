@@ -65,6 +65,7 @@ export { A_ScopeError } from './global/A-Scope/A-Scope.error';
 export * from './global/A-Scope/A-Scope.types';
 
 export { A_Meta } from './global/A-Meta/A-Meta.class';
+export { A_MetaDecorator } from './global/A-Meta/A-Meta.decorator';
 export * from './global/A-Meta/A-Meta.types';
 
 export { A_Fragment } from './global/A-Fragment/A-Fragment.class';

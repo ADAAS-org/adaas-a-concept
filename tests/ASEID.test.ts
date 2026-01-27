@@ -23,6 +23,41 @@ describe('ASEID Tests', () => {
         expect(aseid.shard).toBe('shard1');
         expect(aseid.toString()).toBe('my-concept@my-scope:my-entity:shard1.123@v1');
     });
+      it('Should allow to create a new ASEID and use hash for identity', async () => {
+        const aseid1 = new ASEID({
+            concept: 'my-concept',
+            scope: 'my-scope',
+            entity: 'my-entity',
+            id: '123',
+            version: 'v1',
+            shard: 'shard1'
+        });
+
+        const aseid2 = new ASEID({
+            concept: 'my-concept',
+            scope: 'my-scope',
+            entity: 'my-entity',
+            id: '123',
+            version: 'v1',
+            shard: 'shard1'
+        });
+
+        const aseid3 = new ASEID({
+            concept: 'my-concept',
+            scope: 'my-scope',
+            entity: 'my-entity',
+            id: '124',
+            version: 'v1',
+            shard: 'shard1'
+        });
+
+        expect(aseid1.hash).toBeDefined();
+        expect(aseid2.hash).toBeDefined();
+        expect(aseid3.hash).toBeDefined();
+
+        expect(aseid1.hash).not.toBe(aseid3.hash);
+        expect(aseid1.hash).toBe(aseid2.hash);  
+    });
     it('Should allow to create a new ASEID object with required parameters only', async () => {
         const aseid = new ASEID({
             entity: 'my-entity',

@@ -5,6 +5,8 @@ import { A_Concept } from "@adaas/a-concept/global/A-Concept/A-Concept.class";
 import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
 import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
 import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
+import { A_Inject } from "@adaas/a-concept/global/A-Inject/A-Inject.decorator";
+import { A_TYPES__ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.types";
 
 jest.retryTimes(0);
 
@@ -127,5 +129,42 @@ describe('A-Meta tests', () => {
         expect(metaE.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.get('.*\\.testFeature$')?.length).toBe(2);
         expect(metaE.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.get('.*\\.testFeature$')?.map(e => e.handler)).toContain('test3');
         expect(metaE.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.get('.*\\.testFeature$')?.map(e => e.handler)).not.toContain('test2');
+    })
+    it('Should allow to inherit meta properly', async () => {
+
+        class InjectableComponent extends A_Component { }
+
+        class CustomComponentMeta extends A_ComponentMeta<{ customField: string } & A_TYPES__ComponentMeta> {
+
+            get customField(): string | undefined {
+                return this.get('customField');
+            }
+        }
+
+        @A_Meta.Define(CustomComponentMeta)
+        class CustomComponent extends A_Component {
+
+            constructor(
+                @A_Inject(InjectableComponent) public injectableComponent: InjectableComponent
+            ) {
+                super();
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature'
+            })
+            async feature() {
+
+            }
+        }
+
+
+        const meta = A_Context.meta<CustomComponentMeta>(CustomComponent);
+
+        expect(meta).toBeInstanceOf(CustomComponentMeta);
+        expect(meta).toHaveProperty('customField');
+
+        expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.size()).toBe(1);
+        expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.has('.*\\.testFeature$')).toBe(true);
     })
 })  

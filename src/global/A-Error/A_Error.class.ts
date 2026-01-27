@@ -136,6 +136,12 @@ export class A_Error<
     )
     constructor(
         /**
+         * Original JS Error
+         */
+        error: unknown
+    )
+    constructor(
+        /**
          * Error message
          */
         title: string,
@@ -145,7 +151,7 @@ export class A_Error<
         description: string
     )
     constructor(
-        param1: _ConstructorType | Error | string | A_Error,
+        param1: _ConstructorType | Error | string | A_Error | any,
         param2?: string
     ) {
         //  to prevent errors accumulation in the stack trace it returns the original error if provided param1 is A_Error
@@ -178,10 +184,7 @@ export class A_Error<
                 break;
 
             default:
-                throw new A_Error(
-                    A_CONSTANTS__ERROR_CODES.VALIDATION_ERROR,
-                    'Invalid parameters provided to A_Error constructor'
-                );
+                super('An unknown error occurred.');
         }
 
         const initializer = this.getInitializer(param1, param2);

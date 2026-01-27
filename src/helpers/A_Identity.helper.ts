@@ -49,5 +49,23 @@ export class A_IdentityHelper {
         return String(Number(formattedNumber)); // Convert to number and back to string to remove leading zeros
     }
 
+    /**
+     * Generates a simple hash string from the input string.
+     * 
+     * 
+     * @param input 
+     * @returns
+     */
+    static hashString(input: string): string {
+        let hash = 0, i, chr;
+        if (input.length === 0) return hash.toString();
+        for (i = 0; i < input.length; i++) {
+            chr = input.charCodeAt(i);
+            hash = ((hash << 5) - hash) + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash.toString();
+    }
+
 
 }

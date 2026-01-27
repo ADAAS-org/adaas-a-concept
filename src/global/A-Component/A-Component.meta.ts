@@ -6,7 +6,7 @@ import { A_TYPES__ComponentMetaKey } from "./A-Component.constants";
 import { A_TYPES__FeatureDefineDecoratorMeta } from "../A-Feature/A-Feature.types";
 
 
-export class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
+export class A_ComponentMeta<T extends A_TYPES__ComponentMeta = A_TYPES__ComponentMeta> extends A_Meta<T> {
 
     /**
      * Allows to get all the injections for a given handler

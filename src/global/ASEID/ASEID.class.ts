@@ -149,6 +149,14 @@ export class ASEID {
     }
 
     /**
+     * Get the hash of the ASEID, Unique identifier based on the ASEID string
+     * Useful when aseid details should not be exposed directly
+     */
+    get hash(): string {
+        return A_IdentityHelper.hashString(this.toString());
+    }
+
+    /**
      * get Internal Initializer based on the type of the parameter provided
      * 
      * @param param1 

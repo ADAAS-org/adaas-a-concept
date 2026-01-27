@@ -1045,7 +1045,16 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): T | undefined
-
+    resolveFlat<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>,
+        /**
+         * Only Aseid Provided, in this case one entity will be returned
+         */
+        instructions: { query: { aseid: string | ASEID } }
+    ): T | undefined
     resolveFlat<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope

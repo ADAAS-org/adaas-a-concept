@@ -37,6 +37,7 @@ import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
 import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 
 
 
@@ -116,6 +117,9 @@ export class A_Context {
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta> = new Map();
 
 
+
+
+    protected _globals = new Map<string, any>();
 
     /**
      * Private constructor to enforce singleton pattern.
@@ -346,54 +350,72 @@ export class A_Context {
       * 
       * @param container 
       */
-    static meta(
+    static meta<T extends A_ContainerMeta>(
         /**
          * Get meta for the specific container class by constructor.
          */
         container: A_TYPES__Container_Constructor,
-    ): A_ContainerMeta
-    static meta(
+    ): T
+    static meta<T extends A_ContainerMeta>(
         /**
          * Get meta for the specific container instance.
          */
         container: A_Container,
-    ): A_ContainerMeta
-    static meta(
+    ): T
+    static meta<T extends A_EntityMeta>(
         /**
          * Get meta for the specific entity class by constructor.
          */
         entity: A_TYPES__Entity_Constructor,
-    ): A_EntityMeta
-    static meta(
+    ): T
+    static meta<T extends A_EntityMeta>(
         /**
          * Get meta for the specific entity instance.
          */
         entity: A_Entity,
-    ): A_EntityMeta
-    static meta(
+    ): T
+    static meta<T extends A_ComponentMeta>(
         /**
          * Get meta for the specific component class by constructor.
          */
         component: A_TYPES__Component_Constructor,
-    ): A_ComponentMeta
-    static meta(
+    ): T
+    static meta<T extends A_ComponentMeta>(
         /**
          * Get meta for the specific component instance.
          */
         component: A_Component,
-    ): A_ComponentMeta
-    static meta(
+    ): T
+    static meta<T extends A_Meta>(
+        /**
+         * Get meta for the specific component class by constructor.
+         */
+        fragment: A_TYPES__Fragment_Constructor,
+    ): T
+    static meta<T extends A_Meta>(
+        /**
+         * Get meta for the specific component instance.
+         */
+        fragment: A_Fragment,
+    ): T
+    static meta<T extends A_ComponentMeta>(
         /**
          * Get meta for the specific component by its name.
          */
         component: string,
-    ): A_ComponentMeta
+    ): T
     static meta(
         /**
-         * Get meta for the specific injectable target (class or instance).
+         * Get meta for the specific meta linked component (class or instance).
          */
-        target: A_TYPES__InjectableTargets,
+        target: A_TYPES__MetaLinkedComponentConstructors | A_TYPES__MetaLinkedComponents,
     ): A_ComponentMeta
+    static meta<T extends A_Meta>(
+        /**
+         * Get meta for the specific class or instance
+         */
+        constructor: new (...args: any[]) => any
+    ): T
     static meta<T extends Record<string, any>>(
         /**
          * Get meta for the specific class or instance
@@ -469,7 +491,21 @@ export class A_Context {
 
                 break;
             }
-            // 7) If param1 is string then we need to find the component by its name
+            // 7) If param1 is instance of A_Fragment
+            case A_TypeGuards.isFragmentInstance(param1): {
+                property = param1.constructor as A_TYPES__Fragment_Constructor;
+                metaType = A_ComponentMeta;
+
+                break;
+            }
+            // 8) If param1 is class of A_Fragment
+            case A_TypeGuards.isFragmentConstructor(param1): {
+                property = param1;
+                metaType = A_EntityMeta;
+
+                break;
+            }
+            // 9) If param1 is string then we need to find the component by its name
             case typeof param1 === 'string': {
                 const found = Array.from(instance._metaStorage)
                     .find(([c]) => c.name === param1
@@ -484,7 +520,7 @@ export class A_Context {
 
                 break;
             }
-            // 8) If param1 is any other class or function
+            // 10) If param1 is any other class or function
             default: {
                 property = param1;
                 metaType = A_Meta;
@@ -502,6 +538,47 @@ export class A_Context {
         // Return the meta for the property
         return instance._metaStorage.get(property)!;
     }
+
+
+
+    /**
+     * Allows to set meta for the specific class or instance.
+     * 
+     * @param param1 
+     * @param meta 
+     */
+    static setMeta<T extends A_ContainerMeta, S extends A_Container>(
+        param1: S,
+        meta: T
+    )
+    static setMeta<T extends A_EntityMeta, S extends A_Entity>(
+        param1: S,
+        meta: T
+    )
+    static setMeta<T extends A_ComponentMeta, S extends A_Component>(
+        param1: S,
+        meta: T
+    )
+    static setMeta<T extends A_Meta>(
+        param1: new (...args: any[]) => any,
+        meta: T
+    )
+    static setMeta<T extends A_Meta>(
+        param1: A_TYPES__MetaLinkedComponentConstructors | A_TYPES__MetaLinkedComponents,
+        meta: T
+    ) {
+        const instance = A_Context.getInstance();
+
+        const existingMeta = A_Context.meta(param1);
+
+        const constructor = typeof param1 === 'function'
+            ? param1
+            : param1.constructor as A_TYPES__MetaLinkedComponentConstructors;
+
+        instance._metaStorage.set(constructor, existingMeta ? meta.from(existingMeta) : meta);
+    }
+
+
 
 
     /**

@@ -1,12 +1,27 @@
+import { A_MetaDecorator } from "./A-Meta.decorator";
+import { A_TYPES__Meta_Constructor } from "./A-Meta.types";
+
 /**
  * A Meta is an entity that stores all the metadata for the specific entity like container, component, feature, etc. 
  * 
  * [!] Meta can be different depending on the type of input data
  */
 export class A_Meta<
-    _StorageItems extends Record<string, any> = any,
+    _StorageItems extends Record<any, any> = any,
     _SerializedType extends Record<string, any> = Record<string, any>
 > implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+
+    /**
+     * Allows to set a custom meta class for the Component or Container or Entity, or anything else. 
+     * 
+     * @param target 
+     * @returns 
+     */
+    static Define<T extends A_Meta>(target: A_TYPES__Meta_Constructor<T>) {
+        return A_MetaDecorator(target);
+    }
+
+
 
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]> = new Map();
 

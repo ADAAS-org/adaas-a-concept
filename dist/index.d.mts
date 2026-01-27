@@ -68,117 +68,38 @@ type A_TYPES__ExtractProperties<T, P extends A_TYPES__Paths<T>[]> = A_TYPES__Uni
     [K in keyof P]: P[K] extends string ? A_TYPES__ExtractNested<T, P[K]> : never;
 }[number]>;
 
-/**
- * A Meta is an entity that stores all the metadata for the specific entity like container, component, feature, etc.
- *
- * [!] Meta can be different depending on the type of input data
- */
-declare class A_Meta<_StorageItems extends Record<string, any> = any, _SerializedType extends Record<string, any> = Record<string, any>> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
-    protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]>;
+declare enum A_TYPES__ConceptAbstractions {
     /**
-     * Method to get the iterator for the meta object
-     *
-     * @returns
+     * Run the concept.
      */
-    [Symbol.iterator](): Iterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    Run = "run",
     /**
-     * Allows to replicate received meta object by replacing internal meta to the received one
-     *
-     * @param meta
-     * @returns
+     * Build the concept.
      */
-    from(meta: A_Meta<_StorageItems>): A_Meta<_StorageItems>;
+    Build = "build",
     /**
-     * Method to set values in the map
-     *
-     * @param key
-     * @param value
+     * Publish the concept.
      */
-    set<K extends keyof _StorageItems>(key: K, value: _StorageItems[K]): void;
+    Publish = "publish",
     /**
-     * Method to get values from the map
-     *
-     * @param key
-     * @returns
+     * Deploy the concept.
      */
-    get<K extends keyof _StorageItems>(key: K): _StorageItems[K] | undefined;
+    Deploy = "deploy",
     /**
-     * Method to delete values from the map
-     *
-     * @param key
-     * @returns
+     * Load the concept.
      */
-    delete(key: keyof _StorageItems): boolean;
+    Load = "load",
     /**
-     * Method to get the size of the map
-     *
-     * @returns
+     * Start the concept.
      */
-    size(): number;
+    Start = "start",
     /**
-     * This method is needed to convert the key to a regular expression and cover cases like:
-     *
-     * simple * e.g. "a*" instead of "a.*"
-     *
-     * simple ? e.g. "a?" instead of "a."
-     *
-     * etc.
-     *
-     * @param key
-     * @returns
+     * Stop the concept.
      */
-    private convertToRegExp;
-    /**
-     * Method to find values in the map by name.
-     *
-     * Converts the Key in Map to a regular expression and then compares to the name
-     *
-     * @param name
-     * @returns
-     */
-    find(name: string): [keyof _StorageItems, _StorageItems[keyof _StorageItems]][];
-    /**
-     * Method to find values in the map by regular expression
-     *
-     * Compares Map Key to the input regular expression
-     *
-     * @param regex
-     * @returns
-     */
-    findByRegex(regex: RegExp): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
-    /**
-     * Method to check if the map has a specific key
-     *
-     * @param key
-     * @returns
-     */
-    has(key: keyof _StorageItems): boolean;
-    /**
-     * Method to get the size of the map
-     *
-     * @returns
-     */
-    entries(): IterableIterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
-    /**
-     * Method to clear the map
-     */
-    clear(): void;
-    toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
-    protected recursiveToJSON(value: any): any;
-    /**
-     * Serializes the meta to a JSON object
-     * Uses internal storage to convert to JSON
-     *
-     * @returns
-     */
-    toJSON(): _SerializedType;
+    Stop = "stop"
 }
-
-declare enum A_TYPES__ContainerMetaKey {
-    FEATURES = "a-container-features",
-    INJECTIONS = "a-container-injections",
-    ABSTRACTIONS = "a-container-abstractions",
-    EXTENSIONS = "a-container-extensions"
+declare enum A_TYPES__ConceptMetaKey {
+    LIFECYCLE = "a-component-extensions"
 }
 
 declare enum A_TYPES__A_Stage_Status {
@@ -442,6 +363,11 @@ declare class ASEID {
      * Get the shard of the ASEID (if any)
      */
     get shard(): string | undefined;
+    /**
+     * Get the hash of the ASEID, Unique identifier based on the ASEID string
+     * Useful when aseid details should not be exposed directly
+     */
+    get hash(): string;
     /**
      * get Internal Initializer based on the type of the parameter provided
      *
@@ -1024,6 +950,11 @@ declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TYPES__Er
      * Original JS Error
      */
     error: Error);
+    constructor(
+    /**
+     * Original JS Error
+     */
+    error: unknown);
     constructor(
     /**
      * Error message
@@ -1905,160 +1836,6 @@ type A_TYPES__FeatureExtendDecoratorMeta = {
 };
 
 /**
- * Container constructor type
- * Uses the generic type T to specify the type of the container
- */
-type A_TYPES__Container_Constructor<T = A_Container> = new (...args: any[]) => T;
-/**
- * Container initialization type
- */
-type A_TYPES__Container_Init = {
-    /**
-     * The extra name for the container (optional)
-     */
-    name?: string;
-} & A_TYPES__Scope_Init;
-/**
- * Container serialized type
- */
-type A_TYPES__Container_Serialized = {
-    /**
-     * The ASEID of the container
-     */
-    aseid: string;
-};
-/**
- * Meta information stored in each Container
- */
-type A_TYPES__ContainerMeta = {
-    /**
-     * Extensions applied to the component per handler
-     */
-    [A_TYPES__ContainerMetaKey.EXTENSIONS]: A_Meta<{
-        /**
-         * Where Key the regexp for what to apply the extension
-         * A set of container names or a wildcard, or a regexp
-         *
-         *
-         * Where value is the extension instructions
-         */
-        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[];
-    }>;
-    [A_TYPES__ContainerMetaKey.FEATURES]: A_Meta<{
-        /**
-         * Where Key is the name of the feature
-         *
-         * Where value is the list of features
-         */
-        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta;
-    }>;
-    [A_TYPES__ContainerMetaKey.ABSTRACTIONS]: A_Meta<{
-        /**
-         * Where Key the regexp for what to apply the extension
-         * A set of container names or a wildcard, or a regexp
-         *
-         *
-         * Where value is the extension instructions
-         */
-        [Key: string]: A_TYPES__ConceptAbstraction[];
-    }>;
-    [A_TYPES__ContainerMetaKey.INJECTIONS]: A_Meta<{
-        /**
-         * Where Key is the name of the injection
-         *
-         * Where value is the list of injections
-         */
-        [Key: string]: A_TYPES__A_InjectDecorator_Meta;
-    }>;
-};
-type A_TYPES__ContainerMetaExtension = A_TYPES__FeatureExtendDecoratorMeta;
-
-declare class A_Container {
-    /**
-     * Configuration of the container that will be used to run it.
-     */
-    protected readonly config: Partial<A_TYPES__Container_Init>;
-    /**
-     * Name of the container
-     */
-    get name(): string;
-    /**
-     * Returns the scope where the container is registered
-     */
-    get scope(): A_Scope;
-    /**
-     * This class should combine Components to achieve the goal withing Concept
-     *
-     * Container is a direct container that should be "run" to make Concept work.
-     * So because of that Container can be:
-     * - HTTP Server
-     * - BASH Script
-     * - Database Connection
-     * - Microservice
-     * - etc.
-     *
-     * @param config - Configuration of the container that will be used to run it.
-     */
-    constructor(
-    /**
-     * Configuration of the container that will be used to run it.
-     */
-    config?: Partial<A_TYPES__Container_Init>);
-    /**
-     * Calls the feature with the given name in the given scope
-     *
-     * [!] Note: This method creates a new instance of the feature every time it is called
-     *
-     * @param feature - the name of the feature to call
-     * @param scope  - the scope in which to call the feature
-     * @returns  - void
-     */
-    call(
-    /**
-     * Name of the feature to call
-     */
-    feature: string, 
-    /**
-     * scope in which the feature will be executed
-     */
-    scope?: A_Scope): Promise<void>;
-}
-
-declare enum A_TYPES__ConceptAbstractions {
-    /**
-     * Run the concept.
-     */
-    Run = "run",
-    /**
-     * Build the concept.
-     */
-    Build = "build",
-    /**
-     * Publish the concept.
-     */
-    Publish = "publish",
-    /**
-     * Deploy the concept.
-     */
-    Deploy = "deploy",
-    /**
-     * Load the concept.
-     */
-    Load = "load",
-    /**
-     * Start the concept.
-     */
-    Start = "start",
-    /**
-     * Stop the concept.
-     */
-    Stop = "stop"
-}
-declare enum A_TYPES__ConceptMetaKey {
-    LIFECYCLE = "a-component-extensions"
-}
-
-/**
  * A-Abstraction Extend decorator allows to extends behavior of each concept abstraction execution.
  * In case some components or containers requires to extend the behavior of the abstraction like 'start', 'build' or 'deploy'
  * for example, this decorator allows to do so.
@@ -2510,6 +2287,259 @@ type A_TYPES__ConceptAbstractionMeta = {
  * Uses to define the extension that will be applied to the Concept
  */
 type A_TYPES__ConceptAbstraction = A_TYPES__FeatureExtendDecoratorMeta;
+
+declare enum A_TYPES__ContainerMetaKey {
+    FEATURES = "a-container-features",
+    INJECTIONS = "a-container-injections",
+    ABSTRACTIONS = "a-container-abstractions",
+    EXTENSIONS = "a-container-extensions"
+}
+
+/**
+ * Container constructor type
+ * Uses the generic type T to specify the type of the container
+ */
+type A_TYPES__Container_Constructor<T = A_Container> = new (...args: any[]) => T;
+/**
+ * Container initialization type
+ */
+type A_TYPES__Container_Init = {
+    /**
+     * The extra name for the container (optional)
+     */
+    name?: string;
+} & A_TYPES__Scope_Init;
+/**
+ * Container serialized type
+ */
+type A_TYPES__Container_Serialized = {
+    /**
+     * The ASEID of the container
+     */
+    aseid: string;
+};
+/**
+ * Meta information stored in each Container
+ */
+type A_TYPES__ContainerMeta = {
+    /**
+     * Extensions applied to the component per handler
+     */
+    [A_TYPES__ContainerMetaKey.EXTENSIONS]: A_Meta<{
+        /**
+         * Where Key the regexp for what to apply the extension
+         * A set of container names or a wildcard, or a regexp
+         *
+         *
+         * Where value is the extension instructions
+         */
+        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[];
+    }>;
+    [A_TYPES__ContainerMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         *
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta;
+    }>;
+    [A_TYPES__ContainerMetaKey.ABSTRACTIONS]: A_Meta<{
+        /**
+         * Where Key the regexp for what to apply the extension
+         * A set of container names or a wildcard, or a regexp
+         *
+         *
+         * Where value is the extension instructions
+         */
+        [Key: string]: A_TYPES__ConceptAbstraction[];
+    }>;
+    [A_TYPES__ContainerMetaKey.INJECTIONS]: A_Meta<{
+        /**
+         * Where Key is the name of the injection
+         *
+         * Where value is the list of injections
+         */
+        [Key: string]: A_TYPES__A_InjectDecorator_Meta;
+    }>;
+};
+type A_TYPES__ContainerMetaExtension = A_TYPES__FeatureExtendDecoratorMeta;
+
+declare class A_Container {
+    /**
+     * Configuration of the container that will be used to run it.
+     */
+    protected readonly config: Partial<A_TYPES__Container_Init>;
+    /**
+     * Name of the container
+     */
+    get name(): string;
+    /**
+     * Returns the scope where the container is registered
+     */
+    get scope(): A_Scope;
+    /**
+     * This class should combine Components to achieve the goal withing Concept
+     *
+     * Container is a direct container that should be "run" to make Concept work.
+     * So because of that Container can be:
+     * - HTTP Server
+     * - BASH Script
+     * - Database Connection
+     * - Microservice
+     * - etc.
+     *
+     * @param config - Configuration of the container that will be used to run it.
+     */
+    constructor(
+    /**
+     * Configuration of the container that will be used to run it.
+     */
+    config?: Partial<A_TYPES__Container_Init>);
+    /**
+     * Calls the feature with the given name in the given scope
+     *
+     * [!] Note: This method creates a new instance of the feature every time it is called
+     *
+     * @param feature - the name of the feature to call
+     * @param scope  - the scope in which to call the feature
+     * @returns  - void
+     */
+    call(
+    /**
+     * Name of the feature to call
+     */
+    feature: string, 
+    /**
+     * scope in which the feature will be executed
+     */
+    scope?: A_Scope): Promise<void>;
+}
+
+/**
+ * Meta constructor type
+ */
+type A_TYPES__Meta_Constructor<T = A_Meta> = new (...args: any[]) => T;
+/**
+ * Components that can have Meta associated with them
+ */
+type A_TYPES__MetaLinkedComponents = A_Container | A_Component | A_Entity | A_Fragment;
+/**
+ * Constructors of components that can have Meta associated with them
+ */
+type A_TYPES__MetaLinkedComponentConstructors = new (...args: any[]) => any | A_TYPES__Container_Constructor | A_TYPES__Component_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Fragment_Constructor;
+
+/**
+ * A Meta is an entity that stores all the metadata for the specific entity like container, component, feature, etc.
+ *
+ * [!] Meta can be different depending on the type of input data
+ */
+declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedType extends Record<string, any> = Record<string, any>> implements Iterable<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
+    /**
+     * Allows to set a custom meta class for the Component or Container or Entity, or anything else.
+     *
+     * @param target
+     * @returns
+     */
+    static Define<T extends A_Meta>(target: A_TYPES__Meta_Constructor<T>): (target: A_TYPES__MetaLinkedComponentConstructors) => A_TYPES__MetaLinkedComponentConstructors;
+    protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]>;
+    /**
+     * Method to get the iterator for the meta object
+     *
+     * @returns
+     */
+    [Symbol.iterator](): Iterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    /**
+     * Allows to replicate received meta object by replacing internal meta to the received one
+     *
+     * @param meta
+     * @returns
+     */
+    from(meta: A_Meta<_StorageItems>): A_Meta<_StorageItems>;
+    /**
+     * Method to set values in the map
+     *
+     * @param key
+     * @param value
+     */
+    set<K extends keyof _StorageItems>(key: K, value: _StorageItems[K]): void;
+    /**
+     * Method to get values from the map
+     *
+     * @param key
+     * @returns
+     */
+    get<K extends keyof _StorageItems>(key: K): _StorageItems[K] | undefined;
+    /**
+     * Method to delete values from the map
+     *
+     * @param key
+     * @returns
+     */
+    delete(key: keyof _StorageItems): boolean;
+    /**
+     * Method to get the size of the map
+     *
+     * @returns
+     */
+    size(): number;
+    /**
+     * This method is needed to convert the key to a regular expression and cover cases like:
+     *
+     * simple * e.g. "a*" instead of "a.*"
+     *
+     * simple ? e.g. "a?" instead of "a."
+     *
+     * etc.
+     *
+     * @param key
+     * @returns
+     */
+    private convertToRegExp;
+    /**
+     * Method to find values in the map by name.
+     *
+     * Converts the Key in Map to a regular expression and then compares to the name
+     *
+     * @param name
+     * @returns
+     */
+    find(name: string): [keyof _StorageItems, _StorageItems[keyof _StorageItems]][];
+    /**
+     * Method to find values in the map by regular expression
+     *
+     * Compares Map Key to the input regular expression
+     *
+     * @param regex
+     * @returns
+     */
+    findByRegex(regex: RegExp): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    /**
+     * Method to check if the map has a specific key
+     *
+     * @param key
+     * @returns
+     */
+    has(key: keyof _StorageItems): boolean;
+    /**
+     * Method to get the size of the map
+     *
+     * @returns
+     */
+    entries(): IterableIterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    /**
+     * Method to clear the map
+     */
+    clear(): void;
+    toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    protected recursiveToJSON(value: any): any;
+    /**
+     * Serializes the meta to a JSON object
+     * Uses internal storage to convert to JSON
+     *
+     * @returns
+     */
+    toJSON(): _SerializedType;
+}
 
 declare enum A_TYPES__ComponentMetaKey {
     EXTENSIONS = "a-component-extensions",
@@ -3183,6 +3213,19 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     entity: A_TYPES__Entity_Constructor<T>, 
     /**
+     * Only Aseid Provided, in this case one entity will be returned
+     */
+    instructions: {
+        query: {
+            aseid: string | ASEID;
+        };
+    }): T | undefined;
+    resolveFlat<T extends A_Entity>(
+    /**
+     * Provide an entity constructor to resolve its instance or an array of instances from the scope
+     */
+    entity: A_TYPES__Entity_Constructor<T>, 
+    /**
      * Provide optional instructions to find a specific entity or a set of entities
      */
     instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
@@ -3545,16 +3588,7 @@ type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragment | A_
  */
 type A_TYPES_ScopeIndependentComponents = A_Error | A_Scope | A_Caller;
 
-/**
- * Components that can have Meta associated with them
- */
-type A_TYPES__MetaLinkedComponents = A_Container | A_Component | A_Entity;
-/**
- * Constructors of components that can have Meta associated with them
- */
-type A_TYPES__MetaLinkedComponentConstructors = A_TYPES__Container_Constructor | A_TYPES__Component_Constructor | A_TYPES__Entity_Constructor;
-
-declare class A_ComponentMeta extends A_Meta<A_TYPES__ComponentMeta> {
+declare class A_ComponentMeta<T extends A_TYPES__ComponentMeta = A_TYPES__ComponentMeta> extends A_Meta<T> {
     /**
      * Allows to get all the injections for a given handler
      *
@@ -3686,6 +3720,7 @@ declare class A_Context {
      * Meta provides to store extra information about the class behavior and configuration.
      */
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta>;
+    protected _globals: Map<string, any>;
     /**
      * Private constructor to enforce singleton pattern.
      *
@@ -3781,51 +3816,76 @@ declare class A_Context {
       *
       * @param container
       */
-    static meta(
+    static meta<T extends A_ContainerMeta>(
     /**
      * Get meta for the specific container class by constructor.
      */
-    container: A_TYPES__Container_Constructor): A_ContainerMeta;
-    static meta(
+    container: A_TYPES__Container_Constructor): T;
+    static meta<T extends A_ContainerMeta>(
     /**
      * Get meta for the specific container instance.
      */
-    container: A_Container): A_ContainerMeta;
-    static meta(
+    container: A_Container): T;
+    static meta<T extends A_EntityMeta>(
     /**
      * Get meta for the specific entity class by constructor.
      */
-    entity: A_TYPES__Entity_Constructor): A_EntityMeta;
-    static meta(
+    entity: A_TYPES__Entity_Constructor): T;
+    static meta<T extends A_EntityMeta>(
     /**
      * Get meta for the specific entity instance.
      */
-    entity: A_Entity): A_EntityMeta;
-    static meta(
+    entity: A_Entity): T;
+    static meta<T extends A_ComponentMeta>(
     /**
      * Get meta for the specific component class by constructor.
      */
-    component: A_TYPES__Component_Constructor): A_ComponentMeta;
-    static meta(
+    component: A_TYPES__Component_Constructor): T;
+    static meta<T extends A_ComponentMeta>(
     /**
      * Get meta for the specific component instance.
      */
-    component: A_Component): A_ComponentMeta;
-    static meta(
+    component: A_Component): T;
+    static meta<T extends A_Meta>(
+    /**
+     * Get meta for the specific component class by constructor.
+     */
+    fragment: A_TYPES__Fragment_Constructor): T;
+    static meta<T extends A_Meta>(
+    /**
+     * Get meta for the specific component instance.
+     */
+    fragment: A_Fragment): T;
+    static meta<T extends A_ComponentMeta>(
     /**
      * Get meta for the specific component by its name.
      */
-    component: string): A_ComponentMeta;
+    component: string): T;
     static meta(
     /**
-     * Get meta for the specific injectable target (class or instance).
+     * Get meta for the specific meta linked component (class or instance).
      */
-    target: A_TYPES__InjectableTargets): A_ComponentMeta;
+    target: A_TYPES__MetaLinkedComponentConstructors | A_TYPES__MetaLinkedComponents): A_ComponentMeta;
+    static meta<T extends A_Meta>(
+    /**
+     * Get meta for the specific class or instance
+     */
+    constructor: new (...args: any[]) => any): T;
     static meta<T extends Record<string, any>>(
     /**
      * Get meta for the specific class or instance
      */
     constructor: new (...args: any[]) => any): A_Meta<T>;
+    /**
+     * Allows to set meta for the specific class or instance.
+     *
+     * @param param1
+     * @param meta
+     */
+    static setMeta<T extends A_ContainerMeta, S extends A_Container>(param1: S, meta: T): any;
+    static setMeta<T extends A_EntityMeta, S extends A_Entity>(param1: S, meta: T): any;
+    static setMeta<T extends A_ComponentMeta, S extends A_Component>(param1: S, meta: T): any;
+    static setMeta<T extends A_Meta>(param1: new (...args: any[]) => any, meta: T): any;
     /**
      *
      * This method allows to get the issuer of a specific scope.
@@ -4068,6 +4128,15 @@ declare class A_ScopeError extends A_Error {
     static readonly CircularInheritanceError = "A-Scope Circular Inheritance Error";
     static readonly DeregistrationError = "A-Scope Deregistration Error";
 }
+
+/**
+ *
+ * This decorator should allow to set a default meta type for the class, this helps to avoid
+ * the need to create custom meta classes for each class.
+ *
+ * @returns
+ */
+declare function A_MetaDecorator<T extends A_Meta>(constructor: new (...args: any[]) => T): (target: A_TYPES__MetaLinkedComponentConstructors) => A_TYPES__MetaLinkedComponentConstructors;
 
 /**
  * A-Dependency require decorator return type
@@ -4390,6 +4459,14 @@ declare class A_IdentityHelper {
      * Remove leading zeros from a formatted number
      */
     static removeLeadingZeros(formattedNumber: any): string;
+    /**
+     * Generates a simple hash string from the input string.
+     *
+     *
+     * @param input
+     * @returns
+     */
+    static hashString(input: string): string;
 }
 
 declare class A_StepManagerError extends A_Error {
@@ -4586,4 +4663,4 @@ declare class A_TypeGuards {
     static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T;
 }
 
-export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_EntityInjectionInstructions, type A_TYPES__A_InjectDecorator_EntityInjectionPagination, type A_TYPES__A_InjectDecorator_EntityInjectionQuery, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableConstructors, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__ScopeResolvableComponents, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_EntityInjectionInstructions, type A_TYPES__A_InjectDecorator_EntityInjectionPagination, type A_TYPES__A_InjectDecorator_EntityInjectionQuery, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableConstructors, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__ScopeResolvableComponents, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

@@ -1,7 +1,7 @@
 {
   "name": "@adaas/a-concept",
   "version": "0.1.59",
-  "description": "A-Concept is a framework to build new Applications within or outside the ADAAS ecosystem. This framework is designed to be modular structure regardless environment and program goal.",
+  "description": "A-Concept is a framework of the new generation that is tailored to use AI, enabling developers to create AI-powered applications with ease. It provides a structured approach to building, managing, and deploying AI-driven solutions.",
   "license": "Apache-2.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -16,9 +16,9 @@
     "url": "git+https://github.com/ADAAS-org/adaas-a-concept.git"
   },
   "keywords": [
-    "sdk",
-    "ai",
-    "rag"
+    "adaas",
+    "ai framework",
+    "a-concept"
   ],
   "bugs": {
     "url": "https://github.com/ADAAS-org/adaas-a-concept/issues"
