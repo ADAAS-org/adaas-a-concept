@@ -15,8 +15,9 @@ import { A_TYPES__MetaLinkedComponentConstructors } from "./A-Meta.types";
 export function A_MetaDecorator<T extends A_Meta>(
     constructor: new (...args: any[]) => T
 ) {
-    return function (target: A_TYPES__MetaLinkedComponentConstructors
-    ) {
+    return function <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(
+        target: TTarget
+    ): TTarget {
         // Store meta info on the target class itself for the Meta decorator to pick up
         A_Context.setMeta(target, new constructor());
 

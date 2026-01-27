@@ -144,6 +144,10 @@ describe('A-Meta tests', () => {
         @A_Meta.Define(CustomComponentMeta)
         class CustomComponent extends A_Component {
 
+            static Test(){
+
+            }
+
             constructor(
                 @A_Inject(InjectableComponent) public injectableComponent: InjectableComponent
             ) {

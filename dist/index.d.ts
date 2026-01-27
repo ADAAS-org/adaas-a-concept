@@ -2440,7 +2440,7 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
      * @param target
      * @returns
      */
-    static Define<T extends A_Meta>(target: A_TYPES__Meta_Constructor<T>): (target: A_TYPES__MetaLinkedComponentConstructors) => A_TYPES__MetaLinkedComponentConstructors;
+    static Define<T extends A_Meta>(target: A_TYPES__Meta_Constructor<T>): <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(target: TTarget) => TTarget;
     protected meta: Map<keyof _StorageItems, _StorageItems[keyof _StorageItems]>;
     /**
      * Method to get the iterator for the meta object
@@ -4136,7 +4136,7 @@ declare class A_ScopeError extends A_Error {
  *
  * @returns
  */
-declare function A_MetaDecorator<T extends A_Meta>(constructor: new (...args: any[]) => T): (target: A_TYPES__MetaLinkedComponentConstructors) => A_TYPES__MetaLinkedComponentConstructors;
+declare function A_MetaDecorator<T extends A_Meta>(constructor: new (...args: any[]) => T): <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(target: TTarget) => TTarget;
 
 /**
  * A-Dependency require decorator return type
