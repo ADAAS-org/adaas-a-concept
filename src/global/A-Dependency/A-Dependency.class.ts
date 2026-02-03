@@ -7,6 +7,7 @@ import { A_Dependency_Require } from "./A-Dependency-Require.decorator";
 import { A_DependencyError } from "./A-Dependency.error";
 import { A_TYPES__A_Dependency_EntityInjectionPagination, A_TYPES__A_Dependency_EntityInjectionQuery, A_TYPES__A_Dependency_Serialized, A_TYPES__A_DependencyInjectable, A_TYPES__A_DependencyResolutionStrategy } from "./A-Dependency.types";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
+import { A_Dependency_All } from "./A-Dependency-All.decorator";
 
 
 export class A_Dependency<
@@ -56,6 +57,15 @@ export class A_Dependency<
      */
     static get Flat(): typeof A_Dependency_Flat {
         return A_Dependency_Flat;
+    }
+
+    /**
+     * Allows to indicate that all instances of the dependency should be resolved
+     * 
+     * @returns
+     */
+    static get All(): typeof A_Dependency_All {
+        return A_Dependency_All;
     }
 
     protected _name: string;

@@ -1399,6 +1399,15 @@ layerOffset?: number): A_TYPES__A_Dependency_ParentDecoratorReturn;
  */
 declare function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorReturn;
 
+/**
+ * Should indicate which All is required
+ */
+declare function A_Dependency_All<T extends A_Entity>(
+/**
+ * Constructor Parameters that will be used to create the default instance
+ */
+entity: A_TYPES__Entity_Constructor<T>): A_TYPES__A_Dependency_AllDecoratorReturn;
+
 declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> {
     /**
      * Allows to indicate which Injected parameter is required
@@ -1434,6 +1443,12 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
      * @returns
      */
     static get Flat(): typeof A_Dependency_Flat;
+    /**
+     * Allows to indicate that all instances of the dependency should be resolved
+     *
+     * @returns
+     */
+    static get All(): typeof A_Dependency_All;
     protected _name: string;
     protected _target?: A_TYPES__Ctor<T>;
     protected _resolutionStrategy: A_TYPES__A_DependencyResolutionStrategy;
