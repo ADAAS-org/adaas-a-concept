@@ -8,6 +8,7 @@ import { A_TYPES__A_InjectDecorator_Meta, A_TYPES__InjectableTargets } from "../
 import { A_TYPES__A_Dependency_RequireDecoratorReturn } from "./A-Dependency.types";
 import { A_DependencyError } from "./A-Dependency.error";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
 
 
 /**
@@ -41,6 +42,10 @@ export function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorRe
 
             case A_TypeGuards.isContainerInstance(target):
                 metaKey = A_TYPES__ContainerMetaKey.INJECTIONS;
+                break;
+
+            case A_TypeGuards.isEntityInstance(target):
+                metaKey = A_TYPES__EntityMetaKey.INJECTIONS;
                 break;
         }
 

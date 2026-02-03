@@ -10,6 +10,7 @@ import { A_DependencyError } from "./A-Dependency.error";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
+import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
 
 
 /**
@@ -48,6 +49,10 @@ export function A_Dependency_All<T extends A_Entity>(
 
             case A_TypeGuards.isContainerInstance(target):
                 metaKey = A_TYPES__ContainerMetaKey.INJECTIONS;
+                break;
+
+            case A_TypeGuards.isEntityInstance(target):
+                metaKey = A_TYPES__EntityMetaKey.INJECTIONS;
                 break;
         }
 

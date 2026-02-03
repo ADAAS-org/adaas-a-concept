@@ -1,4 +1,4 @@
-import { A_Component, A_Dependency, A_Entity, A_Error, A_Inject, A_Scope, A_ScopeError } from "../src";
+import { A_Component, A_Dependency, A_Entity, A_Error, A_Feature, A_FeatureError, A_Inject, A_Scope, A_ScopeError } from "../src";
 
 
 
@@ -45,9 +45,23 @@ describe('A-Dependency tests', () => {
             ) {
                 super();
             }
+
         }
 
-        const scope = new A_Scope({ components: [Test] });
+        class testEntity extends A_Entity {
+            
+            @A_Feature.Extend({
+                name: 'test'
+            })
+            async test(
+                @A_Dependency.Required()
+                @A_Inject(DependencyRequiredComponent) component: DependencyRequiredComponent,
+            ) {
+
+            }
+        }
+
+        const scope = new A_Scope({ components: [Test], entities: [new testEntity()] });
 
         try {
             scope.resolve(Test);
@@ -59,6 +73,18 @@ describe('A-Dependency tests', () => {
         const dependency = scope.resolve(DependencyRequiredComponent);
 
         expect(dependency).toBeUndefined();
+
+
+        const entityInstance = scope.resolve(testEntity);
+
+        try {
+            await entityInstance?.call('test');
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_FeatureError);
+            expect((error as A_FeatureError).originalError).toBeInstanceOf(A_ScopeError);
+            expect((error as A_FeatureError).originalError.title).toBe(A_ScopeError.ResolutionError);
+        }
+
     });
     it('Should resolve a component if it has default constructor for dependency', async () => {
         class MyCustomEntity extends A_Entity<{ foo: string }> {
