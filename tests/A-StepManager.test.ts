@@ -1,4 +1,5 @@
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
+import { A_Dependency } from "@adaas/a-concept/global/A-Dependency/A-Dependency.class";
 import { A_StepsManager } from "@adaas/a-concept/global/A-StepManager/A-StepManager.class";
 
 describe('A-StepManager tests', () => {
@@ -20,32 +21,32 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
             },
             {
                 name: 'step6',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step6',
             },
         ]);
@@ -76,34 +77,34 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
                 before: /^.*\.*step2$/.source,
                 after: /^.*\.*step6$/.source
             },
             {
                 name: 'step6',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step6',
                 before: /^ComponentA\.step2$/.source
             },
@@ -135,32 +136,32 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
             },
             {
                 name: 'step6',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step6',
                 before: /.*/.source,
             },
@@ -191,33 +192,33 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
                 before: new RegExp('.*').source,
             },
             {
                 name: 'step6',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step6',
                 before: new RegExp('.*').source,
             },
@@ -249,32 +250,32 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
             },
             {
                 name: 'test',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'test',
                 before: /^.*\.step(4|5)$/.source,
                 after: /^.*\.step(1|2)$/.source,
@@ -309,22 +310,22 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'readFromEnv',
-                component: ComponentB,
+                dependency: new A_Dependency(ComponentB),
                 handler: 'readFromEnv',
             },
             {
                 name: 'readFromFile',
-                component: ComponentB,
+                dependency: new A_Dependency(ComponentB),
                 handler: 'readFromFile',
             },
             {
                 name: 'initialize',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'initialize',
             },
             {
                 name: 'inject',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'inject',
                 before: /ComponentB\.read.+/ig.source,
                 after: 'ComponentA.initialize'
@@ -356,28 +357,28 @@ describe('A-StepManager tests', () => {
         const sm = new A_StepsManager([
             {
                 name: 'step1',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step1',
             },
             {
                 name: 'step2',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step2',
             },
             {
                 name: 'step3',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step3',
                 override: /^.*\.step(4|5)$/.source
             },
             {
                 name: 'step4',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step4',
             },
             {
                 name: 'step5',
-                component: ComponentA,
+                dependency: new A_Dependency(ComponentA),
                 handler: 'step5',
             }
         ]);

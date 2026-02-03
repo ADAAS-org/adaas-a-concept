@@ -5,7 +5,7 @@ import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
 import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
 import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
-import { A_Entity, A_Error, A_TYPES__FeatureState } from "../src";
+import { A_Dependency, A_Entity, A_Error, A_TYPES__FeatureState } from "../src";
 
 jest.retryTimes(0);
 
@@ -27,7 +27,7 @@ describe('A-Feature tests', () => {
         const template = [
             {
                 name: 'A_Component.testHandler',
-                component: A_Component,
+                dependency: new A_Dependency(A_Component),
                 handler: 'testHandler',
             }
         ]
@@ -59,7 +59,7 @@ describe('A-Feature tests', () => {
                 invoke: true,
                 template: [{
                     name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
+                    dependency: new A_Dependency(MyExtendedComponent),
                     handler: 'testHandler',
                     behavior: 'sync',
                     before: '',
@@ -67,7 +67,7 @@ describe('A-Feature tests', () => {
                 },
                 {
                     name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
+                    dependency: new A_Dependency(MyExtendedComponent),
                     handler: 'testHandler'
                 }]
             })
@@ -113,7 +113,7 @@ describe('A-Feature tests', () => {
                 invoke: true,
                 template: [{
                     name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
+                    dependency: new A_Dependency(MyExtendedComponent),
                     handler: 'testHandler',
                     behavior: 'sync',
                     before: '',
@@ -121,7 +121,7 @@ describe('A-Feature tests', () => {
                 },
                 {
                     name: 'MyExtendedComponent.testHandler',
-                    component: MyExtendedComponent,
+                    dependency: new A_Dependency(MyExtendedComponent),
                     handler: 'testHandler'
                 }]
             })
@@ -172,7 +172,7 @@ describe('A-Feature tests', () => {
                 invoke: true,
                 template: [{
                     name: 'MyExtendedComponent2.testHandler',
-                    component: 'MyExtendedComponent2',
+                    dependency: new A_Dependency('MyExtendedComponent2'),
                     handler: 'testHandler',
                     behavior: 'sync',
                     before: '',
@@ -345,8 +345,7 @@ describe('A-Feature tests', () => {
     it('Should inherit feature definitions & extensions', async () => {
         const executionOrder: string[] = [];
 
-        // 1) create a base component with some feature
-        class My_Component extends A_Component {
+        class Parent_Component extends A_Component {
 
             @A_Feature.Define({ invoke: false })
             async feature1() {
@@ -363,6 +362,27 @@ describe('A-Feature tests', () => {
             ) {
                 executionOrder.push('stepTwo');
             }
+
+            @A_Feature.Extend({
+                name: 'feature1',
+            })
+            async feature1Extension2(
+                @A_Inject(A_Scope) scope: A_Scope
+            ) {
+                executionOrder.push('stepFour');
+            }
+        }
+
+        // 1) create a base component with some feature
+        class My_Component extends Parent_Component {
+            @A_Feature.Extend({
+                name: 'feature1',
+            })
+            async feature1Extension(
+                @A_Inject(A_Scope) scope: A_Scope
+            ) {
+                executionOrder.push('stepThree');
+            }
         }
 
 
@@ -374,11 +394,18 @@ describe('A-Feature tests', () => {
 
         // 3) create an instance of the component from the scope
         const myComponent = scope.resolve(My_Child_Component)!;
+
+
+        const featureDefinition = A_Context.featureTemplate('feature1', myComponent, scope)
+
+        expect(featureDefinition).toBeDefined();
+        expect(featureDefinition.length).toBe(2);
+
         expect(myComponent).toBeInstanceOf(My_Child_Component);
 
         await myComponent.feature1();
 
-        expect(executionOrder).toEqual(['stepOne', 'stepTwo']);
+        expect(executionOrder).toEqual(['stepOne', 'stepThree', 'stepFour']);
     });
 
     it('Should allow override feature extension', async () => {
@@ -491,7 +518,7 @@ describe('A-Feature tests', () => {
             template: [
                 {
                     name: 'A_Component.testHandler',
-                    component: 'A_Component',
+                    dependency: new A_Dependency('A_Component'),
                     handler: 'testHandler',
                 }
             ]
@@ -548,17 +575,17 @@ describe('A-Feature tests', () => {
             template: [
                 {
                     name: 'ComponentA.feature1',
-                    component: 'ComponentA',
+                    dependency: new A_Dependency('ComponentA'),
                     handler: 'feature1',
                 },
                 {
                     name: 'ComponentA.feature2',
-                    component: 'ComponentA',
+                    dependency: new A_Dependency('ComponentA'),
                     handler: 'feature2',
                 },
                 {
                     name: 'ComponentA.feature3',
-                    component: 'ComponentA',
+                    dependency: new A_Dependency('ComponentA'),
                     handler: 'feature3',
                 },
             ]
@@ -589,7 +616,6 @@ describe('A-Feature tests', () => {
             async test() {
                 await this.call('myFeature');
             }
-
         }
 
         class MyComponent extends A_Component {
@@ -603,9 +629,7 @@ describe('A-Feature tests', () => {
             }
         }
 
-        class My_Entity extends BaseEntity {
-
-        }
+        class My_Entity extends BaseEntity { }
 
         const scope = new A_Scope({ name: 'TestScope', components: [MyComponent] });
 
@@ -620,7 +644,7 @@ describe('A-Feature tests', () => {
         await baseEntity.test();
 
         expect(executionResults).toEqual(['testMethod']);
-
+        
         await myEntity.test();
 
         expect(executionResults).toEqual(['testMethod', 'testMethod']);
@@ -691,6 +715,7 @@ describe('A-Feature tests', () => {
 
 
         class ChildComponent_A extends BaseComponent {
+
             @A_Feature.Extend({
                 name: 'testFeature',
                 scope: [ChildComponent_A]

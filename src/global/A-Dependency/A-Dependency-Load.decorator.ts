@@ -14,18 +14,15 @@ import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
  * Should indicate which Load is required
  */
 export function A_Dependency_Load(
-    /**
-     * Path to load the dependency from
-     */
-    path: string
+
 ): A_TYPES__A_Dependency_LoadDecoratorReturn {
 
-    if (!path || typeof path !== 'string') {
-        throw new A_DependencyError(
-            A_DependencyError.InvalidLoadPath,
-            `A-Load decorator requires a valid path string to the dependency`
-        );
-    }
+    // if (!path || typeof path !== 'string') {
+    //     throw new A_DependencyError(
+    //         A_DependencyError.InvalidLoadPath,
+    //         `A-Load decorator requires a valid path string to the dependency`
+    //     );
+    // }
 
     return function (
         target: A_TYPES__InjectableTargets,
@@ -62,9 +59,8 @@ export function A_Dependency_Load(
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
-        paramsArray[parameterIndex] = {
-            ...(paramsArray[parameterIndex] || {}),
-            load: path
+        paramsArray[parameterIndex].resolutionStrategy = {
+            load: true
         }
         // save back the updated injections array
         existedMeta.set(method, paramsArray);

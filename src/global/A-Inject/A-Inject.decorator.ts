@@ -1,8 +1,6 @@
 import {
-    A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
     A_TYPES__A_InjectDecorator_Meta,
     A_TYPES__A_InjectDecoratorReturn,
-    A_TYPES__InjectableConstructors,
     A_TYPES__InjectableTargets
 } from "./A-Inject.types";
 import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
@@ -26,6 +24,10 @@ import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types";
 import { A_Error } from "../A-Error/A_Error.class";
 import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
+import { A_Dependency } from "../A-Dependency/A-Dependency.class";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
+import { A_TYPES__A_DependencyInjectable, A_TYPES__A_DependencyResolutionStrategy } from "../A-Dependency/A-Dependency.types";
+import { A_TYPES__Caller_Constructor } from "../A-Caller/A_Caller.types";
 
 
 /**
@@ -39,46 +41,19 @@ import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
  * @param params - see overloads
  * @returns - decorator function
  */
-export function A_Inject<T extends A_Scope>(
-    /***
-     * Provide the Scope constructor that will be associated with the injection.
-     *
-     * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
-     */
-    scope: A_TYPES__Scope_Constructor<T>
-): A_TYPES__A_InjectDecoratorReturn
-export function A_Inject<T extends A_Error>(
-    /***
-     * Provide the Error constructor that will be associated with the injection.
-     *
-     * [!] It returns an Instance of the Error what is executed.
-     */
-    error: A_TYPES__Error_Constructor<T>
-): A_TYPES__A_InjectDecoratorReturn
-export function A_Inject<T extends A_Feature>(
-    /**
-     * Provide the Feature constructor that will be associated with the injection.
-     * 
-     * [!] It returns an Instance of the Feature what is executed. 
-     */
-    feature: A_TYPES__Feature_Constructor<T>
-): A_TYPES__A_InjectDecoratorReturn
 export function A_Inject<T extends A_Component>(
     /**
      * Provide the Component constructor that will be associated with the injection.
      * 
      * [!] It returns an Instance of the Component from current Scope or from Parent Scopes.
      */
-    component: A_TYPES__Component_Constructor<T>
-): A_TYPES__A_InjectDecoratorReturn
-//  Allows to inject just one A_FeatureCaller
-export function A_Inject(
+    component: A_TYPES__Component_Constructor<T>,
     /**
-     * Provide the A_Caller constructor to inject the Caller instance
+     * Provide additional instructions on how to perform the injection
      *
-     * [!] It returns initiator of the call, e.g. Container/Component/Command who called Feature 
+     * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
      */
-    caller: typeof A_Caller
+    config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>
 ): A_TYPES__A_InjectDecoratorReturn
 // Allows to inject just one Context Fragment
 export function A_Inject<T extends A_Fragment>(
@@ -87,7 +62,13 @@ export function A_Inject<T extends A_Fragment>(
      *
      * [!] It returns the Fragment instance from current Scope or from Parent Scopes.
      */
-    fragment: A_TYPES__Fragment_Constructor<T>
+    fragment: A_TYPES__Fragment_Constructor<T>,
+    /**
+     * Provide additional instructions on how to perform the injection
+     *
+     * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
+     */
+    config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>
 ): A_TYPES__A_InjectDecoratorReturn
 export function A_Inject<T extends A_Entity>(
     /**
@@ -103,7 +84,7 @@ export function A_Inject<T extends A_Entity>(
      * 
      * [!] Default Pagination is 1 if it's necessary to get multiple Entities please customize it in the instructions
      */
-    config?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
+    config?: Partial<A_TYPES__A_DependencyResolutionStrategy<T>>
 ): A_TYPES__A_InjectDecoratorReturn<T>
 export function A_Inject<T extends A_Component>(
     /**
@@ -113,9 +94,58 @@ export function A_Inject<T extends A_Component>(
      */
     ctor: string
 ): A_TYPES__A_InjectDecoratorReturn
-export function A_Inject(
-    param1: A_TYPES__InjectableConstructors,
-    param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
+//  Allows to inject just one A_FeatureCaller
+export function A_Inject<T extends A_Caller>(
+    /**
+     * Provide the A_Caller constructor to inject the Caller instance
+     *
+     * [!] It returns initiator of the call, e.g. Container/Component/Command who called Feature 
+     */
+    caller: A_TYPES__Caller_Constructor<T>
+): A_TYPES__A_InjectDecoratorReturn
+//  Allows to inject just one A_Error instance
+export function A_Inject<T extends A_Error>(
+    /***
+     * Provide the Error constructor that will be associated with the injection.
+     *
+     * [!] It returns an Instance of the Error what is executed.
+     */
+    error: A_TYPES__Error_Constructor<T>,
+    /**
+     * Provide additional instructions on how to perform the injection
+     *
+     * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
+     */
+    config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>
+): A_TYPES__A_InjectDecoratorReturn
+export function A_Inject<T extends A_Feature>(
+    /**
+     * Provide the Feature constructor that will be associated with the injection.
+     * 
+     * [!] It returns an Instance of the Feature what is executed. 
+     */
+    feature: A_TYPES__Feature_Constructor<T>
+): A_TYPES__A_InjectDecoratorReturn
+// Allows to inject just one Scope instance
+export function A_Inject<T extends A_Scope>(
+    /***
+     * Provide the Scope constructor that will be associated with the injection.
+     *
+     * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
+     */
+    scope: A_TYPES__Scope_Constructor<T>
+): A_TYPES__A_InjectDecoratorReturn
+export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
+    /***
+     * Provide the Scope constructor that will be associated with the injection.
+     *
+     * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
+     */
+    dependency: A_Dependency<T>
+): A_TYPES__A_InjectDecoratorReturn
+export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
+    param1: string | A_TYPES__Ctor<T> | A_Dependency<T>,
+    param2?: Partial<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>>
 ): A_TYPES__A_InjectDecoratorReturn {
 
     //  pre call checks
@@ -166,10 +196,8 @@ export function A_Inject(
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
-        paramsArray[parameterIndex] = {
-            target: param1,
-            instructions: param2
-        }
+        paramsArray[parameterIndex] = param1 instanceof A_Dependency ? param1 : new A_Dependency(param1, param2);
+      
         // save back the updated injections array
         existedMeta.set(method, paramsArray);
 

@@ -57,9 +57,8 @@ export function A_Dependency_Parent(
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
-        paramsArray[parameterIndex] = {
-            ...(paramsArray[parameterIndex] || {}),
-            parent: { layerOffset }
+        paramsArray[parameterIndex].resolutionStrategy = {
+            parent: layerOffset
         }
         // save back the updated injections array
         existedMeta.set(method, paramsArray);

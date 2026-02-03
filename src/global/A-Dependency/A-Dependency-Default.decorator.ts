@@ -56,11 +56,11 @@ export function A_Dependency_Default(
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
-        paramsArray[parameterIndex] = {
-            ...(paramsArray[parameterIndex] || {}),
-            defaultArgs: args,
-            create: true
+        paramsArray[parameterIndex].resolutionStrategy = {
+            create: true,
+            args: args
         }
+
         // save back the updated injections array
         existedMeta.set(method, paramsArray);
 

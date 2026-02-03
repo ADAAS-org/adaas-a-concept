@@ -38,6 +38,7 @@ import { A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
 import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
+import { A_Dependency } from "../A-Dependency/A-Dependency.class";
 
 
 
@@ -531,8 +532,27 @@ export class A_Context {
 
         // Check if the meta already exists for the property, if not create a new one
         if (!instance._metaStorage.has(property)) {
-            const inheritMeta = instance._metaStorage.get(Object.getPrototypeOf(property)) || new metaType();
-            instance._metaStorage.set(property, new metaType().from(inheritMeta as any));
+            // const inheritMeta = instance._metaStorage.get(Object.getPrototypeOf(property)) || new metaType();
+            // instance._metaStorage.set(property, new metaType().from(inheritMeta as any));
+
+            let inheritedMeta: A_Meta<any> | undefined = undefined;
+            let currentProperty: any = property;
+
+            // go up to the prototype chain and find if there is any meta to inherit from
+            while (!inheritedMeta) {
+                const parent = Object.getPrototypeOf(currentProperty);
+
+                if (!parent) {
+                    break;
+                }
+                inheritedMeta = instance._metaStorage.get(parent);
+                currentProperty = parent;
+            }
+
+            if (!inheritedMeta)
+                inheritedMeta = new metaType();
+
+            instance._metaStorage.set(property, new metaType().from(inheritedMeta as any));
         }
 
         // Return the meta for the property
@@ -791,12 +811,12 @@ export class A_Context {
             .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
             .map(c => `${c.name}.${name}`);
 
-
-
-        // const callNames = [`${component.constructor.name}.${name}`];
+        // const callNames = [`${A_CommonHelper.getComponentName(component)}.${name}`];
         // const callNames = [`BaseComponent.testFeature`];
 
-        const steps: A_TYPES__A_StageStep[] = [];
+        const steps: Map<string, A_TYPES__A_StageStep> = new Map();
+
+        const allowedComponents: Set<A_TYPES__MetaLinkedComponentConstructors> = new Set();
 
         for (const callName of callNames) {
             // We need to get all components that has extensions for the feature in component
@@ -804,14 +824,22 @@ export class A_Context {
                 // Just try to make sure that component not only Indexed but also presented in scope
                 if (scope.has(cmp) && (
                     A_TypeGuards.isComponentMetaInstance(meta)
-                    || A_TypeGuards.isContainerMetaInstance(meta)
+                    ||
+                    A_TypeGuards.isContainerMetaInstance(meta)
                 )) {
+                    allowedComponents.add(cmp);
                     // Get all extensions for the feature
                     meta
                         .extensions(callName)
                         .forEach((declaration) => {
-                            steps.push({
-                                component: cmp,
+                            const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+
+                            if (inherited) {
+                                steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
+                            }
+
+                            steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
+                                dependency: new A_Dependency(cmp),
                                 ...declaration
                             });
                         });
@@ -819,7 +847,7 @@ export class A_Context {
             }
         }
 
-        return instance.filterToMostDerived(scope, steps);
+        return instance.filterToMostDerived(scope, Array.from(steps.values()));
     }
 
 
@@ -834,21 +862,16 @@ export class A_Context {
         scope: A_Scope,
         items: A_TYPES__A_StageStep[]): Array<A_TYPES__A_StageStep> {
         return items.filter(item => {
-            const currentClass = typeof item.component === 'string'
-                ? scope.resolveConstructor(item.component)
-                : A_TypeGuards.isContainerInstance(item.component)
-                    ? item.component.constructor : item.component;
+            // const currentClass = scope.resolveConstructor(item.dependency.name)
+            const currentClass = scope.resolveConstructor(item.dependency.name)
 
             // Check if this class is parent of any other in the list
             const isParentOfAnother = items.some(other => {
                 if (other === item) return false;
 
-                const otherClass = typeof other.component === 'string'
-                    ? scope.resolveConstructor(other.component)
-                    : A_TypeGuards.isContainerInstance(other.component)
-                        ? other.component.constructor
-                        : other.component;
+                const otherClass = scope.resolveConstructor(other.dependency.name);
 
+                if (!currentClass || !otherClass) return false;
 
                 return currentClass.prototype.isPrototypeOf(otherClass.prototype);
             });
@@ -997,30 +1020,39 @@ export class A_Context {
                     `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`
                 );
 
-        const steps: A_TYPES__A_StageStep[] = [];
+        const steps: Map<string, A_TYPES__A_StageStep> = new Map();
 
         const scope = this.scope(component);
 
         // We need to get all components that has extensions for the feature in component
+        const allowedComponents: Set<A_TYPES__MetaLinkedComponentConstructors> = new Set();
+
         for (const [cmp, meta] of instance._metaStorage) {
             // Just try to make sure that component not only Indexed but also presented in scope
             if (scope.has(cmp) && (
                 A_TypeGuards.isComponentMetaInstance(meta)
                 || A_TypeGuards.isContainerMetaInstance(meta)
             )) {
+                allowedComponents.add(cmp);
                 // Get all extensions for the feature
                 meta
                     .abstractions(abstraction)
                     .forEach((declaration) => {
-                        steps.push({
-                            component: cmp,
+                        const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+
+                        if (inherited) {
+                            steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
+                        }
+
+                        steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
+                            dependency: new A_Dependency(cmp),
                             ...declaration
                         });
                     });
             }
         }
 
-        return instance.filterToMostDerived(scope, steps);
+        return instance.filterToMostDerived(scope, Array.from(steps.values()));
     }
 
 

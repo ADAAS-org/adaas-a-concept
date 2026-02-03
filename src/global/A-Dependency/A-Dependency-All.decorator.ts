@@ -5,15 +5,22 @@ import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A
 import { A_TYPES__ContainerMetaKey } from "@adaas/a-concept/global/A-Container/A-Container.constants";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_TYPES__A_InjectDecorator_Meta, A_TYPES__InjectableTargets } from "../A-Inject/A-Inject.types";
-import { A_TYPES__A_Dependency_FlatDecoratorReturn } from "./A-Dependency.types";
+import { A_TYPES__A_Dependency_AllDecoratorReturn } from "./A-Dependency.types";
 import { A_DependencyError } from "./A-Dependency.error";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
 
 
 /**
- * Should indicate which dependency is required
+ * Should indicate which All is required
  */
-export function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn {
+export function A_Dependency_All<T extends A_Entity>(
+    /**
+     * Constructor Parameters that will be used to create the default instance
+     */
+    entity: A_TYPES__Entity_Constructor<T>
+): A_TYPES__A_Dependency_AllDecoratorReturn {
 
     return function (
         target: A_TYPES__InjectableTargets,
@@ -26,7 +33,7 @@ export function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn {
         if (!A_TypeGuards.isTargetAvailableForInjection(target)) {
             throw new A_DependencyError(
                 A_DependencyError.InvalidDependencyTarget,
-                `A-Dependency cannot be used on the target of type ${typeof target} (${componentName})`
+                `A-All cannot be used on the target of type ${typeof target} (${componentName})`
             );
         }
 
@@ -49,12 +56,13 @@ export function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn {
         // get existing injections for the method or create a new array
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
-
         // set the parameter injection info
         paramsArray[parameterIndex].resolutionStrategy = {
-            flat: true,
+            pagination: {
+                ...paramsArray[parameterIndex].resolutionStrategy.pagination,
+                count: -1
+            }
         }
-
         // save back the updated injections array
         existedMeta.set(method, paramsArray);
 

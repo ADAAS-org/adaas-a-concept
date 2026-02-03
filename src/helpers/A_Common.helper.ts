@@ -312,6 +312,10 @@ export class A_CommonHelper {
             if (fnAny.displayName) return String(fnAny.displayName);
             if (fnAny.name) return String(fnAny.name);
 
+            if(fnAny.constructor && fnAny.constructor.name) {
+                return String(fnAny.constructor.name);
+            }
+
             // Try to extract a name from source if possible
             try {
                 const src = Function.prototype.toString.call(component);

@@ -5,6 +5,7 @@ import { A_TYPES__Scope_Init } from "../A-Scope/A-Scope.types";
 import { A_TYPES__ContainerMetaKey } from "./A-Container.constants";
 import { A_Container } from "./A-Container.class";
 import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 
 
 // ============================================================================
@@ -14,7 +15,7 @@ import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMe
  * Container constructor type
  * Uses the generic type T to specify the type of the container
  */
-export type A_TYPES__Container_Constructor<T = A_Container> = new (...args: any[]) => T;
+export type A_TYPES__Container_Constructor<T = A_Container> = A_TYPES__Ctor<T>;
 /**
  * Container initialization type
  */

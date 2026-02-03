@@ -13,5 +13,7 @@ export class A_ScopeError extends A_Error {
 
     static readonly CircularInheritanceError = 'A-Scope Circular Inheritance Error';
 
+    static readonly CircularImportError = 'A-Scope Circular Import Error';
+
     static readonly DeregistrationError = 'A-Scope Deregistration Error';
 }

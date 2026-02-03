@@ -9,10 +9,10 @@ import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_StageError } from "./A-Stage.error";
 import { A_Error } from "../A-Error/A_Error.class";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
-import { A_TYPES__ScopeResolvableComponents } from "../A-Scope/A-Scope.types";
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TYPES__A_DependencyInjectable } from "../A-Dependency/A-Dependency.types";
 
 
 
@@ -110,85 +110,24 @@ export class A_Stage {
         scope: A_Scope,
         step: A_TYPES__A_StageStep
     ) {
-        let resolverConstructor: A_TYPES__Container_Constructor | A_TYPES__Component_Constructor;
-
-        switch (true) {
-            case A_TypeGuards.isContainerInstance(step.component):
-                resolverConstructor = step.component.constructor as A_TYPES__Container_Constructor;
-                break;
-
-            case A_TypeGuards.isString(step.component):
-                resolverConstructor = scope.resolveConstructor(step.component);
-                break;
-
-            default:
-                resolverConstructor = step.component;
-                break;
-        }
-
+        let resolverConstructor: A_TYPES__Container_Constructor | A_TYPES__Component_Constructor =
+            (step.dependency.target as A_TYPES__Container_Constructor | A_TYPES__Component_Constructor)
+            || scope.resolveConstructor(step.dependency.name);
 
         return Promise
             .all(A_Context
                 .meta(resolverConstructor)
                 .injections(step.handler)
-                .map(async arg => {
+                .map(async dependency => {
                     switch (true) {
-                        case A_TypeGuards.isCallerConstructor(arg.target):
+                        case A_TypeGuards.isCallerConstructor(dependency.target):
                             return this._feature.caller.component;
 
-                        case A_TypeGuards.isFeatureConstructor(arg.target):
+                        case A_TypeGuards.isFeatureConstructor(dependency.target):
                             return this._feature;
 
                         default: {
-                            const { target, require, create, defaultArgs, parent, flat } = arg;
-
-
-                            let dependency;
-                            let targetScope = scope;
-
-
-                            switch (true) {
-                                // 1) Flat resolution
-                                case flat: {
-                                    dependency = targetScope.resolveFlat(target);
-                                    break;
-                                }
-                                // 2) Parent resolution
-                                case parent && typeof parent.layerOffset === 'number': {
-                                    const targetParent = targetScope.parentOffset(parent.layerOffset);
-                                    if (!targetParent) {
-                                        throw new A_StageError(
-                                            A_StageError.ArgumentsResolutionError,
-                                            `Unable to resolve parent scope at layer offset ${parent.layerOffset} for argument ${A_CommonHelper.getComponentName(arg.target)} for stage ${this.name} in scope ${scope.name}`
-                                        );
-                                    }
-                                    dependency = targetParent.resolve(target);
-                                    targetScope = targetParent;
-
-                                    break;
-                                }
-                                // 3) Normal resolution
-                                default: {
-                                    dependency = targetScope.resolve(target);
-                                    break;
-                                }
-                            }
-
-                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
-                                const newDependency = new target(...defaultArgs);
-
-                                targetScope.register(newDependency);
-                                return newDependency;
-                            }
-
-                            if (require && !dependency) {
-                                throw new A_StageError(
-                                    A_StageError.ArgumentsResolutionError,
-                                    `Unable to resolve required argument ${A_CommonHelper.getComponentName(arg.target)} for stage ${this.name} in scope ${scope.name}`
-                                );
-                            }
-
-                            return dependency;
+                            return scope.resolveDependency(dependency);
                         }
                     }
                 })
@@ -206,29 +145,23 @@ export class A_Stage {
         scope: A_Scope,
         step: A_TYPES__A_StageStep
     ) {
-        const { component, handler } = step;
+        const { dependency, handler } = step;
 
-        let instance: A_TYPES__ScopeResolvableComponents | undefined
+        let instance: A_TYPES__A_DependencyInjectable | undefined =
+            (scope.resolveDependency(dependency) || this.feature.scope.resolveDependency(dependency)) as A_TYPES__A_DependencyInjectable
 
-        switch (true) {
-            case A_TypeGuards.isContainerInstance(component):
-                instance = component;
-                break;
-
-            case A_TypeGuards.isString(component):
-                instance = scope.resolve(component) || this.feature.scope.resolve(component);
-                break;
-
-            default:
-                instance = scope.resolve(component) || this.feature.scope.resolve(component);
-                break;
-        }
 
         if (!instance)
-            throw new A_StageError(A_StageError.CompileError, `Unable to resolve component ${typeof component === 'string' ? component : component.name} from scope ${scope.name}`);
+            throw new A_StageError(
+                A_StageError.CompileError,
+                `Unable to resolve component ${dependency.name} from scope ${scope.name}`
+            );
 
         if (!instance[handler])
-            throw new A_StageError(A_StageError.CompileError, `Handler ${handler} not found in ${instance.constructor.name}`);
+            throw new A_StageError(
+                A_StageError.CompileError,
+                `Handler ${handler} not found in ${instance.constructor.name}`
+            );
 
         return instance;
     }

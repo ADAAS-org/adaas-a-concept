@@ -7,7 +7,7 @@ import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types"
 import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types"
 import { A_Feature } from "./A-Feature.class"
-import { A_TYPES__Required } from "@adaas/a-concept/types/A_Common.types"
+import { A_TYPES__Ctor, A_TYPES__Required } from "@adaas/a-concept/types/A_Common.types"
 import { A_Scope } from "../A-Scope/A-Scope.class"
 import { A_Stage } from "../A-Stage/A-Stage.class"
 import { A_TYPES__Error_Init } from "../A-Error/A_Error.types"
@@ -20,7 +20,7 @@ import { A_TYPES__Error_Init } from "../A-Error/A_Error.types"
  * Feature constructor type
  * Uses the generic type T to specify the type of the feature
  */
-export type A_TYPES__Feature_Constructor<T = A_Feature> = new (...args: any[]) => T;
+export type A_TYPES__Feature_Constructor<T = A_Feature> = A_TYPES__Ctor<T>;
 /**
  * Feature initialization type
  */
@@ -181,7 +181,7 @@ export type A_TYPES__FeatureDefineDecoratorConfig = {
 /**
  * Describes a single template item used in Feature Define decorator
  */
-export type A_TYPES__FeatureDefineDecoratorTemplateItem = A_TYPES__Required<Partial<A_TYPES__A_StageStep>, ['name', 'handler', 'component']>
+export type A_TYPES__FeatureDefineDecoratorTemplateItem = A_TYPES__Required<Partial<A_TYPES__A_StageStep>, ['name', 'handler', 'dependency']>
 /**
  * Describes a target where Feature Define decorator can be applied
  * 

@@ -146,16 +146,12 @@ export function A_Feature_Extend(
         }
 
 
-
-
-
         const existedDefinitions = A_Context
             .meta(target)
             .get(metaKey);
 
         // Get the existed metadata or create a new one
-        const meta = A_Context
-            .meta(target)
+        const meta = A_Context.meta(target)
 
         const existedMeta = meta.get(metaKey)
             ? new A_Meta().from(meta.get(metaKey)!)

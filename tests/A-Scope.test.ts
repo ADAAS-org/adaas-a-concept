@@ -7,7 +7,7 @@ import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
 import { A_Fragment } from '@adaas/a-concept/global/A-Fragment/A-Fragment.class';
 import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
 import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
-import { A_Error } from '../src';
+import { A_Dependency, A_Error } from '../src';
 
 jest.retryTimes(0);
 
@@ -149,7 +149,7 @@ describe('A-Scope tests', () => {
         const entity2 = new MyEntity({ bar: 'baz' });
         scope.register(entity1);
         scope.register(entity2);
-        const resolved = scope.resolve(MyEntity, { query: { bar: 'baz' } });
+        const resolved = scope.resolveDependency(new A_Dependency(MyEntity, { query: { bar: 'baz' } }));
         expect(resolved).toBe(entity2);
 
 
@@ -168,11 +168,11 @@ describe('A-Scope tests', () => {
             }
         }
         const scope = new A_Scope({ name: 'TestScope' });
-        for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 15; i++) {
             const entity = new MyEntity({ foo: 'bar' });
             scope.register(entity);
         }
-        const resolved = scope.resolve(MyEntity, { pagination: { count: 10 } });
+        const resolved = scope.resolveDependency(new A_Dependency(MyEntity, { pagination: { count: 10 } }));
         expect(Array.isArray(resolved)).toBe(true);
     });
     it('Should return array with pagination.count and provided filter', async () => {
@@ -197,7 +197,7 @@ describe('A-Scope tests', () => {
             const entity = new MyEntity({ foo: 'baz' });
             scope.register(entity);
         }
-        const resolved = scope.resolve(MyEntity, { query: { foo: 'baz' }, pagination: { count: 10 } });
+        const resolved = scope.resolveDependency(new A_Dependency(MyEntity, { query: { foo: 'baz' }, pagination: { count: 10, from: 'start' } }));
         expect(Array.isArray(resolved)).toBe(true);
         expect((resolved as Array<MyEntity>).length).toBe(5);
         (resolved as Array<MyEntity>).forEach(r => {
@@ -675,5 +675,34 @@ describe('A-Scope tests', () => {
 
         const resolveByNameFlat = scope.resolveFlat<MyEntity_A>('MyEntity_B');
         expect(resolveByNameFlat).toBeUndefined();
+    });
+
+    it('Should allow to extend scope with imports', async () => {
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyEntity_B extends MyEntity_A { }
+
+        const scopeA = new A_Scope({
+            name: 'ParentScope',
+            entities: [new MyEntity_B({ name: 'Entity1' })]
+        });
+
+        const scopeB = new A_Scope({
+            name: 'TestScope',
+            entities: [new MyEntity_A({ name: 'Entity2' })]
+        });
+
+        scopeB.import(scopeA);
+
+        const resolvedA = scopeB.resolve<MyEntity_B>(MyEntity_B);
+        expect(resolvedA).toBeInstanceOf(MyEntity_B);
+        expect(resolvedA?.name).toBe('Entity1');
     });
 });

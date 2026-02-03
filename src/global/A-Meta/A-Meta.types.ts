@@ -1,3 +1,4 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types";
 import { A_Container } from "../A-Container/A-Container.class";
@@ -15,7 +16,7 @@ import { A_Meta } from "./A-Meta.class";
 /**
  * Meta constructor type
  */
-export type A_TYPES__Meta_Constructor<T = A_Meta> = new (...args: any[]) => T;
+export type A_TYPES__Meta_Constructor<T = A_Meta> = A_TYPES__Ctor<T>;
 /**
  * Components that can have Meta associated with them
  */

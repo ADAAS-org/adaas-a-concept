@@ -11,6 +11,7 @@ import { A_TYPES__Error_Constructor } from "../A-Error/A_Error.types"
 import { A_Scope } from "./A-Scope.class"
 import { A_TYPES__Container_Constructor } from "../A-Container/A-Container.types"
 import { A_TYPES__Feature_Constructor } from "../A-Feature/A-Feature.types"
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types"
 
 
 // ============================================================================
@@ -20,7 +21,7 @@ import { A_TYPES__Feature_Constructor } from "../A-Feature/A-Feature.types"
  * Scope constructor type
  * Uses the generic type T to specify the type of the Scope
  */
-export type A_TYPES__Scope_Constructor<T = A_Scope> = new (...args: any[]) => T;
+export type A_TYPES__Scope_Constructor<T = A_Scope> = A_TYPES__Ctor<T>;
 /**
  * Scope initialization type
  */
@@ -74,17 +75,13 @@ export type A_TYPES__Scope_Serialized = {}
 
 
 /**
- * 
+ * A list of constructors that can have a scope associated with them
  */
 export type A_TYPES__ScopeLinkedConstructors = A_TYPES__Container_Constructor | A_TYPES__Feature_Constructor;
 /**
  * A list of components that can have a scope associated with them
  */
 export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
-/**
- * A list of components that can be resolved by a scope
- */
-export type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Error | A_Scope;
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */
@@ -94,4 +91,3 @@ export type A_TYPES_ScopeDependentComponents = A_Component | A_Entity | A_Fragme
  * Those components haven't scope dependent features.
  */
 export type A_TYPES_ScopeIndependentComponents = A_Error | A_Scope | A_Caller
-

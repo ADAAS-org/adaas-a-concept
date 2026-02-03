@@ -334,6 +334,8 @@ describe('A-Abstraction Tests', () => {
 
         await concept.load();
 
+        console.log(executionOrder);
+
         expect(executionOrder).toEqual(['stepTwo']);
     });
 });

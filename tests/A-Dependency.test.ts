@@ -191,14 +191,13 @@ describe('A-Dependency tests', () => {
                 @A_Inject(MyEntity_A) public myEntityA: MyEntity_A,
             ) {
                 super();
-
             }
         }
 
-        const parentScope = new A_Scope({ entities: [new MyEntity_A({ name: 'Parent Entity' })] });
-        const childScope = new A_Scope({ components: [ChildComponent] }, { parent: parentScope });
+        const parentScope = new A_Scope({ name: 'Parent Scope', entities: [new MyEntity_A({ name: 'Parent Entity' })] });
+        const childScope = new A_Scope({ name: 'Child Scope', components: [ChildComponent] }, { parent: parentScope });
 
-        const instance = childScope.resolve(ChildComponent);
+        const instance = childScope.resolveDependency(new A_Dependency<ChildComponent>(ChildComponent)) as ChildComponent;
 
         expect(instance).toBeDefined();
         expect(instance).toBeInstanceOf(ChildComponent);
@@ -268,7 +267,7 @@ describe('A-Dependency tests', () => {
             name: 'Grandparent Scope',
             entities: [new MyEntity_A({ name: 'Grandparent Entity' })]
         });
-        
+
         const parentScope = new A_Scope({
             name: 'Parent Scope',
             entities: [new MyEntity_A({ name: 'Parent Entity' })]
@@ -286,6 +285,51 @@ describe('A-Dependency tests', () => {
         expect(instance).toBeInstanceOf(ChildComponent);
         expect(instance!.myEntityA).toBeInstanceOf(MyEntity_A);
         expect(instance!.myEntityA.name).toBe('Grandparent Entity');
+    });
+
+    it('Should support proper types declaration', async () => {
+
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyComponent extends A_Component {
+            constructor(
+                @A_Dependency.Parent(-2)
+                @A_Inject(MyEntity_A) public myEntityA: MyEntity_A,
+            ) {
+                super();
+
+            }
+        }
+
+
+        const dependency = new A_Dependency(MyEntity_A, {
+            query: {
+                name: 'Test Entity'
+            },
+            pagination: {
+                count: 5,
+                from: 'start'
+            }
+        });
+
+
+        // const dependency2 = new A_Dependency(MyComponent, {
+        //     query: {
+        //         name: 'Test Entity'
+        //     },
+        //     pagination: {
+        //         count: 5,
+        //         from: 'start'
+        //     }
+        // });
+
     });
 
 });

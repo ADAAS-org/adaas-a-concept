@@ -10,4 +10,7 @@ export class A_DependencyError extends A_Error {
 
 
     static readonly InvalidDefaultTarget = 'Invalid Default Target';
+
+
+    static readonly ResolutionParametersError = 'Dependency Resolution Parameters Error';
 }

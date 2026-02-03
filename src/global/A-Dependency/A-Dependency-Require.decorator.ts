@@ -50,8 +50,7 @@ export function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorRe
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
 
         // set the parameter injection info
-        paramsArray[parameterIndex] = {
-            ...(paramsArray[parameterIndex] || {}),
+        paramsArray[parameterIndex].resolutionStrategy = {
             require: true
         }
         // save back the updated injections array

@@ -275,6 +275,11 @@ export class A_TypeGuards {
     // ==========================================================================
     // ========================= SPECIAL Type Guards =============================
     // ===========================================================================
+    static hasASEID(value: any): value is A_Entity | A_Error {
+        return value && typeof value === 'object' && 'aseid' && (A_TypeGuards.isEntityInstance(value) || A_TypeGuards.isErrorInstance(value));
+    }
+
+
     static isConstructorAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedConstructors {
         return A_TypeGuards.isContainerConstructor(target)
             || A_TypeGuards.isFeatureConstructor(target);
@@ -320,9 +325,9 @@ export class A_TypeGuards {
             || A_TypeGuards.isComponentInstance(param);
     }
 
-    static isAllowedForDependencyDefaultCreation(param: any): param is A_TYPES__Entity_Constructor | A_TYPES__Component_Constructor {
-        return A_TypeGuards.isComponentConstructor(param)
-            || A_CommonHelper.isInheritedFrom(param, A_Component)
+    static isAllowedForDependencyDefaultCreation(param: any): param is A_TYPES__Entity_Constructor | A_TYPES__Fragment_Constructor {
+        return A_TypeGuards.isFragmentConstructor(param)
+            || A_CommonHelper.isInheritedFrom(param, A_Fragment)
             || A_TypeGuards.isEntityConstructor(param)
             || A_CommonHelper.isInheritedFrom(param, A_Entity)
 

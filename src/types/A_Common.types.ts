@@ -1,6 +1,10 @@
 type Primitive = string | number | boolean | bigint | symbol | null | undefined;
 type Decrement = [never, 0, 1, 2, 3, 4, 5];
 
+
+export type A_TYPES__Ctor<T> = new (...args: any[]) => T;
+
+
 export type A_TYPES__DeepPartial<T, D extends number = 5> = {
     [P in keyof Required<T>]?:
     [D] extends [never] ? any :

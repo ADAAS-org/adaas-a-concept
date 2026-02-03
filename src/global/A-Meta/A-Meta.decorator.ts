@@ -1,3 +1,4 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Meta } from "./A-Meta.class";
 import { A_TYPES__MetaLinkedComponentConstructors } from "./A-Meta.types";
@@ -13,7 +14,7 @@ import { A_TYPES__MetaLinkedComponentConstructors } from "./A-Meta.types";
  * @returns 
  */
 export function A_MetaDecorator<T extends A_Meta>(
-    constructor: new (...args: any[]) => T
+    constructor: A_TYPES__Ctor<T>
 ) {
     return function <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(
         target: TTarget

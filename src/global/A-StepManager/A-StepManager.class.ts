@@ -41,7 +41,7 @@ export class A_StepsManager {
     }
 
     private ID(step: A_TYPES__A_StageStep) {
-        return `${typeof step.component === 'string' ? step.component : step.component.name}.${step.handler}`;
+        return `${step.dependency.name}.${step.handler}`;
     }
 
     private buildGraph() {

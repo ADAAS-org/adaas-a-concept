@@ -93,7 +93,6 @@ export function A_Feature_Define(
                     behavior: item.behavior || 'sync',
                     throwOnError: true,
                     override: item.override || ''
-
                 })
             ) : [],
         });

@@ -5,6 +5,7 @@ import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 import { A_TYPES__Entity_Constructor } from "../A-Entity/A-Entity.types";
 import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 
 
 // ============================================================================
@@ -14,7 +15,7 @@ import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
  * Concept constructor type
  * Uses the generic type T to specify the type of the concept
  */
-export type A_TYPES__Concept_Constructor<T = A_Concept> = new (...args: any[]) => T;
+export type A_TYPES__Concept_Constructor<T = A_Concept> = A_TYPES__Ctor<T>;
 /**
  * Concept initialization type
  * Uses the generic type T to specify the type of containers that the concept will use

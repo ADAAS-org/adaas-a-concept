@@ -1,3 +1,4 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_Container } from "../A-Container/A-Container.class";
 import { A_Entity } from "../A-Entity/A-Entity.class";
@@ -14,7 +15,7 @@ export type A_TYPES__CallerComponent = A_Container | A_Component | A_Entity;
  * Caller constructor type
  * Uses the generic type T to specify the type of the caller component
  */
-export type A_TYPES__Caller_Constructor<T = A_Caller> = new (...args: any[]) => T;
+export type A_TYPES__Caller_Constructor<T = A_Caller> = A_TYPES__Ctor<T>;
 /**
  * Caller initialization type
  */

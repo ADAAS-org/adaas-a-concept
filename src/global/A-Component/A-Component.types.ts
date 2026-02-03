@@ -4,6 +4,7 @@ import { A_TYPES__ConceptAbstraction } from "../A-Concept/A-Concept.types"
 import { A_Component } from "./A-Component.class"
 import { A_TYPES__ComponentMetaKey } from "./A-Component.constants"
 import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types"
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types"
 
 
 
@@ -17,7 +18,7 @@ import { A_TYPES__FeatureDefineDecoratorMeta,  A_TYPES__FeatureExtendDecoratorMe
  * Component constructor type
  * Uses the generic type T to specify the type of the component
  */
-export type A_TYPES__Component_Constructor<T = A_Component> = new (...args: any[]) => T;
+export type A_TYPES__Component_Constructor<T = A_Component> = A_TYPES__Ctor<T>;
 /**
  * Component initialization type
  */

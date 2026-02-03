@@ -1,5 +1,7 @@
 import { A_Container } from "../A-Container/A-Container.class"
 import { A_TYPES__Component_Constructor } from "../A-Component/A-Component.types"
+import { A_Dependency } from "../A-Dependency/A-Dependency.class"
+import { A_Component } from "../A-Component/A-Component.class"
 
 
 
@@ -49,7 +51,7 @@ export type A_TYPES__A_StageStep = {
     /**
      * The component to be called
      */
-    component: A_TYPES__Component_Constructor | A_Container | string
+    dependency: A_Dependency,
     /**
      * The method to be called on the component
      */

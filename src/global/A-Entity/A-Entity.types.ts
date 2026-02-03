@@ -4,6 +4,7 @@ import { ASEID } from "../ASEID/ASEID.class";
 import { A_TYPES__EntityMetaKey } from "./A-Entity.constants";
 import { A_TYPES__FeatureDefineDecoratorMeta, A_TYPES__FeatureExtendDecoratorMeta } from "../A-Feature/A-Feature.types";
 import { A_TYPES__A_InjectDecorator_Meta } from "../A-Inject/A-Inject.types";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 
 
 /**
@@ -23,7 +24,7 @@ export interface A_TYPES__IEntity {
  * Entity constructor type
  * Uses the generic type T to specify the type of the entity
  */
-export type A_TYPES__Entity_Constructor<T = A_Entity> = new (...args: any[]) => T;
+export type A_TYPES__Entity_Constructor<T = A_Entity> = A_TYPES__Ctor<T>;
 /**
  * Entity initialization type
  */

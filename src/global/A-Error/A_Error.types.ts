@@ -1,3 +1,4 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_Error } from "./A_Error.class";
 
@@ -9,7 +10,7 @@ import { A_Error } from "./A_Error.class";
  * Entity constructor type
  * Uses the generic type T to specify the type of the entity
  */
-export type A_TYPES__Error_Constructor<T = A_Error> = new (...args: any[]) => T;
+export type A_TYPES__Error_Constructor<T = A_Error> = A_TYPES__Ctor<T>;
 /**
  * Error initialization type
  */

@@ -1,9 +1,8 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 import { A_Component } from "../A-Component/A-Component.class";
 import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_Container } from "../A-Container/A-Container.class";
-import { A_Feature } from "../A-Feature/A-Feature.class";
 import { A_TYPES__FeatureExtendDecoratorConfig } from "../A-Feature/A-Feature.types";
-import { A_Scope } from "../A-Scope/A-Scope.class";
 import { A_Abstraction } from "./A-Abstraction.class";
 
 
@@ -14,7 +13,7 @@ import { A_Abstraction } from "./A-Abstraction.class";
  * Abstraction constructor type
  * Uses the generic type T to specify the type of the abstraction
  */
-export type A_TYPES__Abstraction_Constructor<T = A_Abstraction> = new (...args: any[]) => T;
+export type A_TYPES__Abstraction_Constructor<T = A_Abstraction> = A_TYPES__Ctor<T>;
 /**
  * Abstraction initialization type
  */

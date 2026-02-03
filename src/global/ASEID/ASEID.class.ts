@@ -31,6 +31,26 @@ export class ASEID {
     }
 
 
+    static compare(aseid1: ASEID | string | undefined, aseid2: ASEID | string | undefined): boolean {
+
+        if (!aseid1 || !aseid2) {
+            return false;
+        }
+
+        if (A_TypeGuards.isString(aseid1) && this.isASEID(aseid1) === false) {
+            throw new ASEID_Error(ASEID_Error.ASEIDValidationError, `Invalid ASEID format provided: ${aseid1}`);
+        }
+
+        if (A_TypeGuards.isString(aseid2) && this.isASEID(aseid2) === false) {
+            throw new ASEID_Error(ASEID_Error.ASEIDValidationError, `Invalid ASEID format provided: ${aseid2}`);
+        }
+
+        const aseidObj1 = aseid1 instanceof ASEID ? aseid1 : new ASEID(aseid1);
+        const aseidObj2 = aseid2 instanceof ASEID ? aseid2 : new ASEID(aseid2);
+
+        return aseidObj1.toString() === aseidObj2.toString();
+    }
+
 
     // ====================================================================
     // ==================== Hidden ASEID Information ======================

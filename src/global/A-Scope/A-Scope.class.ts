@@ -2,15 +2,9 @@ import {
     A_TYPES__ScopeConfig,
     A_TYPES__Scope_Init,
     A_TYPES__ScopeLinkedComponents,
-    A_TYPES__ScopeResolvableComponents,
     A_TYPES__Scope_Constructor,
     A_TYPES__ScopeLinkedConstructors
 } from './A-Scope.types'
-import {
-    A_TYPES__A_InjectDecorator_EntityInjectionInstructions,
-    A_TYPES__A_InjectDecorator_EntityInjectionQuery,
-    A_TYPES__InjectableConstructors,
-} from "@adaas/a-concept/global/A-Inject/A-Inject.types";
 import { A_Fragment } from "../A-Fragment/A-Fragment.class";
 import { A_Context } from "../A-Context/A-Context.class";
 import { A_Component } from "../A-Component/A-Component.class";
@@ -18,7 +12,6 @@ import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_Error } from "../A-Error/A_Error.class";
 import { A_FormatterHelper } from '@adaas/a-concept/helpers/A_Formatter.helper';
-import { ASEID } from '../ASEID/ASEID.class';
 import { A_CommonHelper } from '@adaas/a-concept/helpers/A_Common.helper';
 import { A_TYPES__Entity_Constructor } from '../A-Entity/A-Entity.types';
 import { A_ScopeError } from './A-Scope.error';
@@ -27,6 +20,10 @@ import { A_TYPES__Fragment_Constructor } from '../A-Fragment/A-Fragment.types';
 import { A_TYPES__Error_Constructor } from '../A-Error/A_Error.types';
 import { A_TYPES__ComponentMetaKey } from '../A-Component/A-Component.constants';
 import { A_Meta } from '../A-Meta/A-Meta.class';
+import { A_Dependency } from '../A-Dependency/A-Dependency.class';
+import { A_TYPES__A_DependencyInjectable } from '../A-Dependency/A-Dependency.types';
+import { A_TYPES__Ctor } from '@adaas/a-concept/types/A_Common.types';
+import { ASEID } from '../ASEID/ASEID.class';
 
 
 
@@ -96,7 +93,10 @@ export class A_Scope<
      * Storage for the fragments, should be weak as fragments are singletons per scope
      */
     protected _fragments: Map<A_TYPES__Fragment_Constructor<_FragmentType[number]>, _FragmentType[number]> = new Map();
-
+    /**
+     * Storage for imported scopes 
+     */
+    protected _imports: Set<A_Scope> = new Set();
 
 
 
@@ -154,6 +154,11 @@ export class A_Scope<
      * [!] One error per code
      */
     get errors(): Array<InstanceType<_ErrorType[number]>> { return Array.from(this._errors.values()) }
+    /**
+     * Returns an Array of imported scopes
+     * [!] Imported scopes are scopes that have been imported into the current scope using the import() method
+     */
+    get imports(): Array<A_Scope> { return Array.from(this._imports.values()) }
 
     /**
      * Returns the parent scope of the current scope
@@ -220,25 +225,25 @@ export class A_Scope<
      * @param level 
      * @returns 
      */
-    parentOffset(
+    parentOffset<T extends A_Scope>(
         /**
          * Level of the parent scope to retrieve
          * 
          * Examples:
-         * - level 0 - immediate parent
-         * - level -1 - grandparent
-         * - level -2 - great-grandparent
+         * - level 0 - this scope
+         * - level -1 - parent
+         * - level -2 - grandparent
          */
         layerOffset: number
-    ): A_Scope | undefined {
-        let parentScope = this.parent;
+    ): T | undefined {
+        let parentScope: A_Scope | undefined = this;
 
-        while (layerOffset < -1 && parentScope) {
+        while (layerOffset <= -1 && parentScope) {
             parentScope = parentScope.parent;
             layerOffset++;
         }
 
-        return parentScope;
+        return parentScope as T
     }
 
 
@@ -357,9 +362,9 @@ export class A_Scope<
         this._errors.clear();
         this._fragments.clear();
         this._entities.clear();
+        this._imports.clear();
 
         if (this.issuer()) {
-
             A_Context.deallocate(this);
         }
     }
@@ -457,6 +462,49 @@ export class A_Scope<
 
 
     /**
+     * This method allows to import other scopes, to make their dependencies available in the current scope
+     * 
+     * [!] Import doesn't create a parent-child relationship between scopes, it just copies the dependencies from the imported scopes
+     * [!] It doesn't change the entities ownership, so entities remain unique to their original scopes
+     * 
+     * @param scopes 
+     * @returns 
+     */
+    import(...scopes: A_Scope[]): A_Scope {
+
+        scopes.forEach(scope => {
+            if (scope === this)
+                throw new A_ScopeError(
+                    A_ScopeError.CircularImportError,
+                    `Unable to import scope ${this.name} into itself`
+                );
+
+            if (this._imports.has(scope))
+                return;
+
+            this._imports.add(scope);
+        });
+
+        return this;
+    }
+
+    /**
+     * This method allows to deimport other scopes, to remove their dependencies from the current scope
+     * 
+     * 
+     * @param scopes 
+     * @returns 
+     */
+    deimport(...scopes: A_Scope[]): A_Scope {
+
+        scopes.forEach(scope => {
+            if (this._imports.has(scope))
+                this._imports.delete(scope);
+        });
+        return this;
+    }
+
+    /**
      * This method is used to check if the component is available in the scope
      * 
      * [!] Note that this method checks for the component in the current scope and all parent scopes
@@ -496,8 +544,11 @@ export class A_Scope<
          */
         constructor: string
     ): boolean
-    has(
-        ctor: unknown
+    has<T extends A_TYPES__A_DependencyInjectable>(
+        ctor: A_TYPES__Ctor<T> | string
+    ): boolean
+    has<T extends A_TYPES__A_DependencyInjectable>(
+        ctor: A_TYPES__Ctor<T> | string
     ): boolean {
 
         let found = this.hasFlat(ctor as any);
@@ -634,34 +685,133 @@ export class A_Scope<
     }
 
 
+    // /**
+    //  * Merges two scopes into a new one
+    //  * 
+    //  * [!] Notes: 
+    //  *  - this method does NOT modify the existing scopes
+    //  *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
+    //  * 
+    //  * @param anotherScope 
+    //  * @returns 
+    //  */
+    // merge(anotherScope: A_Scope): A_Scope {
+    //     const merged = new A_Scope(
+    //         {
+    //             name: `${this.name} + ${anotherScope.name}`,
+
+    //             components: [...this.allowedComponents, ...anotherScope.allowedComponents],
+    //             fragments: [...this.fragments, ...anotherScope.fragments],
+    //             entities: [
+    //                 ...this.entities, ...anotherScope.entities,
+    //                 ...this.allowedEntities, ...anotherScope.allowedEntities
+    //             ],
+    //         },
+    //         {
+    //             parent: this._parent || anotherScope._parent
+    //         }
+    //     );
+
+    //     return merged;
+    // }
+
+
+
     /**
-     * Merges two scopes into a new one
+     * Allows to resolve a specific dependency 
      * 
-     * [!] Notes: 
-     *  - this method does NOT modify the existing scopes
-     *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
-     * 
-     * @param anotherScope 
+     * @param dependency 
      * @returns 
      */
-    merge(anotherScope: A_Scope): A_Scope {
-        const merged = new A_Scope(
-            {
-                name: `${this.name} + ${anotherScope.name}`,
+    resolveDependency<T extends A_TYPES__A_DependencyInjectable>(
+        dependency: A_Dependency<T>
+    ): T | Array<T> | undefined {
 
-                components: [...this.allowedComponents, ...anotherScope.allowedComponents],
-                fragments: [...this.fragments, ...anotherScope.fragments],
-                entities: [
-                    ...this.entities, ...anotherScope.entities,
-                    ...this.allowedEntities, ...anotherScope.allowedEntities
-                ],
-            },
-            {
-                parent: this._parent || anotherScope._parent
+        let result: Array<T> = [];
+        let targetScope: A_Scope = this.parentOffset(dependency.parent) || this;
+
+        //  first deal with level conditions and 
+        switch (true) {
+            // 1) Flat resolution
+            case dependency.flat && !dependency.all: {
+                const resolved = targetScope.resolveFlatOnce<T>(dependency.target || dependency.name);
+                if (resolved)
+                    result = [resolved];
+                break;
             }
-        );
+            case dependency.flat && dependency.all: {
+                result = targetScope.resolveFlatAll<T>(dependency.target || dependency.name);
+                break;
+            }
+            case !dependency.flat && !dependency.all: {
+                const resolved = targetScope.resolveOnce<T>(dependency.target || dependency.name);
+                if (resolved)
+                    result = [resolved];
+                break;
+            }
+            case !dependency.flat && dependency.all: {
+                result = targetScope.resolveAll<T>(dependency.target || dependency.name);
+                break;
+            }
 
-        return merged;
+            default:
+                result = [];
+        }
+
+        //  2) create if not found and allowed
+        if (dependency.create
+            && !result.length
+            && A_TypeGuards.isAllowedForDependencyDefaultCreation(dependency.target)
+        ) {
+
+            const newDependency = new dependency.target(...dependency.args);
+
+            targetScope.register(newDependency);
+
+            result.push(newDependency as T);
+        }
+
+        //  3) handle required dependencies
+        if (dependency.require && !result.length) {
+            throw new A_ScopeError(
+                A_ScopeError.ResolutionError,
+                `Dependency ${dependency.name} is required but could not be resolved in scope ${targetScope.name}`
+            );
+        }
+
+
+        // 4) Apply filters
+        if (dependency.query.aseid)
+            //  in this case we should return only one dependency by aseid
+            result = result.filter(dep => A_TypeGuards.hasASEID(dep) && ASEID.compare(dep.aseid, dependency.query.aseid));
+
+        else if (Object.keys(dependency.query).length > 0)
+            result = result
+                .filter(dep => {
+                    const query = dependency.query;
+                    if (!query) return true;
+
+                    return Object.entries(query).every(([key, value]) => {
+                        return (dep as any)[key] === value;
+                    });
+                });
+
+
+        // 5) apply pagination
+        const count = dependency.pagination.count;
+        const from = dependency.pagination.from;  // from start or from end
+
+
+        const startSliceIndex = from === 'end'
+            ? Math.max(result.length - count, 0)
+            : 0;
+        const endSliceIndex = from === 'end'
+            ? result.length
+            : Math.min(count, result.length);
+
+        const slice = result.slice(startSliceIndex, endSliceIndex);
+
+        return slice.length === 1 ? slice[0] : slice.length ? slice : undefined;
     }
 
 
@@ -693,13 +843,39 @@ export class A_Scope<
          */
         name: string
     ): A_TYPES__Fragment_Constructor<T>
-    resolveConstructor<T extends A_TYPES__ScopeResolvableComponents>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
             c => c.name === name
                 || c.name === A_FormatterHelper.toPascalCase(name)
         );
+
         if (component) return component as A_TYPES__Component_Constructor<T>;
+        else
+        // 1.2) Check components prototypes
+        {
+            const protoComponent = Array.from(this.allowedComponents).find(
+
+                //  it should go rthough prototyopes and check their names to be equal to the provided name
+                c => {
+                    let current = c;
+
+                    while (current) {
+                        if (current.name === name
+                            || current.name === A_FormatterHelper.toPascalCase(name)
+                        ) {
+                            return true;
+                        }
+                        current = Object.getPrototypeOf(current);
+                    }
+
+                    return false;
+
+                }
+            );
+            if (protoComponent) return protoComponent as A_TYPES__Component_Constructor<T>;
+        }
 
         // 2) Check entities
         const entity = Array.from(this.allowedEntities).find(
@@ -709,14 +885,38 @@ export class A_Scope<
                 || (e as any).entity === A_FormatterHelper.toKebabCase(name)
         );
         if (entity) return entity as A_TYPES__Entity_Constructor<T>;
+        else
+        // 2.2) Check entities prototypes
+        {
+            const protoEntity = Array.from(this.allowedEntities).find(
+                e => A_CommonHelper.isInheritedFrom(e, name as any)
+            );
+            if (protoEntity) return protoEntity as A_TYPES__Entity_Constructor<T>;
+        }
 
         // 3) Check fragments
         const fragment = Array.from(this.allowedFragments).find(f => f.name === name
             || f.name === A_FormatterHelper.toPascalCase(name)
         );
         if (fragment) return fragment as A_TYPES__Fragment_Constructor<T>;
+        else
+        // 3.2) Check fragments prototypes
+        {
+            const protoFragment = Array.from(this.allowedFragments).find(
+                f => A_CommonHelper.isInheritedFrom(f, name as any)
+            );
+            if (protoFragment) return protoFragment as A_TYPES__Fragment_Constructor<T>;
+        }
 
-        // If not found in current scope, check parent scope
+        // If not found in current scope, check imported scopes
+        for (const importedScope of this._imports) {
+            const importedConstructor = importedScope.resolveConstructor<T>(name);
+            if (importedConstructor) {
+                return importedConstructor;
+            }
+        }
+
+        // Then, finally check parent scope
         if (!!this._parent) {
             return this._parent.resolveConstructor(name) as any;
         }
@@ -753,14 +953,23 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): Array<T>
-    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveAll<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         */
         constructorName: string
     ): Array<T>
-    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveAll<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: A_TYPES__InjectableConstructors
+        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
+    ): Array<T>
+    resolveAll<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
     ): Array<T> {
 
         const results: Array<T> = [];
@@ -769,8 +978,15 @@ export class A_Scope<
         const currentResults = this.resolveFlatAll<T>(param1 as any);
         results.push(...currentResults);
 
-        // 2) Resolve all in the parent scope
+        // 2) resolve all in the imported scopes
+        this._imports.forEach(importedScope => {
+            if (importedScope.has(param1 as any)) {
+                const importedResults = importedScope.resolveFlatAll<T>(param1 as any);
+                results.push(...importedResults);
+            }
+        });
 
+        // 3) Resolve all in the parent scope
         let parentScope = this._parent;
 
         while (parentScope && parentScope.has(param1 as any)) {
@@ -780,6 +996,7 @@ export class A_Scope<
             // Move to the next parent scope
             parentScope = parentScope._parent;
         }
+
 
 
         return results;
@@ -814,14 +1031,23 @@ export class A_Scope<
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): Array<T>
-    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveFlatAll<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         */
         constructorName: string
     ): Array<T>
-    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveFlatAll<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: A_TYPES__InjectableConstructors
+        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string,
+    ): Array<T>
+    resolveFlatAll<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string,
     ): Array<T> {
 
         const results: Array<T> = [];
@@ -832,7 +1058,7 @@ export class A_Scope<
                 // 1) Check components
                 this.allowedComponents.forEach(ctor => {
                     if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
-                        const instance = this.resolve<T>(ctor);
+                        const instance = this.resolveOnce<T>(ctor);
                         if (instance) results.push(instance as T);
                     }
                 });
@@ -843,7 +1069,7 @@ export class A_Scope<
                 // 2) Check fragments
                 this.allowedFragments.forEach(ctor => {
                     if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
-                        const instance = this.resolve(ctor);
+                        const instance = this.resolveOnce<T>(ctor);
                         if (instance) results.push(instance as T);
                     }
                 });
@@ -909,50 +1135,18 @@ export class A_Scope<
          */
         component: A_TYPES__Component_Constructor<T>
     ): T | undefined
-    resolve<T extends A_TYPES__Component_Constructor[]>(
-        /**
-         * Provide an array of component constructors to resolve their instances from the scope
-         */
-        components: [...T]
-    ): Array<InstanceType<T[number]>> | undefined
     resolve<T extends A_Fragment>(
         /**
          * Provide a fragment constructor to resolve its instance from the scope
          */
         fragment: A_TYPES__Fragment_Constructor<T>
     ): T | undefined
-    resolve<T extends A_TYPES__Fragment_Constructor[]>(
-        /**
-         * Provide an array of fragment constructors to resolve their instances from the scope
-         */
-        fragments: [...T]
-    ): Array<InstanceType<T[number]>> | undefined
     resolve<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): T | undefined
-    resolve<T extends A_Entity>(
-        /**
-         * Provide an entity constructor to resolve its instance or an array of instances from the scope
-         */
-        entity: A_TYPES__Entity_Constructor<T>,
-        /**
-         * Only Aseid Provided, in this case one entity will be returned
-         */
-        instructions: { query: { aseid: string | ASEID } }
-    ): T | undefined
-    resolve<T extends A_Entity>(
-        /**
-         * Provide an entity constructor to resolve its instance or an array of instances from the scope
-         */
-        entity: A_TYPES__Entity_Constructor<T>,
-        /**
-         * Provide optional instructions to find a specific entity or a set of entities
-         */
-        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
-    ): Array<T>
     resolve<T extends A_Scope>(
         /**
          * Uses only in case of resolving a single entity
@@ -967,40 +1161,113 @@ export class A_Scope<
          * 
          * Provide an entity constructor to resolve its instance from the scope
          */
-        scope: A_TYPES__Error_Constructor<T>
+        error: A_TYPES__Error_Constructor<T>
     ): T | undefined
-    resolve<T extends A_TYPES__ScopeResolvableComponents>(
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         */
         constructorName: string
     ): T | undefined
-    // ------------------------------------ base definition ------------------------------------
-    resolve<T extends A_TYPES__ScopeResolvableComponents>(
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: A_TYPES__InjectableConstructors,
-
-    ): T | Array<T> | undefined
-    resolve<T extends A_TYPES__ScopeLinkedConstructors>(
+        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
+    ): T | undefined
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: InstanceType<T>,
+        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
+    ): T | undefined {
+        return this.resolveOnce<T>(param1);
+    }
 
-    ): T | Array<T> | undefined
-    resolve<T extends A_TYPES__ScopeResolvableComponents>(
+    /**
+     * This method allows to resolve/inject a component, fragment or entity from the scope
+     * Depending on the provided parameters it can resolve:
+     * - A single component/fragment/entity by its constructor or name
+     * - An array of components/fragments/entities by providing an array of constructors
+     * - An entity or an array of entities by providing the entity constructor and query instructions
+     * 
+     * @param component 
+     * @returns 
+     */
+    resolveOnce<T extends A_Component>(
+        /**
+         * Provide a component constructor to resolve its instance from the scope
+         */
+        component: A_TYPES__Component_Constructor<T>
+    ): T | undefined
+    resolveOnce<T extends A_Fragment>(
+        /**
+         * Provide a fragment constructor to resolve its instance from the scope
+         */
+        fragment: A_TYPES__Fragment_Constructor<T>
+    ): T | undefined
+    resolveOnce<T extends A_Entity>(
+        /**
+         * Provide an entity constructor to resolve its instance or an array of instances from the scope
+         */
+        entity: A_TYPES__Entity_Constructor<T>
+    ): T | undefined
+    resolveOnce<T extends A_Scope>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        scope: A_TYPES__Scope_Constructor<T>
+    ): T | undefined
+    resolveOnce<T extends A_Error>(
+        /**
+         * Uses only in case of resolving a single entity
+         * 
+         * Provide an entity constructor to resolve its instance from the scope
+         */
+        error: A_TYPES__Error_Constructor<T>
+    ): T | undefined
+    resolveOnce<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         */
+        constructorName: string
+    ): T | undefined
+    resolveOnce<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: A_TYPES__InjectableConstructors | Array<A_TYPES__InjectableConstructors>,
-        param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): T | Array<T> | undefined {
+        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
+    ): T | undefined
+    resolveOnce<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+         */
+        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
+    ): T | undefined {
 
+        const value = this.resolveFlatOnce(param1);
 
-        if (A_TypeGuards.isArray(param1)) {
-            return param1.map(c => this.resolveOnce(c, param2)) as Array<T>;
-        } else {
-            return this.resolveOnce(param1, param2) as T;
+        // if not found in the current scope, check imported scopes
+        if (!value) {
+            for (const importedScope of this._imports) {
+                if (importedScope.has(param1 as any)) {
+                    const importedValue = importedScope.resolveFlatOnce<T>(param1 as any);
+                    if (importedValue) {
+                        return importedValue;
+                    }
+                }
+            }
         }
+
+        //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
+        //  That means that we should ensure that there's no components that are children of the required component
+        if (!value && !!this.parent) {
+            return this.parent.resolve<T>(param1);
+        }
+
+        return value as T;
     }
 
 
@@ -1021,50 +1288,18 @@ export class A_Scope<
          */
         component: A_TYPES__Component_Constructor<T>
     ): T | undefined
-    resolveFlat<T extends A_TYPES__Component_Constructor[]>(
-        /**
-         * Provide an array of component constructors to resolve their instances from the scope
-         */
-        components: [...T]
-    ): Array<InstanceType<T[number]>> | undefined
     resolveFlat<T extends A_Fragment>(
         /**
          * Provide a fragment constructor to resolve its instance from the scope
          */
         fragment: A_TYPES__Fragment_Constructor<T>
     ): T | undefined
-    resolveFlat<T extends A_TYPES__Fragment_Constructor[]>(
-        /**
-         * Provide an array of fragment constructors to resolve their instances from the scope
-         */
-        fragments: [...T]
-    ): Array<InstanceType<T[number]>> | undefined
     resolveFlat<T extends A_Entity>(
         /**
          * Provide an entity constructor to resolve its instance or an array of instances from the scope
          */
         entity: A_TYPES__Entity_Constructor<T>
     ): T | undefined
-    resolveFlat<T extends A_Entity>(
-        /**
-         * Provide an entity constructor to resolve its instance or an array of instances from the scope
-         */
-        entity: A_TYPES__Entity_Constructor<T>,
-        /**
-         * Only Aseid Provided, in this case one entity will be returned
-         */
-        instructions: { query: { aseid: string | ASEID } }
-    ): T | undefined
-    resolveFlat<T extends A_Entity>(
-        /**
-         * Provide an entity constructor to resolve its instance or an array of instances from the scope
-         */
-        entity: A_TYPES__Entity_Constructor<T>,
-        /**
-         * Provide optional instructions to find a specific entity or a set of entities
-         */
-        instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
-    ): Array<T>
     resolveFlat<T extends A_Scope>(
         /**
          * Uses only in case of resolving a single entity
@@ -1079,43 +1314,87 @@ export class A_Scope<
          * 
          * Provide an entity constructor to resolve its instance from the scope
          */
-        scope: A_TYPES__Error_Constructor<T>
+        error: A_TYPES__Error_Constructor<T>
     ): T | undefined
-    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveFlat<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         */
         constructorName: string
     ): T | undefined
-    // base definition
-    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+    resolveFlat<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: A_TYPES__InjectableConstructors,
-
-    ): T | Array<T> | undefined
-    resolveFlat<T extends A_TYPES__ScopeLinkedConstructors>(
+        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable>,
+    ): T | undefined
+    resolveFlat<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        param1: InstanceType<T>,
-
-    ): T | Array<T> | undefined
-    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
-        /**
-         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
-         */
-        param1: A_TYPES__InjectableConstructors | Array<A_TYPES__InjectableConstructors>,
-        param2?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): T | Array<T | undefined> | undefined {
-
-        if (A_TypeGuards.isArray(param1)) {
-            return param1.map(c => this.resolveFlatOnce(c, param2)) as Array<T>;
-        } else {
-            return this.resolveFlatOnce(param1, param2) as T;
-        }
+        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string,
+    ): T | undefined {
+        return this.resolveFlatOnce(param1) as T;
     }
 
 
+    /**
+     * Resolves a component, fragment or entity from the scope without checking parent scopes
+     * 
+     * @param component 
+     * @param instructions 
+     */
+    resolveFlatOnce<T extends A_TYPES__A_DependencyInjectable>(
+        component: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string,
+    ): T | undefined {
 
+        let value: T | undefined = undefined;
+
+        const componentName = A_CommonHelper.getComponentName(component);
+
+
+        if (!component || !this.has(component)) {
+            return undefined;
+        }
+
+        switch (true) {
+            case A_TypeGuards.isString(component): {
+                value = this.resolveByName(component) as T;
+                break;
+            }
+            case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
+                value = this.resolveIssuer(component) as T;
+                break;
+            }
+            case A_TypeGuards.isScopeConstructor(component): {
+                value = this.resolveScope(component) as T
+                break;
+            }
+            case A_TypeGuards.isEntityConstructor(component): {
+                value = this.resolveEntity(component) as T
+                break;
+            }
+            case A_TypeGuards.isFragmentConstructor(component): {
+                value = this.resolveFragment(component) as T;
+                break;
+            }
+            case A_TypeGuards.isComponentConstructor(component): {
+                value = this.resolveComponent(component) as T;
+                break;
+            }
+            case A_TypeGuards.isErrorConstructor(component): {
+                value = this.resolveError(component) as T;
+                break;
+            }
+            default:
+                throw new A_ScopeError(
+                    A_ScopeError.ResolutionError,
+                    `Injected Component ${componentName} not found in the scope`
+                );
+        }
+
+        return value
+    }
 
 
 
@@ -1174,86 +1453,6 @@ export class A_Scope<
         return undefined;
     }
 
-    /**
-     * Resolves a component, fragment or entity from the scope without checking parent scopes
-     * 
-     * @param component 
-     * @param instructions 
-     */
-    private resolveFlatOnce(
-        component: any,
-        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
-
-        let value: A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined = undefined;
-
-        const componentName = A_CommonHelper.getComponentName(component);
-
-        if (!component || !this.has(component))
-            return undefined;
-
-        switch (true) {
-            case A_TypeGuards.isString(component): {
-                value = this.resolveByName(component) as A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | undefined;
-                break;
-            }
-            case A_TypeGuards.isConstructorAllowedForScopeAllocation(component): {
-                value = this.resolveIssuer(component);
-                break;
-            }
-            case A_TypeGuards.isEntityConstructor(component): {
-                value = this.resolveEntity(component, instructions);
-                break;
-            }
-            case A_TypeGuards.isFragmentConstructor(component): {
-                value = this.resolveFragment(component);
-                break;
-            }
-            case A_TypeGuards.isScopeConstructor(component): {
-                value = this.resolveScope(component);
-                break;
-            }
-            case A_TypeGuards.isComponentConstructor(component): {
-                value = this.resolveComponent(component);
-                break;
-            }
-            case A_TypeGuards.isErrorConstructor(component): {
-                value = this.resolveError(component);
-                break;
-            }
-            default:
-                throw new A_ScopeError(
-                    A_ScopeError.ResolutionError,
-                    `Injected Component ${componentName} not found in the scope`
-                );
-        }
-
-        return value;
-    }
-
-    /**
-     * This method is used internally to resolve a single component, fragment or entity from the scope
-     * 
-     * @param component 
-     * @param instructions 
-     * @returns 
-     */
-    private resolveOnce(
-        component: any,
-        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>
-    ): A_TYPES__ScopeResolvableComponents | A_Scope | A_TYPES__ScopeLinkedComponents | Array<A_TYPES__ScopeResolvableComponents> | undefined {
-
-        const values = this.resolveFlatOnce(component, instructions);
-
-        //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
-        //  That means that we should ensure that there's no components that are children of the required component
-        if (!values && !!this.parent) {
-            return this.parent.resolveOnce(component, instructions);
-        }
-
-        return values;
-    }
-
 
     /**
      * Resolves the issuer of the scope by provided constructor
@@ -1294,87 +1493,18 @@ export class A_Scope<
      * @returns 
      */
     private resolveEntity<T extends A_Entity>(
-        entity: A_TYPES__Entity_Constructor<T>,
-        instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>
+        entity: A_TYPES__Entity_Constructor<T>
     ): T | Array<T> | undefined {
 
-        const query = instructions?.query || {} as Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>;
-        const count = instructions?.pagination?.count || 1;
+        /**
+         * 1) In case when no instructions provided, return the first found entity of the provided type
+         * 
+         * [!] Note that it returns ONLY ONE entity
+         * [!!] In case when no entity found in the current scope, it tries to resolve it from the parent scope (if exists)
+         */
 
-        switch (true) {
-            /**
-             * 1) In case when no instructions provided, return the first found entity of the provided type
-             * 
-             * [!] Note that it returns ONLY ONE entity
-             * [!!] In case when no entity found in the current scope, it tries to resolve it from the parent scope (if exists)
-             */
-            case !instructions: {
-                return this.entities.find(e => e instanceof entity) as T | undefined;
-            }
-            /**
-             * 2) In case when aseid is provided in the query, we can directly get the entity from the map
-             * 
-             * [!] Note that it returns ONLY ONE entity
-             */
-            case !!query.aseid
-                && typeof query.aseid === 'string'
-                && this._entities.has(query.aseid): {
-                    return this._entities.get(query.aseid) as T;
-                }
-            /**
-             * 3) In case when aseid is provided as ASEID instance, we can directly get the entity from the map
-             * 
-             * [!] Note that it returns ONLY ONE entity
-             */
-            case !!query.aseid
-                && typeof query.aseid === 'object'
-                && query.aseid instanceof ASEID
-                && this._entities.has(query.aseid.toString()): {
-                    return this._entities.get(query.aseid.toString()) as T;
-                }
-            /**
-             * 4) In case when id is provided in the query, we have to find the entity by the id
-             * 
-             * [!]  Note that it returns ONLY ONE entity
-             */
-            case !!query.id: {
+        return this.entities.find(e => e instanceof entity) as T | undefined;
 
-                const found = this.entities
-                    .filter(e => e instanceof entity)
-                    .find(e => String(e.id) === String(query.id));
-
-                return found as T;
-            }
-            /**
-             * 5) In case when there's a query object, we have to filter the entities by the query
-             * 
-             * [!] Note that it can return either a single entity or an array of entities depending on the count instruction
-             * [!!] In case when no entity found in the current scope, it tries to resolve it from the parent scope (if exists)
-             */
-            default: {
-
-                const found = this.entities
-                    .filter(e => e instanceof entity)
-                    .filter(e => {
-                        return Object
-                            .entries(query)
-                            .every(([key, value]) => {
-                                if (key in e) {
-                                    return (e as any)[key] === value;
-                                }
-                                return false;
-                            });
-                    });
-
-                if (found.length === 0)
-                    return undefined;
-
-                if (count === 1)
-                    return found[0] as T;
-
-                return found as T[];
-            }
-        }
     }
     /**
      * This method is used internally to resolve a single error from the scope
@@ -1449,74 +1579,8 @@ export class A_Scope<
                 const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
                 const resolvedArgs = (argsMeta?.get('constructor') || [])
-                    .map(arg => {
-                        // for Error handling purposes
-                        const componentName = A_CommonHelper.getComponentName(arg.target)
+                    .map(dependency => this.resolveDependency(dependency));
 
-                        if ('instructions' in arg && !!arg.instructions) {
-                            const { target, parent, flat, instructions } = arg
-                            const dependency = this.resolve(target as any, instructions);
-                            if (!dependency)
-                                throw new A_ScopeError(
-                                    A_ScopeError.ResolutionError,
-                                    `Unable to resolve dependency ${componentName} for component ${component.name} in scope ${this.name}`
-                                );
-
-                            return dependency;
-                        } else {
-                            const { target, require, create, defaultArgs, parent, flat, } = arg;
-
-                            let dependency;
-
-                            // ----------------- Resolution Strategies -----------------
-                            switch (true) {
-                                // 1) Flat resolution
-                                case flat: {
-                                    dependency = this.resolveFlat(target);
-                                    break;
-                                }
-                                // 2) Parent resolution
-                                case parent && typeof parent.layerOffset === 'number': {
-                                    const targetParent = this.parentOffset(parent.layerOffset);
-                                    if (!targetParent) {
-                                        throw new A_ScopeError(
-                                            A_ScopeError.ResolutionError,
-                                            `Unable to resolve parent scope at offset ${parent.layerOffset} for dependency ${componentName} for component ${component.name} in scope ${this.name}`
-                                        );
-                                    }
-                                    dependency = targetParent.resolve(target);
-
-                                    break;
-                                }
-                                // 3) Normal resolution
-                                default: {
-                                    dependency = this.resolve(target);
-                                    break;
-                                }
-                            }
-
-                            // ----------------- Post-Resolution Actions -----------------
-
-                            // 1) Create default instance in case when allowed
-                            if (create && !dependency && A_TypeGuards.isAllowedForDependencyDefaultCreation(target)) {
-                                dependency = new target(...defaultArgs);
-
-                                this.register(dependency);
-                            }
-
-                            // 2) Throw error in case when required but not resolved
-                            if (require && !dependency) {
-                                throw new A_ScopeError(
-                                    A_ScopeError.ResolutionError,
-                                    `Unable to resolve required dependency ${componentName} for component ${component.name} in scope ${this.name}`
-                                );
-                            }
-
-
-                            //  Finally, return the dependency (either resolved or undefined)
-                            return dependency;
-                        }
-                    });
 
                 const newComponent = new component(...resolvedArgs)
 
@@ -1591,9 +1655,17 @@ export class A_Scope<
          */
         entity: T
     ): void
-
-    register(
-        param1: unknown
+    register<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide an entity instance to register it in the scope
+         */
+        entity: T
+    ): void
+    register<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide an entity instance to register it in the scope
+         */
+        param1: T
     ): void {
         switch (true) {
             // ------------------------------------------
