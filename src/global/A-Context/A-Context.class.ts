@@ -39,6 +39,7 @@ import { A_TYPES__ConceptAbstractions } from "../A-Concept/A-Concept.constants";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 import { A_Dependency } from "../A-Dependency/A-Dependency.class";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 
 
 
@@ -415,13 +416,13 @@ export class A_Context {
         /**
          * Get meta for the specific class or instance
          */
-        constructor: new (...args: any[]) => any
+        constructor: A_TYPES__Ctor<any>
     ): T
     static meta<T extends Record<string, any>>(
         /**
          * Get meta for the specific class or instance
          */
-        constructor: new (...args: any[]) => any
+        constructor: A_TYPES__Ctor<any>
     ): A_Meta<T>
 
     static meta<T extends Record<string, any>>(
@@ -532,8 +533,6 @@ export class A_Context {
 
         // Check if the meta already exists for the property, if not create a new one
         if (!instance._metaStorage.has(property)) {
-            // const inheritMeta = instance._metaStorage.get(Object.getPrototypeOf(property)) || new metaType();
-            // instance._metaStorage.set(property, new metaType().from(inheritMeta as any));
 
             let inheritedMeta: A_Meta<any> | undefined = undefined;
             let currentProperty: any = property;

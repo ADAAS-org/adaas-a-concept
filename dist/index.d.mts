@@ -33,6 +33,7 @@ type A_TYPES__ConceptENVVariables = (typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES)[
 declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY: readonly ["A_CONCEPT_NAME", "A_CONCEPT_ROOT_SCOPE", "A_CONCEPT_ENVIRONMENT", "A_CONCEPT_ROOT_FOLDER", "A_ERROR_DEFAULT_DESCRIPTION"];
 
 type Decrement = [never, 0, 1, 2, 3, 4, 5];
+type A_TYPES__Ctor<T> = new (...args: any[]) => T;
 type A_TYPES__DeepPartial<T, D extends number = 5> = {
     [P in keyof Required<T>]?: [
         D
@@ -68,6 +69,177 @@ type A_TYPES__ExtractProperties<T, P extends A_TYPES__Paths<T>[]> = A_TYPES__Uni
     [K in keyof P]: P[K] extends string ? A_TYPES__ExtractNested<T, P[K]> : never;
 }[number]>;
 
+/**
+ * Fragment constructor type
+ * Uses the generic type T to specify the type of the fragment
+ */
+type A_TYPES__Fragment_Constructor<T = A_Fragment> = A_TYPES__Ctor<T>;
+/**
+ * Fragment initialization type
+ */
+type A_TYPES__Fragment_Init = {
+    name: string;
+};
+/**
+ * Fragment serialized type
+ */
+type A_TYPES__Fragment_Serialized = {
+    /**
+     * The Name of the fragment
+     */
+    name: string;
+};
+
+/**
+ * A_Fragment is a core architectural component that represents a singleton execution context
+ * within the A-Concept framework. It serves as a shared memory container that can be passed
+ * between Components, Entities, and Commands throughout the application pipeline.
+ *
+ * Key Features:
+ * - Singleton pattern: Only one instance per fragment type per scope
+ * - Meta storage: Built-in key-value storage for pipeline data
+ * - Type-safe: Full TypeScript generics support for meta items and serialization
+ * - Serializable: Can be converted to JSON for persistence or transmission
+ *
+ * @template _MetaItems - Type definition for the meta storage structure
+ * @template _SerializedType - Type definition for the serialized output format
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with typed meta
+ * class UserFragment extends A_Fragment<{ userId: string; role: string }> {
+ *   constructor() {
+ *     super({ name: 'UserFragment' });
+ *   }
+ * }
+ *
+ * // Custom serialization
+ * class SessionFragment extends A_Fragment<
+ *   { sessionId: string; timestamp: number },
+ *   { name: string; sessionData: string }
+ * > {
+ *   toJSON() {
+ *     return {
+ *       name: this.name,
+ *       sessionData: `${this.get('sessionId')}-${this.get('timestamp')}`
+ *     };
+ *   }
+ * }
+ * ```
+ */
+declare class A_Fragment<_SerializedType extends A_TYPES__Fragment_Serialized = A_TYPES__Fragment_Serialized> {
+    /**
+     * The unique identifier/name for this fragment instance.
+     * Used for identification and debugging purposes.
+     */
+    protected _name: string;
+    /**
+     * Creates a new A_Fragment instance.
+     *
+     * A_Fragment implements the singleton pattern for execution contexts, allowing
+     * shared state management across different parts of the application pipeline.
+     * Each fragment serves as a memory container that can store typed data and be
+     * serialized for persistence or transmission.
+     *
+     * Key Benefits:
+     * - Centralized state management for related operations
+     * - Type-safe meta operations with full IntelliSense support
+     * - Serialization support for data persistence
+     * - Singleton pattern ensures consistent state within scope
+     *
+     * @param params - Initialization parameters
+     * @param params.name - Optional custom name for the fragment (defaults to class name)
+     *
+     * @example
+     * ```typescript
+     * const fragment = new A_Fragment<{ userId: string }>({
+     *   name: 'UserSessionFragment'
+     * });
+     * fragment.set('userId', '12345');
+     * ```
+     */
+    constructor(params?: Partial<A_TYPES__Fragment_Init>);
+    /**
+     * Gets the fragment's unique name/identifier.
+     *
+     * @returns The fragment name
+     */
+    get name(): string;
+    /**
+     * Serializes the fragment to a JSON-compatible object.
+     *
+     * This method combines the fragment's name with all meta data to create
+     * a serializable representation. The return type is determined by the
+     * _SerializedType generic parameter, allowing for custom serialization formats.
+     *
+     * @returns A serialized representation of the fragment
+     *
+     * @example
+     * ```typescript
+     * const fragment = new A_Fragment<{ userId: string, role: string }>({
+     *   name: 'UserFragment'
+     * });
+     * fragment.set('userId', '12345');
+     * fragment.set('role', 'admin');
+     *
+     * const json = fragment.toJSON();
+     * // Result: { name: 'UserFragment', userId: '12345', role: 'admin' }
+     * ```
+     */
+    toJSON(): _SerializedType;
+}
+
+declare class A_Container {
+    /**
+     * Configuration of the container that will be used to run it.
+     */
+    protected readonly config: Partial<A_TYPES__Container_Init>;
+    /**
+     * Name of the container
+     */
+    get name(): string;
+    /**
+     * Returns the scope where the container is registered
+     */
+    get scope(): A_Scope;
+    /**
+     * This class should combine Components to achieve the goal withing Concept
+     *
+     * Container is a direct container that should be "run" to make Concept work.
+     * So because of that Container can be:
+     * - HTTP Server
+     * - BASH Script
+     * - Database Connection
+     * - Microservice
+     * - etc.
+     *
+     * @param config - Configuration of the container that will be used to run it.
+     */
+    constructor(
+    /**
+     * Configuration of the container that will be used to run it.
+     */
+    config?: Partial<A_TYPES__Container_Init>);
+    /**
+     * Calls the feature with the given name in the given scope
+     *
+     * [!] Note: This method creates a new instance of the feature every time it is called
+     *
+     * @param feature - the name of the feature to call
+     * @param scope  - the scope in which to call the feature
+     * @returns  - void
+     */
+    call(
+    /**
+     * Name of the feature to call
+     */
+    feature: string, 
+    /**
+     * scope in which the feature will be executed
+     */
+    scope?: A_Scope): Promise<void>;
+}
+
 declare enum A_TYPES__ConceptAbstractions {
     /**
      * Run the concept.
@@ -102,104 +274,129 @@ declare enum A_TYPES__ConceptMetaKey {
     LIFECYCLE = "a-component-extensions"
 }
 
-declare enum A_TYPES__A_Stage_Status {
+/**
+ * This is a common class that uses to return an entity that initiates a feature call
+ *
+ * It can be used then in @A_Inject(A_Caller) to get the entity that initiated the feature call
+ *
+ * [!] the class itself may be retrieved, but may require additional processing inside the feature
+ *
+ */
+declare class A_Caller<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> {
     /**
-     * The stage is currently being processed
+     * The component that initiated the feature call
      */
-    PROCESSING = "PROCESSING",
+    protected _component: T;
     /**
-     * The stage has been completed
+     * A_Caller allows to get the component that initiated the feature call
+     *
+     * It can be used then in @A_Inject(A_Caller) to get the entity that initiated the feature call
+     *
+     * [!] If Scope is not provided, a new empty scope will be created and inherited from the global scope
+     *
+     * @param component
+     * @param scope
      */
-    COMPLETED = "COMPLETED",
+    constructor(component: T);
+    get component(): T;
     /**
-     * The stage has failed
+     * Validates the provided parameters and Ensures that the component is of an allowed type
+     *
+     * @param component
      */
-    FAILED = "FAILED",
-    /**
-     * The stage has been skipped
-     */
-    SKIPPED = "SKIPPED",
-    /**
-     * The stage has been paused
-     */
-    /**
-     * The stage has been stopped
-     */
-    /**
-     * The stage has been started
-     */
-    /**
-     * The stage has been initialized
-     */
-    INITIALIZED = "INITIALIZED",
-    /**
-     * The stage has been aborted
-     */
-    ABORTED = "ABORTED"
+    protected validateParams(component: T): void;
 }
-type A_TYPES_StageExecutionBehavior = 'async' | 'sync';
-type A_TYPES__A_StageStep = {
+
+/**
+ * Entity constructor type
+ * Uses the generic type T to specify the type of the entity
+ */
+type A_TYPES__Error_Constructor<T = A_Error> = A_TYPES__Ctor<T>;
+/**
+ * Error initialization type
+ */
+type A_TYPES__Error_Init = {
     /**
-     * The component to be called
+     * Error title
+     *
+     * A short description of the error
      */
-    component: A_TYPES__Component_Constructor | A_Container | string;
+    title: string;
     /**
-     * The method to be called on the component
+     * Error code representing the type of error
+     *
+     * Should be unique within the application or service
+     *
+     * Example: 'validation-error', 'not-found', 'user-not-found', 'unauthorized' etc.
+     *
+     * [!] Note: It is recommended to use kebab-case for error codes
+     * [!] Note: If not provided would be used a kebab-case message of the error
      */
-    handler: string;
+    code?: string;
     /**
-     * Original Feature Extension name
+     * Possible Scope if needed to identify the error by it's execution environment
      *
-     * [!] could be string or regex
+     * For example, error of type 'validation' could happen in different scopes
+     * like 'user', 'admin', 'system' etc. This will help to identify the error context better
      *
+     * Could be string or A_Scope instance
+     *
+     * [!] Note: If not provided, the default scope of the A_Error will be used (A_Context.root.name)
      */
-    name: string;
+    scope?: string | A_Scope;
     /**
-     * In case its async it will be executed independently from the main thread.
-     *
-     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
-     *
+     * Detailed description of the error
      */
-    behavior: A_TYPES_StageExecutionBehavior;
+    description?: string;
     /**
-     * Allows to define the order of the execution of the method.
-     *
-     * [!] In case the method has circular dependencies it will Throw an error.
-     *
+     * Link to the documentation or support page for the error
      */
-    before: string;
+    link?: string;
     /**
-     * Allows to define the order of the execution of the method.
-     *
-     * [!] In case the method has circular dependencies it will Throw an error.
-     *
+     * Original Error if any
      */
-    after: string;
-    /**
-     * Indicates whether to throw an error if the step fails.
-     *
-     * [!] By default is true
-     */
-    throwOnError: boolean;
-    /**
-     *
-     */
-    override: string;
+    originalError?: Error | unknown;
 };
-type A_TYPES__Stage_Serialized = {
+/**
+ * Error serialized type
+ */
+type A_TYPES__Error_Serialized = {
     /**
-     * The name of the stage
+     * ASEID of the error
      */
-    name: string;
+    aseid: string;
     /**
-     *  The status of the stage
-     *
+     * A brief title of the error
      */
-    status: A_TYPES__A_Stage_Status;
-};
-type A_TYPES__A_StageStepProcessingExtraParams = {
-    steps: A_TYPES__A_StageStep[];
-    filter: (step: A_TYPES__A_StageStep) => boolean;
+    title: string;
+    /**
+     * Error message
+     */
+    message: string;
+    /**
+     * Type of the error
+     */
+    type: string;
+    /**
+     * Error code
+     */
+    code: string;
+    /**
+     * Error description
+     */
+    description: string;
+    /**
+     * Link to documentation or support page
+     */
+    link?: string;
+    /**
+     * Scope of the error
+     */
+    scope: string;
+    /**
+     * Original error message if any
+     */
+    originalError?: string;
 };
 
 interface A_TYPES__ASEID_Constructor {
@@ -280,6 +477,7 @@ declare class ASEID {
      * @returns
      */
     static isASEID(identity: string): boolean;
+    static compare(aseid1: ASEID | string | undefined, aseid2: ASEID | string | undefined): boolean;
     /**
      * Concept for the ASEID
      * Generally it is the application name or code, should correspond to the concept where the entity is used
@@ -401,455 +599,6 @@ declare class ASEID {
     toJSON(): A_TYPES__ASEID_JSON;
     protected verifyInput(param1: string | A_TYPES__Required<Partial<A_TYPES__ASEID_Constructor>, ['id', 'entity']>): void;
 }
-
-declare enum A_TYPES__EntityMetaKey {
-    EXTENSIONS = "a-component-extensions",
-    FEATURES = "a-component-features",
-    ABSTRACTIONS = "a-component-abstractions",
-    INJECTIONS = "a-component-injections"
-}
-declare enum A_TYPES__EntityFeatures {
-    SAVE = "save",
-    DESTROY = "destroy",
-    LOAD = "load"
-}
-
-/**
- * Entity interface
- */
-interface A_TYPES__IEntity {
-    /**
-     * The ASEID of the entity
-     */
-    aseid: ASEID;
-}
-/**
- * Entity constructor type
- * Uses the generic type T to specify the type of the entity
- */
-type A_TYPES__Entity_Constructor<T = A_Entity> = new (...args: any[]) => T;
-/**
- * Entity initialization type
- */
-type A_TYPES__Entity_Init = any;
-/**
- * Entity serialized type
- */
-type A_TYPES__Entity_Serialized = {
-    /**
-     * The ASEID of the entity
-     */
-    aseid: string;
-};
-/**
- * Entity meta type
- */
-type A_TYPES__EntityMeta = {
-    [A_TYPES__EntityMetaKey.EXTENSIONS]: A_Meta<{
-        /**
-         * Where Key the regexp for what to apply the extension
-         * A set of container names or a wildcard, or a regexp
-         *
-         *
-         * Where value is the extension instructions
-         */
-        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[];
-    }>;
-    case: any;
-    [A_TYPES__EntityMetaKey.FEATURES]: A_Meta<{
-        /**
-         * Where Key is the name of the feature
-         *
-         * Where value is the list of features
-         */
-        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta;
-    }>;
-    /**
-     * Injections defined on the component per handler
-     */
-    [A_TYPES__EntityMetaKey.INJECTIONS]: A_Meta<{
-        /**
-         * Where Key is the name of the injection
-         *
-         * Where value is the list of injections
-         */
-        [Key: string]: A_TYPES__A_InjectDecorator_Meta;
-    }>;
-};
-
-/**
- * A_Entity is another abstraction that describes all major participants in the system business logic.
- * Each Entity should have a clear definition and a clear set of responsibilities.
- * However, entity may hide some of its responsibilities behind the interface to prevent overload.
- *
- * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
- */
-declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_TYPES__Entity_Init, _SerializedType extends A_TYPES__Entity_Serialized = A_TYPES__Entity_Serialized> implements A_TYPES__IEntity {
-    /**
-     * Entity Identifier that corresponds to the class name
-     */
-    static get entity(): string;
-    /**
-     * DEFAULT Concept Name (Application Name) of the entity from environment variable A_CONCEPT_NAME
-     * [!] If environment variable is not set, it will default to 'a-concept'
-     */
-    static get concept(): string;
-    /**
-     * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE
-     * [!] If environment variable is not set, it will default to 'core'
-     * [!] Scope is an application specific identifier that can be used to group entities together
-     * [!] e.g. 'default', 'core', 'public', 'internal', etc
-     */
-    static get scope(): string;
-    /**
-     * ASEID is an entity identifier that is unique across the system
-     * A - A_Concept or Application
-     * S - System or Scope
-     * E - Entity
-     * ID - Identifier
-     *
-     * [!] ASEID is immutable and should not be changed after the entity is created
-     *
-     * [!] ASEID is composed of the following parts:
-     * - concept: an application specific identifier from where the entity is coming from
-     * - scope: the scope of the entity from concept
-     * - entity: the name of the entity from concept
-     * - id: the unique identifier of the entity
-     *
-     * [!] For more information about ASEID, please refer to the ASEID class documentation]
-     */
-    aseid: ASEID;
-    /**
-     * Create a new A_entity instance from Aseid String
-     * e.g. project@scope:entity:0000000001
-     *
-     * @param aseid
-     */
-    constructor(
-    /**
-     * ASEID string that represents the entity
-     */
-    aseid?: string);
-    /**
-     * Create a new A_entity instance from Aseid instance
-     * e.g. new ASEID({concept: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
-     *
-     * @param aseid
-     */
-    constructor(
-    /**
-     * ASEID instance that represents the entity
-     */
-    aseid: ASEID);
-    /**
-     * Create a new A_entity instance from serialized object
-     *
-     * @param serialized
-     */
-    constructor(
-    /**
-     * Serialized object that represents the entity
-     */
-    serialized: _SerializedType);
-    /**
-     * Create a new A_entity instance from constructor object
-     *
-     * @param newEntity
-     */
-    constructor(
-    /**
-     * Constructor object that represents the entity
-     */
-    newEntity?: _ConstructorType);
-    /**
-     * Extracts the ID from the ASEID
-     * ID is the unique identifier of the entity
-     */
-    get id(): string | number;
-    protected isStringASEID(x: unknown): x is string;
-    protected isASEIDInstance(x: unknown): x is ASEID;
-    /**
-     * A "serialized" object is considered such if it is a non-null object
-     * and contains an "aseid" property (this mirrors your original check).
-     *
-     * @param x
-     * @returns
-     */
-    protected isSerializedObject(x: unknown): x is _SerializedType;
-    /**
-     * Constructor-style props = a plain object which does NOT contain "aseid".
-     * This is the "create from provided fields" case.
-     *
-     * @param x
-     * @returns
-     */
-    protected isConstructorProps(x: unknown): x is _ConstructorType;
-    /**
-     * Determines the appropriate initializer method based on the type of `props`.
-     * The method checks if `props` is:
-     * 1) a string that matches ASEID format -> fromASEID
-     * 2) an ASEID instance -> fromASEID
-     * 3) a serialized object (has 'aseid') -> fromJSON
-     * 4) a plain object with no 'aseid' -> treat as constructor props -> fromNew
-     *
-     * [!] If `props` is undefined, it will call fromUndefined method
-     *
-     * If none of the above, it throws an error indicating incorrect constructor usage.
-     *
-     *
-     * To get a custom initializer, override this method in the child class.
-     * Example:
-     * ```typescript
-     * protected getInitializer(
-     *   props?: string | ASEID | _SerializedType | _ConstructorType
-     * ): (props: any) => void | (() => void) {
-     *   if('customField' in props) {
-     *       return this.fromCustomField.bind(this);
-     *   }
-     *   return super.getInitializer(props);
-     * }
-     * ```
-     * @param props
-     * @returns The appropriate initializer method
-     */
-    protected getInitializer(props?: string | ASEID | _SerializedType | _ConstructorType): (props: any) => void | (() => void);
-    /**
-     * Generates a new ASEID for the entity.
-     * It uses class definitions for concept, scope, and entity,
-     * and allows overriding any of these values.
-     *
-     * @param override
-     * @returns
-     */
-    protected generateASEID(override?: Partial<A_TYPES__ASEID_Constructor>): ASEID;
-    /**
-     * Call a feature of the component with the provided scope
-     *
-     * [!] If the provided scope is not inherited from the entity scope, it will be inherited
-     *
-     * @param lifecycleMethod
-     * @param args
-     */
-    call(feature: string, scope?: A_Scope): any;
-    /**
-     * The default method that can be called and extended to load entity data.
-     */
-    load(scope?: A_Scope): Promise<any>;
-    /**
-     * The default method that can be called and extended to destroy entity data.
-     */
-    destroy(scope?: A_Scope): Promise<any>;
-    /**
-     * The default method that can be called and extended to save entity data.
-     */
-    save(scope?: A_Scope): Promise<any>;
-    /**
-     * Create a new entity from ASEID string or instance
-     * [!] Executed when the constructor is called with a string or ASEID instance that represents the ASEID
-     * [!] Executes By Default with new A_Entity('aseid-string') or new A_Entity(new ASEID(...)) if getInitializer has not been overridden
-     *
-     * @param aseid
-     */
-    fromASEID(aseid: string | ASEID): void;
-    /**
-     * Handles the case when no props are provided to the constructor.
-     * This method can be overridden in child classes to set default values or perform specific initialization logic.
-     * By default, it does nothing.
-     *
-     *
-     * @returns
-     */
-    fromUndefined(): void;
-    /**
-     * Create a new entity from constructor object
-     * [!] Executed when the constructor is called with an object that does not contain "aseid" property
-     * [!] Executes By Default with new A_Entity({}) if getInitializer has not been overridden
-     *
-     * @param newEntity
-     * @returns
-     */
-    fromNew(newEntity: _ConstructorType): void;
-    /**
-     * Creates a new entity from serialized object
-     *
-     * [!] Executed when the constructor is called with an object that contains "aseid" property
-     * [!] Executes By Default with new A_Entity({ aseid: '...' }) if getInitializer has not been overridden
-     *
-     *
-     * @param serialized
-     * @returns
-     */
-    fromJSON(serialized: _SerializedType): void;
-    /**
-     * Converts the entity to a JSON object
-     * [!] This method should be extended in the child classes to include all properties of the entity
-     * [!] Includes aseid by default
-     *
-     *
-     * @returns
-     */
-    toJSON(): _SerializedType;
-    /**
-     * Returns the string representation of the entity
-     * what is basically the ASEID string
-     *
-     * @returns
-     */
-    toString(): string;
-}
-
-/**
- * A-Feature decorator
- *
- * This decorator allows to define a custom lifecycle stage for the Container.
- * These stages are executed in a container-specific order and can be extended by components that are injected into the container.
- * This approach allows to create a flexible and extendable architecture for the application.
- *
- * The main difference between the A-Feature and A-Feature decorators is that A-Feature methods can be inherited and overridden by child classes.
- *
- *
- * @param params
- * @returns
- */
-declare function A_Feature_Define(config?: Partial<A_TYPES__FeatureDefineDecoratorConfig>): (target: A_TYPES__FeatureDefineDecoratorTarget, propertyKey: string, descriptor: A_TYPES__FeatureDefineDecoratorDescriptor) => A_TYPES__FeatureDefineDecoratorDescriptor;
-
-/**
- * A-Extend decorator
- *
- * This decorator allows to define a custom Extend stage for the Container.
- * These stages are executed in a container-specific order and can be extended by components that are injected into the container.
- * This approach allows to create a flexible and extendable architecture for the application.
- *
- * The main difference between the A-Extend and A-Extend decorators is that A-Extend methods can be inherited and overridden by child classes.
- *
- *
- * @param params
- * @returns
- */
-/**
- * Use regexp in case if you need more flexibility and control over the name of the method
- *
- * @param regexp
- */
-declare function A_Feature_Extend(
-/**
- * The regular expression to match the name of the Feature method to be extended
- *
- * Example:
- *
- * ```ts
- *  @A_Feature.Extend(/.*\.load/)
- * ```
- */
-regexp: RegExp): any;
-/**
- * In this case the name configurations will be used as an input to get scope and name of target function
- * [!] Not that for all SCOPE will be used OR operator
- *
- * @param config
- */
-declare function A_Feature_Extend(
-/**
- * Configuration for the A-Feature-Extend decorator
- */
-config: Partial<A_TYPES__FeatureExtendDecoratorConfig>): any;
-/**
- * In this case the name of function will be used as a name of the Feature.
- * [!] AND it will be applicable for ANY element where the name is the same as the name of the function
- */
-declare function A_Feature_Extend(): any;
-
-/**
- * Entity constructor type
- * Uses the generic type T to specify the type of the entity
- */
-type A_TYPES__Error_Constructor<T = A_Error> = new (...args: any[]) => T;
-/**
- * Error initialization type
- */
-type A_TYPES__Error_Init = {
-    /**
-     * Error title
-     *
-     * A short description of the error
-     */
-    title: string;
-    /**
-     * Error code representing the type of error
-     *
-     * Should be unique within the application or service
-     *
-     * Example: 'validation-error', 'not-found', 'user-not-found', 'unauthorized' etc.
-     *
-     * [!] Note: It is recommended to use kebab-case for error codes
-     * [!] Note: If not provided would be used a kebab-case message of the error
-     */
-    code?: string;
-    /**
-     * Possible Scope if needed to identify the error by it's execution environment
-     *
-     * For example, error of type 'validation' could happen in different scopes
-     * like 'user', 'admin', 'system' etc. This will help to identify the error context better
-     *
-     * Could be string or A_Scope instance
-     *
-     * [!] Note: If not provided, the default scope of the A_Error will be used (A_Context.root.name)
-     */
-    scope?: string | A_Scope;
-    /**
-     * Detailed description of the error
-     */
-    description?: string;
-    /**
-     * Link to the documentation or support page for the error
-     */
-    link?: string;
-    /**
-     * Original Error if any
-     */
-    originalError?: Error | unknown;
-};
-/**
- * Error serialized type
- */
-type A_TYPES__Error_Serialized = {
-    /**
-     * ASEID of the error
-     */
-    aseid: string;
-    /**
-     * A brief title of the error
-     */
-    title: string;
-    /**
-     * Error message
-     */
-    message: string;
-    /**
-     * Type of the error
-     */
-    type: string;
-    /**
-     * Error code
-     */
-    code: string;
-    /**
-     * Error description
-     */
-    description: string;
-    /**
-     * Link to documentation or support page
-     */
-    link?: string;
-    /**
-     * Scope of the error
-     */
-    scope: string;
-    /**
-     * Original error message if any
-     */
-    originalError?: string;
-};
 
 declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TYPES__Error_Init, _SerializedType extends A_TYPES__Error_Serialized = A_TYPES__Error_Serialized> extends Error {
     /**
@@ -1090,6 +839,67 @@ declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TYPES__Er
     protected validateTitle(title: string): void;
 }
 
+/**
+ * A-Feature decorator
+ *
+ * This decorator allows to define a custom lifecycle stage for the Container.
+ * These stages are executed in a container-specific order and can be extended by components that are injected into the container.
+ * This approach allows to create a flexible and extendable architecture for the application.
+ *
+ * The main difference between the A-Feature and A-Feature decorators is that A-Feature methods can be inherited and overridden by child classes.
+ *
+ *
+ * @param params
+ * @returns
+ */
+declare function A_Feature_Define(config?: Partial<A_TYPES__FeatureDefineDecoratorConfig>): (target: A_TYPES__FeatureDefineDecoratorTarget, propertyKey: string, descriptor: A_TYPES__FeatureDefineDecoratorDescriptor) => A_TYPES__FeatureDefineDecoratorDescriptor;
+
+/**
+ * A-Extend decorator
+ *
+ * This decorator allows to define a custom Extend stage for the Container.
+ * These stages are executed in a container-specific order and can be extended by components that are injected into the container.
+ * This approach allows to create a flexible and extendable architecture for the application.
+ *
+ * The main difference between the A-Extend and A-Extend decorators is that A-Extend methods can be inherited and overridden by child classes.
+ *
+ *
+ * @param params
+ * @returns
+ */
+/**
+ * Use regexp in case if you need more flexibility and control over the name of the method
+ *
+ * @param regexp
+ */
+declare function A_Feature_Extend(
+/**
+ * The regular expression to match the name of the Feature method to be extended
+ *
+ * Example:
+ *
+ * ```ts
+ *  @A_Feature.Extend(/.*\.load/)
+ * ```
+ */
+regexp: RegExp): any;
+/**
+ * In this case the name configurations will be used as an input to get scope and name of target function
+ * [!] Not that for all SCOPE will be used OR operator
+ *
+ * @param config
+ */
+declare function A_Feature_Extend(
+/**
+ * Configuration for the A-Feature-Extend decorator
+ */
+config: Partial<A_TYPES__FeatureExtendDecoratorConfig>): any;
+/**
+ * In this case the name of function will be used as a name of the Feature.
+ * [!] AND it will be applicable for ANY element where the name is the same as the name of the function
+ */
+declare function A_Feature_Extend(): any;
+
 declare class A_Stage {
     /**
      * The feature that owns this stage
@@ -1156,14 +966,14 @@ declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<any[]>;
+    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Fragment<A_TYPES__Fragment_Serialized> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Caller<A_TYPES__FeatureAvailableComponents> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]> | A_TYPES__A_DependencyInjectable[] | undefined)[]>;
     /**
      * Resolves the component of the step
      *
      * @param step
      * @returns
      */
-    protected getStepComponent(scope: A_Scope, step: A_TYPES__A_StageStep): A_TYPES__ScopeResolvableComponents;
+    protected getStepComponent(scope: A_Scope, step: A_TYPES__A_StageStep): A_TYPES__A_DependencyInjectable;
     /**
      * Calls the handler of the step
      *
@@ -1253,39 +1063,6 @@ declare class A_FeatureError extends A_Error<A_TYPES__FeatureError_Init> {
      */
     stage?: A_Stage;
     protected fromConstructor(params: A_TYPES__FeatureError_Init): void;
-}
-
-/**
- * This is a common class that uses to return an entity that initiates a feature call
- *
- * It can be used then in @A_Inject(A_Caller) to get the entity that initiated the feature call
- *
- * [!] the class itself may be retrieved, but may require additional processing inside the feature
- *
- */
-declare class A_Caller<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__FeatureAvailableComponents> {
-    /**
-     * The component that initiated the feature call
-     */
-    protected _component: T;
-    /**
-     * A_Caller allows to get the component that initiated the feature call
-     *
-     * It can be used then in @A_Inject(A_Caller) to get the entity that initiated the feature call
-     *
-     * [!] If Scope is not provided, a new empty scope will be created and inherited from the global scope
-     *
-     * @param component
-     * @param scope
-     */
-    constructor(component: T);
-    get component(): T;
-    /**
-     * Validates the provided parameters and Ensures that the component is of an allowed type
-     *
-     * @param component
-     */
-    protected validateParams(component: T): void;
 }
 
 /**
@@ -1500,11 +1277,330 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
     toString(): string;
 }
 
+type A_TYPES__A_DependencyConstructor<T extends A_Dependency> = A_TYPES__Ctor<T>;
+type A_TYPES__A_DependencyInjectable = A_Entity | A_Container | A_Component | A_Fragment | A_Feature | A_Caller | A_Error | A_Scope;
+type A_TYPES__A_DependencyResolutionType<T> = T extends string ? string : T extends A_TYPES__Ctor<infer R> ? R : never;
+type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = {
+    /**
+     * If tru will throw an error if the dependency is not found
+     */
+    require: boolean;
+    /**
+     * Indicates that dependency should be loaded from a specific path before resolution
+     */
+    load: boolean;
+    /**
+     * Number of levels to go up in the parent chain when resolving the dependency
+     */
+    parent: number;
+    /**
+     * If true, will only resolve the dependency in the current scope without going up to parent scopes
+     */
+    flat: boolean;
+    /**
+     * If has any value indicates that entity should be created with default parameters provided
+     */
+    create: boolean;
+    /**
+     * Default constructor arguments to use when creating the dependency
+     */
+    args: any[];
+    /**
+     * Allows to query by specific entity properties e.g. ASEID, name, type, custom properties, etc.
+     */
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>>;
+    /**
+     * Pagination settings for the entity search
+     */
+    pagination: A_TYPES__A_Dependency_EntityInjectionPagination;
+};
+type A_TYPES__A_Dependency_Serialized = {
+    name: string;
+    all: boolean;
+    require: boolean;
+    load: boolean;
+    parent: number;
+    flat: boolean;
+    create: any;
+    args: any[];
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery>;
+    pagination: A_TYPES__A_Dependency_EntityInjectionPagination;
+};
+type A_TYPES__A_Dependency_EntityResolutionConfig<T extends A_Entity = A_Entity> = {
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
+    pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
+};
+type A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity = A_Entity> = {
+    aseid: string;
+} & {
+    [key in keyof T]?: any;
+};
+type A_TYPES__A_Dependency_EntityInjectionPagination = {
+    count: number;
+    from: 'start' | 'end';
+};
+/**
+ * A-Dependency require decorator return type
+ */
+type A_TYPES__A_Dependency_RequireDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * A-Dependency load decorator return type
+ */
+type A_TYPES__A_Dependency_LoadDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * A-Dependency default decorator return type
+ */
+type A_TYPES__A_Dependency_DefaultDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * A-Dependency parent decorator return type
+ */
+type A_TYPES__A_Dependency_ParentDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * A-Dependency flat decorator return type
+ */
+type A_TYPES__A_Dependency_FlatDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * A-Dependency All decorator return type
+ */
+type A_TYPES__A_Dependency_AllDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+
+/**
+ * Should indicate which Default is required
+ */
+declare function A_Dependency_Default(
+/**
+ * Constructor Parameters that will be used to create the default instance
+ */
+...args: any[]): A_TYPES__A_Dependency_DefaultDecoratorReturn;
+
+/**
+ * Should indicate which dependency is required
+ */
+declare function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn;
+
+/**
+ * Should indicate which Load is required
+ */
+declare function A_Dependency_Load(): A_TYPES__A_Dependency_LoadDecoratorReturn;
+
+/**
+ * Should indicate which dependency is required
+ */
+declare function A_Dependency_Parent(
+/**
+ * Indicates how many layers up the parent dependency should be resolved from current dependency
+ *
+ * Default: -1 (one layer up)
+ */
+layerOffset?: number): A_TYPES__A_Dependency_ParentDecoratorReturn;
+
+/**
+ * Should indicate which dependency is required
+ */
+declare function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorReturn;
+
+declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> {
+    /**
+     * Allows to indicate which Injected parameter is required
+     *
+     * [!] If parameter marked as required is not provided, an error will be thrown
+     *
+     * @returns
+     */
+    static get Required(): typeof A_Dependency_Require;
+    /**
+     * Allows to indicate which dependency should be loaded from a specific path
+     *
+     * @returns
+     */
+    static get Loaded(): typeof A_Dependency_Load;
+    /**
+     * Allows to indicate which dependency default parameters should be used
+     *
+     * @returns
+     */
+    static get Default(): typeof A_Dependency_Default;
+    /**
+     * Allows to indicate which parent dependency should be resolved
+     * e.g. from which layer up the parent should be taken
+     *
+     * @returns
+     */
+    static get Parent(): typeof A_Dependency_Parent;
+    /**
+     * Allows to indicate that the dependency should be resolved in a flat manner
+     * Only in the same scope, without going up to parent scopes
+     *
+     * @returns
+     */
+    static get Flat(): typeof A_Dependency_Flat;
+    protected _name: string;
+    protected _target?: A_TYPES__Ctor<T>;
+    protected _resolutionStrategy: A_TYPES__A_DependencyResolutionStrategy;
+    protected _defaultPagination: A_TYPES__A_DependencyResolutionStrategy['pagination'];
+    protected _defaultResolutionStrategy: A_TYPES__A_DependencyResolutionStrategy;
+    get flat(): boolean;
+    get require(): boolean;
+    get load(): boolean;
+    /**
+     * Indicates cases when it's necessary to search across all instances
+     */
+    get all(): boolean;
+    get parent(): number;
+    get create(): any;
+    get args(): any[];
+    get query(): Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>>;
+    get pagination(): A_TYPES__A_Dependency_EntityInjectionPagination;
+    /**
+     * Class instances allows to identify dependencies by name and use them for better type checking
+     *
+     * @param name
+     */
+    constructor(name: string | A_TYPES__Ctor<T>, resolutionStrategy?: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & {
+        pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
+    }>);
+    /**
+     * Gets the dependency name
+     *
+     * Can be identifier, url or any string value
+     *
+     * @returns
+     */
+    get name(): string;
+    /**
+     * Returns the original class of the dependency if provided
+     *
+     */
+    get target(): A_TYPES__Ctor<T> | undefined;
+    /**
+     * Gets the dependency resolution strategy
+     */
+    get resolutionStrategy(): A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>;
+    /**
+     * Sets the dependency resolution strategy
+     */
+    set resolutionStrategy(strategy: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & {
+        pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
+    }>);
+    /**
+     * Method for the parameters check and all input data before usage
+     *
+     * @returns
+     */
+    private initCheck;
+    /**
+     * Serializes the dependency to a JSON object
+     *
+     * @returns
+     */
+    toJSON(): A_TYPES__A_Dependency_Serialized;
+}
+
+declare enum A_TYPES__A_Stage_Status {
+    /**
+     * The stage is currently being processed
+     */
+    PROCESSING = "PROCESSING",
+    /**
+     * The stage has been completed
+     */
+    COMPLETED = "COMPLETED",
+    /**
+     * The stage has failed
+     */
+    FAILED = "FAILED",
+    /**
+     * The stage has been skipped
+     */
+    SKIPPED = "SKIPPED",
+    /**
+     * The stage has been paused
+     */
+    /**
+     * The stage has been stopped
+     */
+    /**
+     * The stage has been started
+     */
+    /**
+     * The stage has been initialized
+     */
+    INITIALIZED = "INITIALIZED",
+    /**
+     * The stage has been aborted
+     */
+    ABORTED = "ABORTED"
+}
+type A_TYPES_StageExecutionBehavior = 'async' | 'sync';
+type A_TYPES__A_StageStep = {
+    /**
+     * The component to be called
+     */
+    dependency: A_Dependency;
+    /**
+     * The method to be called on the component
+     */
+    handler: string;
+    /**
+     * Original Feature Extension name
+     *
+     * [!] could be string or regex
+     *
+     */
+    name: string;
+    /**
+     * In case its async it will be executed independently from the main thread.
+     *
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
+     *
+     */
+    behavior: A_TYPES_StageExecutionBehavior;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    before: string;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    after: string;
+    /**
+     * Indicates whether to throw an error if the step fails.
+     *
+     * [!] By default is true
+     */
+    throwOnError: boolean;
+    /**
+     *
+     */
+    override: string;
+};
+type A_TYPES__Stage_Serialized = {
+    /**
+     * The name of the stage
+     */
+    name: string;
+    /**
+     *  The status of the stage
+     *
+     */
+    status: A_TYPES__A_Stage_Status;
+};
+type A_TYPES__A_StageStepProcessingExtraParams = {
+    steps: A_TYPES__A_StageStep[];
+    filter: (step: A_TYPES__A_StageStep) => boolean;
+};
+
 /**
  * Feature constructor type
  * Uses the generic type T to specify the type of the feature
  */
-type A_TYPES__Feature_Constructor<T = A_Feature> = new (...args: any[]) => T;
+type A_TYPES__Feature_Constructor<T = A_Feature> = A_TYPES__Ctor<T>;
 /**
  * Feature initialization type
  */
@@ -1633,7 +1729,7 @@ type A_TYPES__FeatureDefineDecoratorConfig = {
 /**
  * Describes a single template item used in Feature Define decorator
  */
-type A_TYPES__FeatureDefineDecoratorTemplateItem = A_TYPES__Required<Partial<A_TYPES__A_StageStep>, ['name', 'handler', 'component']>;
+type A_TYPES__FeatureDefineDecoratorTemplateItem = A_TYPES__Required<Partial<A_TYPES__A_StageStep>, ['name', 'handler', 'dependency']>;
 /**
  * Describes a target where Feature Define decorator can be applied
  *
@@ -1929,7 +2025,7 @@ declare class A_Abstraction {
  * Abstraction constructor type
  * Uses the generic type T to specify the type of the abstraction
  */
-type A_TYPES__Abstraction_Constructor<T = A_Abstraction> = new (...args: any[]) => T;
+type A_TYPES__Abstraction_Constructor<T = A_Abstraction> = A_TYPES__Ctor<T>;
 /**
  * Abstraction initialization type
  */
@@ -2109,130 +2205,10 @@ declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
 }
 
 /**
- * A_Fragment is a core architectural component that represents a singleton execution context
- * within the A-Concept framework. It serves as a shared memory container that can be passed
- * between Components, Entities, and Commands throughout the application pipeline.
- *
- * Key Features:
- * - Singleton pattern: Only one instance per fragment type per scope
- * - Meta storage: Built-in key-value storage for pipeline data
- * - Type-safe: Full TypeScript generics support for meta items and serialization
- * - Serializable: Can be converted to JSON for persistence or transmission
- *
- * @template _MetaItems - Type definition for the meta storage structure
- * @template _SerializedType - Type definition for the serialized output format
- *
- * @example
- * ```typescript
- * // Basic usage with typed meta
- * class UserFragment extends A_Fragment<{ userId: string; role: string }> {
- *   constructor() {
- *     super({ name: 'UserFragment' });
- *   }
- * }
- *
- * // Custom serialization
- * class SessionFragment extends A_Fragment<
- *   { sessionId: string; timestamp: number },
- *   { name: string; sessionData: string }
- * > {
- *   toJSON() {
- *     return {
- *       name: this.name,
- *       sessionData: `${this.get('sessionId')}-${this.get('timestamp')}`
- *     };
- *   }
- * }
- * ```
- */
-declare class A_Fragment<_SerializedType extends A_TYPES__Fragment_Serialized = A_TYPES__Fragment_Serialized> {
-    /**
-     * The unique identifier/name for this fragment instance.
-     * Used for identification and debugging purposes.
-     */
-    protected _name: string;
-    /**
-     * Creates a new A_Fragment instance.
-     *
-     * A_Fragment implements the singleton pattern for execution contexts, allowing
-     * shared state management across different parts of the application pipeline.
-     * Each fragment serves as a memory container that can store typed data and be
-     * serialized for persistence or transmission.
-     *
-     * Key Benefits:
-     * - Centralized state management for related operations
-     * - Type-safe meta operations with full IntelliSense support
-     * - Serialization support for data persistence
-     * - Singleton pattern ensures consistent state within scope
-     *
-     * @param params - Initialization parameters
-     * @param params.name - Optional custom name for the fragment (defaults to class name)
-     *
-     * @example
-     * ```typescript
-     * const fragment = new A_Fragment<{ userId: string }>({
-     *   name: 'UserSessionFragment'
-     * });
-     * fragment.set('userId', '12345');
-     * ```
-     */
-    constructor(params?: Partial<A_TYPES__Fragment_Init>);
-    /**
-     * Gets the fragment's unique name/identifier.
-     *
-     * @returns The fragment name
-     */
-    get name(): string;
-    /**
-     * Serializes the fragment to a JSON-compatible object.
-     *
-     * This method combines the fragment's name with all meta data to create
-     * a serializable representation. The return type is determined by the
-     * _SerializedType generic parameter, allowing for custom serialization formats.
-     *
-     * @returns A serialized representation of the fragment
-     *
-     * @example
-     * ```typescript
-     * const fragment = new A_Fragment<{ userId: string, role: string }>({
-     *   name: 'UserFragment'
-     * });
-     * fragment.set('userId', '12345');
-     * fragment.set('role', 'admin');
-     *
-     * const json = fragment.toJSON();
-     * // Result: { name: 'UserFragment', userId: '12345', role: 'admin' }
-     * ```
-     */
-    toJSON(): _SerializedType;
-}
-
-/**
- * Fragment constructor type
- * Uses the generic type T to specify the type of the fragment
- */
-type A_TYPES__Fragment_Constructor<T = A_Fragment> = new (...args: any[]) => T;
-/**
- * Fragment initialization type
- */
-type A_TYPES__Fragment_Init = {
-    name: string;
-};
-/**
- * Fragment serialized type
- */
-type A_TYPES__Fragment_Serialized = {
-    /**
-     * The Name of the fragment
-     */
-    name: string;
-};
-
-/**
  * Concept constructor type
  * Uses the generic type T to specify the type of the concept
  */
-type A_TYPES__Concept_Constructor<T = A_Concept> = new (...args: any[]) => T;
+type A_TYPES__Concept_Constructor<T = A_Concept> = A_TYPES__Ctor<T>;
 /**
  * Concept initialization type
  * Uses the generic type T to specify the type of containers that the concept will use
@@ -2299,7 +2275,7 @@ declare enum A_TYPES__ContainerMetaKey {
  * Container constructor type
  * Uses the generic type T to specify the type of the container
  */
-type A_TYPES__Container_Constructor<T = A_Container> = new (...args: any[]) => T;
+type A_TYPES__Container_Constructor<T = A_Container> = A_TYPES__Ctor<T>;
 /**
  * Container initialization type
  */
@@ -2364,61 +2340,104 @@ type A_TYPES__ContainerMeta = {
 };
 type A_TYPES__ContainerMetaExtension = A_TYPES__FeatureExtendDecoratorMeta;
 
-declare class A_Container {
-    /**
-     * Configuration of the container that will be used to run it.
-     */
-    protected readonly config: Partial<A_TYPES__Container_Init>;
-    /**
-     * Name of the container
-     */
-    get name(): string;
-    /**
-     * Returns the scope where the container is registered
-     */
-    get scope(): A_Scope;
-    /**
-     * This class should combine Components to achieve the goal withing Concept
-     *
-     * Container is a direct container that should be "run" to make Concept work.
-     * So because of that Container can be:
-     * - HTTP Server
-     * - BASH Script
-     * - Database Connection
-     * - Microservice
-     * - etc.
-     *
-     * @param config - Configuration of the container that will be used to run it.
-     */
-    constructor(
-    /**
-     * Configuration of the container that will be used to run it.
-     */
-    config?: Partial<A_TYPES__Container_Init>);
-    /**
-     * Calls the feature with the given name in the given scope
-     *
-     * [!] Note: This method creates a new instance of the feature every time it is called
-     *
-     * @param feature - the name of the feature to call
-     * @param scope  - the scope in which to call the feature
-     * @returns  - void
-     */
-    call(
-    /**
-     * Name of the feature to call
-     */
-    feature: string, 
-    /**
-     * scope in which the feature will be executed
-     */
-    scope?: A_Scope): Promise<void>;
+/**
+ * A-Inject decorator descriptor type
+ * Indicates the type of the decorator function
+ */
+type A_TYPES__A_InjectDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => Promise<void>>;
+/**
+ * A-Inject decorator return type
+ * Indicates what the decorator function returns
+ */
+type A_TYPES__A_InjectDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+type A_TYPES__A_InjectDecorator_Meta = Array<A_Dependency>;
+/**
+ * Targets that can be injected into Extended functions or constructors
+ */
+type A_TYPES__InjectableTargets = A_TYPES__Component_Constructor | InstanceType<A_TYPES__Component_Constructor> | InstanceType<A_TYPES__Container_Constructor>;
+
+declare enum A_TYPES__ComponentMetaKey {
+    EXTENSIONS = "a-component-extensions",
+    FEATURES = "a-component-features",
+    INJECTIONS = "a-component-injections",
+    ABSTRACTIONS = "a-component-abstractions"
 }
+
+/**
+ * Component constructor type
+ * Uses the generic type T to specify the type of the component
+ */
+type A_TYPES__Component_Constructor<T = A_Component> = A_TYPES__Ctor<T>;
+/**
+ * Component initialization type
+ */
+type A_TYPES__Component_Init = any;
+/**
+ * Component serialized type
+ */
+type A_TYPES__Component_Serialized = {
+    /**
+     * The ASEID of the component
+     */
+    aseid: string;
+};
+/**
+ * Component meta type
+ */
+type A_TYPES__ComponentMeta = {
+    /**
+     * Extensions applied to the component per handler
+     */
+    [A_TYPES__ComponentMetaKey.EXTENSIONS]: A_Meta<{
+        /**
+         * Where Key the regexp for what to apply the extension
+         * A set of container names or a wildcard, or a regexp
+         *
+         *
+         * Where value is the extension instructions
+         */
+        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[];
+    }>;
+    /**
+     * Features defined on the component per handler
+     */
+    [A_TYPES__ComponentMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         *
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta;
+    }>;
+    /**
+     * Injections defined on the component per handler
+     */
+    [A_TYPES__ComponentMetaKey.INJECTIONS]: A_Meta<{
+        /**
+         * Where Key is the name of the injection
+         *
+         * Where value is the list of injections
+         */
+        [Key: string]: A_TYPES__A_InjectDecorator_Meta;
+    }>;
+    /**
+     *  Abstractions extended by the component per handler
+     */
+    [A_TYPES__ComponentMetaKey.ABSTRACTIONS]: A_Meta<{
+        /**
+         * Where Key is the name of the stage
+         *
+         * Where value is the list of injections
+         */
+        [Key: string]: A_TYPES__ConceptAbstraction[];
+    }>;
+};
+type A_TYPES__ComponentMetaExtension = A_TYPES__FeatureExtendDecoratorMeta;
 
 /**
  * Meta constructor type
  */
-type A_TYPES__Meta_Constructor<T = A_Meta> = new (...args: any[]) => T;
+type A_TYPES__Meta_Constructor<T = A_Meta> = A_TYPES__Ctor<T>;
 /**
  * Components that can have Meta associated with them
  */
@@ -2541,39 +2560,50 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
     toJSON(): _SerializedType;
 }
 
-declare enum A_TYPES__ComponentMetaKey {
+declare enum A_TYPES__EntityMetaKey {
     EXTENSIONS = "a-component-extensions",
     FEATURES = "a-component-features",
-    INJECTIONS = "a-component-injections",
-    ABSTRACTIONS = "a-component-abstractions"
+    ABSTRACTIONS = "a-component-abstractions",
+    INJECTIONS = "a-component-injections"
+}
+declare enum A_TYPES__EntityFeatures {
+    SAVE = "save",
+    DESTROY = "destroy",
+    LOAD = "load"
 }
 
 /**
- * Component constructor type
- * Uses the generic type T to specify the type of the component
+ * Entity interface
  */
-type A_TYPES__Component_Constructor<T = A_Component> = new (...args: any[]) => T;
-/**
- * Component initialization type
- */
-type A_TYPES__Component_Init = any;
-/**
- * Component serialized type
- */
-type A_TYPES__Component_Serialized = {
+interface A_TYPES__IEntity {
     /**
-     * The ASEID of the component
+     * The ASEID of the entity
+     */
+    aseid: ASEID;
+}
+/**
+ * Entity constructor type
+ * Uses the generic type T to specify the type of the entity
+ */
+type A_TYPES__Entity_Constructor<T = A_Entity> = A_TYPES__Ctor<T>;
+/**
+ * Entity initialization type
+ */
+type A_TYPES__Entity_Init = any;
+/**
+ * Entity serialized type
+ */
+type A_TYPES__Entity_Serialized = {
+    /**
+     * The ASEID of the entity
      */
     aseid: string;
 };
 /**
- * Component meta type
+ * Entity meta type
  */
-type A_TYPES__ComponentMeta = {
-    /**
-     * Extensions applied to the component per handler
-     */
-    [A_TYPES__ComponentMetaKey.EXTENSIONS]: A_Meta<{
+type A_TYPES__EntityMeta = {
+    [A_TYPES__EntityMetaKey.EXTENSIONS]: A_Meta<{
         /**
          * Where Key the regexp for what to apply the extension
          * A set of container names or a wildcard, or a regexp
@@ -2583,10 +2613,8 @@ type A_TYPES__ComponentMeta = {
          */
         [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[];
     }>;
-    /**
-     * Features defined on the component per handler
-     */
-    [A_TYPES__ComponentMetaKey.FEATURES]: A_Meta<{
+    case: any;
+    [A_TYPES__EntityMetaKey.FEATURES]: A_Meta<{
         /**
          * Where Key is the name of the feature
          *
@@ -2597,7 +2625,7 @@ type A_TYPES__ComponentMeta = {
     /**
      * Injections defined on the component per handler
      */
-    [A_TYPES__ComponentMetaKey.INJECTIONS]: A_Meta<{
+    [A_TYPES__EntityMetaKey.INJECTIONS]: A_Meta<{
         /**
          * Where Key is the name of the injection
          *
@@ -2605,76 +2633,228 @@ type A_TYPES__ComponentMeta = {
          */
         [Key: string]: A_TYPES__A_InjectDecorator_Meta;
     }>;
-    /**
-     *  Abstractions extended by the component per handler
-     */
-    [A_TYPES__ComponentMetaKey.ABSTRACTIONS]: A_Meta<{
-        /**
-         * Where Key is the name of the stage
-         *
-         * Where value is the list of injections
-         */
-        [Key: string]: A_TYPES__ConceptAbstraction[];
-    }>;
 };
-type A_TYPES__ComponentMetaExtension = A_TYPES__FeatureExtendDecoratorMeta;
-
-type A_TYPES__CallerComponent = A_Container | A_Component | A_Entity;
-/**
- * Caller constructor type
- * Uses the generic type T to specify the type of the caller component
- */
-type A_TYPES__Caller_Constructor<T = A_Caller> = new (...args: any[]) => T;
-/**
- * Caller initialization type
- */
-type A_TYPES__Caller_Init = {};
-/**
- * Caller serialized type
- */
-type A_TYPES__Caller_Serialized = {};
 
 /**
- * A-Inject decorator descriptor type
- * Indicates the type of the decorator function
- */
-type A_TYPES__A_InjectDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => Promise<void>>;
-/**
- * A-Inject decorator return type
- * Indicates what the decorator function returns
- */
-type A_TYPES__A_InjectDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-type A_TYPES__A_InjectDecorator_Meta = Array<{
-    target: A_TYPES__InjectableConstructors;
-    require?: boolean;
-    load?: string;
-    defaultArgs?: any;
-    parent?: {
-        layerOffset?: number;
-    };
-    flat?: boolean;
-    create?: boolean;
-    instructions?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions>;
-}>;
-/**
- * Targets that can be injected into Extended functions or constructors
+ * A_Entity is another abstraction that describes all major participants in the system business logic.
+ * Each Entity should have a clear definition and a clear set of responsibilities.
+ * However, entity may hide some of its responsibilities behind the interface to prevent overload.
  *
+ * Each entity should be connected to the ContextFragment (Scope) and should be able to communicate with other entities.
  */
-type A_TYPES__InjectableTargets = A_TYPES__Component_Constructor | InstanceType<A_TYPES__Component_Constructor> | InstanceType<A_TYPES__Container_Constructor>;
-type A_TYPES__InjectableConstructors = A_TYPES__Component_Constructor | A_TYPES__Container_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Feature_Constructor | A_TYPES__Caller_Constructor | A_TYPES__Fragment_Constructor | A_TYPES__Error_Constructor | string;
-type A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T extends A_Entity = A_Entity> = {
-    query: Partial<A_TYPES__A_InjectDecorator_EntityInjectionQuery<T>>;
-    pagination: Partial<A_TYPES__A_InjectDecorator_EntityInjectionPagination>;
-};
-type A_TYPES__A_InjectDecorator_EntityInjectionQuery<T extends A_Entity = A_Entity> = {
-    aseid: string;
-} & {
-    [key in keyof T]?: any;
-};
-type A_TYPES__A_InjectDecorator_EntityInjectionPagination = {
-    count: number;
-    from: 'start' | 'end';
-};
+declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_TYPES__Entity_Init, _SerializedType extends A_TYPES__Entity_Serialized = A_TYPES__Entity_Serialized> implements A_TYPES__IEntity {
+    /**
+     * Entity Identifier that corresponds to the class name
+     */
+    static get entity(): string;
+    /**
+     * DEFAULT Concept Name (Application Name) of the entity from environment variable A_CONCEPT_NAME
+     * [!] If environment variable is not set, it will default to 'a-concept'
+     */
+    static get concept(): string;
+    /**
+     * DEFAULT Scope of the entity from environment variable A_CONCEPT_DEFAULT_SCOPE
+     * [!] If environment variable is not set, it will default to 'core'
+     * [!] Scope is an application specific identifier that can be used to group entities together
+     * [!] e.g. 'default', 'core', 'public', 'internal', etc
+     */
+    static get scope(): string;
+    /**
+     * ASEID is an entity identifier that is unique across the system
+     * A - A_Concept or Application
+     * S - System or Scope
+     * E - Entity
+     * ID - Identifier
+     *
+     * [!] ASEID is immutable and should not be changed after the entity is created
+     *
+     * [!] ASEID is composed of the following parts:
+     * - concept: an application specific identifier from where the entity is coming from
+     * - scope: the scope of the entity from concept
+     * - entity: the name of the entity from concept
+     * - id: the unique identifier of the entity
+     *
+     * [!] For more information about ASEID, please refer to the ASEID class documentation]
+     */
+    aseid: ASEID;
+    /**
+     * Create a new A_entity instance from Aseid String
+     * e.g. project@scope:entity:0000000001
+     *
+     * @param aseid
+     */
+    constructor(
+    /**
+     * ASEID string that represents the entity
+     */
+    aseid?: string);
+    /**
+     * Create a new A_entity instance from Aseid instance
+     * e.g. new ASEID({concept: 'project', scope: 'default', entity: 'entity', id: '0000000001'})
+     *
+     * @param aseid
+     */
+    constructor(
+    /**
+     * ASEID instance that represents the entity
+     */
+    aseid: ASEID);
+    /**
+     * Create a new A_entity instance from serialized object
+     *
+     * @param serialized
+     */
+    constructor(
+    /**
+     * Serialized object that represents the entity
+     */
+    serialized: _SerializedType);
+    /**
+     * Create a new A_entity instance from constructor object
+     *
+     * @param newEntity
+     */
+    constructor(
+    /**
+     * Constructor object that represents the entity
+     */
+    newEntity?: _ConstructorType);
+    /**
+     * Extracts the ID from the ASEID
+     * ID is the unique identifier of the entity
+     */
+    get id(): string | number;
+    protected isStringASEID(x: unknown): x is string;
+    protected isASEIDInstance(x: unknown): x is ASEID;
+    /**
+     * A "serialized" object is considered such if it is a non-null object
+     * and contains an "aseid" property (this mirrors your original check).
+     *
+     * @param x
+     * @returns
+     */
+    protected isSerializedObject(x: unknown): x is _SerializedType;
+    /**
+     * Constructor-style props = a plain object which does NOT contain "aseid".
+     * This is the "create from provided fields" case.
+     *
+     * @param x
+     * @returns
+     */
+    protected isConstructorProps(x: unknown): x is _ConstructorType;
+    /**
+     * Determines the appropriate initializer method based on the type of `props`.
+     * The method checks if `props` is:
+     * 1) a string that matches ASEID format -> fromASEID
+     * 2) an ASEID instance -> fromASEID
+     * 3) a serialized object (has 'aseid') -> fromJSON
+     * 4) a plain object with no 'aseid' -> treat as constructor props -> fromNew
+     *
+     * [!] If `props` is undefined, it will call fromUndefined method
+     *
+     * If none of the above, it throws an error indicating incorrect constructor usage.
+     *
+     *
+     * To get a custom initializer, override this method in the child class.
+     * Example:
+     * ```typescript
+     * protected getInitializer(
+     *   props?: string | ASEID | _SerializedType | _ConstructorType
+     * ): (props: any) => void | (() => void) {
+     *   if('customField' in props) {
+     *       return this.fromCustomField.bind(this);
+     *   }
+     *   return super.getInitializer(props);
+     * }
+     * ```
+     * @param props
+     * @returns The appropriate initializer method
+     */
+    protected getInitializer(props?: string | ASEID | _SerializedType | _ConstructorType): (props: any) => void | (() => void);
+    /**
+     * Generates a new ASEID for the entity.
+     * It uses class definitions for concept, scope, and entity,
+     * and allows overriding any of these values.
+     *
+     * @param override
+     * @returns
+     */
+    protected generateASEID(override?: Partial<A_TYPES__ASEID_Constructor>): ASEID;
+    /**
+     * Call a feature of the component with the provided scope
+     *
+     * [!] If the provided scope is not inherited from the entity scope, it will be inherited
+     *
+     * @param lifecycleMethod
+     * @param args
+     */
+    call(feature: string, scope?: A_Scope): any;
+    /**
+     * The default method that can be called and extended to load entity data.
+     */
+    load(scope?: A_Scope): Promise<any>;
+    /**
+     * The default method that can be called and extended to destroy entity data.
+     */
+    destroy(scope?: A_Scope): Promise<any>;
+    /**
+     * The default method that can be called and extended to save entity data.
+     */
+    save(scope?: A_Scope): Promise<any>;
+    /**
+     * Create a new entity from ASEID string or instance
+     * [!] Executed when the constructor is called with a string or ASEID instance that represents the ASEID
+     * [!] Executes By Default with new A_Entity('aseid-string') or new A_Entity(new ASEID(...)) if getInitializer has not been overridden
+     *
+     * @param aseid
+     */
+    fromASEID(aseid: string | ASEID): void;
+    /**
+     * Handles the case when no props are provided to the constructor.
+     * This method can be overridden in child classes to set default values or perform specific initialization logic.
+     * By default, it does nothing.
+     *
+     *
+     * @returns
+     */
+    fromUndefined(): void;
+    /**
+     * Create a new entity from constructor object
+     * [!] Executed when the constructor is called with an object that does not contain "aseid" property
+     * [!] Executes By Default with new A_Entity({}) if getInitializer has not been overridden
+     *
+     * @param newEntity
+     * @returns
+     */
+    fromNew(newEntity: _ConstructorType): void;
+    /**
+     * Creates a new entity from serialized object
+     *
+     * [!] Executed when the constructor is called with an object that contains "aseid" property
+     * [!] Executes By Default with new A_Entity({ aseid: '...' }) if getInitializer has not been overridden
+     *
+     *
+     * @param serialized
+     * @returns
+     */
+    fromJSON(serialized: _SerializedType): void;
+    /**
+     * Converts the entity to a JSON object
+     * [!] This method should be extended in the child classes to include all properties of the entity
+     * [!] Includes aseid by default
+     *
+     *
+     * @returns
+     */
+    toJSON(): _SerializedType;
+    /**
+     * Returns the string representation of the entity
+     * what is basically the ASEID string
+     *
+     * @returns
+     */
+    toString(): string;
+}
 
 declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
     /**
@@ -2725,6 +2905,10 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _fragments: Map<A_TYPES__Fragment_Constructor<_FragmentType[number]>, _FragmentType[number]>;
     /**
+     * Storage for imported scopes
+     */
+    protected _imports: Set<A_Scope>;
+    /**
      * Returns the name of the scope
      */
     get name(): string;
@@ -2773,6 +2957,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     get errors(): Array<InstanceType<_ErrorType[number]>>;
     /**
+     * Returns an Array of imported scopes
+     * [!] Imported scopes are scopes that have been imported into the current scope using the import() method
+     */
+    get imports(): Array<A_Scope>;
+    /**
      * Returns the parent scope of the current scope
      *
      * @param setValue
@@ -2817,16 +3006,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @param level
      * @returns
      */
-    parentOffset(
+    parentOffset<T extends A_Scope>(
     /**
      * Level of the parent scope to retrieve
      *
      * Examples:
-     * - level 0 - immediate parent
-     * - level -1 - grandparent
-     * - level -2 - great-grandparent
+     * - level 0 - this scope
+     * - level -1 - parent
+     * - level -2 - grandparent
      */
-    layerOffset: number): A_Scope | undefined;
+    layerOffset: number): T | undefined;
     /**
      * Determines which initializer method to use based on the type of the first parameter.
      *
@@ -2936,6 +3125,24 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     inherit(parent: A_Scope): A_Scope;
     /**
+     * This method allows to import other scopes, to make their dependencies available in the current scope
+     *
+     * [!] Import doesn't create a parent-child relationship between scopes, it just copies the dependencies from the imported scopes
+     * [!] It doesn't change the entities ownership, so entities remain unique to their original scopes
+     *
+     * @param scopes
+     * @returns
+     */
+    import(...scopes: A_Scope[]): A_Scope;
+    /**
+     * This method allows to deimport other scopes, to remove their dependencies from the current scope
+     *
+     *
+     * @param scopes
+     * @returns
+     */
+    deimport(...scopes: A_Scope[]): A_Scope;
+    /**
      * This method is used to check if the component is available in the scope
      *
      * [!] Note that this method checks for the component in the current scope and all parent scopes
@@ -2970,6 +3177,7 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide a string to check if a component, entity or fragment with the provided name is available in the scope
      */
     constructor: string): boolean;
+    has<T extends A_TYPES__A_DependencyInjectable>(ctor: A_TYPES__Ctor<T> | string): boolean;
     /**
      * This method is used to check if the component is available in the scope
      *
@@ -3006,16 +3214,12 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     constructor: string): boolean;
     /**
-     * Merges two scopes into a new one
+     * Allows to resolve a specific dependency
      *
-     * [!] Notes:
-     *  - this method does NOT modify the existing scopes
-     *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
-     *
-     * @param anotherScope
+     * @param dependency
      * @returns
      */
-    merge(anotherScope: A_Scope): A_Scope;
+    resolveDependency<T extends A_TYPES__A_DependencyInjectable>(dependency: A_Dependency<T>): T | Array<T> | undefined;
     /**
      * Allows to retrieve the constructor of the component or entity by its name
      *
@@ -3041,6 +3245,7 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide the fragment name in PascalCase to retrieve its constructor
      */
     name: string): A_TYPES__Fragment_Constructor<T>;
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined;
     /**
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
@@ -3064,7 +3269,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): Array<T>;
-    resolveAll<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): Array<T>;
+    resolveAll<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+     */
+    constructorName: string): Array<T>;
+    resolveAll<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string): Array<T>;
     /**
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
@@ -3088,7 +3302,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): Array<T>;
-    resolveFlatAll<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): Array<T>;
+    resolveFlatAll<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+     */
+    constructorName: string): Array<T>;
+    resolveFlatAll<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     */
+    ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string): Array<T>;
     /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -3099,78 +3322,72 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @param component
      * @returns
      */
-    resolve<T extends A_Component>(
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component constructor to resolve its instance from the scope
+     */
+    component: A_TYPES__Ctor<T>): T | undefined;
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a target dependency to resolve its instance from the scope
+     *
+     * [!] In this case its possible to provide a custom resolution strategy via A_Dependency options
+     */
+    dependency: A_Dependency<T>): T | Array<T> | undefined;
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component constructor to resolve its instance from the scope
+     */
+    component: string): T | Array<T> | undefined;
+    /**
+     * This method allows to resolve/inject a component, fragment or entity from the scope
+     * Depending on the provided parameters it can resolve:
+     * - A single component/fragment/entity by its constructor or name
+     * - An array of components/fragments/entities by providing an array of constructors
+     * - An entity or an array of entities by providing the entity constructor and query instructions
+     *
+     * @param component
+     * @returns
+     */
+    resolveOnce<T extends A_Component>(
     /**
      * Provide a component constructor to resolve its instance from the scope
      */
     component: A_TYPES__Component_Constructor<T>): T | undefined;
-    resolve<T extends A_TYPES__Component_Constructor[]>(
-    /**
-     * Provide an array of component constructors to resolve their instances from the scope
-     */
-    components: [...T]): Array<InstanceType<T[number]>> | undefined;
-    resolve<T extends A_Fragment>(
+    resolveOnce<T extends A_Fragment>(
     /**
      * Provide a fragment constructor to resolve its instance from the scope
      */
     fragment: A_TYPES__Fragment_Constructor<T>): T | undefined;
-    resolve<T extends A_TYPES__Fragment_Constructor[]>(
-    /**
-     * Provide an array of fragment constructors to resolve their instances from the scope
-     */
-    fragments: [...T]): Array<InstanceType<T[number]>> | undefined;
-    resolve<T extends A_Entity>(
+    resolveOnce<T extends A_Entity>(
     /**
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): T | undefined;
-    resolve<T extends A_Entity>(
-    /**
-     * Provide an entity constructor to resolve its instance or an array of instances from the scope
-     */
-    entity: A_TYPES__Entity_Constructor<T>, 
-    /**
-     * Only Aseid Provided, in this case one entity will be returned
-     */
-    instructions: {
-        query: {
-            aseid: string | ASEID;
-        };
-    }): T | undefined;
-    resolve<T extends A_Entity>(
-    /**
-     * Provide an entity constructor to resolve its instance or an array of instances from the scope
-     */
-    entity: A_TYPES__Entity_Constructor<T>, 
-    /**
-     * Provide optional instructions to find a specific entity or a set of entities
-     */
-    instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
-    resolve<T extends A_Scope>(
+    resolveOnce<T extends A_Scope>(
     /**
      * Uses only in case of resolving a single entity
      *
      * Provide an entity constructor to resolve its instance from the scope
      */
     scope: A_TYPES__Scope_Constructor<T>): T | undefined;
-    resolve<T extends A_Error>(
+    resolveOnce<T extends A_Error>(
     /**
      * Uses only in case of resolving a single entity
      *
      * Provide an entity constructor to resolve its instance from the scope
      */
-    scope: A_TYPES__Error_Constructor<T>): T | undefined;
-    resolve<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): T | undefined;
-    resolve<T extends A_TYPES__ScopeResolvableComponents>(
+    error: A_TYPES__Error_Constructor<T>): T | undefined;
+    resolveOnce<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+     */
+    constructorName: string): T | undefined;
+    resolveOnce<T extends A_TYPES__A_DependencyInjectable>(
     /**
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
      */
-    param1: A_TYPES__InjectableConstructors): T | Array<T> | undefined;
-    resolve<T extends A_TYPES__ScopeLinkedConstructors>(
-    /**
-     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
-     */
-    param1: InstanceType<T>): T | Array<T> | undefined;
+    ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string): T | undefined;
     /**
      * This polymorphic method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -3187,48 +3404,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide a component constructor to resolve its instance from the scope
      */
     component: A_TYPES__Component_Constructor<T>): T | undefined;
-    resolveFlat<T extends A_TYPES__Component_Constructor[]>(
-    /**
-     * Provide an array of component constructors to resolve their instances from the scope
-     */
-    components: [...T]): Array<InstanceType<T[number]>> | undefined;
     resolveFlat<T extends A_Fragment>(
     /**
      * Provide a fragment constructor to resolve its instance from the scope
      */
     fragment: A_TYPES__Fragment_Constructor<T>): T | undefined;
-    resolveFlat<T extends A_TYPES__Fragment_Constructor[]>(
-    /**
-     * Provide an array of fragment constructors to resolve their instances from the scope
-     */
-    fragments: [...T]): Array<InstanceType<T[number]>> | undefined;
     resolveFlat<T extends A_Entity>(
     /**
      * Provide an entity constructor to resolve its instance or an array of instances from the scope
      */
     entity: A_TYPES__Entity_Constructor<T>): T | undefined;
-    resolveFlat<T extends A_Entity>(
-    /**
-     * Provide an entity constructor to resolve its instance or an array of instances from the scope
-     */
-    entity: A_TYPES__Entity_Constructor<T>, 
-    /**
-     * Only Aseid Provided, in this case one entity will be returned
-     */
-    instructions: {
-        query: {
-            aseid: string | ASEID;
-        };
-    }): T | undefined;
-    resolveFlat<T extends A_Entity>(
-    /**
-     * Provide an entity constructor to resolve its instance or an array of instances from the scope
-     */
-    entity: A_TYPES__Entity_Constructor<T>, 
-    /**
-     * Provide optional instructions to find a specific entity or a set of entities
-     */
-    instructions: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): Array<T>;
     resolveFlat<T extends A_Scope>(
     /**
      * Uses only in case of resolving a single entity
@@ -3242,18 +3427,24 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      *
      * Provide an entity constructor to resolve its instance from the scope
      */
-    scope: A_TYPES__Error_Constructor<T>): T | undefined;
-    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(constructorName: string): T | undefined;
-    resolveFlat<T extends A_TYPES__ScopeResolvableComponents>(
+    error: A_TYPES__Error_Constructor<T>): T | undefined;
+    resolveFlat<T extends A_TYPES__A_DependencyInjectable>(
+    /**
+     * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+     */
+    constructorName: string): T | undefined;
+    resolveFlat<T extends A_TYPES__A_DependencyInjectable>(
     /**
      * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
      */
-    param1: A_TYPES__InjectableConstructors): T | Array<T> | undefined;
-    resolveFlat<T extends A_TYPES__ScopeLinkedConstructors>(
+    ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable>): T | undefined;
     /**
-     * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
+     * Resolves a component, fragment or entity from the scope without checking parent scopes
+     *
+     * @param component
+     * @param instructions
      */
-    param1: InstanceType<T>): T | Array<T> | undefined;
+    resolveFlatOnce<T extends A_TYPES__A_DependencyInjectable>(component: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string): T | undefined;
     /**
      * This method is used internally to resolve a component, fragment or entity by its constructor name
      *
@@ -3264,21 +3455,6 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @returns
      */
     private resolveByName;
-    /**
-     * Resolves a component, fragment or entity from the scope without checking parent scopes
-     *
-     * @param component
-     * @param instructions
-     */
-    private resolveFlatOnce;
-    /**
-     * This method is used internally to resolve a single component, fragment or entity from the scope
-     *
-     * @param component
-     * @param instructions
-     * @returns
-     */
-    private resolveOnce;
     /**
      * Resolves the issuer of the scope by provided constructor
      *
@@ -3377,6 +3553,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     entity: A_TYPES__Entity_Constructor<T>): void;
     register<T extends A_Entity>(
+    /**
+     * Provide an entity instance to register it in the scope
+     */
+    entity: T): void;
+    register<T extends A_TYPES__A_DependencyInjectable>(
     /**
      * Provide an entity instance to register it in the scope
      */
@@ -3522,7 +3703,7 @@ declare class A_Component {
  * Scope constructor type
  * Uses the generic type T to specify the type of the Scope
  */
-type A_TYPES__Scope_Constructor<T = A_Scope> = new (...args: any[]) => T;
+type A_TYPES__Scope_Constructor<T = A_Scope> = A_TYPES__Ctor<T>;
 /**
  * Scope initialization type
  */
@@ -3567,17 +3748,13 @@ type A_TYPES__ScopeConfig = {
  */
 type A_TYPES__Scope_Serialized = {};
 /**
- *
+ * A list of constructors that can have a scope associated with them
  */
 type A_TYPES__ScopeLinkedConstructors = A_TYPES__Container_Constructor | A_TYPES__Feature_Constructor;
 /**
  * A list of components that can have a scope associated with them
  */
 type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
-/**
- * A list of components that can be resolved by a scope
- */
-type A_TYPES__ScopeResolvableComponents = A_Component | A_Fragment | A_Entity | A_Error | A_Scope;
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */
@@ -3870,12 +4047,12 @@ declare class A_Context {
     /**
      * Get meta for the specific class or instance
      */
-    constructor: new (...args: any[]) => any): T;
+    constructor: A_TYPES__Ctor<any>): T;
     static meta<T extends Record<string, any>>(
     /**
      * Get meta for the specific class or instance
      */
-    constructor: new (...args: any[]) => any): A_Meta<T>;
+    constructor: A_TYPES__Ctor<any>): A_Meta<T>;
     /**
      * Allows to set meta for the specific class or instance.
      *
@@ -4109,6 +4286,21 @@ declare class A_CallerError extends A_Error {
     static readonly CallerInitializationError = "Unable to initialize A-Caller";
 }
 
+type A_TYPES__CallerComponent = A_Container | A_Component | A_Entity;
+/**
+ * Caller constructor type
+ * Uses the generic type T to specify the type of the caller component
+ */
+type A_TYPES__Caller_Constructor<T = A_Caller> = A_TYPES__Ctor<T>;
+/**
+ * Caller initialization type
+ */
+type A_TYPES__Caller_Init = {};
+/**
+ * Caller serialized type
+ */
+type A_TYPES__Caller_Serialized = {};
+
 declare const A_CONSTANTS__ERROR_CODES: {
     readonly UNEXPECTED_ERROR: "A-Error Unexpected Error";
     readonly VALIDATION_ERROR: "A-Error Validation Error";
@@ -4126,6 +4318,7 @@ declare class A_ScopeError extends A_Error {
     static readonly ResolutionError = "A-Scope Resolution Error";
     static readonly RegistrationError = "A-Scope Registration Error";
     static readonly CircularInheritanceError = "A-Scope Circular Inheritance Error";
+    static readonly CircularImportError = "A-Scope Circular Import Error";
     static readonly DeregistrationError = "A-Scope Deregistration Error";
 }
 
@@ -4136,119 +4329,14 @@ declare class A_ScopeError extends A_Error {
  *
  * @returns
  */
-declare function A_MetaDecorator<T extends A_Meta>(constructor: new (...args: any[]) => T): <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(target: TTarget) => TTarget;
-
-/**
- * A-Dependency require decorator return type
- */
-type A_TYPES__A_Dependency_RequireDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-/**
- * A-Dependency load decorator return type
- */
-type A_TYPES__A_Dependency_LoadDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-/**
- * A-Dependency default decorator return type
- */
-type A_TYPES__A_Dependency_DefaultDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-type A_TYPES__A_Dependency_ParentDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-type A_TYPES__A_Dependency_FlatDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
-
-/**
- * Should indicate which Default is required
- */
-declare function A_Dependency_Default(
-/**
- * Constructor Parameters that will be used to create the default instance
- */
-...args: any[]): A_TYPES__A_Dependency_DefaultDecoratorReturn;
-
-/**
- * Should indicate which dependency is required
- */
-declare function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn;
-
-/**
- * Should indicate which Load is required
- */
-declare function A_Dependency_Load(
-/**
- * Path to load the dependency from
- */
-path: string): A_TYPES__A_Dependency_LoadDecoratorReturn;
-
-/**
- * Should indicate which dependency is required
- */
-declare function A_Dependency_Parent(
-/**
- * Indicates how many layers up the parent dependency should be resolved from current dependency
- *
- * Default: -1 (one layer up)
- */
-layerOffset?: number): A_TYPES__A_Dependency_ParentDecoratorReturn;
-
-/**
- * Should indicate which dependency is required
- */
-declare function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorReturn;
-
-declare class A_Dependency {
-    /**
-     * Allows to indicate which Injected parameter is required
-     *
-     * [!] If parameter marked as required is not provided, an error will be thrown
-     *
-     * @returns
-     */
-    static get Required(): typeof A_Dependency_Require;
-    /**
-     * Allows to indicate which dependency should be loaded from a specific path
-     *
-     * @returns
-     */
-    static get Loaded(): typeof A_Dependency_Load;
-    /**
-     * Allows to indicate which dependency default parameters should be used
-     *
-     * @returns
-     */
-    static get Default(): typeof A_Dependency_Default;
-    /**
-     * Allows to indicate which parent dependency should be resolved
-     * e.g. from which layer up the parent should be taken
-     *
-     * @returns
-     */
-    static get Parent(): typeof A_Dependency_Parent;
-    /**
-     * Allows to indicate that the dependency should be resolved in a flat manner
-     * Only in the same scope, without going up to parent scopes
-     *
-     * @returns
-     */
-    static get Flat(): typeof A_Dependency_Flat;
-    protected _name: string;
-    /**
-     * Class instances allows to indentify dependencies by name and use them for better type checking
-     *
-     * @param name
-     */
-    constructor(name: string);
-    /**
-     * Gets the dependency name
-     *
-     * Can be identifier, url or any string value
-     *
-     * @returns
-     */
-    get name(): string;
-}
+declare function A_MetaDecorator<T extends A_Meta>(constructor: A_TYPES__Ctor<T>): <TTarget extends A_TYPES__MetaLinkedComponentConstructors>(target: TTarget) => TTarget;
 
 declare class A_DependencyError extends A_Error {
     static readonly InvalidDependencyTarget = "Invalid Dependency Target";
     static readonly InvalidLoadTarget = "Invalid Load Target";
     static readonly InvalidLoadPath = "Invalid Load Path";
     static readonly InvalidDefaultTarget = "Invalid Default Target";
+    static readonly ResolutionParametersError = "Dependency Resolution Parameters Error";
 }
 
 declare class A_InjectError extends A_Error {
@@ -4267,48 +4355,32 @@ declare class A_InjectError extends A_Error {
  * @param params - see overloads
  * @returns - decorator function
  */
-declare function A_Inject<T extends A_Scope>(
-/***
- * Provide the Scope constructor that will be associated with the injection.
- *
- * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
- */
-scope: A_TYPES__Scope_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
-declare function A_Inject<T extends A_Error>(
-/***
- * Provide the Error constructor that will be associated with the injection.
- *
- * [!] It returns an Instance of the Error what is executed.
- */
-error: A_TYPES__Error_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
-declare function A_Inject<T extends A_Feature>(
-/**
- * Provide the Feature constructor that will be associated with the injection.
- *
- * [!] It returns an Instance of the Feature what is executed.
- */
-feature: A_TYPES__Feature_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
 declare function A_Inject<T extends A_Component>(
 /**
  * Provide the Component constructor that will be associated with the injection.
  *
  * [!] It returns an Instance of the Component from current Scope or from Parent Scopes.
  */
-component: A_TYPES__Component_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
-declare function A_Inject(
+component: A_TYPES__Component_Constructor<T>, 
 /**
- * Provide the A_Caller constructor to inject the Caller instance
+ * Provide additional instructions on how to perform the injection
  *
- * [!] It returns initiator of the call, e.g. Container/Component/Command who called Feature
+ * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
  */
-caller: typeof A_Caller): A_TYPES__A_InjectDecoratorReturn;
+config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>): A_TYPES__A_InjectDecoratorReturn;
 declare function A_Inject<T extends A_Fragment>(
 /**
  * Provide the Fragment constructor to inject the Fragment instance
  *
  * [!] It returns the Fragment instance from current Scope or from Parent Scopes.
  */
-fragment: A_TYPES__Fragment_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
+fragment: A_TYPES__Fragment_Constructor<T>, 
+/**
+ * Provide additional instructions on how to perform the injection
+ *
+ * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
+ */
+config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>): A_TYPES__A_InjectDecoratorReturn;
 declare function A_Inject<T extends A_Entity>(
 /**
  * Provide the Entity constructor to inject the Entity instance
@@ -4323,7 +4395,7 @@ entity: A_TYPES__Entity_Constructor<T>,
  *
  * [!] Default Pagination is 1 if it's necessary to get multiple Entities please customize it in the instructions
  */
-config?: Partial<A_TYPES__A_InjectDecorator_EntityInjectionInstructions<T>>): A_TYPES__A_InjectDecoratorReturn<T>;
+config?: Partial<A_TYPES__A_DependencyResolutionStrategy<T>>): A_TYPES__A_InjectDecoratorReturn<T>;
 declare function A_Inject<T extends A_Component>(
 /**
  * Provide the name of Component constructor to inject the Component instance
@@ -4331,6 +4403,47 @@ declare function A_Inject<T extends A_Component>(
  * [!] You can use both customized one or original depending on your overriding strategy
  */
 ctor: string): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_Caller>(
+/**
+ * Provide the A_Caller constructor to inject the Caller instance
+ *
+ * [!] It returns initiator of the call, e.g. Container/Component/Command who called Feature
+ */
+caller: A_TYPES__Caller_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_Error>(
+/***
+ * Provide the Error constructor that will be associated with the injection.
+ *
+ * [!] It returns an Instance of the Error what is executed.
+ */
+error: A_TYPES__Error_Constructor<T>, 
+/**
+ * Provide additional instructions on how to perform the injection
+ *
+ * [!] Default Pagination is 1 if it's necessary to get multiple Fragments please customize it in the instructions
+ */
+config?: Omit<Partial<A_TYPES__A_DependencyResolutionStrategy<T>>, 'query' | 'pagination'>): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_Feature>(
+/**
+ * Provide the Feature constructor that will be associated with the injection.
+ *
+ * [!] It returns an Instance of the Feature what is executed.
+ */
+feature: A_TYPES__Feature_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_Scope>(
+/***
+ * Provide the Scope constructor that will be associated with the injection.
+ *
+ * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
+ */
+scope: A_TYPES__Scope_Constructor<T>): A_TYPES__A_InjectDecoratorReturn;
+declare function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
+/***
+ * Provide the Scope constructor that will be associated with the injection.
+ *
+ * [!] It returns an instance of the Scope where the Entity/Component/Container is defined.
+ */
+dependency: A_Dependency<T>): A_TYPES__A_InjectDecoratorReturn;
 
 declare class A_CommonHelper {
     /**
@@ -4575,6 +4688,20 @@ declare class A_TypeGuards {
      */
     static isCallerConstructor(ctor: any): ctor is A_TYPES__Caller_Constructor;
     /**
+     * Type guard to check if the constructor is of type A_Dependency
+     *
+     * @param ctor
+     * @returns
+     */
+    static isDependencyConstructor<T extends A_TYPES__A_DependencyInjectable>(ctor: any): ctor is A_Dependency<T>;
+    /**
+     * Type guard to check if the instance is of type A_Dependency
+     *
+     * @param instance
+     * @returns
+     */
+    static isDependencyInstance<T extends A_TYPES__A_DependencyInjectable>(instance: any): instance is A_Dependency<T>;
+    /**
      * Type guard to check if the instance is of type A_Container
      *
      * @param instance
@@ -4644,6 +4771,7 @@ declare class A_TypeGuards {
      * @returns
      */
     static isEntityMetaInstance(instance: any): instance is A_EntityMeta;
+    static hasASEID(value: any): value is A_Entity | A_Error;
     static isConstructorAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedConstructors;
     static isInstanceAllowedForScopeAllocation(target: any): target is A_TYPES__ScopeLinkedComponents;
     static isConstructorAvailableForAbstraction(target: any): target is A_TYPES__AbstractionAvailableComponents;
@@ -4652,7 +4780,7 @@ declare class A_TypeGuards {
     static isAllowedForFeatureDefinition(param: any): param is A_TYPES__FeatureAvailableComponents;
     static isAllowedForFeatureExtension(param: any): param is A_TYPES__FeatureExtendDecoratorTarget;
     static isAllowedForAbstractionDefinition(param: any): param is A_TYPES__AbstractionAvailableComponents;
-    static isAllowedForDependencyDefaultCreation(param: any): param is A_TYPES__Entity_Constructor | A_TYPES__Component_Constructor;
+    static isAllowedForDependencyDefaultCreation(param: any): param is A_TYPES__Entity_Constructor | A_TYPES__Fragment_Constructor;
     /**
      * Allows to check if the provided param is of constructor type.
      *
@@ -4663,4 +4791,4 @@ declare class A_TypeGuards {
     static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T;
 }
 
-export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_EntityInjectionInstructions, type A_TYPES__A_InjectDecorator_EntityInjectionPagination, type A_TYPES__A_InjectDecorator_EntityInjectionQuery, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableConstructors, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__ScopeResolvableComponents, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
