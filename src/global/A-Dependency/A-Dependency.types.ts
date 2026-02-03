@@ -64,7 +64,7 @@ export type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_Depende
     /**
      * Allows to query by specific entity properties e.g. ASEID, name, type, custom properties, etc.
      */
-    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>>,
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>,
     /**
      * Pagination settings for the entity search
      */
@@ -72,7 +72,7 @@ export type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_Depende
 }
 
 
-export type A_TYPES__A_Dependency_Serialized = {
+export type A_TYPES__A_Dependency_Serialized<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = {
     name: string,
     all: boolean,
     require: boolean,
@@ -81,7 +81,7 @@ export type A_TYPES__A_Dependency_Serialized = {
     flat: boolean,
     create: any,
     args: any[],
-    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery>,
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>,
     pagination: A_TYPES__A_Dependency_EntityInjectionPagination
 }
 
@@ -90,17 +90,20 @@ export type A_TYPES__A_Dependency_Serialized = {
 // =--------------------------------------------------------------------------------------------
 
 
-export type A_TYPES__A_Dependency_EntityResolutionConfig<T extends A_Entity = A_Entity> = {
+export type A_TYPES__A_Dependency_EntityResolutionConfig<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = {
     query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>,
     pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>
 }
 
 
-export type A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity = A_Entity> = {
-    aseid: string,
-} & {
-    [key in keyof T]?: any
-};
+export type A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> =
+    T extends A_Entity
+    ? {
+        aseid: string,
+    } & {
+        [key in keyof T]?: any
+    }
+    : never;
 
 
 export type A_TYPES__A_Dependency_EntityInjectionPagination = {

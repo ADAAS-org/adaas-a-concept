@@ -145,7 +145,7 @@ export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
 ): A_TYPES__A_InjectDecoratorReturn
 export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
     param1: string | A_TYPES__Ctor<T> | A_Dependency<T>,
-    param2?: Partial<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>>
+    param2?: Partial<A_TYPES__A_DependencyResolutionStrategy<T>>
 ): A_TYPES__A_InjectDecoratorReturn {
 
     //  pre call checks
@@ -197,7 +197,7 @@ export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
 
         // set the parameter injection info
         paramsArray[parameterIndex] = param1 instanceof A_Dependency ? param1 : new A_Dependency(param1, param2);
-      
+
         // save back the updated injections array
         existedMeta.set(method, paramsArray);
 

@@ -1308,13 +1308,13 @@ type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_DependencyInje
     /**
      * Allows to query by specific entity properties e.g. ASEID, name, type, custom properties, etc.
      */
-    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>>;
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
     /**
      * Pagination settings for the entity search
      */
     pagination: A_TYPES__A_Dependency_EntityInjectionPagination;
 };
-type A_TYPES__A_Dependency_Serialized = {
+type A_TYPES__A_Dependency_Serialized<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = {
     name: string;
     all: boolean;
     require: boolean;
@@ -1323,18 +1323,18 @@ type A_TYPES__A_Dependency_Serialized = {
     flat: boolean;
     create: any;
     args: any[];
-    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery>;
+    query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
     pagination: A_TYPES__A_Dependency_EntityInjectionPagination;
 };
-type A_TYPES__A_Dependency_EntityResolutionConfig<T extends A_Entity = A_Entity> = {
+type A_TYPES__A_Dependency_EntityResolutionConfig<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = {
     query: Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
     pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
 };
-type A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity = A_Entity> = {
+type A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> = T extends A_Entity ? {
     aseid: string;
 } & {
     [key in keyof T]?: any;
-};
+} : never;
 type A_TYPES__A_Dependency_EntityInjectionPagination = {
     count: number;
     from: 'start' | 'end';
@@ -1449,14 +1449,14 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
     get parent(): number;
     get create(): any;
     get args(): any[];
-    get query(): Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>>;
+    get query(): Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
     get pagination(): A_TYPES__A_Dependency_EntityInjectionPagination;
     /**
      * Class instances allows to identify dependencies by name and use them for better type checking
      *
      * @param name
      */
-    constructor(name: string | A_TYPES__Ctor<T>, resolutionStrategy?: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & {
+    constructor(name: string | A_TYPES__Ctor<T>, resolutionStrategy?: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T>, 'pagination'> & {
         pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
     }>);
     /**
@@ -1475,11 +1475,11 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
     /**
      * Gets the dependency resolution strategy
      */
-    get resolutionStrategy(): A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>;
+    get resolutionStrategy(): A_TYPES__A_DependencyResolutionStrategy<T>;
     /**
      * Sets the dependency resolution strategy
      */
-    set resolutionStrategy(strategy: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & {
+    set resolutionStrategy(strategy: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T>, 'pagination'> & {
         pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination>;
     }>);
     /**
@@ -1493,7 +1493,7 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
      *
      * @returns
      */
-    toJSON(): A_TYPES__A_Dependency_Serialized;
+    toJSON(): A_TYPES__A_Dependency_Serialized<T>;
 }
 
 declare enum A_TYPES__A_Stage_Status {

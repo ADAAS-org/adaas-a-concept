@@ -5,8 +5,7 @@ import { A_Dependency_Load } from "./A-Dependency-Load.decorator";
 import { A_Dependency_Parent } from "./A-Dependency-Parent.decorator";
 import { A_Dependency_Require } from "./A-Dependency-Require.decorator";
 import { A_DependencyError } from "./A-Dependency.error";
-import { A_TYPES__A_Dependency_EntityInjectionPagination, A_TYPES__A_Dependency_EntityInjectionQuery, A_TYPES__A_Dependency_Serialized, A_TYPES__A_DependencyInjectable, A_TYPES__A_DependencyResolutionStrategy, A_TYPES__A_DependencyResolutionType } from "./A-Dependency.types";
-import { A_Entity } from "../A-Entity/A-Entity.class";
+import { A_TYPES__A_Dependency_EntityInjectionPagination, A_TYPES__A_Dependency_EntityInjectionQuery, A_TYPES__A_Dependency_Serialized, A_TYPES__A_DependencyInjectable, A_TYPES__A_DependencyResolutionStrategy } from "./A-Dependency.types";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
 
 
@@ -62,7 +61,7 @@ export class A_Dependency<
     protected _name: string;
     protected _target?: A_TYPES__Ctor<T>;
     protected _resolutionStrategy!: A_TYPES__A_DependencyResolutionStrategy;
-    
+
     protected _defaultPagination: A_TYPES__A_DependencyResolutionStrategy['pagination'] = {
         count: 1,
         from: 'start',
@@ -102,8 +101,8 @@ export class A_Dependency<
     get args(): any[] {
         return this._resolutionStrategy.args;
     }
-    get query(): Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T extends A_Entity ? T : A_Entity>> {
-        return this._resolutionStrategy.query;
+    get query(): Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>> {
+        return this._resolutionStrategy.query as Partial<A_TYPES__A_Dependency_EntityInjectionQuery<T>>;
     }
     get pagination(): A_TYPES__A_Dependency_EntityInjectionPagination {
         return this._resolutionStrategy.pagination;
@@ -119,7 +118,7 @@ export class A_Dependency<
      */
     constructor(
         name: string | A_TYPES__Ctor<T>,
-        resolutionStrategy?: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & { pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination> }>
+        resolutionStrategy?: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T>, 'pagination'> & { pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination> }>
     ) {
         this._name = typeof name === 'string' ? name : A_CommonHelper.getComponentName(name);
 
@@ -152,14 +151,14 @@ export class A_Dependency<
     /**
      * Gets the dependency resolution strategy
      */
-    get resolutionStrategy(): A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity> {
+    get resolutionStrategy(): A_TYPES__A_DependencyResolutionStrategy<T> {
         return this._resolutionStrategy!;
     }
 
     /**
      * Sets the dependency resolution strategy
      */
-    set resolutionStrategy(strategy: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T extends A_Entity ? T : A_Entity>, 'pagination'> & { pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination> }>) {
+    set resolutionStrategy(strategy: Partial<Omit<A_TYPES__A_DependencyResolutionStrategy<T>, 'pagination'> & { pagination: Partial<A_TYPES__A_Dependency_EntityInjectionPagination> }>) {
         this._resolutionStrategy = {
             ...this._defaultResolutionStrategy,
             ...this._resolutionStrategy,
@@ -177,16 +176,13 @@ export class A_Dependency<
      * 
      * @returns 
      */
-    private initCheck(
-    ): this {
+    private initCheck(): this {
         if (!this._resolutionStrategy) {
             throw new A_DependencyError(
                 A_DependencyError.ResolutionParametersError,
                 `Resolution strategy parameters are not provided for dependency: ${this._name}`
             );
         }
-
-
 
         return this;
     }
@@ -197,7 +193,7 @@ export class A_Dependency<
      * 
      * @returns 
      */
-    toJSON(): A_TYPES__A_Dependency_Serialized {
+    toJSON(): A_TYPES__A_Dependency_Serialized<T> {
         return {
             name: this._name,
             all: this.all,
