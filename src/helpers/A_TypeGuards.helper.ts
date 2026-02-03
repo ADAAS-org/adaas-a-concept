@@ -29,6 +29,8 @@ import { A_TYPES__AbstractionAvailableComponents } from "../global/A-Abstraction
 import { A_TYPES__Scope_Constructor, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeLinkedConstructors } from "../global/A-Scope/A-Scope.types";
 import { A_TYPES__InjectableTargets } from "../global/A-Inject/A-Inject.types";
 import { ASEID } from "../global/ASEID/ASEID.class";
+import { A_Dependency } from "../global/A-Dependency/A-Dependency.class";
+import { A_TYPES__A_DependencyInjectable } from "../global/A-Dependency/A-Dependency.types";
 
 
 
@@ -175,9 +177,27 @@ export class A_TypeGuards {
     static isCallerConstructor(ctor: any): ctor is A_TYPES__Caller_Constructor {
         return typeof ctor === 'function' && A_CommonHelper.isInheritedFrom(ctor, A_Caller);
     }
+    /**
+     * Type guard to check if the constructor is of type A_Dependency
+     * 
+     * @param ctor 
+     * @returns 
+     */
+    static isDependencyConstructor<T extends A_TYPES__A_DependencyInjectable>(ctor: any): ctor is A_Dependency<T> {
+        return typeof ctor === 'function' && A_CommonHelper.isInheritedFrom(ctor, A_Dependency);
+    }
     // ----------------------------------------------------------------------------
     // Instance type guards
     // ----------------------------------------------------------------------------
+    /**
+     * Type guard to check if the instance is of type A_Dependency
+     * 
+     * @param instance 
+     * @returns 
+     */
+    static isDependencyInstance<T extends A_TYPES__A_DependencyInjectable>(instance: any): instance is A_Dependency<T> {
+        return instance instanceof A_Dependency;
+    }
     /**
      * Type guard to check if the instance is of type A_Container
      * 

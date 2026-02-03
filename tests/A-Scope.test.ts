@@ -149,7 +149,7 @@ describe('A-Scope tests', () => {
         const entity2 = new MyEntity({ bar: 'baz' });
         scope.register(entity1);
         scope.register(entity2);
-        const resolved = scope.resolveDependency(new A_Dependency(MyEntity, { query: { bar: 'baz' } }));
+        const resolved = scope.resolve(new A_Dependency(MyEntity, { query: { bar: 'baz' } }));
         expect(resolved).toBe(entity2);
 
 
@@ -197,7 +197,7 @@ describe('A-Scope tests', () => {
             const entity = new MyEntity({ foo: 'baz' });
             scope.register(entity);
         }
-        const resolved = scope.resolveDependency(new A_Dependency(MyEntity, { query: { foo: 'baz' }, pagination: { count: 10, from: 'start' } }));
+        const resolved = scope.resolve(new A_Dependency(MyEntity, { query: { foo: 'baz' }, pagination: { count: 10, from: 'start' } }));
         expect(Array.isArray(resolved)).toBe(true);
         expect((resolved as Array<MyEntity>).length).toBe(5);
         (resolved as Array<MyEntity>).forEach(r => {
@@ -369,7 +369,7 @@ describe('A-Scope tests', () => {
 
         container.scope.register(new A_Error('Test Error'));
 
-        const resolved = container.scope.resolve(A_Error);
+        const resolved = container.scope.resolve(A_Error) as A_Error;
         expect(resolved).toBeInstanceOf(A_Error);
         expect(resolved?.message).toBe('Test Error');
 
@@ -619,7 +619,7 @@ describe('A-Scope tests', () => {
             entities: [new MyEntity_A({ name: 'Entity2' })]
         }).inherit(parentScope);
 
-        const resolvedByNameA = scope.resolve<MyEntity_A>('MyEntity_A');
+        const resolvedByNameA = scope.resolve<MyEntity_A>('MyEntity_A') as MyEntity_A;
         expect(resolvedByNameA).toBeInstanceOf(MyEntity_A);
         expect(resolvedByNameA?.name).toBe('Entity2');
     });
@@ -646,9 +646,9 @@ describe('A-Scope tests', () => {
             entities: [new MyEntity_A({ name: 'Entity2' })]
         }).inherit(parentScope);
 
-        const resolvedByName = scope.resolve<MyEntity_B>('MyEntity_B');
+        const resolvedByName = scope.resolve<MyEntity_B>('MyEntity_B') as MyEntity_B;
         expect(resolvedByName).toBeInstanceOf(MyEntity_B);
-        expect(resolvedByName?.name).toBe('Entity1');
+        expect(resolvedByName?.name).toBe('Entity1')
     });
 
     it('Should not resolve entity by class name from parent scope with resolveFlat', async () => {

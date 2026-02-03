@@ -127,7 +127,7 @@ export class A_Stage {
                             return this._feature;
 
                         default: {
-                            return scope.resolveDependency(dependency);
+                            return scope.resolve(dependency);
                         }
                     }
                 })
@@ -148,7 +148,7 @@ export class A_Stage {
         const { dependency, handler } = step;
 
         let instance: A_TYPES__A_DependencyInjectable | undefined =
-            (scope.resolveDependency(dependency) || this.feature.scope.resolveDependency(dependency)) as A_TYPES__A_DependencyInjectable
+            (scope.resolve(dependency) || this.feature.scope.resolve(dependency)) as A_TYPES__A_DependencyInjectable
 
 
         if (!instance)

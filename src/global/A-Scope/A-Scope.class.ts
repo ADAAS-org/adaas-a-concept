@@ -685,38 +685,6 @@ export class A_Scope<
     }
 
 
-    // /**
-    //  * Merges two scopes into a new one
-    //  * 
-    //  * [!] Notes: 
-    //  *  - this method does NOT modify the existing scopes
-    //  *  - parent of the new scope will be the parent of the current scope or the parent of anotherScope (if exists)
-    //  * 
-    //  * @param anotherScope 
-    //  * @returns 
-    //  */
-    // merge(anotherScope: A_Scope): A_Scope {
-    //     const merged = new A_Scope(
-    //         {
-    //             name: `${this.name} + ${anotherScope.name}`,
-
-    //             components: [...this.allowedComponents, ...anotherScope.allowedComponents],
-    //             fragments: [...this.fragments, ...anotherScope.fragments],
-    //             entities: [
-    //                 ...this.entities, ...anotherScope.entities,
-    //                 ...this.allowedEntities, ...anotherScope.allowedEntities
-    //             ],
-    //         },
-    //         {
-    //             parent: this._parent || anotherScope._parent
-    //         }
-    //     );
-
-    //     return merged;
-    // }
-
-
-
     /**
      * Allows to resolve a specific dependency 
      * 
@@ -1129,59 +1097,39 @@ export class A_Scope<
      * @param component 
      * @returns 
      */
-    resolve<T extends A_Component>(
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component constructor to resolve its instance from the scope
          */
-        component: A_TYPES__Component_Constructor<T>
-    ): T | undefined
-    resolve<T extends A_Fragment>(
-        /**
-         * Provide a fragment constructor to resolve its instance from the scope
-         */
-        fragment: A_TYPES__Fragment_Constructor<T>
-    ): T | undefined
-    resolve<T extends A_Entity>(
-        /**
-         * Provide an entity constructor to resolve its instance or an array of instances from the scope
-         */
-        entity: A_TYPES__Entity_Constructor<T>
-    ): T | undefined
-    resolve<T extends A_Scope>(
-        /**
-         * Uses only in case of resolving a single entity
-         * 
-         * Provide an entity constructor to resolve its instance from the scope
-         */
-        scope: A_TYPES__Scope_Constructor<T>
-    ): T | undefined
-    resolve<T extends A_Error>(
-        /**
-         * Uses only in case of resolving a single entity
-         * 
-         * Provide an entity constructor to resolve its instance from the scope
-         */
-        error: A_TYPES__Error_Constructor<T>
+        component: A_TYPES__Ctor<T>
     ): T | undefined
     resolve<T extends A_TYPES__A_DependencyInjectable>(
         /**
-         * Provide a component, fragment or entity constructor to resolve its instance(s) from the scope
+         * Provide a target dependency to resolve its instance from the scope
+         * 
+         * [!] In this case its possible to provide a custom resolution strategy via A_Dependency options
          */
-        constructorName: string
-    ): T | undefined
+        dependency: A_Dependency<T>
+    ): T | Array<T> | undefined
+    resolve<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide a component constructor to resolve its instance from the scope
+         */
+        component: string
+    ): T | Array<T> | undefined
     resolve<T extends A_TYPES__A_DependencyInjectable>(
         /**
          * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
          */
-        ctor: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
-    ): T | undefined
-    resolve<T extends A_TYPES__A_DependencyInjectable>(
-        /**
-         * Provide a component, fragment or entity constructor or an array of constructors to resolve its instance(s) from the scope
-         */
-        param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
-    ): T | undefined {
-        return this.resolveOnce<T>(param1);
+        param1: A_TYPES__Ctor<T> | A_Dependency<T> | string
+    ): T | Array<T> | undefined {
+
+        const dependency = A_TypeGuards.isDependencyInstance(param1) ?
+            param1 as A_Dependency<T> :
+            new A_Dependency<T>(param1)
+
+
+        return this.resolveDependency<T>(dependency);
     }
 
     /**
@@ -1264,7 +1212,7 @@ export class A_Scope<
         //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
         //  That means that we should ensure that there's no components that are children of the required component
         if (!value && !!this.parent) {
-            return this.parent.resolve<T>(param1);
+            return this.parent.resolveOnce<T>(param1);
         }
 
         return value as T;
@@ -1579,7 +1527,7 @@ export class A_Scope<
                 const argsMeta = componentMeta.get(A_TYPES__ComponentMetaKey.INJECTIONS);
 
                 const resolvedArgs = (argsMeta?.get('constructor') || [])
-                    .map(dependency => this.resolveDependency(dependency));
+                    .map(dependency => this.resolve(dependency));
 
 
                 const newComponent = new component(...resolvedArgs)
