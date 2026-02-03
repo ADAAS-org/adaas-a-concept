@@ -766,20 +766,36 @@ export class A_Scope<
 
 
         // 5) apply pagination
+
         const count = dependency.pagination.count;
         const from = dependency.pagination.from;  // from start or from end
 
 
+
         const startSliceIndex = from === 'end'
-            ? Math.max(result.length - count, 0)
+            ? (count === -1 ? 0 : Math.max(result.length - count, 0))
             : 0;
+
+        //  end slice should handle -1 for all items
         const endSliceIndex = from === 'end'
             ? result.length
-            : Math.min(count, result.length);
+            : (count === -1 ? result.length : Math.min(count, result.length));
 
         const slice = result.slice(startSliceIndex, endSliceIndex);
 
-        return slice.length === 1 ? slice[0] : slice.length ? slice : undefined;
+        /**
+         * Default behavior is to return single instance if count is 1
+         * 
+         * If Directive All (-1) is provided or count > 1, an array is returned
+         * 
+         * If no instances found, undefined is returned
+         */
+        return slice.length === 1
+            && count !== -1
+            ? slice[0]
+            : slice.length
+                ? slice
+                : undefined;
     }
 
 
@@ -940,17 +956,20 @@ export class A_Scope<
         param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
     ): Array<T> {
 
-        const results: Array<T> = [];
+        const results: Set<T> = new Set();
 
         // 1) Resolve all in the current scope
         const currentResults = this.resolveFlatAll<T>(param1 as any);
-        results.push(...currentResults);
+        currentResults.forEach(result => results.add(result));
 
         // 2) resolve all in the imported scopes
         this._imports.forEach(importedScope => {
+
             if (importedScope.has(param1 as any)) {
                 const importedResults = importedScope.resolveFlatAll<T>(param1 as any);
-                results.push(...importedResults);
+
+
+                importedResults.forEach(result => results.add(result));
             }
         });
 
@@ -958,8 +977,9 @@ export class A_Scope<
         let parentScope = this._parent;
 
         while (parentScope && parentScope.has(param1 as any)) {
-            const parentResults = parentScope.resolveFlatAll<T>(param1 as any);
-            results.push(...parentResults);
+
+            const parentResults = parentScope.resolveAll<T>(param1 as any);
+            parentResults.forEach(result => results.add(result));
 
             // Move to the next parent scope
             parentScope = parentScope._parent;
@@ -967,7 +987,7 @@ export class A_Scope<
 
 
 
-        return results;
+        return Array.from(results);
     }
 
 
@@ -1127,7 +1147,6 @@ export class A_Scope<
         const dependency = A_TypeGuards.isDependencyInstance(param1) ?
             param1 as A_Dependency<T> :
             new A_Dependency<T>(param1)
-
 
         return this.resolveDependency<T>(dependency);
     }

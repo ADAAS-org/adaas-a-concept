@@ -175,6 +175,7 @@ export class A_Dependency<
             ...strategy,
             pagination: {
                 ...this._defaultPagination,
+                ...(this._resolutionStrategy || {}).pagination,
                 ...(strategy.pagination || {})
             },
         };

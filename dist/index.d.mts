@@ -1402,11 +1402,7 @@ declare function A_Dependency_Require(): A_TYPES__A_Dependency_RequireDecoratorR
 /**
  * Should indicate which All is required
  */
-declare function A_Dependency_All<T extends A_Entity>(
-/**
- * Constructor Parameters that will be used to create the default instance
- */
-entity: A_TYPES__Entity_Constructor<T>): A_TYPES__A_Dependency_AllDecoratorReturn;
+declare function A_Dependency_All(): A_TYPES__A_Dependency_AllDecoratorReturn;
 
 declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__A_DependencyInjectable> {
     /**

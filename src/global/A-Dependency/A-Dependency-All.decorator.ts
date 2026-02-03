@@ -16,12 +16,7 @@ import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
 /**
  * Should indicate which All is required
  */
-export function A_Dependency_All<T extends A_Entity>(
-    /**
-     * Constructor Parameters that will be used to create the default instance
-     */
-    entity: A_TYPES__Entity_Constructor<T>
-): A_TYPES__A_Dependency_AllDecoratorReturn {
+export function A_Dependency_All(): A_TYPES__A_Dependency_AllDecoratorReturn {
 
     return function (
         target: A_TYPES__InjectableTargets,

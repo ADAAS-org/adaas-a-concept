@@ -49,7 +49,7 @@ describe('A-Dependency tests', () => {
         }
 
         class testEntity extends A_Entity {
-            
+
             @A_Feature.Extend({
                 name: 'test'
             })
@@ -355,6 +355,98 @@ describe('A-Dependency tests', () => {
         //         from: 'start'
         //     }
         // });
+
+    });
+    it('Should support directive All for query', async () => {
+
+        const executionChain: number[] = [];
+
+        class MyEntity_A extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(newEntity: { name: string; }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+            }
+        }
+
+        class MyComponent extends A_Component {
+
+
+            @A_Feature.Extend()
+            async allEntities(
+                @A_Dependency.All()
+                @A_Inject(MyEntity_A) entities: MyEntity_A[],
+                @A_Inject(A_Scope) scope: A_Scope,
+            ) {
+                executionChain.push(entities.length);
+            }
+
+            @A_Feature.Extend()
+            async allFlatEntities(
+                @A_Dependency.Flat()
+                //  That's important because current scope is feature scope, and plat applies for current scope only
+                @A_Dependency.All()
+                @A_Dependency.Parent(-1)
+                @A_Inject(MyEntity_A) entities: MyEntity_A[],
+                @A_Inject(A_Scope) scope: A_Scope,
+
+            ) {
+                executionChain.push(entities.length);
+            }
+
+            @A_Feature.Extend()
+            async withImportedEntities(
+                @A_Dependency.All()
+                @A_Inject(MyEntity_A) entities: MyEntity_A[],
+            ) {
+                executionChain.push(entities.length);
+            }
+        }
+
+        const parentScope = new A_Scope({
+            name: 'Parent Scope',
+            entities: [
+                new MyEntity_A({ name: 'Entity 1' }),
+                new MyEntity_A({ name: 'Entity 2' }),
+                new MyEntity_A({ name: 'Entity 3' }),
+            ]
+        });
+
+        const childScope = new A_Scope({
+            name: 'Child Scope',
+            components: [MyComponent],
+            entities: [
+                new MyEntity_A({ name: 'Entity 4' }),
+                new MyEntity_A({ name: 'Entity 5' }),
+            ]
+        }, { parent: parentScope });
+
+
+        const importScope = new A_Scope({
+            name: 'Import Scope',
+            entities: [
+                new MyEntity_A({ name: 'Entity 6' }),
+            ]
+        });
+
+
+
+        const componentInstance = childScope.resolve(MyComponent);
+
+        await componentInstance?.call('allEntities');
+        await componentInstance?.call('allFlatEntities');
+        await componentInstance?.call('withImportedEntities');
+
+        expect(executionChain).toEqual([5, 2, 5]);
+
+        childScope.import(importScope);
+
+        await componentInstance?.call('withImportedEntities');
+
+
+        expect(executionChain).toEqual([5, 2, 5, 6]);
+
 
     });
 
