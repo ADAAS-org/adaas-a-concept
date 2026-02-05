@@ -1230,14 +1230,15 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     completed(): void;
     /**
-     * This method marks the feature as failed and throws an error
+     * This method marks the feature as failed and returns the error
      * Uses to mark the feature as failed
      *
      * @param error
+     * @returns The error that caused the failure
      */
-    failed(error: A_FeatureError): void;
+    failed(error: A_FeatureError): A_FeatureError;
     /**
-     * This method marks the feature as failed and throws an error
+     * This method marks the feature as interrupted and throws an error
      * Uses to interrupt or end the feature processing
      *
      * @param error
@@ -1246,7 +1247,7 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
     /**
      * The reason of feature interruption
      */
-    reason?: string | A_StageError | Error): Promise<void>;
+    reason?: string | A_StageError | Error): A_FeatureError;
     /**
      * Allows to chain the feature to another feature.
      * In this case the parent feature scope (if new not provided), stages, caller will be used.

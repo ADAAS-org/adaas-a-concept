@@ -591,22 +591,21 @@ describe('A-Feature tests', () => {
             ]
         });
 
-        feature.process();
-
-        await new Promise<void>(async (resolve) => {
-            setTimeout(() => {
-                feature.interrupt();
-            }, 1000);
-
-
-            setTimeout(() => {
-                expect(feature.state).toBe(A_TYPES__FeatureState.INTERRUPTED);
-                expect(executionOrder).toEqual(['feature1', 'feature2']);
-
-                resolve();
-
-            }, 3000);
-        });
+        await Promise.all([
+            feature.process(),
+            new Promise<void>(async (resolve) => {
+                setTimeout(() => {
+                    feature.interrupt();
+                    resolve();
+                }, 800);
+            }),
+            new Promise<void>(async (resolve) => {
+                setTimeout(() => {
+                    expect(feature.state).toBe(A_TYPES__FeatureState.INTERRUPTED);
+                    resolve();
+                }, 1000);
+            })
+        ]);
 
     }, 5000);
     it('Should allow to use extension if only parent class provided', async () => {
@@ -867,5 +866,172 @@ describe('A-Feature tests', () => {
             'ChildComponent_B.test'
         ]);
 
+    })
+    it('Should throw a Sync error  when executed sync', async () => {
+
+        const resultChain: string[] = [];
+
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            test1() {
+                resultChain.push('ChildComponent_A.test');
+                throw new A_Error('Deliberate Sync Error in test1');
+            }
+        }
+
+        class ChildComponent_B extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            test2() {
+                resultChain.push('ChildComponent_B.test');
+            }
+        }
+
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A, ChildComponent_B] });
+
+        try {
+            testScope.resolve(ChildComponent_A)!.call('testFeature');
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(A_Error)
+            expect((error as A_Error).originalError.message).toBe('Deliberate Sync Error in test1');
+        }
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test'
+        ]);
+        const feature = new A_Feature({
+            name: 'testFeature',
+            component: testScope.resolve(ChildComponent_A)!,
+        })
+
+        try {
+            feature.process();
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(A_Error)
+            expect((error as A_Error).originalError.message).toBe('Deliberate Sync Error in test1');
+        }
+
+        expect(feature.state).toBe(A_TYPES__FeatureState.FAILED);
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'ChildComponent_A.test'
+        ]);
+    })
+    it('Should throw an Async error when executed async', async () => {
+
+        const resultChain: string[] = [];
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test1() {
+                resultChain.push('ChildComponent_A.test');
+
+                await new Promise<void>(async (resolve, reject) => {
+                    setTimeout(() => {
+                        reject(new A_Error('Deliberate Async Error in test1'));
+                    }, 2000);
+                });
+            }
+        }
+
+        class ChildComponent_B extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test2() {
+                resultChain.push('ChildComponent_B.test');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A, ChildComponent_B] });
+        try {
+            await Promise.all([
+                new Promise<void>(async (resolve) => {
+                    setTimeout(() => {
+                        resultChain.push('feature3');
+
+                        resolve();
+                    }, 1000);
+                }),
+                testScope.resolve(ChildComponent_A)!.call('testFeature')
+            ]);
+
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(A_Error)
+            expect((error as A_Error).originalError.message).toBe('Deliberate Async Error in test1');
+        }
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'feature3'
+        ]);
+
+        const feature = new A_Feature({
+            name: 'testFeature',
+            component: testScope.resolve(ChildComponent_A)!,
+        })
+
+        try {
+            await feature.process();
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(A_Error)
+            expect((error as A_Error).originalError.message).toBe('Deliberate Async Error in test1');
+        }
+
+        expect(feature.state).toBe(A_TYPES__FeatureState.FAILED);
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'feature3',
+            'ChildComponent_A.test'
+        ]);
+    })
+
+    it('Should throw an Async error when executed async and error in method', async () => {
+
+        const resultChain: string[] = [];
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test1() {
+                resultChain.push('ChildComponent_A.test');
+
+                throw new A_Error('Deliberate Async Error in test1');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A] });
+
+        const feature = new A_Feature({
+            name: 'testFeature',
+            component: testScope.resolve(ChildComponent_A)!,
+        })
+
+        try {
+            await feature.process();
+        } catch (error) {
+            expect(error).toBeInstanceOf(A_Error);
+            expect((error as A_Error).originalError).toBeInstanceOf(A_Error)
+            expect((error as A_Error).originalError.message).toBe('Deliberate Async Error in test1');
+        }
+
+        expect(feature.state).toBe(A_TYPES__FeatureState.FAILED);
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test'
+        ]);
     })
 });

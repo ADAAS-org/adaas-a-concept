@@ -375,11 +375,11 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
             // Convert iterator to array to get all stages
             const stages = Array.from(this);
-            
+
             return this.processStagesSequentially(stages, scope, 0);
 
         } catch (error) {
-            this.failed(new A_FeatureError({
+            throw this.failed(new A_FeatureError({
                 title: A_FeatureError.FeatureProcessingError,
                 description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
                 stage: this.stage,
@@ -392,11 +392,16 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * Process stages one by one, ensuring each stage completes before starting the next
      */
     private processStagesSequentially(
-        stages: A_Stage[], 
-        scope: A_Scope | undefined, 
+        stages: A_Stage[],
+        scope: A_Scope | undefined,
         index: number
     ): Promise<void> | void {
         try {
+            // Check if feature has been interrupted before processing next stage
+            if (this.state === A_TYPES__FeatureState.INTERRUPTED) {
+                return;
+            }
+
             // If we've processed all stages, complete the feature
             if (index >= stages.length) {
                 this.completed();
@@ -408,22 +413,28 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
             if (A_TypeGuards.isPromiseInstance(result)) {
                 // Async stage - return promise that processes remaining stages
-                return result.then(() => {
-                    return this.processStagesSequentially(stages, scope, index + 1);
-                }).catch(error => {
-                    this.failed(new A_FeatureError({
-                        title: A_FeatureError.FeatureProcessingError,
-                        description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-                        stage: stage,
-                        originalError: error
-                    }));
-                });
+                return result
+                    .then(() => {
+                        // Check for interruption after async stage completes
+                        if (this.state === A_TYPES__FeatureState.INTERRUPTED) {
+                            return;
+                        }
+                        return this.processStagesSequentially(stages, scope, index + 1);
+                    })
+                    .catch(error => {
+                        throw this.failed(new A_FeatureError({
+                            title: A_FeatureError.FeatureProcessingError,
+                            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+                            stage: stage,
+                            originalError: error
+                        }));
+                    });
             } else {
                 // Sync stage - continue to next stage immediately
                 return this.processStagesSequentially(stages, scope, index + 1);
             }
         } catch (error) {
-            this.failed(new A_FeatureError({
+            throw this.failed(new A_FeatureError({
                 title: A_FeatureError.FeatureProcessingError,
                 description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
                 stage: this.stage,
@@ -455,19 +466,24 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     completed(): void {
         if (this.isProcessed) return;
 
+        // Don't complete if interrupted
+        if (this.state === A_TYPES__FeatureState.INTERRUPTED) {
+            return;
+        }
 
         this._state = A_TYPES__FeatureState.COMPLETED;
 
         this.scope.destroy();
     }
     /**
-     * This method marks the feature as failed and throws an error
+     * This method marks the feature as failed and returns the error
      * Uses to mark the feature as failed
      * 
      * @param error 
+     * @returns The error that caused the failure
      */
-    failed(error: A_FeatureError) {
-        if (this.isProcessed) return;
+    failed(error: A_FeatureError): A_FeatureError {
+        if (this.isProcessed) return this._error!;
 
         this._state = A_TYPES__FeatureState.FAILED;
 
@@ -475,45 +491,47 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         this.scope.destroy();
 
-        throw this._error;
+        return this._error;
     }
     /**
-     * This method marks the feature as failed and throws an error
+     * This method marks the feature as interrupted and throws an error
      * Uses to interrupt or end the feature processing
      * 
      * @param error 
      */
-    async interrupt(
+    interrupt(
         /**
          * The reason of feature interruption
          */
         reason?: string | A_StageError | Error
-    ) {
-        if (this.isProcessed) return;
+    ): A_FeatureError {
+        if (this.isProcessed) return this._error!;
 
         this._state = A_TYPES__FeatureState.INTERRUPTED;
 
         switch (true) {
             case A_TypeGuards.isString(reason):
-                this._error = new A_FeatureError(A_FeatureError.Interruption, reason);
+                this._error = new A_FeatureError(A_FeatureError.Interruption, reason as string);
                 break;
 
             case A_TypeGuards.isErrorInstance(reason):
                 this._error = new A_FeatureError({
                     code: A_FeatureError.Interruption,
-                    title: reason.title,
-                    description: reason.description,
+                    title: (reason as any).title || 'Feature Interrupted',
+                    description: (reason as any).description || (reason as Error).message,
                     stage: this.stage,
                     originalError: reason
                 });
                 break;
 
             default:
+                this._error = new A_FeatureError(A_FeatureError.Interruption, 'Feature was interrupted');
                 break;
         }
 
-
         this.scope.destroy();
+        
+        return this._error;
     }
 
 
@@ -573,7 +591,17 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         // create new caller for the chained feature
         feature._caller = this._caller;
 
-        return feature.process(featureScope);
+        const result = feature.process(featureScope);
+        
+        // If the chained feature processing returns a promise, ensure errors are propagated
+        if (A_TypeGuards.isPromiseInstance(result)) {
+            return result.catch(error => {
+                // Re-throw to ensure chained feature errors propagate to caller
+                throw error;
+            });
+        }
+        
+        return result;
     }
 
 
