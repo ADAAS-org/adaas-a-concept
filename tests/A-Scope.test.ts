@@ -705,4 +705,109 @@ describe('A-Scope tests', () => {
         expect(resolvedA).toBeInstanceOf(MyEntity_B);
         expect(resolvedA?.name).toBe('Entity1');
     });
+
+    it('Should deregister entities properly', async () => {
+
+        class MyEntity extends A_Entity { }
+
+        class MyFragment extends A_Fragment { }
+
+        class MyComponent extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+
+
+        const entity = new MyEntity();
+        const fragment = new MyFragment();
+
+        scope.register(entity);
+        scope.register(fragment);
+        scope.register(MyComponent);
+
+        expect(scope.has(MyEntity)).toBe(true);
+        expect(scope.has(MyFragment)).toBe(true);
+        expect(scope.has(MyComponent)).toBe(true);
+
+        scope.deregister(entity);
+        scope.deregister(fragment);
+        scope.deregister(MyComponent);
+
+        expect(scope.has(MyEntity)).toBe(false);
+        expect(scope.has(MyFragment)).toBe(false);
+        expect(scope.has(MyComponent)).toBe(false);
+    });
+
+    it('Should deregister all entities by class', async () => {
+
+        class BaseEntity extends A_Entity { }
+
+        class MyEntityA extends A_Entity { }
+        class MyEntityB extends BaseEntity { }
+
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+
+
+        const entityA1 = new MyEntityA();
+        const entityA2 = new MyEntityA();
+        const entityB1 = new MyEntityB();
+
+        scope.register(entityA1);
+        scope.register(entityA2);
+        scope.register(entityB1);
+
+        expect(scope.resolveAll(MyEntityA).length).toBe(2);
+        expect(scope.resolveAll(BaseEntity).length).toBe(1);
+
+        scope.deregister(MyEntityA);
+
+        expect(scope.resolveAll(MyEntityA).length).toBe(0);
+        expect(scope.resolveAll(BaseEntity).length).toBe(1);
+
+        const entityB2 = new MyEntityB();
+        scope.register(entityB2);
+
+        expect(scope.resolveAll(BaseEntity).length).toBe(2);
+
+        scope.deregister(BaseEntity);
+
+        expect(scope.resolveAll(BaseEntity).length).toBe(0);
+    });
+    it('Should register/deregister fragments with the same names', async () => {
+
+        class MyFragment extends A_Fragment {
+
+            array: string[] = [];
+
+            constructor(name: string) {
+                super({ name });
+            }
+        }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+
+        const fragmentA1 = new MyFragment('fragmentA');
+
+        scope.register(fragmentA1);
+
+        expect(scope.has(MyFragment)).toBe(true);
+        expect(scope.resolve(MyFragment)).toBe(fragmentA1);
+
+        scope.deregister(fragmentA1);
+
+        fragmentA1.array.push('newData');
+
+
+        expect(scope.has(MyFragment)).toBe(false);
+
+        const fragmentA2 = new MyFragment('fragmentA');
+
+        scope.register(fragmentA2);
+
+        expect(scope.has(MyFragment)).toBe(true);
+        expect(scope.resolve(MyFragment)).toBe(fragmentA2);
+        expect(fragmentA2.array.length).toBe(0);
+    });
 });

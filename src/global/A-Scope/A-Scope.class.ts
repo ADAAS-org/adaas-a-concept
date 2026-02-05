@@ -1814,6 +1814,13 @@ export class A_Scope<
                 this._components.delete(param1.constructor as _ComponentType[number]);
                 A_Context.deregister(param1);
 
+                const ctor = param1.constructor as _ComponentType[number];
+
+                const hasComponent = this._components.has(ctor);
+                if (!hasComponent) {
+                    this.allowedComponents.delete(ctor);
+                }
+
                 break;
             }
             // 3) In case when it's a A-Entity instance
@@ -1821,13 +1828,27 @@ export class A_Scope<
 
                 this._entities.delete(param1.aseid.toString());
                 A_Context.deregister(param1);
+
+                const ctor = param1.constructor as _EntityType[number];
+
+                const hasEntity = Array.from(this._entities.values()).some(entity => entity instanceof ctor);
+                if (!hasEntity) {
+                    this.allowedEntities.delete(ctor);
+                }
+
                 break;
             }
             // 4) In case when it's a A-Fragment instance
             case A_TypeGuards.isFragmentInstance(param1): {
-
                 this._fragments.delete(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
                 A_Context.deregister(param1);
+
+                const ctor = param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>;
+
+                const hasFragment = Array.from(this._fragments.values()).some(fragment => fragment instanceof ctor);
+                if (!hasFragment) {
+                    this.allowedFragments.delete(ctor);
+                }
 
                 break;
             }
@@ -1836,6 +1857,14 @@ export class A_Scope<
 
                 this._errors.delete(param1.code);
                 A_Context.deregister(param1);
+
+                const ctor = param1.constructor as _ErrorType[number];
+
+                const hasError = Array.from(this._errors.values()).some(error => error instanceof ctor);
+                if (!hasError) {
+                    this.allowedErrors.delete(ctor);
+                }
+
                 break;
             }
 
@@ -1850,16 +1879,40 @@ export class A_Scope<
             // 8) In case when it's a A-Fragment constructor
             case A_TypeGuards.isFragmentConstructor(param1): {
                 this.allowedFragments.delete(param1 as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
+                // and then deregister all instances of this fragment
+                Array.from(this._fragments.entries()).forEach(([ctor, instance]) => {
+                    if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+                        this._fragments.delete(ctor);
+                        A_Context.deregister(instance);
+                    }
+                });
+
                 break;
             }
             // 9) In case when it's a A-Entity constructor
             case A_TypeGuards.isEntityConstructor(param1): {
                 this.allowedEntities.delete(param1 as _EntityType[number]);
+                //  and then deregister all instances of this entity
+                Array.from(this._entities.entries()).forEach(([aseid, instance]) => {
+                    if (A_CommonHelper.isInheritedFrom(instance.constructor, param1)) {
+                        this._entities.delete(aseid);
+                        A_Context.deregister(instance);
+                    }
+                });
+
                 break;
             }
             // 10) In case when it's a A-Error constructor
             case A_TypeGuards.isErrorConstructor(param1): {
                 this.allowedErrors.delete(param1 as _ErrorType[number]);
+                // and then deregister all instances of this error
+                Array.from(this._errors.entries()).forEach(([code, instance]) => {
+                    if (A_CommonHelper.isInheritedFrom(instance.constructor, param1)) {
+                        this._errors.delete(code);
+                        A_Context.deregister(instance);
+                    }
+                });
+
                 break;
             }
 
@@ -1875,6 +1928,7 @@ export class A_Scope<
                     `Cannot deregister ${componentName} from the scope ${this.name}`
                 );
         }
+
     }
 
     /**
