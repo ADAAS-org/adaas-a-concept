@@ -29,7 +29,7 @@ export class A_Component {
      * @param scope  - the scope in which to call the feature
      * @returns  - void
      */
-    async call(
+    call(
         /**
          * Name of the feature to call
          */
@@ -38,13 +38,13 @@ export class A_Component {
          * Scope in which the feature will be executed
          */
         scope?: A_Scope
-    ) {
+    ): Promise<any> | void {
         const newFeature = new A_Feature({
             name: feature,
             component: this
         });
 
-        return await newFeature.process(scope);
+        return newFeature.process(scope);
     }
 }
 

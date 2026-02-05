@@ -367,4 +367,9 @@ export class A_TypeGuards {
     static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T {
         return !!param && A_TypeGuards.isObject(param) && !(param instanceof Error) && "aseid" in param && ASEID.isASEID(param.aseid);
     }
+
+
+    static isPromiseInstance<T>(value: any): value is Promise<T> {
+        return value instanceof Promise;
+    }
 }

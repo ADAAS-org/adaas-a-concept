@@ -35,11 +35,6 @@ export class A_Stage {
      */
     private _status: A_TYPES__A_Stage_Status = A_TYPES__A_Stage_Status.INITIALIZED;
 
-    /**
-     * Promise that will be resolved when the stage is Processed
-     */
-    private _processed: Promise<void> | undefined;
-
 
     /**
      * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
@@ -106,7 +101,7 @@ export class A_Stage {
      * @param step 
      * @returns 
      */
-    protected async getStepArgs(
+    protected getStepArgs(
         scope: A_Scope,
         step: A_TYPES__A_StageStep
     ) {
@@ -114,24 +109,22 @@ export class A_Stage {
             (step.dependency.target as A_TYPES__Container_Constructor | A_TYPES__Component_Constructor)
             || scope.resolveConstructor(step.dependency.name);
 
-        return Promise
-            .all(A_Context
-                .meta(resolverConstructor)
-                .injections(step.handler)
-                .map(async dependency => {
-                    switch (true) {
-                        case A_TypeGuards.isCallerConstructor(dependency.target):
-                            return this._feature.caller.component;
+        return A_Context
+            .meta(resolverConstructor)
+            .injections(step.handler)
+            .map(dependency => {
+                switch (true) {
+                    case A_TypeGuards.isCallerConstructor(dependency.target):
+                        return this._feature.caller.component;
 
-                        case A_TypeGuards.isFeatureConstructor(dependency.target):
-                            return this._feature;
+                    case A_TypeGuards.isFeatureConstructor(dependency.target):
+                        return this._feature;
 
-                        default: {
-                            return scope.resolve(dependency);
-                        }
+                    default: {
+                        return scope.resolve(dependency);
                     }
-                })
-            )
+                }
+            })
     }
 
 
@@ -174,17 +167,23 @@ export class A_Stage {
      * @param step 
      * @returns 
      */
-    protected async callStepHandler(
+    protected callStepHandler(
         step: A_TYPES__A_StageStep,
         scope: A_Scope
-    ) {
+    ): {
+        handler: Function,
+        params: any[]
+    } {
         // 1) Resolve component
-        const component = await this.getStepComponent(scope, step);
+        const component = this.getStepComponent(scope, step);
         // 2) Resolve arguments
-        const callArgs = await this.getStepArgs(scope, step);
+        const callArgs = this.getStepArgs(scope, step);
 
         // 3) Call handler
-        return await component[step.handler](...callArgs);
+        return {
+            handler: component[step.handler].bind(component),
+            params: callArgs
+        }
     }
 
 
@@ -198,48 +197,51 @@ export class A_Stage {
      * 
      * @param scope - Scope to be used to resolve the steps dependencies
      */
-    async process(
+     process(
         /**
          * Scope to be used to resolve the steps dependencies
          */
         scope?: A_Scope,
-    ): Promise<void> {
+    ): Promise<void> | void {
 
         const targetScope = A_TypeGuards.isScopeInstance(scope)
             ? scope
             : this._feature.scope;
 
-        if (!this._processed)
-            this._processed = new Promise<void>(
-                async (resolve, reject) => {
-                    try {
-                        this._status = A_TYPES__A_Stage_Status.PROCESSING;
+        if (!this.isProcessed) {
+            this._status = A_TYPES__A_Stage_Status.PROCESSING;
 
-                        if (this._definition.behavior === 'sync') {
-                            // in case we have to wait for the result
-                            await this.callStepHandler(this._definition, targetScope);
-                        } else {
-                            // in case we don't have to wait for the result
-                            this.callStepHandler(this._definition, targetScope);
-                        }
+            const { handler, params } = this.callStepHandler(this._definition, targetScope);
 
-                        this.completed();
+            const result = handler(...params);
 
-                        return resolve();
-                    } catch (error) {
-                        const wrappedError = new A_Error(error as any);
+            if (A_TypeGuards.isPromiseInstance(result)) {
 
-                        this.failed(wrappedError);
+                return new Promise<void>(
+                    async (resolve, reject) => {
+                        try {
+                            await result;
 
-                        if (this._definition.throwOnError) {
+                            this.completed();
+
                             return resolve();
-                        } else {
-                            return reject(wrappedError);
-                        }
-                    }
-                });
+                        } catch (error) {
+                            const wrappedError = new A_Error(error as any);
 
-        return this._processed;
+                            this.failed(wrappedError);
+
+                            if (this._definition.throwOnError) {
+                                return resolve();
+                            } else {
+                                return reject(wrappedError);
+                            }
+                        }
+                    });
+            } else {
+                this.completed();
+            }
+        }
+
     }
 
 

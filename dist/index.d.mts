@@ -918,10 +918,6 @@ declare class A_Stage {
      */
     private _status;
     /**
-     * Promise that will be resolved when the stage is Processed
-     */
-    private _processed;
-    /**
      * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
      * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
      *
@@ -966,7 +962,7 @@ declare class A_Stage {
      * @param step
      * @returns
      */
-    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): Promise<(A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Fragment<A_TYPES__Fragment_Serialized> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Caller<A_TYPES__FeatureAvailableComponents> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]> | A_TYPES__A_DependencyInjectable[] | undefined)[]>;
+    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): (A_Container | A_Component | A_Entity<any, A_TYPES__Entity_Serialized> | A_Fragment<A_TYPES__Fragment_Serialized> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Caller<A_TYPES__FeatureAvailableComponents> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]> | A_TYPES__A_DependencyInjectable[] | undefined)[];
     /**
      * Resolves the component of the step
      *
@@ -980,7 +976,10 @@ declare class A_Stage {
      * @param step
      * @returns
      */
-    protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): Promise<any>;
+    protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): {
+        handler: Function;
+        params: any[];
+    };
     skip(): void;
     /**
      * This method processes the stage by executing all the steps
@@ -991,7 +990,7 @@ declare class A_Stage {
     /**
      * Scope to be used to resolve the steps dependencies
      */
-    scope?: A_Scope): Promise<void>;
+    scope?: A_Scope): Promise<void> | void;
     protected completed(): void;
     protected failed(error: Error | A_Error | any): void;
     /**
@@ -1211,7 +1210,11 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      * Optional scope to be used to resolve the steps dependencies
      * If not provided, the scope of the caller component will be used
      */
-    scope?: A_Scope): Promise<void>;
+    scope?: A_Scope): Promise<void> | void;
+    /**
+     * Process stages one by one, ensuring each stage completes before starting the next
+     */
+    private processStagesSequentially;
     /**
      * This method moves the feature to the next stage
      *
@@ -1225,14 +1228,14 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      * @param result
      * @returns
      */
-    completed(): Promise<void>;
+    completed(): void;
     /**
      * This method marks the feature as failed and throws an error
      * Uses to mark the feature as failed
      *
      * @param error
      */
-    failed(error: A_FeatureError): Promise<void>;
+    failed(error: A_FeatureError): void;
     /**
      * This method marks the feature as failed and throws an error
      * Uses to interrupt or end the feature processing
@@ -3707,7 +3710,7 @@ declare class A_Component {
     /**
      * Scope in which the feature will be executed
      */
-    scope?: A_Scope): Promise<void>;
+    scope?: A_Scope): Promise<any> | void;
 }
 
 /**
@@ -4800,6 +4803,7 @@ declare class A_TypeGuards {
      */
     static isErrorConstructorType<T extends A_TYPES__Error_Init>(param: any): param is T;
     static isErrorSerializedType<T extends A_TYPES__Error_Serialized>(param: any): param is T;
+    static isPromiseInstance<T>(value: any): value is Promise<T>;
 }
 
 export { ASEID, ASEID_Error, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_Default, A_Dependency_Load, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

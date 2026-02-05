@@ -355,13 +355,13 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * This method processes the feature by executing all the stages
      * 
      */
-    async process(
+    process(
         /**
          * Optional scope to be used to resolve the steps dependencies
          * If not provided, the scope of the caller component will be used
          */
         scope?: A_Scope,
-    ) {
+    ): Promise<void> | void {
         try {
             // It seems like this is a bad idea to enforce scope inheritance here
             // ---------------------------------------------------------------
@@ -373,20 +373,63 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
             this._state = A_TYPES__FeatureState.PROCESSING;
 
-            for (const stage of this) {
-                await stage.process(scope);
-            }
+            // Convert iterator to array to get all stages
+            const stages = Array.from(this);
+            
+            return this.processStagesSequentially(stages, scope, 0);
 
-            return await this.completed();
         } catch (error) {
-            return await this.failed(new A_FeatureError({
+            this.failed(new A_FeatureError({
                 title: A_FeatureError.FeatureProcessingError,
                 description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
                 stage: this.stage,
                 originalError: error
             }));
         }
+    }
 
+    /**
+     * Process stages one by one, ensuring each stage completes before starting the next
+     */
+    private processStagesSequentially(
+        stages: A_Stage[], 
+        scope: A_Scope | undefined, 
+        index: number
+    ): Promise<void> | void {
+        try {
+            // If we've processed all stages, complete the feature
+            if (index >= stages.length) {
+                this.completed();
+                return;
+            }
+
+            const stage = stages[index];
+            const result = stage.process(scope);
+
+            if (A_TypeGuards.isPromiseInstance(result)) {
+                // Async stage - return promise that processes remaining stages
+                return result.then(() => {
+                    return this.processStagesSequentially(stages, scope, index + 1);
+                }).catch(error => {
+                    this.failed(new A_FeatureError({
+                        title: A_FeatureError.FeatureProcessingError,
+                        description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+                        stage: stage,
+                        originalError: error
+                    }));
+                });
+            } else {
+                // Sync stage - continue to next stage immediately
+                return this.processStagesSequentially(stages, scope, index + 1);
+            }
+        } catch (error) {
+            this.failed(new A_FeatureError({
+                title: A_FeatureError.FeatureProcessingError,
+                description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
+                stage: this.stage,
+                originalError: error
+            }));
+        }
     }
     /**
      * This method moves the feature to the next stage
@@ -409,7 +452,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * @param result 
      * @returns 
      */
-    async completed(): Promise<void> {
+    completed(): void {
         if (this.isProcessed) return;
 
 
@@ -423,7 +466,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * 
      * @param error 
      */
-    async failed(error: A_FeatureError) {
+    failed(error: A_FeatureError) {
         if (this.isProcessed) return;
 
         this._state = A_TYPES__FeatureState.FAILED;

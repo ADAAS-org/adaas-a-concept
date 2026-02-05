@@ -644,7 +644,7 @@ describe('A-Feature tests', () => {
         await baseEntity.test();
 
         expect(executionResults).toEqual(['testMethod']);
-        
+
         await myEntity.test();
 
         expect(executionResults).toEqual(['testMethod', 'testMethod']);
@@ -780,6 +780,91 @@ describe('A-Feature tests', () => {
 
         expect(resultChain).toEqual([
             'ChildComponent_A.test'
+        ]);
+
+    })
+    it('Should execute Sync operations properly', async () => {
+
+        const resultChain: string[] = [];
+
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            test1() {
+                resultChain.push('ChildComponent_A.test');
+            }
+        }
+
+        class ChildComponent_B extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            test2() {
+                resultChain.push('ChildComponent_B.test');
+            }
+        }
+
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A, ChildComponent_B] });
+
+        testScope.resolve(ChildComponent_A)!.call('testFeature');
+
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'ChildComponent_B.test'
+        ]);
+
+    })
+
+    it('Should execute Async operations properly', async () => {
+
+        const resultChain: string[] = [];
+
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test1() {
+                resultChain.push('ChildComponent_A.test');
+
+                await new Promise<void>(async (resolve) => {
+                    setTimeout(() => {
+                        resolve();
+                    }, 3000);
+                });
+            }
+        }
+
+        class ChildComponent_B extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test2() {
+                resultChain.push('ChildComponent_B.test');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A, ChildComponent_B] });
+
+        await Promise.all([
+            new Promise<void>(async (resolve) => {
+                setTimeout(() => {
+                    resultChain.push('feature3');
+
+                    resolve();
+                }, 2000);
+            }),
+            testScope.resolve(ChildComponent_A)!.call('testFeature')
+        ]);
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test',
+            'feature3',
+            'ChildComponent_B.test'
         ]);
 
     })
