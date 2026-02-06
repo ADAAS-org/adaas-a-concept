@@ -31,6 +31,7 @@
     ],
     "paths": {
       "@adaas/a-concept/constants/*": ["src/constants/*"],
+      "@adaas/a-concept/env": ["src/env/index.node.ts"],
       "@adaas/a-concept/global/*": ["src/global/*"],
       "@adaas/a-concept/types/*": ["src/types/*"],
       "@adaas/a-concept/helpers/*": ["src/helpers/*"],
@@ -50,7 +51,8 @@
     "src/**/*",
     "tests/**/*", 
     "examples/**/*", 
-    "src/index.ts"  
+    "src/index.ts",
+    "src/env/global.browser.d.ts"  
   ],
   "exclude": [
     "node_modules/**/*",

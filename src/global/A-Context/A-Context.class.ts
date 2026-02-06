@@ -22,7 +22,6 @@ import { A_ContainerMeta } from "../A-Container/A-Container.meta";
 import { A_Entity } from "../A-Entity/A-Entity.class";
 import { A_EntityMeta } from "../A-Entity/A-Entity.meta";
 import { A_TYPES__A_StageStep } from "../A-Stage/A-Stage.types";
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
 import { A_TYPES__EntityMetaKey } from "../A-Entity/A-Entity.constants";
 import { A_TYPES__ContainerMetaKey } from "../A-Container/A-Container.constants";
 import { A_TYPES__ComponentMetaKey } from "../A-Component/A-Component.constants";
@@ -40,6 +39,7 @@ import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 import { A_Dependency } from "../A-Dependency/A-Dependency.class";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
+import { ENV } from "@adaas/a-concept/env";
 
 
 
@@ -53,7 +53,7 @@ export class A_Context {
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
     static get concept() {
-        return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAME] || 'a-concept';
+        return ENV.A_CONCEPT_NAME || 'a-concept';
     }
     /**
      * Root scope of the application from environment variable A_CONCEPT_ROOT_SCOPE
@@ -66,18 +66,10 @@ export class A_Context {
     /**
      * Environment the application is running in.
      * Can be either 'server' or 'browser'.
-     * [!] Determined by checking if 'window' object is available.
+     * [!] Determined by environment variable A_CONCEPT_RUNTIME_ENVIRONMENT that comes from the build tool or is set manually in the environment.
      */
     static get environment(): A_TYPES__ContextEnvironment {
-        let testEnvironment: A_TYPES__ContextEnvironment = 'browser';
-
-        try {
-            testEnvironment = window.location ? 'browser' : 'server';
-        } catch (error) {
-            testEnvironment = 'server';
-        }
-
-        return testEnvironment;
+        return ENV.A_CONCEPT_RUNTIME_ENVIRONMENT
     }
 
     /**
@@ -129,13 +121,7 @@ export class A_Context {
      * [!] This class should not be instantiated directly. Use A_Context.getInstance() instead.
      */
     private constructor() {
-        let name = 'root';
-
-        if (A_Context.environment === 'server')
-            name = process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE] || 'root';
-
-        if (A_Context.environment === 'browser')
-            name = (window as any)[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE] || 'root';
+        const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
 
         this._root = new A_Scope({ name });
     }
@@ -1063,13 +1049,7 @@ export class A_Context {
 
         instance._registry = new WeakMap();
 
-        let name = 'root';
-
-        if (A_Context.environment === 'server')
-            name = process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE] || 'root';
-
-        if (A_Context.environment === 'browser')
-            name = (window as any)[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE] || 'root';
+        const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
 
         instance._root = new A_Scope({ name });
     }

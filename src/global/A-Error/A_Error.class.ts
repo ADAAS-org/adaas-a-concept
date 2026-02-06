@@ -10,7 +10,7 @@ import { A_FormatterHelper } from '@adaas/a-concept/helpers/A_Formatter.helper';
 import { A_Context } from '../A-Context/A-Context.class';
 import { A_TypeGuards } from '@adaas/a-concept/helpers/A_TypeGuards.helper';
 import { ASEID } from '../ASEID/ASEID.class';
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from '@adaas/a-concept/constants/env.constants';
+import { ENV } from '@adaas/a-concept/env';
 
 
 export class A_Error<
@@ -286,7 +286,7 @@ export class A_Error<
      * [!] Note: This description is intended to provide more context about the error and can be used for debugging or logging purposes
      */
     get description(): string {
-        return this._description || process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION] || A_CONSTANTS__ERROR_DESCRIPTION;
+        return this._description || String(ENV.A_ERROR_DEFAULT_DESCRIPTION) || A_CONSTANTS__ERROR_DESCRIPTION;
     }
     /**
      * Returns the original error if any

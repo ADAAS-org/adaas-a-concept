@@ -10,6 +10,7 @@ const config: Config.InitialOptions = {
     },
     moduleNameMapper: {
         "@adaas/a-concept/constants/(.*)": ["<rootDir>/src/constants/$1"],
+        "@adaas/a-concept/env": ["<rootDir>/src/env/index.node.ts"],
         "@adaas/a-concept/global/(.*)": ["<rootDir>/src/global/$1"],
         "@adaas/a-concept/types/(.*)": ["<rootDir>/src/types/$1"],
         "@adaas/a-concept/helpers/(.*)": ["<rootDir>/src/helpers/$1"],

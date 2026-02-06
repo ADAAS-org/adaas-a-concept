@@ -1,32 +1,95 @@
 import { defineConfig } from "tsup";
 
-export default defineConfig((options) => ({
-  entry: ["src/index.ts"],
-  format: ["esm", "cjs"],
-  dts: true,
-  clean: !options.watch,
-  sourcemap: true,
-  target: "es2020",
-  minify: !options.watch,
-  treeshake: "recommended",
-  skipNodeModulesBundle: true,
-  splitting: false,
-  silent: false,
-  platform: "neutral",
-  // Add hash to filenames for cache busting in production builds
-  outExtension({ format }) {
-    return {
-      js: format === "esm" ? `.mjs` : `.cjs`,
-    };
-  },
-  // Extra optimization options (for 2025 esbuild)
-  esbuildOptions(options) {
-    options.keepNames = true; // Preserve class/function names for better debugging
-    options.charset = "utf8";
+export default defineConfig([
+  /**
+   * ============================
+   * Browser build
+   * ============================
+   *
+   * Produces:
+   *   dist/browser/index.mjs
+   *   dist/browser/env.mjs
+   *
+   * - No Node globals
+   * - No `process`
+   * - Used by bundlers (Vite, Webpack, Rollup)
+   */
+  {
+    entry: {
+      // Public library entry
+      index: "src/index.ts",
+
+      // Public env entry (browser implementation)
+      env: "src/env/index.browser.ts",
+    },
+
+    // Output directory for browser bundle
+    outDir: "dist/browser",
+
+    // Browser consumers expect ESM
+    format: ["esm"],
+
+    // Tells esbuild this is browser-safe code
+    platform: "browser",
+
+    // Reasonable baseline for modern browsers
+    target: "es2020",
+
+    // Smaller bundles
+    treeshake: true,
+
+    // Useful for debugging in bundlers
+    sourcemap: true,
+
+    // Emit .d.ts files
+    dts: true,
+
+    /**
+     * IMPORTANT:
+     * We do NOT define process.env here.
+     * Browser env must never reference process at all.
+     */
   },
 
-  // Enable minification for output size (production only)
-  minifyWhitespace: !options.watch,
-  minifyIdentifiers: !options.watch,
-  minifySyntax: !options.watch,
-}));
+  /**
+   * ============================
+   * Node build
+   * ============================
+   *
+   * Produces:
+   *   dist/node/index.mjs
+   *   dist/node/index.cjs
+   *   dist/node/env.mjs
+   *   dist/node/env.cjs
+   *
+   * - Can use process.env
+   * - Used by Node (ESM + CJS)
+   */
+  {
+    entry: {
+      // Same public API as browser
+      index: "src/index.ts",
+
+      // Node-specific env implementation
+      env: "src/env/index.node.ts",
+    },
+
+    // Output directory for node bundle
+    outDir: "dist/node",
+
+    // Support both module systems
+    format: ["esm", "cjs"],
+
+    // Enables Node globals and resolution
+    platform: "node",
+
+    // Node 16+ safe baseline
+    target: "es2020",
+
+    treeshake: true,
+    sourcemap: true,
+
+    // Emit .d.ts files (shared shape)
+    dts: true,
+  },
+]);
