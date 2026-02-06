@@ -34,15 +34,31 @@ declare class A_CONCEPT_BASE_ENV {
      * Allows to define a default error description for errors thrown without a description
      */
     static get A_ERROR_DEFAULT_DESCRIPTION(): string;
+    /**
+     * Generic getter for environment variables. This allows to access environment variables dynamically by name. It will return undefined if the variable does not exist.
+     *
+     * @param name
+     * @returns
+     */
+    static get(name: string): any;
+    /**
+     * Generic setter for environment variables. This allows to set environment variables dynamically by name.
+     *
+     * @param name
+     * @param value
+     */
+    static set(name: string, value: string): void;
 }
 
-declare class ENV extends A_CONCEPT_BASE_ENV {
-    static get A_CONCEPT_ENVIRONMENT(): any;
+declare class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
+    static get A_CONCEPT_ENVIRONMENT(): string;
     static get A_CONCEPT_RUNTIME_ENVIRONMENT(): A_TYPES__ContextEnvironment;
-    static get A_CONCEPT_NAME(): any;
-    static get A_CONCEPT_ROOT_FOLDER(): any;
-    static get A_CONCEPT_ROOT_SCOPE(): any;
-    static get A_ERROR_DEFAULT_DESCRIPTION(): any;
+    static get A_CONCEPT_NAME(): string;
+    static get A_CONCEPT_ROOT_FOLDER(): string;
+    static get A_CONCEPT_ROOT_SCOPE(): string;
+    static get A_ERROR_DEFAULT_DESCRIPTION(): string;
+    static get(name: string): A_CONCEPT_ENV;
+    static set(name: string, value: string): void;
 }
 
-export { ENV };
+export { A_CONCEPT_ENV };

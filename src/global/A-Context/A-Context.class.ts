@@ -39,7 +39,7 @@ import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_TYPES__Fragment_Constructor } from "../A-Fragment/A-Fragment.types";
 import { A_Dependency } from "../A-Dependency/A-Dependency.class";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types/A_Common.types";
-import { ENV } from "@adaas/a-concept/env";
+import { A_CONCEPT_ENV } from "@adaas/a-concept/env";
 
 
 
@@ -53,7 +53,7 @@ export class A_Context {
      * [!] If environment variable is not set, it will default to 'a-concept'
      */
     static get concept() {
-        return ENV.A_CONCEPT_NAME || 'a-concept';
+        return A_CONCEPT_ENV.A_CONCEPT_NAME || 'a-concept';
     }
     /**
      * Root scope of the application from environment variable A_CONCEPT_ROOT_SCOPE
@@ -69,7 +69,7 @@ export class A_Context {
      * [!] Determined by environment variable A_CONCEPT_RUNTIME_ENVIRONMENT that comes from the build tool or is set manually in the environment.
      */
     static get environment(): A_TYPES__ContextEnvironment {
-        return ENV.A_CONCEPT_RUNTIME_ENVIRONMENT
+        return A_CONCEPT_ENV.A_CONCEPT_RUNTIME_ENVIRONMENT
     }
 
     /**
@@ -121,7 +121,7 @@ export class A_Context {
      * [!] This class should not be instantiated directly. Use A_Context.getInstance() instead.
      */
     private constructor() {
-        const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
+        const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
 
         this._root = new A_Scope({ name });
     }
@@ -1049,7 +1049,7 @@ export class A_Context {
 
         instance._registry = new WeakMap();
 
-        const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
+        const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
 
         instance._root = new A_Scope({ name });
     }

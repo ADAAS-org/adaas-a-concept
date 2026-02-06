@@ -1,6 +1,5 @@
-import { A_TYPES__ContextEnvironment } from "../global/A-Context/A-Context.types";
-
-export class A_CONCEPT_BASE_ENV {
+// src/env/env.base.ts
+var A_CONCEPT_BASE_ENV = class {
   // ----------------------------------------------------------
   // A-Concept Core Environment Variables
   // ----------------------------------------------------------
@@ -35,10 +34,9 @@ export class A_CONCEPT_BASE_ENV {
   /**
    * Runtime environment of the application e.g. browser, node
    */
-  static get A_CONCEPT_RUNTIME_ENVIRONMENT(): A_TYPES__ContextEnvironment {
+  static get A_CONCEPT_RUNTIME_ENVIRONMENT() {
     return "unknown";
   }
-
   /**
    * Root folder of the application
    * [!] Automatically set by A-Concept when the application starts
@@ -46,22 +44,20 @@ export class A_CONCEPT_BASE_ENV {
   static get A_CONCEPT_ROOT_FOLDER() {
     return "/app";
   }
-
   /**
    * Allows to define a default error description for errors thrown without a description
    */
   static get A_ERROR_DEFAULT_DESCRIPTION() {
     return "If you see this error please let us know.";
   }
-
   /**
    * Generic getter for environment variables. This allows to access environment variables dynamically by name. It will return undefined if the variable does not exist.
    * 
    * @param name 
    * @returns 
    */
-  static get(name: string) {
-    return (this as any)[name];
+  static get(name) {
+    return this[name];
   }
   /**
    * Generic setter for environment variables. This allows to set environment variables dynamically by name.
@@ -69,8 +65,11 @@ export class A_CONCEPT_BASE_ENV {
    * @param name 
    * @param value 
    */
-  static set(name: string, value: string) {
-    (this as any)[name] = value;
+  static set(name, value) {
+    this[name] = value;
   }
+};
 
-} 
+export { A_CONCEPT_BASE_ENV };
+//# sourceMappingURL=chunk-JIILD3HV.mjs.map
+//# sourceMappingURL=chunk-JIILD3HV.mjs.map

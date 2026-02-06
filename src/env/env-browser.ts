@@ -2,7 +2,7 @@ import { A_TYPES__ContextEnvironment } from "../global/A-Context/A-Context.types
 import { A_CONCEPT_BASE_ENV } from "./env.base";
 
 
-export class ENV extends A_CONCEPT_BASE_ENV {
+export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
     static get A_CONCEPT_ENVIRONMENT() {
         return window.__A_CONCEPT_ENVIRONMENT_ENV__?.A_CONCEPT_ENVIRONMENT || super.A_CONCEPT_ENVIRONMENT;
     }
@@ -20,5 +20,14 @@ export class ENV extends A_CONCEPT_BASE_ENV {
     }
     static get A_ERROR_DEFAULT_DESCRIPTION() {
         return window.__A_CONCEPT_ENVIRONMENT_ENV__?.A_ERROR_DEFAULT_DESCRIPTION || super.A_ERROR_DEFAULT_DESCRIPTION;
+    }
+    static get(name: string) {
+        return window.__A_CONCEPT_ENVIRONMENT_ENV__?.[name] || (this as typeof A_CONCEPT_ENV)[name as keyof typeof A_CONCEPT_ENV];
+    }
+    static set(name: string, value: string) {
+        if (!window.__A_CONCEPT_ENVIRONMENT_ENV__) {
+            window.__A_CONCEPT_ENVIRONMENT_ENV__ = {};
+        }
+        window.__A_CONCEPT_ENVIRONMENT_ENV__[name] = value;
     }
 };

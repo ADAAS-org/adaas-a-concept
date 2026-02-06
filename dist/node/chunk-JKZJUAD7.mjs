@@ -1,5 +1,3 @@
-'use strict';
-
 // src/constants/env.constants.ts
 var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
   // ----------------------------------------------------------
@@ -28,6 +26,10 @@ var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
    */
   A_CONCEPT_ENVIRONMENT: "A_CONCEPT_ENVIRONMENT",
   /**
+   * Runtime environment of the application e.g. browser, node
+   */
+  A_CONCEPT_RUNTIME_ENVIRONMENT: "A_CONCEPT_RUNTIME_ENVIRONMENT",
+  /**
    * Root folder of the application
    * [!] Automatically set by A-Concept when the application starts
    */
@@ -37,6 +39,14 @@ var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
    */
   A_ERROR_DEFAULT_DESCRIPTION: "A_ERROR_DEFAULT_DESCRIPTION"
 };
+var A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY = [
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAME,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ENVIRONMENT,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_RUNTIME_ENVIRONMENT,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION
+];
 
 // src/env/env.base.ts
 var A_CONCEPT_BASE_ENV = class {
@@ -170,6 +180,6 @@ var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
   }
 };
 
-exports.A_CONCEPT_ENV = A_CONCEPT_ENV;
-//# sourceMappingURL=env.js.map
-//# sourceMappingURL=env.js.map
+export { A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY };
+//# sourceMappingURL=chunk-JKZJUAD7.mjs.map
+//# sourceMappingURL=chunk-JKZJUAD7.mjs.map

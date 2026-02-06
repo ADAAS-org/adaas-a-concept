@@ -1,7 +1,7 @@
-import { A_CONCEPT_BASE_ENV } from './chunk-5ABP3TCO.mjs';
+import { A_CONCEPT_BASE_ENV } from './chunk-JIILD3HV.mjs';
 
 // src/env/env-browser.ts
-var ENV = class extends A_CONCEPT_BASE_ENV {
+var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
   static get A_CONCEPT_ENVIRONMENT() {
     return window.__A_CONCEPT_ENVIRONMENT_ENV__?.A_CONCEPT_ENVIRONMENT || super.A_CONCEPT_ENVIRONMENT;
   }
@@ -20,8 +20,17 @@ var ENV = class extends A_CONCEPT_BASE_ENV {
   static get A_ERROR_DEFAULT_DESCRIPTION() {
     return window.__A_CONCEPT_ENVIRONMENT_ENV__?.A_ERROR_DEFAULT_DESCRIPTION || super.A_ERROR_DEFAULT_DESCRIPTION;
   }
+  static get(name) {
+    return window.__A_CONCEPT_ENVIRONMENT_ENV__?.[name] || this[name];
+  }
+  static set(name, value) {
+    if (!window.__A_CONCEPT_ENVIRONMENT_ENV__) {
+      window.__A_CONCEPT_ENVIRONMENT_ENV__ = {};
+    }
+    window.__A_CONCEPT_ENVIRONMENT_ENV__[name] = value;
+  }
 };
 
-export { ENV };
+export { A_CONCEPT_ENV };
 //# sourceMappingURL=env.mjs.map
 //# sourceMappingURL=env.mjs.map

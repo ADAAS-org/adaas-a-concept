@@ -1,4 +1,4 @@
-import { A_CONCEPT_BASE_ENV } from './chunk-5ABP3TCO.mjs';
+import { A_CONCEPT_BASE_ENV } from './chunk-JIILD3HV.mjs';
 
 // src/constants/env.constants.ts
 var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
@@ -590,7 +590,7 @@ var A_CONSTANTS__ERROR_CODES = {
 var A_CONSTANTS__ERROR_DESCRIPTION = "If you see this error please let us know.";
 
 // src/env/env-node.ts
-var ENV = class extends A_CONCEPT_BASE_ENV {
+var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
   // ----------------------------------------------------------
   // A-Concept Core Environment Variables
   // ----------------------------------------------------------
@@ -633,13 +633,19 @@ var ENV = class extends A_CONCEPT_BASE_ENV {
    * [!] Automatically set by A-Concept when the application starts
    */
   static get A_CONCEPT_ROOT_FOLDER() {
-    return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER] || super.A_CONCEPT_ROOT_FOLDER;
+    return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER] || process.cwd();
   }
   /**
    * Allows to define a default error description for errors thrown without a description
    */
   static get A_ERROR_DEFAULT_DESCRIPTION() {
     return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION] || super.A_ERROR_DEFAULT_DESCRIPTION;
+  }
+  static get(name) {
+    return process.env[name] || this[name];
+  }
+  static set(name, value) {
+    process.env[name] = value;
   }
 };
 
@@ -789,7 +795,7 @@ var A_Error = class _A_Error extends Error {
    * [!] Note: This description is intended to provide more context about the error and can be used for debugging or logging purposes
    */
   get description() {
-    return this._description || String(ENV.A_ERROR_DEFAULT_DESCRIPTION) || A_CONSTANTS__ERROR_DESCRIPTION;
+    return this._description || String(A_CONCEPT_ENV.A_ERROR_DEFAULT_DESCRIPTION) || A_CONSTANTS__ERROR_DESCRIPTION;
   }
   /**
    * Returns the original error if any
@@ -4601,7 +4607,7 @@ var A_Context = class _A_Context {
      */
     this._metaStorage = /* @__PURE__ */ new Map();
     this._globals = /* @__PURE__ */ new Map();
-    const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || "root";
+    const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     this._root = new A_Scope({ name });
   }
   // ====================================================================================================
@@ -4613,7 +4619,7 @@ var A_Context = class _A_Context {
    * [!] If environment variable is not set, it will default to 'a-concept'
    */
   static get concept() {
-    return ENV.A_CONCEPT_NAME || "a-concept";
+    return A_CONCEPT_ENV.A_CONCEPT_NAME || "a-concept";
   }
   /**
    * Root scope of the application from environment variable A_CONCEPT_ROOT_SCOPE
@@ -4629,7 +4635,7 @@ var A_Context = class _A_Context {
    * [!] Determined by environment variable A_CONCEPT_RUNTIME_ENVIRONMENT that comes from the build tool or is set manually in the environment.
    */
   static get environment() {
-    return ENV.A_CONCEPT_RUNTIME_ENVIRONMENT;
+    return A_CONCEPT_ENV.A_CONCEPT_RUNTIME_ENVIRONMENT;
   }
   /**
    * Get the instance of the Namespace Provider.
@@ -5052,7 +5058,7 @@ var A_Context = class _A_Context {
   static reset() {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
-    const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || "root";
+    const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     instance._root = new A_Scope({ name });
   }
   // ====================================================================================================================

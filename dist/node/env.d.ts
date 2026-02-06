@@ -34,9 +34,23 @@ declare class A_CONCEPT_BASE_ENV {
      * Allows to define a default error description for errors thrown without a description
      */
     static get A_ERROR_DEFAULT_DESCRIPTION(): string;
+    /**
+     * Generic getter for environment variables. This allows to access environment variables dynamically by name. It will return undefined if the variable does not exist.
+     *
+     * @param name
+     * @returns
+     */
+    static get(name: string): any;
+    /**
+     * Generic setter for environment variables. This allows to set environment variables dynamically by name.
+     *
+     * @param name
+     * @param value
+     */
+    static set(name: string, value: string): void;
 }
 
-declare class ENV extends A_CONCEPT_BASE_ENV {
+declare class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
     /**
      * Name of the application
      *
@@ -70,6 +84,8 @@ declare class ENV extends A_CONCEPT_BASE_ENV {
      * Allows to define a default error description for errors thrown without a description
      */
     static get A_ERROR_DEFAULT_DESCRIPTION(): string;
+    static get(name: string): any;
+    static set(name: string, value: string): void;
 }
 
-export { ENV };
+export { A_CONCEPT_ENV };

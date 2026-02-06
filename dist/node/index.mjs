@@ -1,5 +1,5 @@
-import { ENV } from './chunk-LKQAYXTD.mjs';
-export { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from './chunk-LKQAYXTD.mjs';
+import { A_CONCEPT_ENV } from './chunk-JKZJUAD7.mjs';
+export { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from './chunk-JKZJUAD7.mjs';
 
 // src/global/A-Feature/A-Feature.types.ts
 var A_TYPES__FeatureState = /* @__PURE__ */ ((A_TYPES__FeatureState2) => {
@@ -686,7 +686,7 @@ var A_Error = class _A_Error extends Error {
    * [!] Note: This description is intended to provide more context about the error and can be used for debugging or logging purposes
    */
   get description() {
-    return this._description || String(ENV.A_ERROR_DEFAULT_DESCRIPTION) || A_CONSTANTS__ERROR_DESCRIPTION;
+    return this._description || String(A_CONCEPT_ENV.A_ERROR_DEFAULT_DESCRIPTION) || A_CONSTANTS__ERROR_DESCRIPTION;
   }
   /**
    * Returns the original error if any
@@ -4498,7 +4498,7 @@ var A_Context = class _A_Context {
      */
     this._metaStorage = /* @__PURE__ */ new Map();
     this._globals = /* @__PURE__ */ new Map();
-    const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || "root";
+    const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     this._root = new A_Scope({ name });
   }
   // ====================================================================================================
@@ -4510,7 +4510,7 @@ var A_Context = class _A_Context {
    * [!] If environment variable is not set, it will default to 'a-concept'
    */
   static get concept() {
-    return ENV.A_CONCEPT_NAME || "a-concept";
+    return A_CONCEPT_ENV.A_CONCEPT_NAME || "a-concept";
   }
   /**
    * Root scope of the application from environment variable A_CONCEPT_ROOT_SCOPE
@@ -4526,7 +4526,7 @@ var A_Context = class _A_Context {
    * [!] Determined by environment variable A_CONCEPT_RUNTIME_ENVIRONMENT that comes from the build tool or is set manually in the environment.
    */
   static get environment() {
-    return ENV.A_CONCEPT_RUNTIME_ENVIRONMENT;
+    return A_CONCEPT_ENV.A_CONCEPT_RUNTIME_ENVIRONMENT;
   }
   /**
    * Get the instance of the Namespace Provider.
@@ -4949,7 +4949,7 @@ var A_Context = class _A_Context {
   static reset() {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
-    const name = String(ENV.A_CONCEPT_ROOT_SCOPE) || "root";
+    const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     instance._root = new A_Scope({ name });
   }
   // ====================================================================================================================

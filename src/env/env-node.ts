@@ -2,7 +2,7 @@ import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "../constants/env.constants";
 import { A_TYPES__ContextEnvironment } from "../global/A-Context/A-Context.types";
 import { A_CONCEPT_BASE_ENV } from "./env.base";
 
-export class ENV extends A_CONCEPT_BASE_ENV {
+export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
     // ----------------------------------------------------------
     // A-Concept Core Environment Variables
     // ----------------------------------------------------------
@@ -37,8 +37,8 @@ export class ENV extends A_CONCEPT_BASE_ENV {
     /**
      * Runtime environment of the application e.g. browser, node
      */
-    static get A_CONCEPT_RUNTIME_ENVIRONMENT():A_TYPES__ContextEnvironment {
-        return  'server';
+    static get A_CONCEPT_RUNTIME_ENVIRONMENT(): A_TYPES__ContextEnvironment {
+        return 'server';
     }
 
     /**
@@ -46,7 +46,7 @@ export class ENV extends A_CONCEPT_BASE_ENV {
      * [!] Automatically set by A-Concept when the application starts
      */
     static get A_CONCEPT_ROOT_FOLDER() {
-        return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER] || super.A_CONCEPT_ROOT_FOLDER;
+        return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER] || process.cwd();
     }
 
     /**
@@ -54,5 +54,13 @@ export class ENV extends A_CONCEPT_BASE_ENV {
      */
     static get A_ERROR_DEFAULT_DESCRIPTION() {
         return process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION] || super.A_ERROR_DEFAULT_DESCRIPTION;
+    }
+
+    static get(name: string) {
+        return process.env[name] || (this as A_CONCEPT_ENV)[name as keyof typeof A_CONCEPT_ENV];
+    }
+
+    static set(name: string, value: string): void {
+        process.env[name] = value;
     }
 } 
