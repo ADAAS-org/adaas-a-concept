@@ -26,6 +26,8 @@ export default defineConfig([
     // Output directory for browser bundle
     outDir: "dist/browser",
 
+    bundle: false, // Bundle for browser consumption
+
     // Browser consumers expect ESM
     format: ["esm"],
 
@@ -76,6 +78,8 @@ export default defineConfig([
 
     // Output directory for node bundle
     outDir: "dist/node",
+
+    bundle: false, // Don't bundle node build, keep imports as-is
 
     // Support both module systems
     format: ["esm", "cjs"],
