@@ -95,5 +95,12 @@ export default defineConfig([
 
     // Emit .d.ts files (shared shape)
     dts: true,
+
+    // Ensure .cjs extension for CommonJS output
+    outExtension({ format }) {
+      return {
+        js: format === "esm" ? ".mjs" : ".cjs"
+      };
+    }
   },
 ]);

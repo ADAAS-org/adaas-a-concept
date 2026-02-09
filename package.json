@@ -10,14 +10,12 @@
     ".": {
       "browser": "./dist/browser/index.mjs",
       "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.cjs",
-      "types": "./dist/node/index.d.ts"
+      "require": "./dist/node/index.cjs"
     },
     "./env": {
       "browser": "./dist/browser/env.mjs",
       "import": "./dist/node/env.mjs",
-      "require": "./dist/node/env.cjs",
-      "types": "./dist/node/env.d.ts"
+      "require": "./dist/node/env.cjs"
     }
   },
   "author": {
