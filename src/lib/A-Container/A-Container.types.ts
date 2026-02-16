@@ -1,0 +1,92 @@
+import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/a-inject";
+import { A_TYPES__ConceptAbstraction, } from "@adaas/a-concept/a-concept";
+import { A_Meta } from "@adaas/a-concept/a-meta";
+import { A_TYPES__Scope_Init } from "@adaas/a-concept/a-scope";
+import { A_TYPES__ContainerMetaKey } from "./A-Container.constants";
+import { A_Container } from "./A-Container.class";
+import {
+    A_TYPES__FeatureDefineDecoratorMeta,
+    A_TYPES__FeatureExtendDecoratorMeta
+} from "@adaas/a-concept/a-feature";
+import { A_TYPES__Ctor } from "@adaas/a-concept/types";
+
+
+// ============================================================================
+// --------------------------- Primary Types ----------------------------------
+// ============================================================================
+/**
+ * Container constructor type
+ * Uses the generic type T to specify the type of the container
+ */
+export type A_TYPES__Container_Constructor<T = A_Container> = A_TYPES__Ctor<T>;
+/**
+ * Container initialization type
+ */
+export type A_TYPES__Container_Init = {
+    /**
+     * The extra name for the container (optional)
+     */
+    name?: string,
+} & A_TYPES__Scope_Init;
+/**
+ * Container serialized type
+ */
+export type A_TYPES__Container_Serialized = {
+    /**
+     * The ASEID of the container
+     */
+    aseid: string
+};
+
+
+
+// =======================================================================
+// ----------------------- A CONTAINER META-------------------------------
+// =======================================================================
+/**
+ * Meta information stored in each Container
+ */
+export type A_TYPES__ContainerMeta = {
+    /**
+     * Extensions applied to the component per handler
+     */
+    [A_TYPES__ContainerMetaKey.EXTENSIONS]: A_Meta<{
+        /**
+         * Where Key the regexp for what to apply the extension
+         * A set of container names or a wildcard, or a regexp
+         * 
+         *
+         * Where value is the extension instructions
+         */
+        [Key: string]: A_TYPES__FeatureExtendDecoratorMeta[]
+    }>,
+    [A_TYPES__ContainerMetaKey.FEATURES]: A_Meta<{
+        /**
+         * Where Key is the name of the feature
+         * 
+         * Where value is the list of features
+         */
+        [Key: string]: A_TYPES__FeatureDefineDecoratorMeta
+    }>
+    [A_TYPES__ContainerMetaKey.ABSTRACTIONS]: A_Meta<{
+        /**
+         * Where Key the regexp for what to apply the extension
+         * A set of container names or a wildcard, or a regexp
+         * 
+         *
+         * Where value is the extension instructions
+         */
+        [Key: string]: A_TYPES__ConceptAbstraction[]
+    }>,
+    [A_TYPES__ContainerMetaKey.INJECTIONS]: A_Meta<{
+        /**
+         * Where Key is the name of the injection
+         * 
+         * Where value is the list of injections
+         */
+        [Key: string]: A_TYPES__A_InjectDecorator_Meta
+    }>
+}
+
+
+export type A_TYPES__ContainerMetaExtension = A_TYPES__FeatureExtendDecoratorMeta

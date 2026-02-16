@@ -1,4 +1,4 @@
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_TYPES__ConceptENVVariables } from "../constants/env.constants";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_TYPES__ConceptENVVariables } from "@adaas/a-concept/types";
 import type { RuntimeEnv } from "./env.base";
 
 

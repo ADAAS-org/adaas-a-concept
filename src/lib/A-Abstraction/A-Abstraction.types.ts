@@ -1,0 +1,68 @@
+import { A_TYPES__Ctor } from "@adaas/a-concept/types";
+import { A_Component } from "@adaas/a-concept/a-component";
+import { A_TYPES__ConceptAbstractions } from "@adaas/a-concept/a-concept";
+import { A_Container } from "@adaas/a-concept/a-container";
+import { A_TYPES__FeatureExtendDecoratorConfig } from "@adaas/a-concept/a-feature";
+import { A_Abstraction } from "./A-Abstraction.class";
+
+
+// ============================================================================
+// --------------------------- Primary Types ----------------------------------
+// ============================================================================
+/**
+ * Abstraction constructor type
+ * Uses the generic type T to specify the type of the abstraction
+ */
+export type A_TYPES__Abstraction_Constructor<T = A_Abstraction> = A_TYPES__Ctor<T>;
+/**
+ * Abstraction initialization type
+ */
+export type A_TYPES__Abstraction_Init = {
+    /**
+     * Name of the A-Abstraction
+     */
+    name: A_TYPES__ConceptAbstractions,
+    /**
+     * Features that compose the A-Abstraction
+     */
+    containers: Array<A_Container>
+};
+/**
+ * Abstraction serialized type
+ */
+export type A_TYPES__Abstraction_Serialized = {
+    /**
+     * The ASEID of the abstraction
+     */
+    aseid: string
+};
+
+
+
+/**
+ * Components that can extend Abstractions
+ */
+export type A_TYPES__AbstractionAvailableComponents = A_Component
+    | A_Container
+
+
+// ===========================================================================
+// --------------------------- Decorator Types -------------------------------
+// ===========================================================================
+
+export type A_TYPES__AbstractionDecoratorDescriptor =
+
+    TypedPropertyDescriptor<() => any>
+    |
+    TypedPropertyDescriptor<(
+        ...args: any[]
+    ) => any>
+    |
+    TypedPropertyDescriptor<(
+        ...args: any[]
+    ) => Promise<any>>
+    |
+    TypedPropertyDescriptor<() => Promise<any>>
+
+
+export type A_TYPES__AbstractionDecoratorConfig = A_TYPES__FeatureExtendDecoratorConfig

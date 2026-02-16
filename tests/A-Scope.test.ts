@@ -1,13 +1,14 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
-import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
-import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
-import { A_Fragment } from '@adaas/a-concept/global/A-Fragment/A-Fragment.class';
-import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
-import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
-import { A_Dependency, A_Error } from '../src';
+import { A_Component } from "@adaas/a-concept/a-component";
+import { A_Concept } from '@adaas/a-concept/a-concept';
+import { A_Container } from '@adaas/a-concept/a-container';
+import { A_Context } from '@adaas/a-concept/a-context';
+import { A_Entity } from "@adaas/a-concept/a-entity";
+import { A_Feature } from '@adaas/a-concept/a-feature';
+import { A_Fragment } from '@adaas/a-concept/a-fragment'
+import { A_Scope } from "@adaas/a-concept/a-scope";
+import { ASEID } from '@adaas/a-concept/aseid';
+import { A_Dependency } from "@adaas/a-concept/a-dependency";
+import { A_Error } from "@adaas/a-concept/a-error";
 
 jest.retryTimes(0);
 

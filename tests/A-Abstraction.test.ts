@@ -1,9 +1,9 @@
-import { A_Component } from '@adaas/a-concept/global/A-Component/A-Component.class';
-import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
-import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { A_Inject } from '@adaas/a-concept/global/A-Inject/A-Inject.decorator';
-import { A_Feature } from '@adaas/a-concept/global/A-Feature/A-Feature.class';
+import { A_Component } from '@adaas/a-concept/a-component';
+import { A_Concept } from '@adaas/a-concept/a-concept';
+import { A_Container } from '@adaas/a-concept/a-container';
+import { A_Context } from '@adaas/a-concept/a-context';
+import { A_Inject } from '@adaas/a-concept/a-inject';
+import { A_Feature } from '@adaas/a-concept/a-feature';
 
 jest.retryTimes(0);
 

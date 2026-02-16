@@ -3,21 +3,6 @@
   "version": "0.2.14",
   "description": "A-Concept is a framework of the new generation that is tailored to use AI, enabling developers to create AI-powered applications with ease. It provides a structured approach to building, managing, and deploying AI-driven solutions.",
   "license": "Apache-2.0",
-  "main": "./dist/node/index.cjs",
-  "module": "./dist/node/index.mjs",
-  "types": "./dist/node/index.d.ts",
-  "exports": {
-    ".": {
-      "browser": "./dist/browser/index.mjs",
-      "import": "./dist/node/index.mjs",
-      "require": "./dist/node/index.cjs"
-    },
-    "./env": {
-      "browser": "./dist/browser/env.mjs",
-      "import": "./dist/node/env.mjs",
-      "require": "./dist/node/env.cjs"
-    }
-  },
   "author": {
     "name": "ADAAS YAZILIM LİMİTED ŞİRKETİ",
     "email": "contact-us@adaas.org"
@@ -34,6 +19,24 @@
   ],
   "bugs": {
     "url": "https://github.com/ADAAS-org/adaas-a-concept/issues"
+  },
+  "exports": {
+    ".": {
+      "browser": {
+        "types": "./dist/browser/index.d.mts",
+        "import": "./dist/browser/index.mjs"
+      },
+      "node": {
+        "types": "./dist/node/index.d.ts",
+        "import": "./dist/node/index.mjs",
+        "require": "./dist/node/index.cjs"
+      },
+      "default": {
+        "types": "./dist/node/index.d.ts",
+        "import": "./dist/node/index.mjs",
+        "require": "./dist/node/index.cjs"
+      }
+    }
   },
   "sideEffects": false,
   "nodemonConfig": {

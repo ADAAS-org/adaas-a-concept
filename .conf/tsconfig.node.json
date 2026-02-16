@@ -1,0 +1,40 @@
+{
+   "extends": "./tsconfig.base.json",
+   "compilerOptions": {
+      "rootDir": "../",
+      "outDir": "dist/node",
+      "baseUrl": "../",
+      
+      "paths": {
+          "@adaas/a-concept/constants/*": ["src/constants/*"],
+         "@adaas/a-concept/utils/*": ["src/utils/*"],
+         "@adaas/a-concept/helpers/*": ["src/helpers/*"],
+         "@adaas/a-concept/types": ["src/types"],
+         "@adaas/a-concept/env": ["src/env/index.node.ts"],
+         
+
+         "@adaas/a-concept/a-abstraction": ["src/lib/A-Abstraction"],
+         "@adaas/a-concept/a-caller": ["src/lib/A-Caller"],
+         "@adaas/a-concept/a-component": ["src/lib/A-Component"],
+         "@adaas/a-concept/a-concept": ["src/lib/A-Concept"],
+         "@adaas/a-concept/a-container": ["src/lib/A-Container"],
+         "@adaas/a-concept/a-context": ["src/lib/A-Context"],
+         "@adaas/a-concept/a-dependency": ["src/lib/A-Dependency"],
+         "@adaas/a-concept/a-entity": ["src/lib/A-Entity"],
+         "@adaas/a-concept/a-error": ["src/lib/A-Error"],
+         "@adaas/a-concept/a-feature": ["src/lib/A-Feature"],
+         "@adaas/a-concept/a-fragment": ["src/lib/A-Fragment"],
+         "@adaas/a-concept/a-inject": ["src/lib/A-Inject"],
+         "@adaas/a-concept/a-meta": ["src/lib/A-Meta"],
+         "@adaas/a-concept/a-scope": ["src/lib/A-Scope"],
+         "@adaas/a-concept/a-stage": ["src/lib/A-Stage"],
+         "@adaas/a-concept/a-step-manager": ["src/lib/A-StepManager"],
+         "@adaas/a-concept/aseid": ["src/lib/ASEID"],
+
+      },
+
+      "types": [
+         "node"
+      ],
+   },
+}

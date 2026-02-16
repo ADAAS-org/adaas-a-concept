@@ -1,4 +1,9 @@
-import { A_Component, A_Dependency, A_Entity, A_Error, A_Feature, A_FeatureError, A_Inject, A_Scope, A_ScopeError } from "../src";
+import { A_Component } from "@adaas/a-concept/a-component";
+import { A_Dependency } from "@adaas/a-concept/a-dependency";
+import { A_Entity } from "@adaas/a-concept/a-entity";
+import { A_Feature, A_FeatureError } from "@adaas/a-concept/a-feature";
+import { A_Inject } from "@adaas/a-concept/a-inject";
+import { A_Scope, A_ScopeError } from "@adaas/a-concept/a-scope";
 
 
 

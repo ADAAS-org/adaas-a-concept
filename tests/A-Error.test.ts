@@ -1,8 +1,11 @@
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
-import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_Error } from "@adaas/a-concept/global/A-Error/A_Error.class";
-import { A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION } from "@adaas/a-concept/global/A-Error/A_Error.constants";
-import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { A_Context } from "@adaas/a-concept/a-context";
+import {
+    A_Error,
+    A_CONSTANTS__ERROR_CODES, 
+    A_CONSTANTS__ERROR_DESCRIPTION
+} from "@adaas/a-concept/a-error";
+import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
 
 jest.retryTimes(0);
 

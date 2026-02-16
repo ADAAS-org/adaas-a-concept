@@ -1,4 +1,4 @@
-import { A_TYPES__DeepPartial } from "../types/A_Common.types";
+import { A_TYPES__DeepPartial } from "@adaas/a-concept/types";
 
 export class A_CommonHelper {
 
@@ -312,7 +312,7 @@ export class A_CommonHelper {
             if (fnAny.displayName) return String(fnAny.displayName);
             if (fnAny.name) return String(fnAny.name);
 
-            if(fnAny.constructor && fnAny.constructor.name) {
+            if (fnAny.constructor && fnAny.constructor.name) {
                 return String(fnAny.constructor.name);
             }
 

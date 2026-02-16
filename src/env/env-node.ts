@@ -1,5 +1,5 @@
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "../constants/env.constants";
-import { A_TYPES__ContextEnvironment } from "../global/A-Context/A-Context.types";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
+import { A_TYPES__ContextEnvironment } from "@adaas/a-concept/a-context";
 import { A_CONCEPT_BASE_ENV } from "./env.base";
 
 export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {

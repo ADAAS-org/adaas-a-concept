@@ -1,6 +1,7 @@
-import { A_Container } from '@adaas/a-concept/global/A-Container/A-Container.class';
-import { A_Scope } from '@adaas/a-concept/global/A-Scope/A-Scope.class';
-import { A_Concept, A_Feature } from '../src';
+import { A_Concept } from '@adaas/a-concept/a-concept';
+import { A_Container } from '@adaas/a-concept/a-container';
+import { A_Feature } from '@adaas/a-concept/a-feature';
+import { A_Scope } from '@adaas/a-concept/a-scope';
 
 
 describe('A-Container tests', () => {

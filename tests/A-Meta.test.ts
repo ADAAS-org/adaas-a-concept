@@ -1,12 +1,14 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_TYPES__ComponentMetaKey } from "@adaas/a-concept/global/A-Component/A-Component.constants";
-import { A_ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.meta";
-import { A_Concept } from "@adaas/a-concept/global/A-Concept/A-Concept.class";
-import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
-import { A_Meta } from "@adaas/a-concept/global/A-Meta/A-Meta.class";
-import { A_Inject } from "@adaas/a-concept/global/A-Inject/A-Inject.decorator";
-import { A_TYPES__ComponentMeta } from "@adaas/a-concept/global/A-Component/A-Component.types";
+import {
+    A_Component,
+    A_ComponentMeta,
+    A_TYPES__ComponentMeta,
+    A_TYPES__ComponentMetaKey
+} from "@adaas/a-concept/a-component";
+import { A_Concept } from "@adaas/a-concept/a-concept";
+import { A_Context } from "@adaas/a-concept/a-context";
+import { A_Feature } from "@adaas/a-concept/a-feature";
+import { A_Meta } from "@adaas/a-concept/a-meta";
+import { A_Inject } from "@adaas/a-concept/a-inject";
 
 jest.retryTimes(0);
 
@@ -144,7 +146,7 @@ describe('A-Meta tests', () => {
         @A_Meta.Define(CustomComponentMeta)
         class CustomComponent extends A_Component {
 
-            static Test(){
+            static Test() {
 
             }
 

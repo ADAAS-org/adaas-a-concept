@@ -1,9 +1,11 @@
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
-import { A_Context } from "@adaas/a-concept/global/A-Context/A-Context.class";
-import { A_Entity } from "@adaas/a-concept/global/A-Entity/A-Entity.class";
-import { A_TYPES__Entity_Serialized } from '@adaas/a-concept/global/A-Entity/A-Entity.types';
-import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
-import { ASEID } from '@adaas/a-concept/global/ASEID/ASEID.class';
+import { A_Context } from "@adaas/a-concept/a-context";
+import {
+    A_Entity,
+    A_TYPES__Entity_Serialized
+} from "@adaas/a-concept/a-entity";
+import { A_Feature } from "@adaas/a-concept/a-feature";
+import { ASEID } from '@adaas/a-concept/aseid';
 
 jest.retryTimes(0);
 

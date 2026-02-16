@@ -1,36 +1,51 @@
+import { A_CommonHelper } from "./A_Common.helper";
 import {
     A_TYPES__Feature_Constructor,
     A_TYPES__FeatureAvailableComponents,
     A_TYPES__FeatureExtendDecoratorTarget
-} from "../global/A-Feature/A-Feature.types";
+} from "@adaas/a-concept/a-feature";
 import {
     A_TYPES__Error_Constructor,
     A_TYPES__Error_Init,
     A_TYPES__Error_Serialized
-} from "../global/A-Error/A_Error.types";
-import { A_Component } from "../global/A-Component/A-Component.class";
-import { A_ComponentMeta } from "../global/A-Component/A-Component.meta";
-import { A_TYPES__Component_Constructor } from "../global/A-Component/A-Component.types";
-import { A_Container } from "../global/A-Container/A-Container.class";
-import { A_ContainerMeta } from "../global/A-Container/A-Container.meta";
-import { A_TYPES__Container_Constructor } from "../global/A-Container/A-Container.types";
-import { A_Entity } from "../global/A-Entity/A-Entity.class";
-import { A_EntityMeta } from "../global/A-Entity/A-Entity.meta";
-import { A_TYPES__Entity_Constructor } from "../global/A-Entity/A-Entity.types";
-import { A_Feature } from "../global/A-Feature/A-Feature.class";
-import { A_Fragment } from "../global/A-Fragment/A-Fragment.class";
-import { A_TYPES__Fragment_Constructor } from "../global/A-Fragment/A-Fragment.types";
-import { A_Scope } from "../global/A-Scope/A-Scope.class";
-import { A_Caller } from "../global/A-Caller/A_Caller.class";
-import { A_TYPES__Caller_Constructor } from "../global/A-Caller/A_Caller.types";
-import { A_Error } from "../global/A-Error/A_Error.class";
-import { A_CommonHelper } from "./A_Common.helper";
-import { A_TYPES__AbstractionAvailableComponents } from "../global/A-Abstraction/A-Abstraction.types";
-import { A_TYPES__Scope_Constructor, A_TYPES__ScopeLinkedComponents, A_TYPES__ScopeLinkedConstructors } from "../global/A-Scope/A-Scope.types";
-import { A_TYPES__InjectableTargets } from "../global/A-Inject/A-Inject.types";
-import { ASEID } from "../global/ASEID/ASEID.class";
-import { A_Dependency } from "../global/A-Dependency/A-Dependency.class";
-import { A_TYPES__A_DependencyInjectable } from "../global/A-Dependency/A-Dependency.types";
+} from "@adaas/a-concept/a-error";
+import {
+    A_Component,
+    A_ComponentMeta,
+    A_TYPES__Component_Constructor
+} from "@adaas/a-concept/a-component";
+import {
+    A_Container,
+    A_ContainerMeta,
+    A_TYPES__Container_Constructor
+} from "@adaas/a-concept/a-container";
+import {
+    A_Entity,
+    A_EntityMeta,
+    A_TYPES__Entity_Constructor
+} from "@adaas/a-concept/a-entity";
+import { A_Feature } from "@adaas/a-concept/a-feature";
+import {
+    A_TYPES__Fragment_Constructor,
+    A_Fragment
+} from "@adaas/a-concept/a-fragment";
+import {
+    A_Scope,
+    A_TYPES__Scope_Constructor,
+    A_TYPES__ScopeLinkedComponents,
+    A_TYPES__ScopeLinkedConstructors
+} from "@adaas/a-concept/a-scope";
+import {
+    A_Caller,
+    A_TYPES__Caller_Constructor
+} from "@adaas/a-concept/a-caller";
+import { A_TYPES__AbstractionAvailableComponents } from "@adaas/a-concept/a-abstraction";
+import { A_TYPES__InjectableTargets } from "@adaas/a-concept/a-inject";
+import { ASEID } from "@adaas/a-concept/aseid";
+import {
+    A_Dependency,
+    A_TYPES__A_DependencyInjectable
+} from "@adaas/a-concept/a-dependency";
 
 
 
@@ -157,7 +172,7 @@ export class A_TypeGuards {
      * @returns 
      */
     static isErrorConstructor(ctor: any): ctor is A_TYPES__Error_Constructor {
-        return typeof ctor === 'function' && A_CommonHelper.isInheritedFrom(ctor, A_Error);
+        return typeof ctor === 'function' && A_CommonHelper.isInheritedFrom(ctor, Error);
     }
     /**
      * Type guard to check if the constructor is of type A_Feature
@@ -259,8 +274,8 @@ export class A_TypeGuards {
      * @param instance 
      * @returns 
      */
-    static isErrorInstance(instance: any): instance is A_Error {
-        return instance instanceof A_Error;
+    static isErrorInstance(instance: any): boolean {
+        return instance instanceof Error;
     }
     /**
      * Type guard to check if the instance is of type A_ComponentMeta
@@ -295,8 +310,8 @@ export class A_TypeGuards {
     // ==========================================================================
     // ========================= SPECIAL Type Guards =============================
     // ===========================================================================
-    static hasASEID(value: any): value is A_Entity | A_Error {
-        return value && typeof value === 'object' && 'aseid' && (A_TypeGuards.isEntityInstance(value) || A_TypeGuards.isErrorInstance(value));
+    static hasASEID(value: any): value is A_Entity | { aseid: any } {
+        return value && typeof value === 'object' && 'aseid' in value && (A_TypeGuards.isEntityInstance(value) || A_TypeGuards.isErrorInstance(value));
     }
 
 

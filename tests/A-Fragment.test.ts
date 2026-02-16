@@ -1,5 +1,4 @@
-import { A_Fragment } from "@adaas/a-concept/global/A-Fragment/A-Fragment.class";
-import { A_Scope } from "../src";
+import { A_Fragment } from "@adaas/a-concept/a-fragment";
 
 jest.retryTimes(0);
 

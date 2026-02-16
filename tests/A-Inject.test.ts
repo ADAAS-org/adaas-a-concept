@@ -1,4 +1,7 @@
-import { A_Component, A_Error, A_Inject, A_Scope } from "../src";
+import { A_Component } from "@adaas/a-concept/a-component";
+import { A_Error } from "@adaas/a-concept/a-error";
+import { A_Inject } from "@adaas/a-concept/a-inject";
+import { A_Scope } from "@adaas/a-concept/a-scope";
 
 jest.retryTimes(0);
 

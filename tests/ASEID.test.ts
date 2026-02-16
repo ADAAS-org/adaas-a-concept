@@ -1,6 +1,6 @@
 import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { ASEID } from "@adaas/a-concept/global/ASEID/ASEID.class";
+import { A_Context } from '@adaas/a-concept/a-context';
+import { ASEID } from "@adaas/a-concept/aseid";
 
 jest.retryTimes(0);
 

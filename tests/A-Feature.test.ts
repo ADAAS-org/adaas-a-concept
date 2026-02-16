@@ -1,11 +1,15 @@
-import { A_Inject } from "@adaas/a-concept/global/A-Inject/A-Inject.decorator";
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Feature } from "@adaas/a-concept/global/A-Feature/A-Feature.class";
-import { A_Scope } from "@adaas/a-concept/global/A-Scope/A-Scope.class";
-import { A_Caller } from '@adaas/a-concept/global/A-Caller/A_Caller.class';
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
-import { A_Dependency, A_Entity, A_Error, A_TYPES__FeatureState } from "../src";
+import { A_Inject } from "@adaas/a-concept/a-inject";
+import {
+    A_Component,
+    A_TYPES__ComponentMetaKey
+} from "@adaas/a-concept/a-component";
+import { A_Feature, A_TYPES__FeatureState } from "@adaas/a-concept/a-feature";
+import { A_Scope } from "@adaas/a-concept/a-scope";
+import { A_Caller } from '@adaas/a-concept/a-caller';
+import { A_Context } from '@adaas/a-concept/a-context';
+import { A_Dependency } from "@adaas/a-concept/a-dependency";
+import { A_Error } from "@adaas/a-concept/a-error";
+import { A_Entity } from "@adaas/a-concept/a-entity";
 
 jest.retryTimes(0);
 

@@ -1,8 +1,6 @@
+import { A_ID_TYPES__TimeId_Parts } from "@adaas/a-concept/types";
 
-export type A_ID_TYPES__TimeId_Parts = {
-    timestamp: Date;
-    random: string;
-}
+
 
 
 export class A_IdentityHelper {

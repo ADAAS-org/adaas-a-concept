@@ -1,8 +1,10 @@
-import { A_Inject } from '@adaas/a-concept/global/A-Inject/A-Inject.decorator';
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import { A_Concept } from '@adaas/a-concept/global/A-Concept/A-Concept.class';
-import { A_TYPES__ComponentMetaKey } from '@adaas/a-concept/global/A-Component/A-Component.constants';
+import { A_Inject } from '@adaas/a-concept/a-inject';
+import {
+    A_Component,
+    A_TYPES__ComponentMetaKey
+} from "@adaas/a-concept/a-component";
+import { A_Context } from '@adaas/a-concept/a-context';
+import { A_Concept } from '@adaas/a-concept/a-concept';
 
 jest.retryTimes(0);
 

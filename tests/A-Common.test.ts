@@ -1,7 +1,9 @@
-import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
-import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
-import { A_TYPES__DeepPartial } from "@adaas/a-concept/types/A_Common.types";
-import { A_FormatterHelper } from "../src";
+import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { A_CommonHelper} from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_IdentityHelper} from "@adaas/a-concept/helpers/A_Identity.helper";
+import { A_BasicTypeGuards} from "@adaas/a-concept/helpers/A_BasicTypeGuards.helper";
+import { A_TYPES__DeepPartial } from "@adaas/a-concept/types";
 jest.retryTimes(0);
 
 describe('A-Common Tests', () => {

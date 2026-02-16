@@ -1,99 +1,61 @@
 {
-  "$schema": "https://json.schemastore.org/tsconfig",
+   "extends": "./.conf/tsconfig.base.json",
 
-  "compileOnSave": false,
+   "compilerOptions": {
+      "rootDir": "./",
+      "baseUrl": ".",
+      /* ===============================
+         Internal aliases (DEV ONLY)
+         =============================== */
+      "paths": {
+         "@adaas/a-concept/constants/*": ["src/constants/*"],
+         "@adaas/a-concept/utils/*": ["src/utils/*"],
+         "@adaas/a-concept/helpers/*": ["src/helpers/*"],
+         "@adaas/a-concept/types": ["src/types"],
+         "@adaas/a-concept/env": ["src/env/index.node.ts"],
+         
 
-  "compilerOptions": {
-    "useDefineForClassFields": false,
+         "@adaas/a-concept/a-abstraction": ["src/lib/A-Abstraction"],
+         "@adaas/a-concept/a-caller": ["src/lib/A-Caller"],
+         "@adaas/a-concept/a-component": ["src/lib/A-Component"],
+         "@adaas/a-concept/a-concept": ["src/lib/A-Concept"],
+         "@adaas/a-concept/a-container": ["src/lib/A-Container"],
+         "@adaas/a-concept/a-context": ["src/lib/A-Context"],
+         "@adaas/a-concept/a-dependency": ["src/lib/A-Dependency"],
+         "@adaas/a-concept/a-entity": ["src/lib/A-Entity"],
+         "@adaas/a-concept/a-error": ["src/lib/A-Error"],
+         "@adaas/a-concept/a-feature": ["src/lib/A-Feature"],
+         "@adaas/a-concept/a-fragment": ["src/lib/A-Fragment"],
+         "@adaas/a-concept/a-inject": ["src/lib/A-Inject"],
+         "@adaas/a-concept/a-meta": ["src/lib/A-Meta"],
+         "@adaas/a-concept/a-scope": ["src/lib/A-Scope"],
+         "@adaas/a-concept/a-stage": ["src/lib/A-Stage"],
+         "@adaas/a-concept/a-step-manager": ["src/lib/A-StepManager"],
+         "@adaas/a-concept/aseid": ["src/lib/ASEID"],
 
-    /* ===============================
-       Output (tsup controls formats)
-       =============================== */
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
+      },
 
-    /* ===============================
-       Language & runtime
-       =============================== */
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
+      /* ===============================
+         Types
+         =============================== */
+      "types": [
+         "node",
+         "jest",
+         "mocha",
+      ],
+      "typeRoots": ["node_modules/@types"]
+   },
 
-    /* ===============================
-       Module system (CRITICAL)
-       =============================== */
-    "module": "nodenext",
-    "moduleResolution": "NodeNext",
+   "include": [
+      "src/**/*",
+      "tests/**/*",
+      "examples/**/*.ts",
+      "src/index.ts",
+      "src/env/global.browser.d.ts"
+   ],
 
-    /* ===============================
-       Interop
-       =============================== */
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true,
-
-    /* ===============================
-       Type safety
-       =============================== */
-    "strict": true,
-    "noImplicitAny": false,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "noFallthroughCasesInSwitch": true,
-
-    /* ===============================
-       Developer experience
-       =============================== */
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "noErrorTruncation": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-
-    /* ===============================
-       Decorators (if used)
-       =============================== */
-    "experimentalDecorators": true,
-
-    /* ===============================
-       Internal aliases (DEV ONLY)
-       =============================== */
-    "baseUrl": ".",
-    "paths": {
-      "@adaas/a-concept/constants/*": ["src/constants/*"],
-      "@adaas/a-concept/global/*": ["src/global/*"],
-      "@adaas/a-concept/types/*": ["src/types/*"],
-      "@adaas/a-concept/helpers/*": ["src/helpers/*"],
-      "@adaas/a-concept/decorators/*": ["src/decorators/*"],
-      "@adaas/a-concept/utils/*": ["src/utils/*"],
-
-      /* DEV-only override to utils source */
-      "@adaas/a-concept/env": ["src/env/index.node.ts"],
-    },
-
-    /* ===============================
-       Types
-       =============================== */
-    "types": [
-      "node",
-      "jest",
-      "mocha",
-    ],
-    "typeRoots": ["node_modules/@types"]
-  },
-
-  "include": [
-    "src/**/*",
-    "tests/**/*",
-    "examples/**/*.ts",
-    "src/index.ts",
-    "src/env/global.browser.d.ts"
-  ],
-
-  "exclude": [
-    "node_modules",
-    "dist",
-  ]
+   "exclude": [
+      "node_modules",
+      "dist",
+   ]
 }

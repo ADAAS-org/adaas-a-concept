@@ -18,15 +18,14 @@ export default defineConfig([
     entry: {
       // Public library entry
       index: "src/index.ts",
-
-      // Public env entry (browser implementation)
-      env: "src/env/index.browser.ts",
     },
+
+    tsconfig: "./.conf/tsconfig.browser.json", // Separate tsconfig for browser build
 
     // Output directory for browser bundle
     outDir: "dist/browser",
 
-    bundle: false, // Bundle for browser consumption
+    bundle: true, // Bundle for browser consumption
 
     // Browser consumers expect ESM
     format: ["esm"],
@@ -71,15 +70,16 @@ export default defineConfig([
     entry: {
       // Same public API as browser
       index: "src/index.ts",
-
-      // Node-specific env implementation
-      env: "src/env/index.node.ts",
     },
+
+    tsconfig: "./.conf/tsconfig.node.json", // Separate tsconfig for node build
+
+    splitting: true, // Disable code splitting for Node build
 
     // Output directory for node bundle
     outDir: "dist/node",
 
-    bundle: false, // Don't bundle node build, keep imports as-is
+    bundle: true, // Don't bundle node build, keep imports as-is
 
     // Support both module systems
     format: ["esm", "cjs"],

@@ -1,0 +1,5 @@
+export { A_Scope } from './A-Scope.class'
+// export { A_ScopeMeta } from './A-Scope.meta'
+export { A_ScopeError } from './A-Scope.error'
+export * from './A-Scope.types'
+// export * from './A-Scope.constants'

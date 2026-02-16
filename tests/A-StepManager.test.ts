@@ -1,6 +1,6 @@
-import { A_Component } from "@adaas/a-concept/global/A-Component/A-Component.class";
-import { A_Dependency } from "@adaas/a-concept/global/A-Dependency/A-Dependency.class";
-import { A_StepsManager } from "@adaas/a-concept/global/A-StepManager/A-StepManager.class";
+import { A_Component } from "@adaas/a-concept/a-component";
+import { A_Dependency } from "@adaas/a-concept/a-dependency";
+import { A_StepsManager } from "@adaas/a-concept/a-step-manager";
 
 describe('A-StepManager tests', () => {
     it('Should Allow to create a step manager', async () => {

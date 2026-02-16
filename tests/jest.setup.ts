@@ -1,30 +1,30 @@
-import { A_Context } from '@adaas/a-concept/global/A-Context/A-Context.class';
-import fs from 'fs';
+// import { A_Context } from '@adaas/a-concept/a-context';
+// import fs from 'fs';
 
-/**
- * Base hooks for tests
- */
-beforeAll(async () => {
+// /**
+//  * Base hooks for tests
+//  */
+// beforeAll(async () => {
 
-    return Promise.resolve();
-});
+//     return Promise.resolve();
+// });
 
-afterAll(async () => {
-    try {
-        fs.unlinkSync('a-concept.conf.json');
+// afterAll(async () => {
+//     try {
+//         fs.unlinkSync('a-concept.conf.json');
 
-    } catch (error) {
+//     } catch (error) {
 
-    }
-    return Promise.resolve();
-});
+//     }
+//     return Promise.resolve();
+// });
 
-beforeEach(async () => {
-    A_Context.reset();
-    return Promise.resolve();
-});
+// beforeEach(async () => {
+//     A_Context.reset();
+//     return Promise.resolve();
+// });
 
-afterEach(async () => {
-    A_Context.reset();
-    return Promise.resolve();
-});
+// afterEach(async () => {
+//     A_Context.reset();
+//     return Promise.resolve();
+// });

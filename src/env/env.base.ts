@@ -1,4 +1,4 @@
-import { A_TYPES__ContextEnvironment } from "../global/A-Context/A-Context.types";
+import { A_TYPES__ContextEnvironment } from "@adaas/a-concept/a-context";
 
 export class A_CONCEPT_BASE_ENV {
   // ----------------------------------------------------------
