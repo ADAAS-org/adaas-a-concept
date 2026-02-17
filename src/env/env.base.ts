@@ -1,4 +1,5 @@
 import { A_TYPES__ContextEnvironment } from "@adaas/a-concept/a-context";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "../constants/env.constants";
 
 export class A_CONCEPT_BASE_ENV {
   // ----------------------------------------------------------
@@ -71,6 +72,24 @@ export class A_CONCEPT_BASE_ENV {
    */
   static set(name: string, value: string) {
     (this as any)[name] = value;
+  }
+
+  /**
+   * This method returns all the environment variables that are available in the application. It combines the variables from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+   * 
+   * @returns 
+   */
+  static getAll<T extends Record<string, any>>(): T {
+    return {} as T;
+  }
+
+  /**
+   * This method returns all the keys of the environment variables that are available in the application. It combines the keys from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+   * 
+   * @returns 
+   */
+  static getAllKeys<T extends Array<string>>(): T {
+    return [] as any as T;
   }
 
 } 

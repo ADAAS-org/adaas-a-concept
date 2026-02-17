@@ -1,5 +1,6 @@
 import { A_TYPES__ContextEnvironment } from "@adaas/a-concept/a-context";
 import { A_CONCEPT_BASE_ENV } from "./env.base";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "../constants/env.constants";
 
 
 export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
@@ -29,5 +30,41 @@ export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
             window.__A_CONCEPT_ENVIRONMENT_ENV__ = {};
         }
         window.__A_CONCEPT_ENVIRONMENT_ENV__[name] = value;
+    }
+
+    static getAll<T extends Record<string, string>>(): T {
+        const allEnv: Record<string, string> = {};
+
+        // Get all environment variables from the window object
+        if (window.__A_CONCEPT_ENVIRONMENT_ENV__) {
+            Object.keys(window.__A_CONCEPT_ENVIRONMENT_ENV__).forEach(key => {
+                allEnv[key] = window.__A_CONCEPT_ENVIRONMENT_ENV__![key];
+            });
+        }
+
+        // Get all default environment variables from the class
+        A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.forEach(variable => {
+            allEnv[variable] = this.get(variable) as string;
+        });
+
+        return allEnv as T;
+    }
+
+    static getAllKeys<T extends Array<string>>(): T {
+        const keys = new Set<string>();
+
+        // Get all keys from the window object
+        if (window.__A_CONCEPT_ENVIRONMENT_ENV__) {
+            Object.keys(window.__A_CONCEPT_ENVIRONMENT_ENV__).forEach(key => {
+                keys.add(key);
+            });
+        }
+
+        // Get all default environment variable keys from the class
+        A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.forEach(variable => {
+            keys.add(variable);
+        });
+
+        return Array.from(keys) as T;
     }
 };

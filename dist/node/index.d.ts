@@ -2449,6 +2449,52 @@ declare class A_InjectError extends A_Error {
 }
 
 /**
+ * Concept constructor type
+ * Uses the generic type T to specify the type of the concept
+ */
+type A_TYPES__Concept_Constructor<T = A_Concept> = A_TYPES__Ctor<T>;
+/**
+ * Concept initialization type
+ * Uses the generic type T to specify the type of containers that the concept will use
+ */
+type A_TYPES__Concept_Init<T extends Array<A_Container>> = {
+    /**
+     * The name of the Concept
+     * If name is not provided, will be used from environment variable A_CONCEPT_NAME
+     *
+     * By default, the name of the Concept is 'a-concept'
+     *
+     */
+    name?: string;
+    /**
+     * A set of Context Fragments to register globally for the concept.
+     * These fragments will be available in the global context.
+     *
+     */
+    fragments?: Array<InstanceType<A_TYPES__Fragment_Constructor>>;
+    /**
+     * A set of Containers that the concept depends on.
+     * These containers will create a new Container for the concept.
+     */
+    containers?: T;
+    /**
+     * A set of Entities that the concept can use.
+     * These components will be used in the concept.
+     */
+    entities?: Array<InstanceType<A_TYPES__Entity_Constructor> | A_TYPES__Entity_Constructor>;
+    /**
+     * A set of Components available for all containers and fragments in the concept.
+     * These components will be registered in the root scope of the concept.
+     *
+     * [!] Note that these components will be available in all containers and fragments in the concept.
+     */
+    components?: Array<A_TYPES__Component_Constructor>;
+};
+/**
+ * Concept serialized type
+ */
+type A_TYPES__Concept_Serialized = {};
+/**
  * Uses as a transfer object to pass configurations to Feature constructor
  */
 type A_TYPES__ConceptAbstractionMeta = {
@@ -2461,6 +2507,160 @@ type A_TYPES__ConceptAbstractionMeta = {
  * Uses to define the extension that will be applied to the Concept
  */
 type A_TYPES__ConceptAbstraction = A_TYPES__FeatureExtendDecoratorMeta;
+
+declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
+    protected props: A_TYPES__Concept_Init<_Imports>;
+    /**
+     * Load the concept. This step runs before any other steps to ensure that all components are loaded.
+     */
+    static Load(
+    /**
+     * provide additional configuration for the abstraction extension to make it dependent on other factors
+     */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): ReturnType<typeof A_Abstraction_Extend>;
+    /**
+     * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
+     *
+     * [!] To extend the logic just create a custom containers and override the default behavior.
+     */
+    static Publish(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): ReturnType<typeof A_Abstraction_Extend>;
+    /**
+     * Deploy the concept to the environment.
+     */
+    static Deploy(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
+     * Compiles the Concept in case there are some containers that require that.
+     *
+     * Can be used for static websites or any other concept that requires a build step.
+     *
+     */
+    static Build(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
+     *  Main execution of the concept.
+     */
+    static Run(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
+     *  Start the concept. Uses for servers or any other background services.
+     */
+    static Start(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
+     * Stop the concept. Uses for servers or any other background services.
+     */
+    static Stop(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
+     * Name of the concept
+     *
+     * By default, the name of the Concept is 'a-concept'
+     */
+    private _name;
+    /**
+     * A list of internally defined containers that the concept uses.
+     */
+    protected _containers: A_Container[];
+    /**
+     * A-Concept is a placeholder for the concept of the any program.
+     *
+     * Concept - could be any Program regardless environment and it's goal.
+     * It could be mobile, web or simple html page.
+     * All depends on Containers and Components installed and provided in the Concept.
+     *
+     *
+     * [!] Concept operates ONLY with all Components and Containers provided to achieve the goal.
+     *
+     *
+     * @param props - Initialization properties for the Concept
+     */
+    constructor(props: A_TYPES__Concept_Init<_Imports>);
+    /**
+     * Name of the concept
+     */
+    get name(): string;
+    /**
+     * The primary Root scope of the concept.
+     */
+    get scope(): A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]>;
+    /**
+     * Register a class or value in the concept scope.
+     */
+    get register(): A_Scope['register'];
+    /**
+     * Resolve a class or value from the concept scope.
+     */
+    get resolve(): A_Scope['resolve'];
+    /**
+     * Load the concept.
+     */
+    load(scope?: A_Scope): Promise<void>;
+    /**
+     * Run the concept.
+     */
+    run(scope?: A_Scope): Promise<void>;
+    /**
+     * Start the concept.
+     *
+     * @param params
+     */
+    start(scope?: A_Scope): Promise<void>;
+    /**
+     * Stop the concept.
+     *
+     * @param params
+     */
+    stop(scope?: A_Scope): Promise<void>;
+    /**
+     * Build the concept.
+     */
+    build(scope?: A_Scope): Promise<void>;
+    /**
+     * Deploy the concept.
+     */
+    deploy(scope?: A_Scope): Promise<void>;
+    /**
+     * Publish the concept.
+     */
+    publish(scope?: A_Scope): Promise<void>;
+    /**
+     * Call the specific method of the concept or included modules.
+     */
+    call<K extends Record<_Imports[number]['name'], string>>(
+    /**
+     * Name of the method to call
+     */
+    method: K[keyof K], 
+    /**
+     * Container in which the method is located
+     */
+    container: _Imports[number]): Promise<void>;
+}
+
+declare class A_ConceptMeta extends A_Meta<any> {
+    private containers;
+    constructor(containers: Array<A_Container>);
+}
 
 declare enum A_TYPES__ConceptAbstractions {
     /**
@@ -2491,6 +2691,9 @@ declare enum A_TYPES__ConceptAbstractions {
      * Stop the concept.
      */
     Stop = "stop"
+}
+declare enum A_TYPES__ConceptMetaKey {
+    LIFECYCLE = "a-component-extensions"
 }
 
 declare enum A_TYPES__ContainerMetaKey {
@@ -4275,6 +4478,18 @@ declare class A_CONCEPT_BASE_ENV {
      * @param value
      */
     static set(name: string, value: string): void;
+    /**
+     * This method returns all the environment variables that are available in the application. It combines the variables from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+     *
+     * @returns
+     */
+    static getAll<T extends Record<string, any>>(): T;
+    /**
+     * This method returns all the keys of the environment variables that are available in the application. It combines the keys from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+     *
+     * @returns
+     */
+    static getAllKeys<T extends Array<string>>(): T;
 }
 
 declare class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
@@ -4313,6 +4528,8 @@ declare class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
     static get A_ERROR_DEFAULT_DESCRIPTION(): string;
     static get(name: string): any;
     static set(name: string, value: string): void;
+    static getAll<T extends Record<string, any>>(): T;
+    static getAllKeys<T extends Array<string>>(): T;
 }
 
 declare class A_CommonHelper {
@@ -4713,4 +4930,42 @@ declare class A_BasicTypeGuards {
     static isScopeInstance(scope: any): boolean;
 }
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES: {
+    /**
+     * Name of the application
+     *
+     * DEFAULT value is 'a-concept'
+     *
+     * [!] Provided name will be used for all aseids in the application by default
+     */
+    readonly A_CONCEPT_NAME: "A_CONCEPT_NAME";
+    /**
+     * Root scope of the application
+     *
+     * DEFAULT value is 'root'
+     *
+     * [!] Provided name will be used for all aseids in the application by default
+     */
+    readonly A_CONCEPT_ROOT_SCOPE: "A_CONCEPT_ROOT_SCOPE";
+    /**
+     * Environment of the application e.g. development, production, staging
+     */
+    readonly A_CONCEPT_ENVIRONMENT: "A_CONCEPT_ENVIRONMENT";
+    /**
+     * Runtime environment of the application e.g. browser, node
+     */
+    readonly A_CONCEPT_RUNTIME_ENVIRONMENT: "A_CONCEPT_RUNTIME_ENVIRONMENT";
+    /**
+     * Root folder of the application
+     * [!] Automatically set by A-Concept when the application starts
+     */
+    readonly A_CONCEPT_ROOT_FOLDER: "A_CONCEPT_ROOT_FOLDER";
+    /**
+     * Allows to define a default error description for errors thrown without a description
+     */
+    readonly A_ERROR_DEFAULT_DESCRIPTION: "A_ERROR_DEFAULT_DESCRIPTION";
+};
+type A_TYPES__ConceptENVVariables = (typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES)[keyof typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES][];
+declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY: readonly ["A_CONCEPT_NAME", "A_CONCEPT_ROOT_SCOPE", "A_CONCEPT_ENVIRONMENT", "A_CONCEPT_RUNTIME_ENVIRONMENT", "A_CONCEPT_ROOT_FOLDER", "A_ERROR_DEFAULT_DESCRIPTION"];
+
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

@@ -45,11 +45,14 @@ export default defineConfig([
     // Emit .d.ts files
     dts: true,
 
-    /**
-     * IMPORTANT:
-     * We do NOT define process.env here.
-     * Browser env must never reference process at all.
-     */
+    minify: true, // Minify browser build for smaller size
+
+    // Ensure .mjs extension for ESM output
+    outExtension({ format }) {
+      return {
+        js: ".mjs"
+      };
+    }
   },
 
   /**
@@ -95,6 +98,8 @@ export default defineConfig([
 
     // Emit .d.ts files (shared shape)
     dts: true,
+
+    minify: false, // Don't minify Node build for better readability
 
     // Ensure .cjs extension for CommonJS output
     outExtension({ format }) {

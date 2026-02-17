@@ -1,4 +1,4 @@
-import { A_CONSTANTS__DEFAULT_ENV_VARIABLES } from "@adaas/a-concept/constants/env.constants";
+import { A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY } from "@adaas/a-concept/constants/env.constants";
 import { A_TYPES__ContextEnvironment } from "@adaas/a-concept/a-context";
 import { A_CONCEPT_BASE_ENV } from "./env.base";
 
@@ -62,5 +62,29 @@ export class A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
 
     static set(name: string, value: string): void {
         process.env[name] = value;
+    }
+
+
+    static getAll<T extends Record<string, any>>(): T {
+        const allEnv: Record<string, any> = {};
+
+        // Get all environment variables from process.env
+        for (const key in process.env) {
+            allEnv[key] = process.env[key];
+        }
+
+        // Get all default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY
+        A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.forEach((variable) => {
+            allEnv[variable] = this.get(variable);
+        });
+
+        return allEnv as T
+    }
+
+    static getAllKeys<T extends Array<string>>(): T {
+        return [
+            ...Object.keys(process.env),
+            ...A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY
+        ] as T;
     }
 } 

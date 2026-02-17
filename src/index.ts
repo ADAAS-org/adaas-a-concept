@@ -2,6 +2,7 @@
 export * from '@adaas/a-concept/a-abstraction';
 export * from '@adaas/a-concept/a-component';
 export * from '@adaas/a-concept/a-container';
+export * from '@adaas/a-concept/a-concept';
 export * from '@adaas/a-concept/a-context';
 export * from '@adaas/a-concept/a-dependency';
 export * from '@adaas/a-concept/a-entity';
@@ -18,3 +19,4 @@ export * from '@adaas/a-concept/a-fragment';
 export * from '@adaas/a-concept/a-stage';
 export * from '@adaas/a-concept/a-step-manager';
 export * from '@adaas/a-concept/aseid';
+export * from '@adaas/a-concept/constants/env.constants';

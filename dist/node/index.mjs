@@ -452,6 +452,10 @@ var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
    */
   A_CONCEPT_ENVIRONMENT: "A_CONCEPT_ENVIRONMENT",
   /**
+   * Runtime environment of the application e.g. browser, node
+   */
+  A_CONCEPT_RUNTIME_ENVIRONMENT: "A_CONCEPT_RUNTIME_ENVIRONMENT",
+  /**
    * Root folder of the application
    * [!] Automatically set by A-Concept when the application starts
    */
@@ -461,6 +465,14 @@ var A_CONSTANTS__DEFAULT_ENV_VARIABLES = {
    */
   A_ERROR_DEFAULT_DESCRIPTION: "A_ERROR_DEFAULT_DESCRIPTION"
 };
+var A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY = [
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAME,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ENVIRONMENT,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_RUNTIME_ENVIRONMENT,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_FOLDER,
+  A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_ERROR_DEFAULT_DESCRIPTION
+];
 
 // src/env/env.base.ts
 var A_CONCEPT_BASE_ENV = class {
@@ -532,6 +544,22 @@ var A_CONCEPT_BASE_ENV = class {
   static set(name, value) {
     this[name] = value;
   }
+  /**
+   * This method returns all the environment variables that are available in the application. It combines the variables from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+   * 
+   * @returns 
+   */
+  static getAll() {
+    return {};
+  }
+  /**
+   * This method returns all the keys of the environment variables that are available in the application. It combines the keys from process.env and the default environment variables defined in A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.
+   * 
+   * @returns 
+   */
+  static getAllKeys() {
+    return [];
+  }
 };
 
 // src/env/env-node.ts
@@ -591,6 +619,22 @@ var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
   }
   static set(name, value) {
     process.env[name] = value;
+  }
+  static getAll() {
+    const allEnv = {};
+    for (const key in process.env) {
+      allEnv[key] = process.env[key];
+    }
+    A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY.forEach((variable) => {
+      allEnv[variable] = this.get(variable);
+    });
+    return allEnv;
+  }
+  static getAllKeys() {
+    return [
+      ...Object.keys(process.env),
+      ...A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY
+    ];
   }
 };
 
@@ -5390,6 +5434,222 @@ var A_Abstraction = class {
   }
 };
 
+// src/lib/A-Concept/A-Concept.constants.ts
+var A_TYPES__ConceptAbstractions = /* @__PURE__ */ ((A_TYPES__ConceptAbstractions2) => {
+  A_TYPES__ConceptAbstractions2["Run"] = "run";
+  A_TYPES__ConceptAbstractions2["Build"] = "build";
+  A_TYPES__ConceptAbstractions2["Publish"] = "publish";
+  A_TYPES__ConceptAbstractions2["Deploy"] = "deploy";
+  A_TYPES__ConceptAbstractions2["Load"] = "load";
+  A_TYPES__ConceptAbstractions2["Start"] = "start";
+  A_TYPES__ConceptAbstractions2["Stop"] = "stop";
+  return A_TYPES__ConceptAbstractions2;
+})(A_TYPES__ConceptAbstractions || {});
+var A_TYPES__ConceptMetaKey = /* @__PURE__ */ ((A_TYPES__ConceptMetaKey2) => {
+  A_TYPES__ConceptMetaKey2["LIFECYCLE"] = "a-component-extensions";
+  return A_TYPES__ConceptMetaKey2;
+})(A_TYPES__ConceptMetaKey || {});
+
+// src/lib/A-Concept/A-Concept.class.ts
+var A_Concept = class {
+  // ==============================================================================
+  // ==========================  MAIN Methods  ======================================
+  // ==============================================================================
+  /**
+   * A-Concept is a placeholder for the concept of the any program.
+   * 
+   * Concept - could be any Program regardless environment and it's goal.
+   * It could be mobile, web or simple html page.
+   * All depends on Containers and Components installed and provided in the Concept.
+   * 
+   * 
+   * [!] Concept operates ONLY with all Components and Containers provided to achieve the goal.
+   * 
+   * 
+   * @param props - Initialization properties for the Concept
+   */
+  constructor(props) {
+    this.props = props;
+    this._name = props.name || A_Context.root.name;
+    if (props.components && props.components.length)
+      props.components.forEach((component) => this.scope.register(component));
+    if (props.fragments && props.fragments.length)
+      props.fragments.forEach((fragment) => this.scope.register(fragment));
+    if (props.entities && props.entities.length)
+      props.entities.forEach((entity) => this.scope.register(entity));
+    this._containers = props.containers || [];
+  }
+  // ==============================================================================
+  // ====================  STATIC LIFECYCLE DECORATORS  ===========================
+  // ==============================================================================
+  /**
+   * Load the concept. This step runs before any other steps to ensure that all components are loaded.
+   */
+  static Load(config) {
+    return A_Abstraction.Extend("load" /* Load */, config);
+  }
+  /**
+   * Publish the concept to ADAAS platform. (Or any other place defined in the concept)
+   *
+   * [!] To extend the logic just create a custom containers and override the default behavior.
+   */
+  static Publish(config) {
+    return A_Abstraction.Extend("publish" /* Publish */);
+  }
+  /**
+   * Deploy the concept to the environment.
+   */
+  static Deploy(config) {
+    return A_Abstraction.Extend("deploy" /* Deploy */, config);
+  }
+  /**
+   * Compiles the Concept in case there are some containers that require that. 
+   * 
+   * Can be used for static websites or any other concept that requires a build step.
+   * 
+   */
+  static Build(config) {
+    return A_Abstraction.Extend("build" /* Build */, config);
+  }
+  /**
+   *  Main execution of the concept.
+   */
+  static Run(config) {
+    return A_Abstraction.Extend("run" /* Run */, config);
+  }
+  /**
+   *  Start the concept. Uses for servers or any other background services.
+   */
+  static Start(config) {
+    return A_Abstraction.Extend("start" /* Start */, config);
+  }
+  /**
+   * Stop the concept. Uses for servers or any other background services.
+   */
+  static Stop(config) {
+    return A_Abstraction.Extend("stop" /* Stop */, config);
+  }
+  /**
+   * Name of the concept
+   */
+  get name() {
+    return A_Context.root.name;
+  }
+  /**
+   * The primary Root scope of the concept.
+   */
+  get scope() {
+    return A_Context.root;
+  }
+  /**
+   * Register a class or value in the concept scope.
+   */
+  get register() {
+    return this.scope.register.bind(this.scope);
+  }
+  /**
+   * Resolve a class or value from the concept scope.
+   */
+  get resolve() {
+    return this.scope.resolve.bind(this.scope);
+  }
+  // =======================================================================
+  // ==========================  LIFECYCLE  ================================
+  // =======================================================================
+  /**
+   * Load the concept.
+   */
+  async load(scope) {
+    const abstraction = new A_Abstraction({
+      name: "load" /* Load */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Run the concept.
+   */
+  async run(scope) {
+    const abstraction = new A_Abstraction({
+      name: "run" /* Run */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Start the concept.
+   * 
+   * @param params 
+   */
+  async start(scope) {
+    const abstraction = new A_Abstraction({
+      name: "start" /* Start */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Stop the concept.
+   * 
+   * @param params 
+   */
+  async stop(scope) {
+    const abstraction = new A_Abstraction({
+      name: "stop" /* Stop */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Build the concept.
+   */
+  async build(scope) {
+    const abstraction = new A_Abstraction({
+      name: "build" /* Build */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Deploy the concept.
+   */
+  async deploy(scope) {
+    const abstraction = new A_Abstraction({
+      name: "deploy" /* Deploy */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  /**
+   * Publish the concept.
+   */
+  async publish(scope) {
+    const abstraction = new A_Abstraction({
+      name: "publish" /* Publish */,
+      containers: this._containers
+    });
+    await abstraction.process(scope);
+  }
+  // =======================================================================
+  // ==========================  CALL  =====================================
+  // =======================================================================
+  /**
+   * Call the specific method of the concept or included modules.
+   */
+  async call(method, container) {
+    const feature = new A_Feature({ name: method, component: container });
+    return await feature.process();
+  }
+};
+
+// src/lib/A-Concept/A-Concept.meta.ts
+var A_ConceptMeta = class extends A_Meta {
+  constructor(containers) {
+    super();
+    this.containers = containers;
+  }
+};
+
 // src/lib/A-Inject/A-Inject.error.ts
 var A_InjectError = class extends A_Error {
 };
@@ -5436,6 +5696,6 @@ function A_Inject(param1, param2) {
   };
 }
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ConceptAbstractions, A_TYPES__ConceptMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
 //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map
