@@ -6,6 +6,7 @@ import {
 } from "@adaas/a-concept/a-entity";
 import { A_Feature } from "@adaas/a-concept/a-feature";
 import { ASEID } from '@adaas/a-concept/aseid';
+import { A_Scope } from "@adaas/a-concept/a-scope";
 
 jest.retryTimes(0);
 
@@ -20,6 +21,106 @@ describe('A-Entity tests', () => {
         expect(entity.aseid.scope).toBe('root');
         expect(entity.aseid.concept).toBe('a-concept');
 
+    });
+    it('Should handle proper types declaration', async () => {
+        type MyInitType = {
+            name: string;
+            customId: number;
+        }
+
+        type mySerializedType = {
+            name: string;
+            serializedFlag: boolean;
+            customId: number;
+        } & A_TYPES__Entity_Serialized;
+
+        class MyEntity extends A_Entity<MyInitType, mySerializedType> {
+            public name!: string;
+            public customId!: number;
+
+            fromNew(newEntity: MyInitType): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+                this.customId = newEntity.customId;
+            }
+
+            fromJSON(serialized: mySerializedType): void {
+                this.aseid = new ASEID(serialized.aseid);
+                this.name = serialized.name;
+                this.customId = serialized.customId;
+                return;
+            }
+
+
+            toJSON(): mySerializedType {
+                return {
+                    ...super.toJSON(),
+                    name: this.name,
+                    customId: this.customId,
+                    serializedFlag: true,
+                };
+            }
+        }
+
+
+        const entityInstance = new MyEntity({
+            name: 'Test Entity',
+            customId: 42,
+        });
+
+        expect(entityInstance.name).toBe('Test Entity');
+        expect(entityInstance.customId).toBe(42);
+
+        const serialized = entityInstance.toJSON();
+        expect(serialized.name).toBe('Test Entity');
+        expect(serialized.customId).toBe(42);
+        expect(serialized.serializedFlag).toBe(true);
+
+        const deserializedEntity = new MyEntity(serialized);
+        expect(deserializedEntity.name).toBe('Test Entity');
+        expect(deserializedEntity.customId).toBe(42);
+        expect(deserializedEntity.aseid.toString()).toBe(entityInstance.aseid.toString());
+    });
+    it('Should be possible to allocate a scope for entity', async () => {
+
+        let resultScope: A_Scope | undefined = undefined;
+
+
+        class MyEntity extends A_Entity {
+
+            scope!: A_Scope;
+
+            fromNew(newEntity: any): void {
+                super.fromNew(newEntity);
+
+                resultScope = new A_Scope({ name: 'entity-scope' });
+
+                this.scope = A_Context.allocate(this, resultScope);
+            }
+
+            fromUndefined(): void {
+                super.fromUndefined();
+
+                resultScope = new A_Scope({ name: 'entity-scope' });
+
+                this.scope = A_Context.allocate(this, resultScope);
+            }
+
+        }
+
+
+        const entityInstance = new MyEntity();
+
+
+        const ParentScope = new A_Scope({
+            name: 'parent-scope',
+            entities: [entityInstance]
+        });
+
+        expect(resultScope).toBeInstanceOf(A_Scope);
+        expect(entityInstance.scope).toBe(resultScope);
+        expect(resultScope!.issuer()).toBe(entityInstance);
+        expect(A_Context.scope(entityInstance)).toBe(ParentScope);
     });
     it('Should Allow to create an entity with overridden ASEID Scope or Concept', async () => {
         class MyEntity extends A_Entity {

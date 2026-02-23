@@ -89,7 +89,7 @@ export type A_TYPES__ScopeLinkedConstructors = A_TYPES__Container_Constructor | 
 /**
  * A list of components that can have a scope associated with them
  */
-export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature;
+export type A_TYPES__ScopeLinkedComponents = A_Container | A_Feature | A_Entity
 /**
  * A list of components that are dependent on a scope and do not have their own scope
  */

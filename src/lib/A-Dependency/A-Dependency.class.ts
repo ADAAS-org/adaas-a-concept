@@ -14,6 +14,7 @@ import {
 } from "./A-Dependency.types";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types";
 import { A_Dependency_All } from "./A-Dependency-All.decorator";
+import { A_Dependency_Query } from "./A-Dependency-Query.decorator";
 
 
 export class A_Dependency<
@@ -72,6 +73,16 @@ export class A_Dependency<
      */
     static get All(): typeof A_Dependency_All {
         return A_Dependency_All;
+    }
+
+    /**
+     * Allows to indicate that the dependency should be resolved by specific query parameters
+     * e.g. by ASEID, name, type, custom properties, etc.
+     * 
+     * @returns
+     */
+    static get Query(): typeof A_Dependency_Query {
+        return A_Dependency_Query;
     }
 
     protected _name: string;

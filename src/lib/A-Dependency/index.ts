@@ -13,5 +13,6 @@ export { A_Dependency_Flat } from './A-Dependency-Flat.decorator';
 export { A_Dependency_Load } from './A-Dependency-Load.decorator';
 export { A_Dependency_Parent } from './A-Dependency-Parent.decorator';
 export { A_Dependency_Require } from './A-Dependency-Require.decorator';
+export { A_Dependency_Query } from './A-Dependency-Query.decorator';
 
 

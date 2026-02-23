@@ -4,7 +4,7 @@ import { A_TYPES__Ctor } from "@adaas/a-concept/types";
 import { A_Caller } from "@adaas/a-concept/a-caller";
 import { A_Component } from "@adaas/a-concept/a-component";
 import { A_Container } from "@adaas/a-concept/a-container";
-import { A_Entity } from "@adaas/a-concept/a-entity"
+import { A_Entity, A_TYPES__Entity_Constructor } from "@adaas/a-concept/a-entity"
 import { A_Error } from "@adaas/a-concept/a-error";
 import { A_Feature } from "@adaas/a-concept/a-feature";
 import { A_Fragment } from "@adaas/a-concept/a-fragment";
@@ -159,6 +159,17 @@ export type A_TYPES__A_Dependency_FlatDecoratorReturn<T = any> = (
  * A-Dependency All decorator return type
  */
 export type A_TYPES__A_Dependency_AllDecoratorReturn<T = any> = (
+    target: T,
+    propertyKey: string | symbol | undefined,
+    parameterIndex: number
+) => void
+
+export type A_TYPES__A_Dependency_QueryTarget<T extends A_Entity = A_Entity> = T
+    | A_TYPES__Entity_Constructor<T>
+/**
+ * A-Dependency Query decorator return type
+ */
+export type A_TYPES__A_Dependency_QueryDecoratorReturn<T = any> = (
     target: T,
     propertyKey: string | symbol | undefined,
     parameterIndex: number

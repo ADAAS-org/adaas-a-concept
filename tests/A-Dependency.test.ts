@@ -455,4 +455,71 @@ describe('A-Dependency tests', () => {
 
     });
 
+    it('Should be possible to use query decorator for A_Entities in scope', async () => {
+
+        class MyEntity_A extends A_Entity<{ name: string, group: string }> {
+            name!: string;
+            group!: string;
+
+            fromNew(newEntity: { name: string; group: string }): void {
+                super.fromNew(newEntity);
+                this.name = newEntity.name;
+                this.group = newEntity.group;
+            }
+        }
+
+        class MyComponent extends A_Component {
+            @A_Feature.Extend()
+            async simpleQuery(
+                @A_Dependency.Query<MyEntity_A>({ name: 'Entity 1' })
+                @A_Inject(MyEntity_A) entity: MyEntity_A,
+            ) {
+                expect(entity.name).toBe('Entity 1');
+            }
+
+            @A_Feature.Extend()
+            async andQuery(
+                @A_Dependency.Query<MyEntity_A>({ name: 'Entity 1', group: 'Group 1' })
+                @A_Inject(MyEntity_A) entity: MyEntity_A,
+            ) {
+                expect(entity.name).toBe('Entity 1');
+                expect(entity.group).toBe('Group 1');
+            }
+
+            @A_Feature.Extend()
+            async paginationQuery(
+                @A_Dependency.Query<MyEntity_A>({ name: 'Entity 1' }, { count: 2 })
+                @A_Inject(MyEntity_A) entities: MyEntity_A[],
+            ) {
+
+                expect(entities.length).toBe(2);
+                expect(entities[0].name).toBe('Entity 1');
+                expect(entities[0].group).toBe('Group 1');
+                expect(entities[1].name).toBe('Entity 1');
+                expect(entities[1].group).toBe('Group 2');
+            }
+        }
+
+        const scope = new A_Scope({
+            name: 'Test Scope',
+            components: [MyComponent],
+            entities: [
+                new MyEntity_A({ name: 'Entity 1', group: 'Group 1' }),
+                new MyEntity_A({ name: 'Entity 2', group: 'Group 1' }),
+                new MyEntity_A({ name: 'Entity 1', group: 'Group 2' }),
+                new MyEntity_A({ name: 'Entity 2', group: 'Group 2' }),
+                new MyEntity_A({ name: 'Entity 3', group: 'Group 2' }),
+                new MyEntity_A({ name: 'Entity 1', group: 'Group 3' }),
+                new MyEntity_A({ name: 'Entity 2', group: 'Group 3' }),
+            ]
+        });
+
+        const componentInstance = scope.resolve(MyComponent);
+
+        await componentInstance?.call('simpleQuery');
+        await componentInstance?.call('andQuery');
+        await componentInstance?.call('paginationQuery');
+
+    });
+
 });

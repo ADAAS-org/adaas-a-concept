@@ -36,9 +36,9 @@ import {
 } from "@adaas/a-concept/a-entity";
 import { A_TYPES__A_StageStep } from "@adaas/a-concept/a-stage";
 import { A_TYPES__ContextEnvironment } from "./A-Context.types";
-import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
-import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
-import { A_CommonHelper} from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import { A_ContextError } from "./A-Context.error";
 import {
     A_Fragment,
@@ -684,17 +684,7 @@ export class A_Context {
             throw new A_ContextError(A_ContextError.InvalidScopeParameterError, `Invalid parameter provided to get scope. Component of type ${name} is not allowed for scope allocation.`);
 
         switch (true) {
-            case this.isAllowedForScopeAllocation(param1):
 
-                // Check if the parameter has a scope allocated
-                if (!instance._registry.has(param1))
-                    throw new A_ContextError(
-                        A_ContextError.ScopeNotFoundError,
-                        `Invalid parameter provided to get scope. Component of type ${name} does not have a scope allocated. Make sure to allocate a scope using A_Context.allocate() method before trying to get the scope.`
-                    );
-
-                // If the parameter is allowed for scope allocation, return the scope
-                return instance._registry.get(param1)!;
 
             case this.isAllowedToBeRegistered(param1):
 
@@ -707,6 +697,18 @@ export class A_Context {
 
                 // If the parameter is allowed to be registered, return the scope from the storage
                 return instance._scopeStorage.get(param1)!;
+
+            case this.isAllowedForScopeAllocation(param1):
+
+                // Check if the parameter has a scope allocated
+                if (!instance._registry.has(param1))
+                    throw new A_ContextError(
+                        A_ContextError.ScopeNotFoundError,
+                        `Invalid parameter provided to get scope. Component of type ${name} does not have a scope allocated. Make sure to allocate a scope using A_Context.allocate() method before trying to get the scope.`
+                    );
+
+                // If the parameter is allowed for scope allocation, return the scope
+                return instance._registry.get(param1)!;
             default:
                 throw new A_ContextError(A_ContextError.InvalidScopeParameterError, `Invalid parameter provided to get scope. Component of type ${name} is not allowed to be registered.`);
         }
@@ -1076,7 +1078,8 @@ export class A_Context {
      */
     static isAllowedForScopeAllocation(param: any): param is A_TYPES__ScopeLinkedComponents {
         return A_TypeGuards.isContainerInstance(param)
-            || A_TypeGuards.isFeatureInstance(param);
+            || A_TypeGuards.isFeatureInstance(param)
+            || A_TypeGuards.isEntityInstance(param);
     }
     /**
      * Type guard to check if the param is allowed to be registered in the context.

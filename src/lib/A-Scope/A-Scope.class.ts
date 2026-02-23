@@ -179,8 +179,10 @@ export class A_Scope<
     get parent(): A_Scope | undefined {
         return this._parent;
     }
+    
     /**
-     * A_Scope refers to the visibility and accessibility of :
+     * A_Scope is a unique A-Concept Structure that allows to operate with A-Concept Primitives and Models in a specific context and with specific rules.  
+     *  It refers to the visibility and accessibility of :
      * - variables, 
      * - Components, 
      * - Context Fragments 

@@ -31,7 +31,7 @@ export class A_CONCEPT_BASE_ENV {
    * Environment of the application e.g. development, production, staging
    */
   static get A_CONCEPT_ENVIRONMENT() {
-    return "production";
+    return "development";
   }
   /**
    * Runtime environment of the application e.g. browser, node

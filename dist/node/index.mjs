@@ -505,7 +505,7 @@ var A_CONCEPT_BASE_ENV = class {
    * Environment of the application e.g. development, production, staging
    */
   static get A_CONCEPT_ENVIRONMENT() {
-    return "production";
+    return "development";
   }
   /**
    * Runtime environment of the application e.g. browser, node
@@ -2134,6 +2134,49 @@ function A_Dependency_All() {
   };
 }
 
+// src/lib/A-Dependency/A-Dependency-Query.decorator.ts
+function A_Dependency_Query(query, pagination) {
+  return function(target, methodName, parameterIndex) {
+    const componentName = A_CommonHelper.getComponentName(target);
+    if (!A_TypeGuards.isTargetAvailableForInjection(target)) {
+      throw new A_DependencyError(
+        A_DependencyError.InvalidDependencyTarget,
+        `A-All cannot be used on the target of type ${typeof target} (${componentName})`
+      );
+    }
+    const method = methodName ? String(methodName) : "constructor";
+    let metaKey;
+    switch (true) {
+      case (A_TypeGuards.isComponentConstructor(target) || A_TypeGuards.isComponentInstance(target)):
+        metaKey = "a-component-injections" /* INJECTIONS */;
+        break;
+      case A_TypeGuards.isContainerInstance(target):
+        metaKey = "a-container-injections" /* INJECTIONS */;
+        break;
+      case A_TypeGuards.isEntityInstance(target):
+        metaKey = "a-component-injections" /* INJECTIONS */;
+        break;
+    }
+    const existedMeta = A_Context.meta(target).get(metaKey) || new A_Meta();
+    const paramsArray = existedMeta.get(method) || [];
+    paramsArray[parameterIndex].resolutionStrategy = {
+      query: {
+        ...paramsArray[parameterIndex].resolutionStrategy.query,
+        ...query
+      },
+      pagination: {
+        ...paramsArray[parameterIndex].resolutionStrategy.pagination,
+        ...pagination
+      }
+    };
+    existedMeta.set(method, paramsArray);
+    A_Context.meta(target).set(
+      metaKey,
+      existedMeta
+    );
+  };
+}
+
 // src/lib/A-Dependency/A-Dependency.class.ts
 var A_Dependency = class {
   /**
@@ -2212,6 +2255,15 @@ var A_Dependency = class {
    */
   static get All() {
     return A_Dependency_All;
+  }
+  /**
+   * Allows to indicate that the dependency should be resolved by specific query parameters
+   * e.g. by ASEID, name, type, custom properties, etc.
+   * 
+   * @returns
+   */
+  static get Query() {
+    return A_Dependency_Query;
   }
   get flat() {
     return this._resolutionStrategy.flat;
@@ -5004,13 +5056,6 @@ var A_Context = class _A_Context {
     if (!this.isAllowedForScopeAllocation(param1) && !this.isAllowedToBeRegistered(param1))
       throw new A_ContextError(A_ContextError.InvalidScopeParameterError, `Invalid parameter provided to get scope. Component of type ${name} is not allowed for scope allocation.`);
     switch (true) {
-      case this.isAllowedForScopeAllocation(param1):
-        if (!instance._registry.has(param1))
-          throw new A_ContextError(
-            A_ContextError.ScopeNotFoundError,
-            `Invalid parameter provided to get scope. Component of type ${name} does not have a scope allocated. Make sure to allocate a scope using A_Context.allocate() method before trying to get the scope.`
-          );
-        return instance._registry.get(param1);
       case this.isAllowedToBeRegistered(param1):
         if (!instance._scopeStorage.has(param1))
           throw new A_ContextError(
@@ -5018,6 +5063,13 @@ var A_Context = class _A_Context {
             `Invalid parameter provided to get scope. Component of type ${name} does not have a scope registered. Make sure to register the component using A_Context.register() method before trying to get the scope.`
           );
         return instance._scopeStorage.get(param1);
+      case this.isAllowedForScopeAllocation(param1):
+        if (!instance._registry.has(param1))
+          throw new A_ContextError(
+            A_ContextError.ScopeNotFoundError,
+            `Invalid parameter provided to get scope. Component of type ${name} does not have a scope allocated. Make sure to allocate a scope using A_Context.allocate() method before trying to get the scope.`
+          );
+        return instance._registry.get(param1);
       default:
         throw new A_ContextError(A_ContextError.InvalidScopeParameterError, `Invalid parameter provided to get scope. Component of type ${name} is not allowed to be registered.`);
     }
@@ -5235,7 +5287,7 @@ var A_Context = class _A_Context {
    * @returns 
    */
   static isAllowedForScopeAllocation(param) {
-    return A_TypeGuards.isContainerInstance(param) || A_TypeGuards.isFeatureInstance(param);
+    return A_TypeGuards.isContainerInstance(param) || A_TypeGuards.isFeatureInstance(param) || A_TypeGuards.isEntityInstance(param);
   }
   /**
    * Type guard to check if the param is allowed to be registered in the context.
@@ -5696,6 +5748,6 @@ function A_Inject(param1, param2) {
   };
 }
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ConceptAbstractions, A_TYPES__ConceptMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ConceptAbstractions, A_TYPES__ConceptMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
 //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map
