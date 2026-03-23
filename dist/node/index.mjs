@@ -1257,6 +1257,17 @@ var A_Meta = class _A_Meta {
     return this;
   }
   /**
+   * Allows to create a copy of the meta object with the same values, this is needed to ensure that when we inherit meta from the parent component, we create a copy of it, not a reference to the same object. This allows us to modify the meta of the child component without affecting the meta of the parent component.
+   * 
+   * @returns 
+   */
+  clone() {
+    const ctor = this.constructor;
+    const copy = new ctor();
+    copy.meta = new Map(this.meta);
+    return copy;
+  }
+  /**
    * Method to set values in the map
    * 
    * @param key 
@@ -1367,9 +1378,20 @@ var A_Meta = class _A_Meta {
   clear() {
     this.meta.clear();
   }
+  /**
+   * Method to convert the meta to an array of key-value pairs
+   * 
+   * @returns 
+   */
   toArray() {
     return Array.from(this.meta.entries());
   }
+  /**
+   * Helper method to recursively convert the meta object to a JSON-compatible format. It handles nested A_Meta instances, Maps, Arrays, and plain objects.
+   * 
+   * @param value 
+   * @returns 
+   */
   recursiveToJSON(value) {
     switch (true) {
       case value instanceof _A_Meta:
@@ -4122,6 +4144,21 @@ var A_Scope = class {
     return slice.length === 1 && count !== -1 ? slice[0] : slice.length ? slice : void 0;
   }
   resolveConstructor(name) {
+    switch (true) {
+      case A_TypeGuards.isComponentConstructor(name):
+        return Array.from(this.allowedComponents).find((c) => A_CommonHelper.isInheritedFrom(c, name));
+      case A_TypeGuards.isEntityConstructor(name):
+        return Array.from(this.allowedEntities).find((e) => A_CommonHelper.isInheritedFrom(e, name));
+      case A_TypeGuards.isFragmentConstructor(name):
+        return Array.from(this.allowedFragments).find((f) => A_CommonHelper.isInheritedFrom(f, name));
+      case A_TypeGuards.isErrorConstructor(name):
+        return Array.from(this.allowedErrors).find((e) => A_CommonHelper.isInheritedFrom(e, name));
+    }
+    if (!A_TypeGuards.isString(name))
+      throw new A_ScopeError(
+        A_ScopeError.ResolutionError,
+        `Invalid constructor name provided: ${name}`
+      );
     const component = Array.from(this.allowedComponents).find(
       (c) => c.name === name || c.name === A_FormatterHelper.toPascalCase(name)
     );
@@ -5024,7 +5061,7 @@ var A_Context = class _A_Context {
       }
       if (!inheritedMeta)
         inheritedMeta = new metaType();
-      instance._metaStorage.set(property, new metaType().from(inheritedMeta));
+      instance._metaStorage.set(property, inheritedMeta.clone());
     }
     return instance._metaStorage.get(property);
   }

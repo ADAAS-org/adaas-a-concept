@@ -56,8 +56,17 @@ export class A_Meta<
 
         return this;
     }
-
-
+    /**
+     * Allows to create a copy of the meta object with the same values, this is needed to ensure that when we inherit meta from the parent component, we create a copy of it, not a reference to the same object. This allows us to modify the meta of the child component without affecting the meta of the parent component.
+     * 
+     * @returns 
+     */
+    clone(): A_Meta<_StorageItems> {
+        const ctor = this.constructor as new () => this;
+        const copy = new ctor();
+        copy.meta = new Map(this.meta);
+        return copy;
+    }
     /**
      * Method to set values in the map
      * 
@@ -83,9 +92,6 @@ export class A_Meta<
         this.meta.set(key, value);
 
     }
-
-
-
     /**
      * Method to get values from the map
      * 
@@ -95,8 +101,6 @@ export class A_Meta<
     get<K extends keyof _StorageItems>(key: K): _StorageItems[K] | undefined {
         return this.meta.get(key) as _StorageItems[K];
     }
-
-
     /**
      * Method to delete values from the map
      * 
@@ -106,8 +110,6 @@ export class A_Meta<
     delete(key: keyof _StorageItems): boolean {
         return this.meta.delete(key);
     }
-
-
     /**
      * Method to get the size of the map
      * 
@@ -116,8 +118,6 @@ export class A_Meta<
     size(): number {
         return this.meta.size;
     }
-
-
     /**
      * This method is needed to convert the key to a regular expression and cover cases like: 
      * 
@@ -135,8 +135,6 @@ export class A_Meta<
             ? key
             : new RegExp(key);
     }
-
-
     /**
      * Method to find values in the map by name.
      * 
@@ -154,8 +152,6 @@ export class A_Meta<
         }
         return results;
     }
-
-
     /**
      * Method to find values in the map by regular expression
      * 
@@ -173,8 +169,6 @@ export class A_Meta<
         }
         return results;
     }
-
-
     /**
      * Method to check if the map has a specific key
      * 
@@ -184,8 +178,6 @@ export class A_Meta<
     has(key: keyof _StorageItems): boolean {
         return this.meta.has(key);
     }
-
-
     /**
      * Method to get the size of the map
      * 
@@ -194,21 +186,26 @@ export class A_Meta<
     entries(): IterableIterator<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
         return this.meta.entries();
     }
-
-
     /**
      * Method to clear the map
      */
     clear(): void {
         this.meta.clear();
     }
-
-
+    /**
+     * Method to convert the meta to an array of key-value pairs
+     * 
+     * @returns 
+     */
     toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> {
         return Array.from(this.meta.entries());
     }
-
-
+    /**
+     * Helper method to recursively convert the meta object to a JSON-compatible format. It handles nested A_Meta instances, Maps, Arrays, and plain objects.
+     * 
+     * @param value 
+     * @returns 
+     */
     protected recursiveToJSON(value: any): any {
         switch (true) {
             case value instanceof A_Meta:
@@ -235,7 +232,6 @@ export class A_Meta<
                 return value;
         }
     }
-
     /**
      * Serializes the meta to a JSON object
      * Uses internal storage to convert to JSON

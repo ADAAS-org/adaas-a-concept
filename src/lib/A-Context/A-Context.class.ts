@@ -364,11 +364,11 @@ export class A_Context {
          */
         entity: A_TYPES__Entity_Constructor,
     ): T
-    static meta<T extends A_EntityMeta>(
+    static meta<T extends A_EntityMeta, E extends A_Entity>(
         /**
          * Get meta for the specific entity instance.
          */
-        entity: A_Entity,
+        entity: E,
     ): T
     static meta<T extends A_ComponentMeta>(
         /**
@@ -545,7 +545,7 @@ export class A_Context {
             if (!inheritedMeta)
                 inheritedMeta = new metaType();
 
-            instance._metaStorage.set(property, new metaType().from(inheritedMeta as any));
+            instance._metaStorage.set(property, inheritedMeta.clone());
         }
 
         // Return the meta for the property

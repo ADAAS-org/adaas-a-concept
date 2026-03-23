@@ -19,9 +19,9 @@ import {
     A_Entity,
     A_TYPES__Entity_Constructor
 } from "@adaas/a-concept/a-entity";
-import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
-import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
-import { A_CommonHelper} from "@adaas/a-concept/helpers/A_Common.helper";
+import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
 import {
     A_Error,
     A_TYPES__Error_Constructor
@@ -179,7 +179,7 @@ export class A_Scope<
     get parent(): A_Scope | undefined {
         return this._parent;
     }
-    
+
     /**
      * A_Scope is a unique A-Concept Structure that allows to operate with A-Concept Primitives and Models in a specific context and with specific rules.  
      *  It refers to the visibility and accessibility of :
@@ -839,8 +839,61 @@ export class A_Scope<
          */
         name: string
     ): A_TYPES__Fragment_Constructor<T>
-    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined
-    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
+    resolveConstructor<T extends A_Component>(
+        /**
+         * Provide the component constructor or its name to retrieve its constructor
+         */
+        component:  A_TYPES__Ctor<T>
+    ): A_TYPES__Component_Constructor<T> | undefined
+    resolveConstructor<T extends A_Entity>(
+        /**
+         * Provide the entity constructor or its name to retrieve its constructor
+         */
+        entity: A_TYPES__Ctor<T>
+    ): A_TYPES__Entity_Constructor<T> | undefined
+    resolveConstructor<T extends A_Fragment>(
+        /**
+         * Provide the fragment constructor or its name to retrieve its constructor
+         */
+        fragment: A_TYPES__Ctor<T>
+    ): A_TYPES__Fragment_Constructor<T> | undefined
+    resolveConstructor<T extends A_Error>(
+        /**
+         * Provide the error constructor or its name to retrieve its constructor
+         */
+        error: A_TYPES__Ctor<T>
+    ): A_TYPES__Error_Constructor<T> | undefined
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(
+        name: string | A_TYPES__Ctor<T>
+    ): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(
+        name: string | A_TYPES__Ctor<T>
+    ): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
+        // If it's a constructor, find any extension from the allowed constructors and return it
+        switch (true) {
+            case A_TypeGuards.isComponentConstructor(name):
+                return Array.from(this.allowedComponents)
+                    .find((c) => A_CommonHelper.isInheritedFrom(c, name)) as A_TYPES__Component_Constructor<T> | undefined;
+
+            case A_TypeGuards.isEntityConstructor(name):
+                return Array.from(this.allowedEntities)
+                    .find((e) => A_CommonHelper.isInheritedFrom(e, name)) as A_TYPES__Entity_Constructor<T> | undefined;
+
+            case A_TypeGuards.isFragmentConstructor(name):
+                return Array.from(this.allowedFragments)
+                    .find((f) => A_CommonHelper.isInheritedFrom(f, name)) as A_TYPES__Fragment_Constructor<T> | undefined;
+
+            case A_TypeGuards.isErrorConstructor(name):
+                return Array.from(this.allowedErrors)
+                    .find((e) => A_CommonHelper.isInheritedFrom(e, name)) as A_TYPES__Error_Constructor<T> | undefined;
+        }
+
+        if(!A_TypeGuards.isString(name))
+            throw new A_ScopeError(
+                A_ScopeError.ResolutionError,
+                `Invalid constructor name provided: ${name}`
+            );
+
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
             c => c.name === name

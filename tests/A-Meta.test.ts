@@ -132,7 +132,7 @@ describe('A-Meta tests', () => {
         expect(metaE.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.get('.*\\.testFeature$')?.map(e => e.handler)).toContain('test3');
         expect(metaE.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.get('.*\\.testFeature$')?.map(e => e.handler)).not.toContain('test2');
     })
-    it('Should allow to inherit meta properly', async () => {
+    it('Should allow to define a custom meta', async () => {
 
         class InjectableComponent extends A_Component { }
 
@@ -166,6 +166,49 @@ describe('A-Meta tests', () => {
 
 
         const meta = A_Context.meta<CustomComponentMeta>(CustomComponent);
+
+        expect(meta).toBeInstanceOf(CustomComponentMeta);
+        expect(meta).toHaveProperty('customField');
+
+        expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.size()).toBe(1);
+        expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.has('.*\\.testFeature$')).toBe(true);
+    })
+    it('Should propagate a custom me', async () => {
+
+        class InjectableComponent extends A_Component { }
+
+        class CustomComponentMeta extends A_ComponentMeta<{ customField: string } & A_TYPES__ComponentMeta> {
+
+            get customField(): string | undefined {
+                return this.get('customField');
+            }
+        }
+
+        @A_Meta.Define(CustomComponentMeta)
+        class CustomComponent extends A_Component {
+
+            static Test() {
+
+            }
+
+            constructor(
+                @A_Inject(InjectableComponent) public injectableComponent: InjectableComponent
+            ) {
+                super();
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature'
+            })
+            async feature() {
+
+            }
+        }
+
+        class SubCustomComponent extends CustomComponent {}
+
+
+        const meta = A_Context.meta<CustomComponentMeta>(SubCustomComponent);
 
         expect(meta).toBeInstanceOf(CustomComponentMeta);
         expect(meta).toHaveProperty('customField');

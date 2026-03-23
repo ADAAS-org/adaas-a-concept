@@ -739,6 +739,12 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
      */
     from(meta: A_Meta<_StorageItems>): A_Meta<_StorageItems>;
     /**
+     * Allows to create a copy of the meta object with the same values, this is needed to ensure that when we inherit meta from the parent component, we create a copy of it, not a reference to the same object. This allows us to modify the meta of the child component without affecting the meta of the parent component.
+     *
+     * @returns
+     */
+    clone(): A_Meta<_StorageItems>;
+    /**
      * Method to set values in the map
      *
      * @param key
@@ -813,7 +819,18 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
      * Method to clear the map
      */
     clear(): void;
+    /**
+     * Method to convert the meta to an array of key-value pairs
+     *
+     * @returns
+     */
     toArray(): Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]>;
+    /**
+     * Helper method to recursively convert the meta object to a JSON-compatible format. It handles nested A_Meta instances, Maps, Arrays, and plain objects.
+     *
+     * @param value
+     * @returns
+     */
     protected recursiveToJSON(value: any): any;
     /**
      * Serializes the meta to a JSON object
@@ -3330,7 +3347,27 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide the fragment name in PascalCase to retrieve its constructor
      */
     name: string): A_TYPES__Fragment_Constructor<T>;
-    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined;
+    resolveConstructor<T extends A_Component>(
+    /**
+     * Provide the component constructor or its name to retrieve its constructor
+     */
+    component: A_TYPES__Ctor<T>): A_TYPES__Component_Constructor<T> | undefined;
+    resolveConstructor<T extends A_Entity>(
+    /**
+     * Provide the entity constructor or its name to retrieve its constructor
+     */
+    entity: A_TYPES__Ctor<T>): A_TYPES__Entity_Constructor<T> | undefined;
+    resolveConstructor<T extends A_Fragment>(
+    /**
+     * Provide the fragment constructor or its name to retrieve its constructor
+     */
+    fragment: A_TYPES__Ctor<T>): A_TYPES__Fragment_Constructor<T> | undefined;
+    resolveConstructor<T extends A_Error>(
+    /**
+     * Provide the error constructor or its name to retrieve its constructor
+     */
+    error: A_TYPES__Ctor<T>): A_TYPES__Error_Constructor<T> | undefined;
+    resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string | A_TYPES__Ctor<T>): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined;
     /**
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
@@ -4200,11 +4237,11 @@ declare class A_Context {
      * Get meta for the specific entity class by constructor.
      */
     entity: A_TYPES__Entity_Constructor): T;
-    static meta<T extends A_EntityMeta>(
+    static meta<T extends A_EntityMeta, E extends A_Entity>(
     /**
      * Get meta for the specific entity instance.
      */
-    entity: A_Entity): T;
+    entity: E): T;
     static meta<T extends A_ComponentMeta>(
     /**
      * Get meta for the specific component class by constructor.

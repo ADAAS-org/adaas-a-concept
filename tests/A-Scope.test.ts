@@ -106,7 +106,24 @@ describe('A-Scope tests', () => {
         const resolved = childScope.resolve(A_Component);
         expect(resolved).toBe(component);
     });
+    it('should resolve component constructor registered in scope', async () => {
+        class testComponent extends A_Component { }
 
+        const parentScope = new A_Scope({ name: 'ParentScope', components: [testComponent] });
+
+        const resolved = parentScope.resolveConstructor(testComponent);
+        expect(resolved).toBe(testComponent);
+    });
+    it('should resolve inherited component constructor in scope', async () => {
+        class testComponent extends A_Component { }
+        class inheritedComponent extends testComponent { }
+
+        const parentScope = new A_Scope({ name: 'ParentScope', components: [inheritedComponent] });
+
+        const resolved = parentScope.resolveConstructor(testComponent);
+
+        expect(resolved).toBe(inheritedComponent);
+    });
     it('Should resolve only one entity if no query is provided', async () => {
         class MyEntity extends A_Entity<{ bar: string }> {
             public bar!: string;
