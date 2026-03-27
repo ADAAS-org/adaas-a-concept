@@ -5,7 +5,7 @@ import { A_TYPES__FeatureDefineDecoratorMeta } from "@adaas/a-concept/a-feature"
 import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/a-inject";
 
 
-export class A_EntityMeta extends A_Meta<A_TYPES__EntityMeta> {
+export class A_EntityMeta<T extends A_TYPES__EntityMeta = A_TYPES__EntityMeta> extends A_Meta<T> {
 
     /**
      * Returns all features defined in the Container

@@ -843,7 +843,7 @@ export class A_Scope<
         /**
          * Provide the component constructor or its name to retrieve its constructor
          */
-        component:  A_TYPES__Ctor<T>
+        component: A_TYPES__Ctor<T>
     ): A_TYPES__Component_Constructor<T> | undefined
     resolveConstructor<T extends A_Entity>(
         /**
@@ -888,7 +888,7 @@ export class A_Scope<
                     .find((e) => A_CommonHelper.isInheritedFrom(e, name)) as A_TYPES__Error_Constructor<T> | undefined;
         }
 
-        if(!A_TypeGuards.isString(name))
+        if (!A_TypeGuards.isString(name))
             throw new A_ScopeError(
                 A_ScopeError.ResolutionError,
                 `Invalid constructor name provided: ${name}`
@@ -1865,7 +1865,12 @@ export class A_Scope<
          */
         entity: A_Entity
     ): void
-
+    deregister<T extends A_TYPES__A_DependencyInjectable>(
+        /**
+         * Provide an entity instance to register it in the scope
+         */
+        component: T
+    ): void
     deregister(
         param1: unknown
     ): void {

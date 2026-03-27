@@ -13,7 +13,7 @@ import { A_TYPES__FeatureDefineDecoratorMeta } from "@adaas/a-concept/a-feature"
 
 
 
-export class A_ContainerMeta extends A_Meta<A_TYPES__ContainerMeta> {
+export class A_ContainerMeta<T extends A_TYPES__ContainerMeta = A_TYPES__ContainerMeta> extends A_Meta<T> {
 
 
 

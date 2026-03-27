@@ -1,7 +1,7 @@
 import { A_Meta } from "@adaas/a-concept/a-meta";
 import { A_Entity } from "./A-Entity.class";
 import { ASEID } from "@adaas/a-concept/aseid";
-import { A_TYPES__EntityMetaKey } from "./A-Entity.constants";
+import { A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey } from "./A-Entity.constants";
 import { A_TYPES__FeatureDefineDecoratorMeta, A_TYPES__FeatureExtendDecoratorMeta } from "@adaas/a-concept/a-feature";
 import { A_TYPES__A_InjectDecorator_Meta } from "@adaas/a-concept/a-inject";
 import { A_TYPES__Ctor } from "@adaas/a-concept/types";
@@ -88,3 +88,4 @@ export type A_TYPES__EntityMeta = {
 
 
 
+export type A_TYPES__EntityFeatureNames =  typeof A_TYPES__EntityFeatures[keyof typeof A_TYPES__EntityFeatures];

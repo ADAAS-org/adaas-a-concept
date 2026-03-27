@@ -5,8 +5,8 @@ export enum A_TYPES__EntityMetaKey {
     INJECTIONS = 'a-component-injections',
 }
 
-export enum A_TYPES__EntityFeatures {
-    SAVE = 'save',
-    DESTROY = 'destroy',
-    LOAD = 'load'
-}
+export const A_TYPES__EntityFeatures = {
+    SAVE: '_A_Entity__Save',
+    DESTROY: '_A_Entity__Destroy',
+    LOAD: '_A_Entity__Load'
+} as const;

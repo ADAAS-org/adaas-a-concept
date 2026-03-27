@@ -5,14 +5,15 @@ import {
     A_TYPES__IEntity,
 } from "./A-Entity.types";
 import { A_Scope } from "@adaas/a-concept/a-scope";
-import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
-import { A_IdentityHelper} from "@adaas/a-concept/helpers/A_Identity.helper";
+import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
+import { A_IdentityHelper } from "@adaas/a-concept/helpers/A_Identity.helper";
 import {
     ASEID,
     A_TYPES__ASEID_Constructor
 } from "@adaas/a-concept/aseid";
 import { A_EntityError } from "./A-Entity.error";
 import { A_Feature } from "@adaas/a-concept/a-feature";
+import { A_TYPES__EntityFeatures } from "./A-Entity.constants";
 
 
 /**
@@ -289,24 +290,24 @@ export class A_Entity<
     /**
      * The default method that can be called and extended to load entity data.
      */
-    async load(
+    load(
         scope?: A_Scope,
-    ) {
-        return this.call('load', scope);
+    ): Promise<void> | void {
+        return this.call(A_TYPES__EntityFeatures.LOAD, scope);
     }
 
     /**
      * The default method that can be called and extended to destroy entity data.
      */
-    async destroy(scope?: A_Scope) {
-        return this.call('destroy', scope);
+    destroy(scope?: A_Scope): Promise<void> | void {
+        return this.call(A_TYPES__EntityFeatures.DESTROY, scope);
     }
 
     /**
      * The default method that can be called and extended to save entity data.
      */
-    async save(scope?: A_Scope) {
-        return this.call('save', scope);
+    save(scope?: A_Scope): Promise<void> | void {
+        return this.call(A_TYPES__EntityFeatures.SAVE, scope);
     }
 
 

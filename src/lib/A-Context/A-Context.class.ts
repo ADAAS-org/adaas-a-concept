@@ -8,6 +8,7 @@ import {
 } from "@adaas/a-concept/a-scope";
 import {
     A_Meta,
+    A_TYPES__Meta_Constructor,
     A_TYPES__MetaLinkedComponentConstructors,
     A_TYPES__MetaLinkedComponents
 } from "@adaas/a-concept/a-meta";
@@ -376,7 +377,7 @@ export class A_Context {
          */
         component: A_TYPES__Component_Constructor,
     ): T
-    static meta<T extends A_ComponentMeta, S extends A_Component>(
+    static meta<T extends A_ComponentMeta<any>, S extends A_Component>(
         /**
          * Get meta for the specific component instance.
          */
@@ -442,7 +443,7 @@ export class A_Context {
         ) throw new A_ContextError(A_ContextError.InvalidMetaParameterError, `Invalid parameter provided to get meta. Component of type ${componentName} is not allowed for meta storage. Only A_Container, A_Component and A_Entity are allowed.`);
 
         let property: A_TYPES__MetaLinkedComponentConstructors;
-        let metaType: typeof A_Meta<T> | typeof A_ContainerMeta | typeof A_ComponentMeta | typeof A_EntityMeta
+        let metaType: A_TYPES__Meta_Constructor<A_Meta<any>>
 
         switch (true) {
             // 1) If param1 is instance of A_Container

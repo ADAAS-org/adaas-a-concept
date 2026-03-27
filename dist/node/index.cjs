@@ -964,6 +964,20 @@ var A_EntityError = class extends A_Error {
  */
 A_EntityError.ValidationError = "A-Entity Validation Error";
 
+// src/lib/A-Entity/A-Entity.constants.ts
+var A_TYPES__EntityMetaKey = /* @__PURE__ */ ((A_TYPES__EntityMetaKey2) => {
+  A_TYPES__EntityMetaKey2["EXTENSIONS"] = "a-component-extensions";
+  A_TYPES__EntityMetaKey2["FEATURES"] = "a-component-features";
+  A_TYPES__EntityMetaKey2["ABSTRACTIONS"] = "a-component-abstractions";
+  A_TYPES__EntityMetaKey2["INJECTIONS"] = "a-component-injections";
+  return A_TYPES__EntityMetaKey2;
+})(A_TYPES__EntityMetaKey || {});
+var A_TYPES__EntityFeatures = {
+  SAVE: "_A_Entity__Save",
+  DESTROY: "_A_Entity__Destroy",
+  LOAD: "_A_Entity__Load"
+};
+
 // src/lib/A-Entity/A-Entity.class.ts
 var A_Entity = class {
   // ====================================================================
@@ -1119,20 +1133,20 @@ var A_Entity = class {
   /**
    * The default method that can be called and extended to load entity data.
    */
-  async load(scope) {
-    return this.call("load", scope);
+  load(scope) {
+    return this.call(A_TYPES__EntityFeatures.LOAD, scope);
   }
   /**
    * The default method that can be called and extended to destroy entity data.
    */
-  async destroy(scope) {
-    return this.call("destroy", scope);
+  destroy(scope) {
+    return this.call(A_TYPES__EntityFeatures.DESTROY, scope);
   }
   /**
    * The default method that can be called and extended to save entity data.
    */
-  async save(scope) {
-    return this.call("save", scope);
+  save(scope) {
+    return this.call(A_TYPES__EntityFeatures.SAVE, scope);
   }
   // ====================================================================
   // ================== Entity Serialization ============================
@@ -1430,21 +1444,6 @@ var A_Meta = class _A_Meta {
     return json;
   }
 };
-
-// src/lib/A-Entity/A-Entity.constants.ts
-var A_TYPES__EntityMetaKey = /* @__PURE__ */ ((A_TYPES__EntityMetaKey2) => {
-  A_TYPES__EntityMetaKey2["EXTENSIONS"] = "a-component-extensions";
-  A_TYPES__EntityMetaKey2["FEATURES"] = "a-component-features";
-  A_TYPES__EntityMetaKey2["ABSTRACTIONS"] = "a-component-abstractions";
-  A_TYPES__EntityMetaKey2["INJECTIONS"] = "a-component-injections";
-  return A_TYPES__EntityMetaKey2;
-})(A_TYPES__EntityMetaKey || {});
-var A_TYPES__EntityFeatures = /* @__PURE__ */ ((A_TYPES__EntityFeatures2) => {
-  A_TYPES__EntityFeatures2["SAVE"] = "save";
-  A_TYPES__EntityFeatures2["DESTROY"] = "destroy";
-  A_TYPES__EntityFeatures2["LOAD"] = "load";
-  return A_TYPES__EntityFeatures2;
-})(A_TYPES__EntityFeatures || {});
 
 // src/lib/A-Entity/A-Entity.meta.ts
 var A_EntityMeta = class extends A_Meta {

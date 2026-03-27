@@ -65,7 +65,7 @@ export function A_Abstraction_Extend(
         }
 
         let metaKey;
-        const meta: A_ContainerMeta | A_ComponentMeta = A_Context.meta(target);
+        const meta: A_Meta = A_Context.meta(target);
 
         switch (true) {
             case A_TypeGuards.isContainerConstructor(target) || A_TypeGuards.isContainerInstance(target):
