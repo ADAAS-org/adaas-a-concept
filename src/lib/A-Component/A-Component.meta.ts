@@ -50,7 +50,7 @@ export class A_ComponentMeta<T extends A_TYPES__ComponentMeta = A_TYPES__Compone
                         before: extension.before || '',
                         after: extension.after || '',
                         throwOnError: extension.throwOnError || true,
-                        override: ''
+                        override: extension.override || '',
                     });
 
                 });

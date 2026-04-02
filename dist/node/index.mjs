@@ -3053,12 +3053,18 @@ A_StepManagerError.CircularDependencyError = "A-StepManager Circular Dependency 
 // src/lib/A-StepManager/A-StepManager.class.ts
 var A_StepsManager = class {
   constructor(entities) {
+    /**
+     * Maps each step instance to a unique ID.
+     * Duplicate steps (same dependency.name + handler) get indexed suffixes (e.g., #1, #2).
+     */
+    this._uniqueIdMap = /* @__PURE__ */ new Map();
     this._isBuilt = false;
     this.entities = this.prepareSteps(entities);
     this.graph = /* @__PURE__ */ new Map();
     this.visited = /* @__PURE__ */ new Set();
     this.tempMark = /* @__PURE__ */ new Set();
     this.sortedEntities = [];
+    this.assignUniqueIds();
   }
   prepareSteps(entities) {
     return entities.map((step) => ({
@@ -3070,15 +3076,54 @@ var A_StepsManager = class {
       throwOnError: false
     }));
   }
-  ID(step) {
+  /**
+   * Returns the base (non-unique) ID for a step: `dependency.name.handler`
+   */
+  baseID(step) {
     return `${step.dependency.name}.${step.handler}`;
+  }
+  /**
+   * Returns the unique ID assigned to a specific step instance.
+   * Falls back to baseID if not yet assigned.
+   */
+  ID(step) {
+    return this._uniqueIdMap.get(step) || this.baseID(step);
+  }
+  /**
+   * Assigns unique IDs to all steps. 
+   * Duplicate base IDs get an index suffix (#0, #1, ...).
+   * Steps with unique base IDs keep their original ID (no suffix).
+   */
+  assignUniqueIds() {
+    const counts = /* @__PURE__ */ new Map();
+    for (const step of this.entities) {
+      const base = this.baseID(step);
+      counts.set(base, (counts.get(base) || 0) + 1);
+    }
+    const indexTracker = /* @__PURE__ */ new Map();
+    for (const step of this.entities) {
+      const base = this.baseID(step);
+      if (counts.get(base) > 1) {
+        const idx = indexTracker.get(base) || 0;
+        this._uniqueIdMap.set(step, `${base}#${idx}`);
+        indexTracker.set(base, idx + 1);
+      } else {
+        this._uniqueIdMap.set(step, base);
+      }
+    }
   }
   buildGraph() {
     if (this._isBuilt) return;
     this._isBuilt = true;
     this.entities = this.entities.filter(
-      (step, i, self) => !self.some((s) => s.override ? new RegExp(s.override).test(this.ID(step)) : false)
+      (step, i, self) => !self.some((s, j) => {
+        if (i === j || !s.override) return false;
+        const re = new RegExp(s.override);
+        return re.test(this.baseID(step)) || re.test(step.handler);
+      })
     );
+    this._uniqueIdMap.clear();
+    this.assignUniqueIds();
     this.entities.forEach((entity) => this.graph.set(this.ID(entity), /* @__PURE__ */ new Set()));
     this.entities.forEach((entity) => {
       const entityId = this.ID(entity);
@@ -3098,10 +3143,10 @@ var A_StepsManager = class {
       }
     });
   }
-  // Match entities by name or regex
+  // Match entities by name or regex — matches against the base ID for pattern compatibility
   matchEntities(entityId, pattern) {
     const regex = new RegExp(pattern);
-    return this.entities.filter((entity) => regex.test(this.ID(entity)) && this.ID(entity) !== entityId).map((entity) => this.ID(entity));
+    return this.entities.filter((entity) => regex.test(this.baseID(entity)) && this.ID(entity) !== entityId).map((entity) => this.ID(entity));
   }
   // Topological sort with cycle detection
   visit(node) {
@@ -3591,7 +3636,7 @@ var A_ComponentMeta = class extends A_Meta {
           before: extension.before || "",
           after: extension.after || "",
           throwOnError: extension.throwOnError || true,
-          override: ""
+          override: extension.override || ""
         });
       });
     });
@@ -5167,6 +5212,14 @@ var A_Context = class _A_Context {
             const inherited = Array.from(allowedComponents).reverse().find((c) => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
             if (inherited) {
               steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
+            }
+            if (declaration.override) {
+              const overrideRegexp = new RegExp(declaration.override);
+              for (const [stepKey, step] of steps) {
+                if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
+                  steps.delete(stepKey);
+                }
+              }
             }
             steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
               dependency: new A_Dependency(cmp),

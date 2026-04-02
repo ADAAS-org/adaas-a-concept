@@ -834,6 +834,17 @@ export class A_Context {
                                 steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
                             }
 
+                            // Check if the declaration has an override regexp and remove matching steps
+                            // Match against both the full step key (Component.handler) and the handler alone
+                            if (declaration.override) {
+                                const overrideRegexp = new RegExp(declaration.override);
+                                for (const [stepKey, step] of steps) {
+                                    if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
+                                        steps.delete(stepKey);
+                                    }
+                                }
+                            }
+
                             steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
                                 dependency: new A_Dependency(cmp),
                                 ...declaration

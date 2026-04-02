@@ -16,6 +16,11 @@ export class A_StepsManager {
     public tempMark: Set<string>;
     public sortedEntities: string[];
 
+    /**
+     * Maps each step instance to a unique ID.
+     * Duplicate steps (same dependency.name + handler) get indexed suffixes (e.g., #1, #2).
+     */
+    private _uniqueIdMap: Map<A_TYPES__A_StageStep, string> = new Map();
 
     private _isBuilt: boolean = false;
 
@@ -27,6 +32,7 @@ export class A_StepsManager {
         this.tempMark = new Set();
         this.sortedEntities = [];
 
+        this.assignUniqueIds();
     }
 
     private prepareSteps(
@@ -44,19 +50,67 @@ export class A_StepsManager {
             }));
     }
 
-    private ID(step: A_TYPES__A_StageStep) {
+    /**
+     * Returns the base (non-unique) ID for a step: `dependency.name.handler`
+     */
+    private baseID(step: A_TYPES__A_StageStep) {
         return `${step.dependency.name}.${step.handler}`;
+    }
+
+    /**
+     * Returns the unique ID assigned to a specific step instance.
+     * Falls back to baseID if not yet assigned.
+     */
+    private ID(step: A_TYPES__A_StageStep) {
+        return this._uniqueIdMap.get(step) || this.baseID(step);
+    }
+
+    /**
+     * Assigns unique IDs to all steps. 
+     * Duplicate base IDs get an index suffix (#0, #1, ...).
+     * Steps with unique base IDs keep their original ID (no suffix).
+     */
+    private assignUniqueIds() {
+        // Count occurrences of each base ID
+        const counts = new Map<string, number>();
+        for (const step of this.entities) {
+            const base = this.baseID(step);
+            counts.set(base, (counts.get(base) || 0) + 1);
+        }
+
+        // Assign unique IDs with index suffix only for duplicates
+        const indexTracker = new Map<string, number>();
+        for (const step of this.entities) {
+            const base = this.baseID(step);
+            if (counts.get(base)! > 1) {
+                const idx = indexTracker.get(base) || 0;
+                this._uniqueIdMap.set(step, `${base}#${idx}`);
+                indexTracker.set(base, idx + 1);
+            } else {
+                this._uniqueIdMap.set(step, base);
+            }
+        }
     }
 
     private buildGraph() {
         if (this._isBuilt) return;
         this._isBuilt = true;
 
-        // Filter override
+        // Filter override — match against both the full base ID and handler name
+        // so both formats work (e.g., `^.*\.step(4|5)$` and `^test1$`)
+        // A step's own override pattern should not cause it to filter itself out
         this.entities = this.entities
             .filter((step, i, self) =>
-                !self.some(s => s.override ? new RegExp(s.override).test(this.ID(step)) : false)
+                !self.some((s, j) => {
+                    if (i === j || !s.override) return false;
+                    const re = new RegExp(s.override);
+                    return re.test(this.baseID(step)) || re.test(step.handler);
+                })
             );
+
+        // Re-assign unique IDs after filtering
+        this._uniqueIdMap.clear();
+        this.assignUniqueIds();
 
         // Initialize graph nodes
         this.entities.forEach(entity => this.graph.set(this.ID(entity), new Set()));
@@ -90,12 +144,12 @@ export class A_StepsManager {
         });
     }
 
-    // Match entities by name or regex
+    // Match entities by name or regex — matches against the base ID for pattern compatibility
     private matchEntities(entityId: string, pattern: string): string[] {
         const regex = new RegExp(pattern);
 
         return this.entities
-            .filter(entity => regex.test(this.ID(entity)) && this.ID(entity) !== entityId)
+            .filter(entity => regex.test(this.baseID(entity)) && this.ID(entity) !== entityId)
             .map(entity => this.ID(entity));
     }
 

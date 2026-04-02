@@ -1783,10 +1783,29 @@ declare class A_StepsManager {
     visited: Set<string>;
     tempMark: Set<string>;
     sortedEntities: string[];
+    /**
+     * Maps each step instance to a unique ID.
+     * Duplicate steps (same dependency.name + handler) get indexed suffixes (e.g., #1, #2).
+     */
+    private _uniqueIdMap;
     private _isBuilt;
     constructor(entities: Array<A_TYPES__FeatureDefineDecoratorTemplateItem>);
     private prepareSteps;
+    /**
+     * Returns the base (non-unique) ID for a step: `dependency.name.handler`
+     */
+    private baseID;
+    /**
+     * Returns the unique ID assigned to a specific step instance.
+     * Falls back to baseID if not yet assigned.
+     */
     private ID;
+    /**
+     * Assigns unique IDs to all steps.
+     * Duplicate base IDs get an index suffix (#0, #1, ...).
+     * Steps with unique base IDs keep their original ID (no suffix).
+     */
+    private assignUniqueIds;
     private buildGraph;
     private matchEntities;
     private visit;

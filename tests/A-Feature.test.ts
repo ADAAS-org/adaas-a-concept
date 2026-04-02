@@ -1038,4 +1038,80 @@ describe('A-Feature tests', () => {
             'ChildComponent_A.test'
         ]);
     })
+    it('Should keep override definition', async () => {
+
+        const resultChain: string[] = [];
+
+        class ChildComponent_A extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async test1() {
+                resultChain.push('ChildComponent_A.test1');
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+                override: ['test1']
+            })
+            async test2() {
+                resultChain.push('ChildComponent_A.test2');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ChildComponent_A] });
+
+        const featureDefinition = A_Context.featureTemplate('testFeature', testScope.resolve(ChildComponent_A)!, testScope);
+
+
+        expect(featureDefinition).toBeDefined();
+        expect(featureDefinition.length).toBe(1);
+        expect(featureDefinition[0].handler).toBe('test2');
+
+        await testScope.resolve(ChildComponent_A)!.call('testFeature');
+
+        expect(resultChain).toEqual([
+            'ChildComponent_A.test2'
+        ]);
+    })
+
+    it('Should allow to run feature with the same steps', async () => {
+
+        const resultChain: string[] = [];
+
+        class ComponentA extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async feature1() {
+                resultChain.push('ComponentA.feature1');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ComponentA] });
+
+        const feature = new A_Feature({
+            name: 'testFeature',
+            scope: testScope,
+            template: [
+                {
+                    name: 'ComponentA.feature1',
+                    dependency: new A_Dependency('ComponentA'),
+                    handler: 'feature1',
+                },
+                {
+                    name: 'ComponentA.feature1',
+                    dependency: new A_Dependency('ComponentA'),
+                    handler: 'feature1',
+                },
+            ]
+        });
+
+        await feature.process();
+
+        expect(resultChain).toEqual([
+            'ComponentA.feature1',
+            'ComponentA.feature1'
+        ]);
+    })
 });
