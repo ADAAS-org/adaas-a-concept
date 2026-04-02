@@ -1075,13 +1075,16 @@ describe('A-Feature tests', () => {
         ]);
     })
 
-    it('Should allow to run feature with the same steps', async () => {
+    it('Should allow to define 2 extension under the same method', async () => {
 
         const resultChain: string[] = [];
 
         class ComponentA extends A_Component {
             @A_Feature.Extend({
-                name: 'testFeature',
+                name: 'testFeature1',
+            })
+            @A_Feature.Extend({
+                name: 'testFeature2',
             })
             async feature1() {
                 resultChain.push('ComponentA.feature1');
@@ -1090,28 +1093,16 @@ describe('A-Feature tests', () => {
 
         const testScope = new A_Scope({ name: 'TestScope', components: [ComponentA] });
 
-        const feature = new A_Feature({
-            name: 'testFeature',
-            scope: testScope,
-            template: [
-                {
-                    name: 'ComponentA.feature1',
-                    dependency: new A_Dependency('ComponentA'),
-                    handler: 'feature1',
-                },
-                {
-                    name: 'ComponentA.feature1',
-                    dependency: new A_Dependency('ComponentA'),
-                    handler: 'feature1',
-                },
-            ]
-        });
+        const component = testScope.resolve(ComponentA)!;
 
-        await feature.process();
+        component.call('testFeature1');
+        component.call('testFeature2');
 
         expect(resultChain).toEqual([
             'ComponentA.feature1',
             'ComponentA.feature1'
         ]);
     })
+
+
 });

@@ -2812,14 +2812,20 @@ function A_Feature_Extend(param1) {
     const existedMetaValue = [
       ...existedMeta.get(targetRegexp.source) || []
     ];
+    const currentFeatureName = param1 && typeof param1 === "object" && !A_TypeGuards.isRegExp(param1) && param1.name || propertyKey;
     for (const [key, handlers] of existedMeta.entries()) {
       const indexInAnother = handlers.findIndex((item) => item.handler === propertyKey);
       if (key !== targetRegexp.source && indexInAnother !== -1) {
-        handlers.splice(indexInAnother, 1);
-        if (handlers.length === 0) {
-          existedMeta.delete(key);
-        } else {
-          existedMeta.set(key, handlers);
+        const keyStr = String(key);
+        const featureNameMatch = keyStr.match(/\\\.\s*([^\\.$]+)\$$/);
+        const otherFeatureName = featureNameMatch ? featureNameMatch[1] : null;
+        if (otherFeatureName === currentFeatureName) {
+          handlers.splice(indexInAnother, 1);
+          if (handlers.length === 0) {
+            existedMeta.delete(key);
+          } else {
+            existedMeta.set(key, handlers);
+          }
         }
       }
     }

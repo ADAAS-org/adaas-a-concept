@@ -177,18 +177,34 @@ export function A_Feature_Extend(
         ];
 
         //  ensure that other regexps are preserved
+        //  Only remove the handler from another regexp if that regexp targets
+        //  the SAME feature name (i.e., same feature, different scope — inheritance case).
+        //  If the other regexp targets a DIFFERENT feature, leave it alone so that
+        //  the same method can serve multiple features.
+        const currentFeatureName = (param1 && typeof param1 === 'object' && !A_TypeGuards.isRegExp(param1) && (param1 as Partial<A_TYPES__FeatureExtendDecoratorConfig>).name)
+            || propertyKey;
+
         for (const [key, handlers] of existedMeta.entries()) {
 
             const indexInAnother = handlers.findIndex(item => item.handler === propertyKey);
 
-            //  if the same handler exists in another regexp, remove it
+            //  if the same handler exists in another regexp, check if it's the same feature
             if (key !== targetRegexp.source && indexInAnother !== -1) {
-                handlers.splice(indexInAnother, 1);
-                //  if no handlers left for this regexp, remove the regexp entry
-                if (handlers.length === 0) {
-                    existedMeta.delete(key);
-                } else {
-                    existedMeta.set(key, handlers);
+                //  Extract the feature name from the other regexp key
+                //  Regexp keys are built as: ^...\.featureName$ or .*\.featureName$
+                const keyStr = String(key);
+                const featureNameMatch = keyStr.match(/\\\.\s*([^\\.$]+)\$$/);
+                const otherFeatureName = featureNameMatch ? featureNameMatch[1] : null;
+
+                //  Only clean up if the other regexp targets the same feature name
+                if (otherFeatureName === currentFeatureName) {
+                    handlers.splice(indexInAnother, 1);
+                    //  if no handlers left for this regexp, remove the regexp entry
+                    if (handlers.length === 0) {
+                        existedMeta.delete(key);
+                    } else {
+                        existedMeta.set(key, handlers);
+                    }
                 }
             }
         }
