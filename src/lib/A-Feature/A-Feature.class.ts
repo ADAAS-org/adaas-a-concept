@@ -12,7 +12,7 @@ import {
     A_StageError
 } from "@adaas/a-concept/a-stage";
 import { A_StepsManager } from "@adaas/a-concept/a-step-manager";
-import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
+import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_FeatureError } from "./A-Feature.error";
 import { A_Context } from "@adaas/a-concept/a-context";
 import { A_Caller } from "@adaas/a-concept/a-caller";
@@ -203,7 +203,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         if (!params || typeof params !== 'object') {
             throw new A_FeatureError(
                 A_FeatureError.FeatureInitializationError,
-                `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+                `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params)?.slice(0, 100)}...`
             );
         }
     }
@@ -226,7 +226,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             default:
                 throw new A_FeatureError(
                     A_FeatureError.FeatureInitializationError,
-                    `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+                    `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params)?.slice(0, 100)}...`
                 );
         }
     }
@@ -241,14 +241,14 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         if (!params.template || !Array.isArray(params.template)) {
             throw new A_FeatureError(
                 A_FeatureError.FeatureInitializationError,
-                `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template).slice(0, 100)}...`
+                `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template)?.slice(0, 100)}...`
             );
         }
 
         if (!params.component && (!params.scope || !(params.scope instanceof A_Scope))) {
             throw new A_FeatureError(
                 A_FeatureError.FeatureInitializationError,
-                `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope).slice(0, 100)}...`
+                `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope)?.slice(0, 100)}...`
             );
         }
 
@@ -304,7 +304,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         if (!params.component || !A_TypeGuards.isAllowedForFeatureDefinition(params.component)) {
             throw new A_FeatureError(
                 A_FeatureError.FeatureInitializationError,
-                `Invalid A-Feature component provided of type: ${typeof params.component} with value: ${JSON.stringify(params.component).slice(0, 100)}...`
+                `Invalid A-Feature component provided of type: ${typeof params.component} with value: ${JSON.stringify(params.component)?.slice(0, 100)}...`
             );
         }
 
@@ -398,51 +398,56 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         scope: A_Scope | undefined,
         index: number
     ): Promise<void> | void {
-        try {
-            // Check if feature has been interrupted before processing next stage
-            if (this.state === A_TYPES__FeatureState.INTERRUPTED) {
-                return;
+
+        // ── Sync loop — avoids stack overflow for all-sync chains ────────────────
+        while (index < stages.length) {
+
+            if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
+
+            const stage = stages[index]
+            let result: Promise<void> | void
+
+            try {
+                result = stage.process(scope)
+            } catch (error) {
+                throw this.createStageError(error, stage)
             }
 
-            // If we've processed all stages, complete the feature
-            if (index >= stages.length) {
-                this.completed();
-                return;
-            }
-
-            const stage = stages[index];
-            const result = stage.process(scope);
-
+            // ── Async stage — hand off to promise chain ───────────────────────────
             if (A_TypeGuards.isPromiseInstance(result)) {
-                // Async stage - return promise that processes remaining stages
                 return result
                     .then(() => {
-                        // Check for interruption after async stage completes
-                        if (this.state === A_TYPES__FeatureState.INTERRUPTED) {
-                            return;
-                        }
-                        return this.processStagesSequentially(stages, scope, index + 1);
+                        if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
+                        return this.processStagesSequentially(stages, scope, index + 1)
                     })
                     .catch(error => {
-                        throw this.failed(new A_FeatureError({
-                            title: A_FeatureError.FeatureProcessingError,
-                            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-                            stage: stage,
-                            originalError: error
-                        }));
-                    });
-            } else {
-                // Sync stage - continue to next stage immediately
-                return this.processStagesSequentially(stages, scope, index + 1);
+                        throw this.createStageError(error, stage)
+                    })
             }
-        } catch (error) {
-            throw this.failed(new A_FeatureError({
-                title: A_FeatureError.FeatureProcessingError,
-                description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
-                stage: this.stage,
-                originalError: error
-            }));
+
+            index++
         }
+
+        // ── All stages complete ───────────────────────────────────────────────────
+        if (this.state !== A_TYPES__FeatureState.INTERRUPTED) {
+            this.completed()
+        }
+    }
+
+    private createStageError(error: unknown, stage: A_Stage): A_FeatureError {
+        this.failed(new A_FeatureError({
+            title: A_FeatureError.FeatureProcessingError,
+            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+            stage,
+            originalError: error,
+        }))
+
+        return new A_FeatureError({
+            title: A_FeatureError.FeatureProcessingError,
+            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+            stage,
+            originalError: error,
+        })
     }
     /**
      * This method moves the feature to the next stage

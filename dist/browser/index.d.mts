@@ -1084,7 +1084,7 @@ declare class A_Entity<_ConstructorType extends A_TYPES__Entity_Init = A_TYPES__
      * @param lifecycleMethod
      * @param args
      */
-    call(feature: string, scope?: A_Scope): any;
+    call(feature: string, scope?: A_Scope): Promise<any> | void;
     /**
      * The default method that can be called and extended to load entity data.
      */
@@ -2013,6 +2013,7 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      * Process stages one by one, ensuring each stage completes before starting the next
      */
     private processStagesSequentially;
+    private createStageError;
     /**
      * This method moves the feature to the next stage
      *

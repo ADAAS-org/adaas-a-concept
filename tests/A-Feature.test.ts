@@ -1103,6 +1103,107 @@ describe('A-Feature tests', () => {
             'ComponentA.feature1'
         ]);
     })
+    it('Should return promise if at least one step is async', async () => {
+
+        const resultChain: string[] = [];
+
+        class ComponentA extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            async step1() {
+                resultChain.push('ComponentA.step1');
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            step2() {
+                resultChain.push('ComponentA.step2');
+            }
+        }
+
+
+        class MyEntity extends A_Entity {
+            async test() {
+                return await this.call('testFeature');
+            }
+        }
+
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ComponentA] });
+
+        const component = testScope.resolve(ComponentA)!;
+
+        const myEntity = new MyEntity();
+
+        testScope.register(myEntity);
+
+        const res = component.call('testFeature');
+        const res2 = myEntity.test();
+
+        expect(res).toBeInstanceOf(Promise);
+        expect(res2).toBeInstanceOf(Promise);
+
+        await res;
+        await res2;
+
+
+        expect(resultChain).toEqual([
+            'ComponentA.step1',
+            'ComponentA.step1',
+            'ComponentA.step2',
+            'ComponentA.step2'
+        ]);
+    })
+    it('Should execute sync if all steps are synchronous', async () => {
+
+        const resultChain: string[] = [];
+
+        class ComponentA extends A_Component {
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            step1() {
+                resultChain.push('ComponentA.step1');
+            }
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+            })
+            step2() {
+                resultChain.push('ComponentA.step2');
+            }
+        }
+
+
+        class MyEntity extends A_Entity {
+            test() {
+                return this.call('testFeature');
+            }
+        }
+
+        const testScope = new A_Scope({ name: 'TestScope', components: [ComponentA] });
+
+        const component = testScope.resolve(ComponentA)!;
+
+        const myEntity = new MyEntity();
+
+        testScope.register(myEntity);
+
+        const res = component.call('testFeature');
+        const res2 = myEntity.test();
+
+        expect(res).not.toBeInstanceOf(Promise);
+        expect(res2).not.toBeInstanceOf(Promise);
+
+        expect(resultChain).toEqual([
+            'ComponentA.step1',
+            'ComponentA.step2',
+            'ComponentA.step1',
+            'ComponentA.step2'
+        ]);
+    })
 
 
 });

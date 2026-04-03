@@ -58,6 +58,8 @@
     "bench": "ts-node -r tsconfig-paths/register benchmarks/run-all.ts",
     "bench:step-manager": "ts-node -r tsconfig-paths/register benchmarks/step-manager.bench.ts",
     "bench:feature-template": "ts-node -r tsconfig-paths/register benchmarks/feature-template.bench.ts",
+    "bench:feature-optimize": "ts-node -r tsconfig-paths/register benchmarks/feature-optimize.bench.ts",
+    "bench:feature-chaining": "ts-node -r tsconfig-paths/register benchmarks/feature-chaining.bench.ts",
     "bench:scope-resolve": "ts-node -r tsconfig-paths/register benchmarks/scope-resolve.bench.ts",
     "bench:feature-lifecycle": "ts-node -r tsconfig-paths/register benchmarks/feature-lifecycle.bench.ts",
     "start": "nodemon ./tests/example-usage.ts",

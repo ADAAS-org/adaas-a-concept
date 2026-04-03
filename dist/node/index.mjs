@@ -1117,13 +1117,13 @@ var A_Entity = class {
    * @param lifecycleMethod 
    * @param args 
    */
-  async call(feature, scope) {
+  call(feature, scope) {
     const newFeature = new A_Feature({
       name: feature,
       component: this,
       scope
     });
-    return await newFeature.process(scope);
+    return newFeature.process(scope);
   }
   // ====================================================================
   // ================== Entity Base Methods =============================
@@ -3324,7 +3324,7 @@ var A_Feature = class _A_Feature {
     if (!params || typeof params !== "object") {
       throw new A_FeatureError(
         A_FeatureError.FeatureInitializationError,
-        `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+        `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params)?.slice(0, 100)}...`
       );
     }
   }
@@ -3343,7 +3343,7 @@ var A_Feature = class _A_Feature {
       default:
         throw new A_FeatureError(
           A_FeatureError.FeatureInitializationError,
-          `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params).slice(0, 100)}...`
+          `Invalid A-Feature initialization parameters of type: ${typeof params} with value: ${JSON.stringify(params)?.slice(0, 100)}...`
         );
     }
   }
@@ -3356,13 +3356,13 @@ var A_Feature = class _A_Feature {
     if (!params.template || !Array.isArray(params.template)) {
       throw new A_FeatureError(
         A_FeatureError.FeatureInitializationError,
-        `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template).slice(0, 100)}...`
+        `Invalid A-Feature template provided of type: ${typeof params.template} with value: ${JSON.stringify(params.template)?.slice(0, 100)}...`
       );
     }
     if (!params.component && (!params.scope || !(params.scope instanceof A_Scope))) {
       throw new A_FeatureError(
         A_FeatureError.FeatureInitializationError,
-        `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope).slice(0, 100)}...`
+        `Invalid A-Feature scope provided of type: ${typeof params.scope} with value: ${JSON.stringify(params.scope)?.slice(0, 100)}...`
       );
     }
     this._name = params.name;
@@ -3394,7 +3394,7 @@ var A_Feature = class _A_Feature {
     if (!params.component || !A_TypeGuards.isAllowedForFeatureDefinition(params.component)) {
       throw new A_FeatureError(
         A_FeatureError.FeatureInitializationError,
-        `Invalid A-Feature component provided of type: ${typeof params.component} with value: ${JSON.stringify(params.component).slice(0, 100)}...`
+        `Invalid A-Feature component provided of type: ${typeof params.component} with value: ${JSON.stringify(params.component)?.slice(0, 100)}...`
       );
     }
     this._name = params.name;
@@ -3444,41 +3444,42 @@ var A_Feature = class _A_Feature {
    * Process stages one by one, ensuring each stage completes before starting the next
    */
   processStagesSequentially(stages, scope, index) {
-    try {
-      if (this.state === "INTERRUPTED" /* INTERRUPTED */) {
-        return;
-      }
-      if (index >= stages.length) {
-        this.completed();
-        return;
-      }
+    while (index < stages.length) {
+      if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
       const stage = stages[index];
-      const result = stage.process(scope);
+      let result;
+      try {
+        result = stage.process(scope);
+      } catch (error) {
+        throw this.createStageError(error, stage);
+      }
       if (A_TypeGuards.isPromiseInstance(result)) {
         return result.then(() => {
-          if (this.state === "INTERRUPTED" /* INTERRUPTED */) {
-            return;
-          }
+          if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
           return this.processStagesSequentially(stages, scope, index + 1);
         }).catch((error) => {
-          throw this.failed(new A_FeatureError({
-            title: A_FeatureError.FeatureProcessingError,
-            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-            stage,
-            originalError: error
-          }));
+          throw this.createStageError(error, stage);
         });
-      } else {
-        return this.processStagesSequentially(stages, scope, index + 1);
       }
-    } catch (error) {
-      throw this.failed(new A_FeatureError({
-        title: A_FeatureError.FeatureProcessingError,
-        description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || "N/A"}.`,
-        stage: this.stage,
-        originalError: error
-      }));
+      index++;
     }
+    if (this.state !== "INTERRUPTED" /* INTERRUPTED */) {
+      this.completed();
+    }
+  }
+  createStageError(error, stage) {
+    this.failed(new A_FeatureError({
+      title: A_FeatureError.FeatureProcessingError,
+      description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+      stage,
+      originalError: error
+    }));
+    return new A_FeatureError({
+      title: A_FeatureError.FeatureProcessingError,
+      description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+      stage,
+      originalError: error
+    });
   }
   /**
    * This method moves the feature to the next stage

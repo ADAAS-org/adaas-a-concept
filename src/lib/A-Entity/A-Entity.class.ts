@@ -269,17 +269,17 @@ export class A_Entity<
      * @param lifecycleMethod 
      * @param args 
      */
-    async call(
+     call(
         feature: string,
         scope?: A_Scope
-    ) {
+    ): Promise<any> | void {
         const newFeature = new A_Feature({
             name: feature,
             component: this,
             scope
         });
 
-        return await newFeature.process(scope);
+        return  newFeature.process(scope);
     }
 
 
