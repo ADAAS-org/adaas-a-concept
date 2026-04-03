@@ -783,6 +783,11 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
      * @param key
      * @returns
      */
+    /**
+     * Cache for compiled RegExp instances keyed by their string source.
+     * Avoids re-compiling the same regex pattern on every find() call.
+     */
+    private _regExpCache?;
     private convertToRegExp;
     /**
      * Method to find values in the map by name.
@@ -1487,8 +1492,10 @@ type A_TYPES__FeatureAvailableComponents = InstanceType<A_TYPES__FeatureAvailabl
 type A_TYPES__FeatureAvailableConstructors = A_TYPES__Component_Constructor | A_TYPES__Entity_Constructor | A_TYPES__Container_Constructor;
 /**
  * Indicates a type of Feature Define decorator
+ *
+ * [!] Uses a single generic descriptor to support both sync and async methods
  */
-type A_TYPES__FeatureDefineDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => any> | TypedPropertyDescriptor<(...args: any[]) => any> | TypedPropertyDescriptor<(...args: any[]) => Promise<any>> | TypedPropertyDescriptor<(...args: any[]) => Promise<any>>;
+type A_TYPES__FeatureDefineDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => any>;
 /**
  * Describes additional configuration properties to be used in Feature Define decorator
  */
@@ -1549,8 +1556,10 @@ type A_TYPES__FeatureDefineDecoratorMeta = {
 };
 /**
  * Descriptor type for A_Extend decorator
+ *
+ * [!] Uses a single generic descriptor to support both sync and async methods
  */
-type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<() => any> | TypedPropertyDescriptor<(...args: any[]) => any> | TypedPropertyDescriptor<(...args: any[]) => Promise<any>> | TypedPropertyDescriptor<() => Promise<any>>;
+type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => any>;
 /**
  * Target type for A_Extend decorator
  *
@@ -2979,6 +2988,15 @@ type A_TYPES_ScopeIndependentComponents = A_Error | A_Scope | A_Caller;
 
 declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
     /**
+     * Auto-incrementing counter for generating unique scope IDs.
+     */
+    private static _nextUid;
+    /**
+     * Unique numeric ID for this scope instance. Used as a cache key discriminator
+     * to prevent collisions between scopes with the same name or version.
+     */
+    readonly uid: number;
+    /**
      * Scope Name uses for identification and logging purposes
      */
     protected _name: string;
@@ -2992,6 +3010,20 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * throughout the execution pipeline or within running containers.
      */
     protected _meta: A_Meta<_MetaItems>;
+    /**
+     * Monotonically increasing version counter. Incremented on every mutation
+     * (register, deregister, import, deimport, inherit, destroy) so that
+     * external caches (e.g. A_Context feature-extension cache) can detect
+     * staleness cheaply via numeric comparison.
+     */
+    protected _version: number;
+    /**
+     * Cache for resolveConstructor results (both positive and negative).
+     * Key = constructor name (string) or constructor reference toString.
+     * Value = resolved constructor or `null` for negative results.
+     * Invalidated by incrementing _version (cache is cleared on bump).
+     */
+    protected _resolveConstructorCache: Map<string | Function, Function | null>;
     /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
@@ -3054,6 +3086,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     get allowedErrors(): Set<_ErrorType[number]>;
     /**
+     * Returns the current version of the scope. Each mutation increments the version,
+     * allowing external caches to detect staleness via numeric comparison.
+     */
+    get version(): number;
+    /**
      * Returns an Array of entities registered in the scope
      *
      * [!] One entity per aseid
@@ -3089,6 +3126,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * @returns
      */
     get parent(): A_Scope | undefined;
+    /**
+     * Increments the scope version and clears internal caches.
+     * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
+     */
+    protected bumpVersion(): void;
     /**
      * A_Scope is a unique A-Concept Structure that allows to operate with A-Concept Primitives and Models in a specific context and with specific rules.
      *  It refers to the visibility and accessibility of :
@@ -3388,6 +3430,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     error: A_TYPES__Ctor<T>): A_TYPES__Error_Constructor<T> | undefined;
     resolveConstructor<T extends A_TYPES__A_DependencyInjectable>(name: string | A_TYPES__Ctor<T>): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined;
+    /**
+     * Internal uncached implementation of resolveConstructor for string names.
+     * Separated to allow the public method to wrap with caching.
+     */
+    private _resolveConstructorUncached;
     /**
      * This method should resolve all instances of the components, or entities within the scope, by provided parent class
      * So in case of providing a base class it should return all instances that extends this base class
@@ -4151,6 +4198,23 @@ declare class A_Context {
      * Meta provides to store extra information about the class behavior and configuration.
      */
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta>;
+    /**
+     * Monotonically increasing version counter for _metaStorage.
+     * Incremented whenever a new entry is added to _metaStorage so that
+     * caches depending on meta content can detect staleness.
+     */
+    protected _metaVersion: number;
+    /**
+     * Cache for featureExtensions results.
+     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
+     * Automatically invalidated when scope version or meta version changes.
+     */
+    protected _featureExtensionsCache: Map<string, Array<A_TYPES__A_StageStep>>;
+    /**
+     * Maximum number of entries in the featureExtensions cache.
+     * When exceeded, the entire cache is cleared to prevent unbounded growth.
+     */
+    protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
     protected _globals: Map<string, any>;
     /**
      * Private constructor to enforce singleton pattern.
@@ -4407,6 +4471,10 @@ declare class A_Context {
     scope: A_Scope): Array<A_TYPES__A_StageStep>;
     /**
      * method helps to filter steps in a way that only the most derived classes are kept.
+     *
+     * Optimized: Uses a pre-built constructor→class map and single-pass prototype chain
+     * walk to eliminate parent classes in O(n·d) where d is inheritance depth,
+     * instead of the previous O(n²) with isPrototypeOf checks.
      *
      * @param scope
      * @param items

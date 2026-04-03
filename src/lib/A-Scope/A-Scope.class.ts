@@ -47,6 +47,17 @@ export class A_Scope<
 > {
 
     /**
+     * Auto-incrementing counter for generating unique scope IDs.
+     */
+    private static _nextUid: number = 0;
+
+    /**
+     * Unique numeric ID for this scope instance. Used as a cache key discriminator
+     * to prevent collisions between scopes with the same name or version.
+     */
+    readonly uid: number = A_Scope._nextUid++;
+
+    /**
      * Scope Name uses for identification and logging purposes
      */
     protected _name!: string;
@@ -60,6 +71,25 @@ export class A_Scope<
      * throughout the execution pipeline or within running containers.
      */
     protected _meta: A_Meta<_MetaItems> = new A_Meta<_MetaItems>();
+
+    // ===========================================================================
+    // --------------------Cache & Versioning--------------------------------------
+    // ===========================================================================
+    /**
+     * Monotonically increasing version counter. Incremented on every mutation
+     * (register, deregister, import, deimport, inherit, destroy) so that
+     * external caches (e.g. A_Context feature-extension cache) can detect
+     * staleness cheaply via numeric comparison.
+     */
+    protected _version: number = 0;
+
+    /**
+     * Cache for resolveConstructor results (both positive and negative).
+     * Key = constructor name (string) or constructor reference toString.
+     * Value = resolved constructor or `null` for negative results.
+     * Invalidated by incrementing _version (cache is cleared on bump).
+     */
+    protected _resolveConstructorCache: Map<string | Function, Function | null> = new Map();
 
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -137,6 +167,11 @@ export class A_Scope<
      * Returns a list of Constructors for A-Errors that are available in the scope
      */
     get allowedErrors() { return this._allowedErrors }
+    /**
+     * Returns the current version of the scope. Each mutation increments the version,
+     * allowing external caches to detect staleness via numeric comparison.
+     */
+    get version(): number { return this._version }
     // ===========================================================================
     // --------------------Readonly Registered Properties--------------------------
     // ===========================================================================
@@ -178,6 +213,15 @@ export class A_Scope<
      */
     get parent(): A_Scope | undefined {
         return this._parent;
+    }
+
+    /**
+     * Increments the scope version and clears internal caches.
+     * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
+     */
+    protected bumpVersion(): void {
+        this._version++;
+        this._resolveConstructorCache.clear();
     }
 
     /**
@@ -379,6 +423,8 @@ export class A_Scope<
         if (this.issuer()) {
             A_Context.deallocate(this);
         }
+
+        this.bumpVersion();
     }
 
 
@@ -469,6 +515,7 @@ export class A_Scope<
 
 
         this._parent = parent;
+        this.bumpVersion();
         return this;
     }
 
@@ -495,6 +542,7 @@ export class A_Scope<
                 return;
 
             this._imports.add(scope);
+            this.bumpVersion();
         });
 
         return this;
@@ -510,8 +558,10 @@ export class A_Scope<
     deimport(...scopes: A_Scope[]): A_Scope {
 
         scopes.forEach(scope => {
-            if (this._imports.has(scope))
+            if (this._imports.has(scope)) {
                 this._imports.delete(scope);
+                this.bumpVersion();
+            }
         });
         return this;
     }
@@ -893,6 +943,29 @@ export class A_Scope<
                 A_ScopeError.ResolutionError,
                 `Invalid constructor name provided: ${name}`
             );
+
+        // ---- Optimization: check resolveConstructor cache for string lookups ----
+        const cacheKey = name;
+        if (this._resolveConstructorCache.has(cacheKey)) {
+            const cached = this._resolveConstructorCache.get(cacheKey);
+            return (cached === null ? undefined : cached) as any;
+        }
+
+        const resolved = this._resolveConstructorUncached<T>(name);
+
+        // Store in cache (null for negative/miss results)
+        this._resolveConstructorCache.set(cacheKey, resolved ?? null);
+
+        return resolved;
+    }
+
+    /**
+     * Internal uncached implementation of resolveConstructor for string names.
+     * Separated to allow the public method to wrap with caching.
+     */
+    private _resolveConstructorUncached<T extends A_TYPES__A_DependencyInjectable>(
+        name: string
+    ): A_TYPES__Entity_Constructor<T> | A_TYPES__Component_Constructor<T> | A_TYPES__Fragment_Constructor<T> | undefined {
 
         // 1) Check components
         const component = Array.from(this.allowedComponents).find(
@@ -1715,6 +1788,7 @@ export class A_Scope<
                 );
 
                 A_Context.register(this, param1);
+                this.bumpVersion();
 
                 break;
             }
@@ -1726,6 +1800,7 @@ export class A_Scope<
 
                 this._entities.set(param1.aseid.toString(), param1 as InstanceType<_EntityType[number]>);
                 A_Context.register(this, param1);
+                this.bumpVersion();
                 break;
             }
             // 4) In case when it's a A-Fragment instance
@@ -1740,6 +1815,7 @@ export class A_Scope<
                 );
 
                 A_Context.register(this, param1);
+                this.bumpVersion();
 
                 break;
             }
@@ -1754,6 +1830,7 @@ export class A_Scope<
                 );
 
                 A_Context.register(this, (param1 as any));
+                this.bumpVersion();
                 break;
             }
 
@@ -1762,26 +1839,34 @@ export class A_Scope<
             // ------------------------------------------
             // 6) In case when it's a A-Component constructor
             case A_TypeGuards.isComponentConstructor(param1): {
-                if (!this.allowedComponents.has(param1))
+                if (!this.allowedComponents.has(param1)) {
                     this.allowedComponents.add(param1 as _ComponentType[number]);
+                    this.bumpVersion();
+                }
                 break;
             }
             // 8) In case when it's a A-Fragment constructor
             case A_TypeGuards.isFragmentConstructor(param1): {
-                if (!this.allowedFragments.has(param1))
+                if (!this.allowedFragments.has(param1)) {
                     this.allowedFragments.add(param1 as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
+                    this.bumpVersion();
+                }
                 break;
             }
             // 9) In case when it's a A-Entity constructor
             case A_TypeGuards.isEntityConstructor(param1): {
-                if (!this.allowedEntities.has(param1))
+                if (!this.allowedEntities.has(param1)) {
                     this.allowedEntities.add(param1 as _EntityType[number]);
+                    this.bumpVersion();
+                }
                 break;
             }
             // 10) In case when it's a A-Error constructor
             case A_TypeGuards.isErrorConstructor(param1): {
-                if (!this.allowedErrors.has(param1))
+                if (!this.allowedErrors.has(param1)) {
                     this.allowedErrors.add(param1 as _ErrorType[number]);
+                    this.bumpVersion();
+                }
                 break;
             }
 
@@ -1891,6 +1976,7 @@ export class A_Scope<
                     this.allowedComponents.delete(ctor);
                 }
 
+                this.bumpVersion();
                 break;
             }
             // 3) In case when it's a A-Entity instance
@@ -1906,6 +1992,7 @@ export class A_Scope<
                     this.allowedEntities.delete(ctor);
                 }
 
+                this.bumpVersion();
                 break;
             }
             // 4) In case when it's a A-Fragment instance
@@ -1920,6 +2007,7 @@ export class A_Scope<
                     this.allowedFragments.delete(ctor);
                 }
 
+                this.bumpVersion();
                 break;
             }
             // 5) In case when it's a A-Error instance
@@ -1935,6 +2023,7 @@ export class A_Scope<
                     this.allowedErrors.delete(ctor);
                 }
 
+                this.bumpVersion();
                 break;
             }
 
@@ -1944,6 +2033,7 @@ export class A_Scope<
             // 6) In case when it's a A-Component constructor
             case A_TypeGuards.isComponentConstructor(param1): {
                 this.allowedComponents.delete(param1 as _ComponentType[number]);
+                this.bumpVersion();
                 break;
             }
             // 8) In case when it's a A-Fragment constructor
@@ -1957,6 +2047,7 @@ export class A_Scope<
                     }
                 });
 
+                this.bumpVersion();
                 break;
             }
             // 9) In case when it's a A-Entity constructor
@@ -1970,6 +2061,7 @@ export class A_Scope<
                     }
                 });
 
+                this.bumpVersion();
                 break;
             }
             // 10) In case when it's a A-Error constructor
@@ -1983,6 +2075,7 @@ export class A_Scope<
                     }
                 });
 
+                this.bumpVersion();
                 break;
             }
 

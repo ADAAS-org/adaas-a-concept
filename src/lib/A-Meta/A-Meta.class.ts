@@ -130,10 +130,25 @@ export class A_Meta<
      * @param key 
      * @returns 
      */
+    /**
+     * Cache for compiled RegExp instances keyed by their string source.
+     * Avoids re-compiling the same regex pattern on every find() call.
+     */
+    private _regExpCache?: Map<string, RegExp>;
+
     private convertToRegExp(key: string | RegExp): RegExp {
-        return key instanceof RegExp
-            ? key
-            : new RegExp(key);
+        if (key instanceof RegExp) return key;
+
+        // Use cache to avoid re-compiling the same regex pattern repeatedly
+        if (!this._regExpCache) {
+            this._regExpCache = new Map();
+        }
+        let cached = this._regExpCache.get(key);
+        if (!cached) {
+            cached = new RegExp(key);
+            this._regExpCache.set(key, cached);
+        }
+        return cached;
     }
     /**
      * Method to find values in the map by name.

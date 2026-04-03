@@ -119,6 +119,26 @@ export class A_Context {
      */
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta> = new Map();
 
+    /**
+     * Monotonically increasing version counter for _metaStorage.
+     * Incremented whenever a new entry is added to _metaStorage so that
+     * caches depending on meta content can detect staleness.
+     */
+    protected _metaVersion: number = 0;
+
+    /**
+     * Cache for featureExtensions results.
+     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
+     * Automatically invalidated when scope version or meta version changes.
+     */
+    protected _featureExtensionsCache: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
+
+    /**
+     * Maximum number of entries in the featureExtensions cache.
+     * When exceeded, the entire cache is cleared to prevent unbounded growth.
+     */
+    protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
+
 
 
 
@@ -547,6 +567,7 @@ export class A_Context {
                 inheritedMeta = new metaType();
 
             instance._metaStorage.set(property, inheritedMeta.clone());
+            instance._metaVersion++;
         }
 
         // Return the meta for the property
@@ -590,6 +611,7 @@ export class A_Context {
             : param1.constructor as A_TYPES__MetaLinkedComponentConstructors;
 
         instance._metaStorage.set(constructor, existingMeta ? meta.from(existingMeta) : meta);
+        instance._metaVersion++;
     }
 
 
@@ -743,16 +765,13 @@ export class A_Context {
          */
         scope: A_Scope = this.scope(component)
     ): Array<A_TYPES__A_StageStep> {
-        // name for error messages
-        const componentName = A_CommonHelper.getComponentName(component);
-
-        // Input validation
+        // Input validation (defer expensive getComponentName to error paths only)
         if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
         if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
 
         // Check if the parameter is allowed for feature definition
         if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
-            throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
+            throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
 
         const steps: A_TYPES__A_StageStep[] = [
             // 1) Get the base feature definition from the component
@@ -791,75 +810,123 @@ export class A_Context {
     ): Array<A_TYPES__A_StageStep> {
 
         const instance = this.getInstance();
-        // name for error messages
-        const componentName = A_CommonHelper.getComponentName(component);
 
-        // Input validation
+        // Input validation (defer expensive getComponentName to error paths only)
         if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
         if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
 
         // Check if the parameter is allowed for feature definition
         if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
-            throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
+            throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
 
+        // ---- Optimization 1: Check featureExtensions cache ----
+        // Use the effective scope for cache key — the scope that actually contains registered components.
+        // Feature scopes are ephemeral (unique uid per call) and only inherit from the component scope,
+        // so use the parent scope identity when available to enable cache hits across feature calls.
+        const componentCtor = typeof component === 'function' ? component : component.constructor;
+        const effectiveScope = scope.parent || scope;
+        const cacheKey = `${String(name)}::${componentCtor.name}::s${effectiveScope.uid}v${effectiveScope.version}::m${instance._metaVersion}`;
+
+        const cached = instance._featureExtensionsCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
 
         const callNames = A_CommonHelper.getClassInheritanceChain(component)
             .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
             .map(c => `${c.name}.${name}`);
 
-        // const callNames = [`${A_CommonHelper.getComponentName(component)}.${name}`];
-        // const callNames = [`BaseComponent.testFeature`];
-
         const steps: Map<string, A_TYPES__A_StageStep> = new Map();
 
         const allowedComponents: Set<A_TYPES__MetaLinkedComponentConstructors> = new Set();
 
+        // ---- Optimization 2: Pre-cache component names and dependencies ----
+        // Avoid repeated getComponentName() and new A_Dependency() for the same constructor
+        const componentNameCache = new Map<A_TYPES__MetaLinkedComponentConstructors, string>();
+        const dependencyCache = new Map<A_TYPES__MetaLinkedComponentConstructors, A_Dependency>();
+        const getNameCached = (cmp: A_TYPES__MetaLinkedComponentConstructors): string => {
+            let n = componentNameCache.get(cmp);
+            if (n === undefined) {
+                n = A_CommonHelper.getComponentName(cmp);
+                componentNameCache.set(cmp, n);
+            }
+            return n;
+        };
+        const getDependencyCached = (cmp: A_TYPES__MetaLinkedComponentConstructors): A_Dependency => {
+            let d = dependencyCache.get(cmp);
+            if (!d) {
+                d = new A_Dependency(cmp);
+                dependencyCache.set(cmp, d);
+            }
+            return d;
+        };
+
+        // ---- Optimization 3: Build a local set of metas that are in scope ----
+        // Pre-filter _metaStorage entries to only those present in scope,
+        // avoiding repeated scope.has() calls per callName iteration.
+        const scopeFilteredMetas: Array<[A_TYPES__MetaLinkedComponentConstructors, A_ComponentMeta | A_ContainerMeta]> = [];
+        for (const [cmp, meta] of instance._metaStorage) {
+            if (scope.has(cmp) && (
+                A_TypeGuards.isComponentMetaInstance(meta)
+                ||
+                A_TypeGuards.isContainerMetaInstance(meta)
+            )) {
+                scopeFilteredMetas.push([cmp, meta as A_ComponentMeta | A_ContainerMeta]);
+            }
+        }
+
         for (const callName of callNames) {
-            // We need to get all components that has extensions for the feature in component
-            for (const [cmp, meta] of instance._metaStorage) {
-                // Just try to make sure that component not only Indexed but also presented in scope
-                if (scope.has(cmp) && (
-                    A_TypeGuards.isComponentMetaInstance(meta)
-                    ||
-                    A_TypeGuards.isContainerMetaInstance(meta)
-                )) {
-                    allowedComponents.add(cmp);
-                    // Get all extensions for the feature
-                    meta
-                        .extensions(callName)
-                        .forEach((declaration) => {
-                            const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+            // Use pre-filtered list instead of iterating all _metaStorage
+            for (const [cmp, meta] of scopeFilteredMetas) {
+                allowedComponents.add(cmp);
+                // Get all extensions for the feature
+                const extensions = meta.extensions(callName);
 
-                            if (inherited) {
-                                steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
+                for (let i = 0; i < extensions.length; i++) {
+                    const declaration = extensions[i];
+                    const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+
+                    if (inherited) {
+                        steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
+                    }
+
+                    // Check if the declaration has an override regexp and remove matching steps
+                    // Match against both the full step key (Component.handler) and the handler alone
+                    if (declaration.override) {
+                        const overrideRegexp = new RegExp(declaration.override);
+                        for (const [stepKey, step] of steps) {
+                            if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
+                                steps.delete(stepKey);
                             }
+                        }
+                    }
 
-                            // Check if the declaration has an override regexp and remove matching steps
-                            // Match against both the full step key (Component.handler) and the handler alone
-                            if (declaration.override) {
-                                const overrideRegexp = new RegExp(declaration.override);
-                                for (const [stepKey, step] of steps) {
-                                    if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
-                                        steps.delete(stepKey);
-                                    }
-                                }
-                            }
-
-                            steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
-                                dependency: new A_Dependency(cmp),
-                                ...declaration
-                            });
-                        });
+                    steps.set(`${getNameCached(cmp)}.${declaration.handler}`, {
+                        dependency: getDependencyCached(cmp),
+                        ...declaration
+                    });
                 }
             }
         }
 
-        return instance.filterToMostDerived(scope, Array.from(steps.values()));
+        const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
+
+        // ---- Store result in cache ----
+        if (instance._featureExtensionsCache.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
+            instance._featureExtensionsCache.clear();
+        }
+        instance._featureExtensionsCache.set(cacheKey, result);
+
+        return result;
     }
 
 
     /**
      * method helps to filter steps in a way that only the most derived classes are kept.
+     * 
+     * Optimized: Uses a pre-built constructor→class map and single-pass prototype chain
+     * walk to eliminate parent classes in O(n·d) where d is inheritance depth,
+     * instead of the previous O(n²) with isPrototypeOf checks.
      * 
      * @param scope 
      * @param items 
@@ -868,24 +935,50 @@ export class A_Context {
     private filterToMostDerived(
         scope: A_Scope,
         items: A_TYPES__A_StageStep[]): Array<A_TYPES__A_StageStep> {
-        return items.filter(item => {
-            // const currentClass = scope.resolveConstructor(item.dependency.name)
-            const currentClass = scope.resolveConstructor(item.dependency.name)
 
-            // Check if this class is parent of any other in the list
-            const isParentOfAnother = items.some(other => {
-                if (other === item) return false;
+        if (items.length <= 1) return items;
 
-                const otherClass = scope.resolveConstructor(other.dependency.name);
+        // 1) Resolve all dependency names to actual constructor classes
+        //    and build a Set of dependency names present in the items list
+        const resolvedClasses = new Map<string, Function | undefined>();
+        const presentNames = new Set<string>();
 
-                if (!currentClass || !otherClass) return false;
+        for (const item of items) {
+            const depName = item.dependency.name;
+            if (!resolvedClasses.has(depName)) {
+                resolvedClasses.set(depName, scope.resolveConstructor(depName) as Function | undefined);
+            }
+            presentNames.add(depName);
+        }
 
-                return currentClass.prototype.isPrototypeOf(otherClass.prototype);
-            });
+        // 2) Build a set of dependency names that are parents of at least one other item.
+        //    For each resolved class, walk up its prototype chain and mark any ancestor
+        //    that also appears in presentNames as "is parent of another".
+        const parentNames = new Set<string>();
 
-            // Keep only classes that are not parent of any other
-            return !isParentOfAnother;
-        });
+        // Build reverse map: constructor → dependency name (for fast lookup when walking prototypes)
+        const ctorToName = new Map<Function, string>();
+        for (const [depName, ctor] of resolvedClasses) {
+            if (ctor) ctorToName.set(ctor, depName);
+        }
+
+        for (const [depName, ctor] of resolvedClasses) {
+            if (!ctor) continue;
+
+            // Walk prototype chain of this class's prototype to find ancestors
+            let ancestor = Object.getPrototypeOf(ctor.prototype);
+            while (ancestor && ancestor !== Object.prototype) {
+                const ancestorCtor = ancestor.constructor;
+                const ancestorName = ctorToName.get(ancestorCtor);
+                if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
+                    parentNames.add(ancestorName);
+                }
+                ancestor = Object.getPrototypeOf(ancestor);
+            }
+        }
+
+        // 3) Filter: keep only items whose dependency name is NOT in parentNames
+        return items.filter(item => !parentNames.has(item.dependency.name));
     }
 
 
@@ -1070,6 +1163,8 @@ export class A_Context {
         const instance = A_Context.getInstance();
 
         instance._registry = new WeakMap();
+        instance._featureExtensionsCache.clear();
+        instance._metaVersion++;
 
         const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
 

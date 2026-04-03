@@ -159,12 +159,10 @@ export type A_TYPES__FeatureAvailableConstructors = A_TYPES__Component_Construct
 // ---------------------------------------------------------------------------
 /**
  * Indicates a type of Feature Define decorator
+ * 
+ * [!] Uses a single generic descriptor to support both sync and async methods
  */
-export type A_TYPES__FeatureDefineDecoratorDescriptor =
-    TypedPropertyDescriptor<(...args: any[]) => any>
-    | TypedPropertyDescriptor<(...args: any[]) => any>
-    | TypedPropertyDescriptor<(...args: any[]) => Promise<any>>
-    | TypedPropertyDescriptor<(...args: any[]) => Promise<any>>
+export type A_TYPES__FeatureDefineDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => any>
 /**
  * Describes additional configuration properties to be used in Feature Define decorator
  */
@@ -230,12 +228,10 @@ export type A_TYPES__FeatureDefineDecoratorMeta = {
 // ---------------------------------------------------------------------------
 /**
  * Descriptor type for A_Extend decorator
+ * 
+ * [!] Uses a single generic descriptor to support both sync and async methods
  */
-export type A_TYPES__FeatureExtendDecoratorDescriptor =
-    TypedPropertyDescriptor<() => any>
-    | TypedPropertyDescriptor<(...args: any[]) => any>
-    | TypedPropertyDescriptor<(...args: any[]) => Promise<any>>
-    | TypedPropertyDescriptor<() => Promise<any>>
+export type A_TYPES__FeatureExtendDecoratorDescriptor = TypedPropertyDescriptor<(...args: any[]) => any>
 /**
  * Target type for A_Extend decorator
  * 

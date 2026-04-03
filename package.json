@@ -55,6 +55,11 @@
   },
   "scripts": {
     "test": "jest --detectOpenHandles",
+    "bench": "ts-node -r tsconfig-paths/register benchmarks/run-all.ts",
+    "bench:step-manager": "ts-node -r tsconfig-paths/register benchmarks/step-manager.bench.ts",
+    "bench:feature-template": "ts-node -r tsconfig-paths/register benchmarks/feature-template.bench.ts",
+    "bench:scope-resolve": "ts-node -r tsconfig-paths/register benchmarks/scope-resolve.bench.ts",
+    "bench:feature-lifecycle": "ts-node -r tsconfig-paths/register benchmarks/feature-lifecycle.bench.ts",
     "start": "nodemon ./tests/example-usage.ts",
     "example:simple": "nodemon ./examples/simple/concept.ts",
     "example:http": "nodemon ./examples/simple-http-server/concept.ts",
@@ -67,11 +72,14 @@
     "test:simple": "nodemon ./examples/simple/concept.ts"
   },
   "devDependencies": {
+    "@types/benchmark": "^2.1.5",
     "@types/chai": "^4.3.14",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.6",
     "@types/node": "^24.9.1",
+    "benchmark": "^2.1.4",
     "chai": "^5.1.0",
+    "cli-table3": "^0.6.5",
     "dotenv": "^16.4.5",
     "jest": "^29.7.0",
     "mocha": "^10.4.0",

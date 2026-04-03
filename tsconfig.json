@@ -49,6 +49,7 @@
    "include": [
       "src/**/*",
       "tests/**/*",
+      "benchmarks/**/*.ts",
       "examples/**/*.ts",
       "src/index.ts",
       "src/env/global.browser.d.ts"

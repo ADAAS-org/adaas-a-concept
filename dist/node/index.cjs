@@ -1322,20 +1322,17 @@ var A_Meta = class _A_Meta {
   size() {
     return this.meta.size;
   }
-  /**
-   * This method is needed to convert the key to a regular expression and cover cases like: 
-   * 
-   * simple * e.g. "a*" instead of "a.*"
-   * 
-   * simple ? e.g. "a?" instead of "a."
-   * 
-   * etc. 
-   * 
-   * @param key 
-   * @returns 
-   */
   convertToRegExp(key) {
-    return key instanceof RegExp ? key : new RegExp(key);
+    if (key instanceof RegExp) return key;
+    if (!this._regExpCache) {
+      this._regExpCache = /* @__PURE__ */ new Map();
+    }
+    let cached = this._regExpCache.get(key);
+    if (!cached) {
+      cached = new RegExp(key);
+      this._regExpCache.set(key, cached);
+    }
+    return cached;
   }
   /**
    * Method to find values in the map by name.
@@ -3684,14 +3681,36 @@ var A_ComponentMeta = class extends A_Meta {
 };
 
 // src/lib/A-Scope/A-Scope.class.ts
-var A_Scope = class {
+var _A_Scope = class _A_Scope {
   constructor(param1, param2) {
+    /**
+     * Unique numeric ID for this scope instance. Used as a cache key discriminator
+     * to prevent collisions between scopes with the same name or version.
+     */
+    this.uid = _A_Scope._nextUid++;
     /**
      * Internal meta storage using A_Meta for type-safe key-value operations.
      * This stores all the scope's runtime data that can be accessed and modified
      * throughout the execution pipeline or within running containers.
      */
     this._meta = new A_Meta();
+    // ===========================================================================
+    // --------------------Cache & Versioning--------------------------------------
+    // ===========================================================================
+    /**
+     * Monotonically increasing version counter. Incremented on every mutation
+     * (register, deregister, import, deimport, inherit, destroy) so that
+     * external caches (e.g. A_Context feature-extension cache) can detect
+     * staleness cheaply via numeric comparison.
+     */
+    this._version = 0;
+    /**
+     * Cache for resolveConstructor results (both positive and negative).
+     * Key = constructor name (string) or constructor reference toString.
+     * Value = resolved constructor or `null` for negative results.
+     * Invalidated by incrementing _version (cache is cleared on bump).
+     */
+    this._resolveConstructorCache = /* @__PURE__ */ new Map();
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
     // ===========================================================================
@@ -3777,6 +3796,13 @@ var A_Scope = class {
   get allowedErrors() {
     return this._allowedErrors;
   }
+  /**
+   * Returns the current version of the scope. Each mutation increments the version,
+   * allowing external caches to detect staleness via numeric comparison.
+   */
+  get version() {
+    return this._version;
+  }
   // ===========================================================================
   // --------------------Readonly Registered Properties--------------------------
   // ===========================================================================
@@ -3827,6 +3853,14 @@ var A_Scope = class {
    */
   get parent() {
     return this._parent;
+  }
+  /**
+   * Increments the scope version and clears internal caches.
+   * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
+   */
+  bumpVersion() {
+    this._version++;
+    this._resolveConstructorCache.clear();
   }
   /**
    * Generator to iterate through all parent scopes
@@ -3961,6 +3995,7 @@ var A_Scope = class {
     if (this.issuer()) {
       A_Context.deallocate(this);
     }
+    this.bumpVersion();
   }
   /**
    * Retrieves a value from the scope's meta.
@@ -4036,6 +4071,7 @@ var A_Scope = class {
         `Circular inheritance detected: ${[...circularCheck, parent.name].join(" -> ")}`
       );
     this._parent = parent;
+    this.bumpVersion();
     return this;
   }
   /**
@@ -4057,6 +4093,7 @@ var A_Scope = class {
       if (this._imports.has(scope))
         return;
       this._imports.add(scope);
+      this.bumpVersion();
     });
     return this;
   }
@@ -4069,8 +4106,10 @@ var A_Scope = class {
    */
   deimport(...scopes) {
     scopes.forEach((scope) => {
-      if (this._imports.has(scope))
+      if (this._imports.has(scope)) {
         this._imports.delete(scope);
+        this.bumpVersion();
+      }
     });
     return this;
   }
@@ -4211,6 +4250,20 @@ var A_Scope = class {
         A_ScopeError.ResolutionError,
         `Invalid constructor name provided: ${name}`
       );
+    const cacheKey = name;
+    if (this._resolveConstructorCache.has(cacheKey)) {
+      const cached = this._resolveConstructorCache.get(cacheKey);
+      return cached === null ? void 0 : cached;
+    }
+    const resolved = this._resolveConstructorUncached(name);
+    this._resolveConstructorCache.set(cacheKey, resolved ?? null);
+    return resolved;
+  }
+  /**
+   * Internal uncached implementation of resolveConstructor for string names.
+   * Separated to allow the public method to wrap with caching.
+   */
+  _resolveConstructorUncached(name) {
     const component = Array.from(this.allowedComponents).find(
       (c) => c.name === name || c.name === A_FormatterHelper.toPascalCase(name)
     );
@@ -4558,6 +4611,7 @@ var A_Scope = class {
           param1
         );
         A_Context.register(this, param1);
+        this.bumpVersion();
         break;
       }
       // 3) In case when it's a A-Entity instance
@@ -4566,6 +4620,7 @@ var A_Scope = class {
           this.allowedEntities.add(param1.constructor);
         this._entities.set(param1.aseid.toString(), param1);
         A_Context.register(this, param1);
+        this.bumpVersion();
         break;
       }
       // 4) In case when it's a A-Fragment instance
@@ -4577,6 +4632,7 @@ var A_Scope = class {
           param1
         );
         A_Context.register(this, param1);
+        this.bumpVersion();
         break;
       }
       // 5) In case when it's a A-Error instance
@@ -4588,6 +4644,7 @@ var A_Scope = class {
           param1
         );
         A_Context.register(this, param1);
+        this.bumpVersion();
         break;
       }
       // ------------------------------------------
@@ -4595,26 +4652,34 @@ var A_Scope = class {
       // ------------------------------------------
       // 6) In case when it's a A-Component constructor
       case A_TypeGuards.isComponentConstructor(param1): {
-        if (!this.allowedComponents.has(param1))
+        if (!this.allowedComponents.has(param1)) {
           this.allowedComponents.add(param1);
+          this.bumpVersion();
+        }
         break;
       }
       // 8) In case when it's a A-Fragment constructor
       case A_TypeGuards.isFragmentConstructor(param1): {
-        if (!this.allowedFragments.has(param1))
+        if (!this.allowedFragments.has(param1)) {
           this.allowedFragments.add(param1);
+          this.bumpVersion();
+        }
         break;
       }
       // 9) In case when it's a A-Entity constructor
       case A_TypeGuards.isEntityConstructor(param1): {
-        if (!this.allowedEntities.has(param1))
+        if (!this.allowedEntities.has(param1)) {
           this.allowedEntities.add(param1);
+          this.bumpVersion();
+        }
         break;
       }
       // 10) In case when it's a A-Error constructor
       case A_TypeGuards.isErrorConstructor(param1): {
-        if (!this.allowedErrors.has(param1))
+        if (!this.allowedErrors.has(param1)) {
           this.allowedErrors.add(param1);
+          this.bumpVersion();
+        }
         break;
       }
       // ------------------------------------------
@@ -4654,6 +4719,7 @@ var A_Scope = class {
         if (!hasComponent) {
           this.allowedComponents.delete(ctor);
         }
+        this.bumpVersion();
         break;
       }
       // 3) In case when it's a A-Entity instance
@@ -4665,6 +4731,7 @@ var A_Scope = class {
         if (!hasEntity) {
           this.allowedEntities.delete(ctor);
         }
+        this.bumpVersion();
         break;
       }
       // 4) In case when it's a A-Fragment instance
@@ -4676,6 +4743,7 @@ var A_Scope = class {
         if (!hasFragment) {
           this.allowedFragments.delete(ctor);
         }
+        this.bumpVersion();
         break;
       }
       // 5) In case when it's a A-Error instance
@@ -4687,6 +4755,7 @@ var A_Scope = class {
         if (!hasError) {
           this.allowedErrors.delete(ctor);
         }
+        this.bumpVersion();
         break;
       }
       // ------------------------------------------
@@ -4695,6 +4764,7 @@ var A_Scope = class {
       // 6) In case when it's a A-Component constructor
       case A_TypeGuards.isComponentConstructor(param1): {
         this.allowedComponents.delete(param1);
+        this.bumpVersion();
         break;
       }
       // 8) In case when it's a A-Fragment constructor
@@ -4706,6 +4776,7 @@ var A_Scope = class {
             A_Context.deregister(instance);
           }
         });
+        this.bumpVersion();
         break;
       }
       // 9) In case when it's a A-Entity constructor
@@ -4717,6 +4788,7 @@ var A_Scope = class {
             A_Context.deregister(instance);
           }
         });
+        this.bumpVersion();
         break;
       }
       // 10) In case when it's a A-Error constructor
@@ -4728,6 +4800,7 @@ var A_Scope = class {
             A_Context.deregister(instance);
           }
         });
+        this.bumpVersion();
         break;
       }
       // ------------------------------------------
@@ -4848,6 +4921,11 @@ var A_Scope = class {
     console.log(chain.join(" -> "));
   }
 };
+/**
+ * Auto-incrementing counter for generating unique scope IDs.
+ */
+_A_Scope._nextUid = 0;
+var A_Scope = _A_Scope;
 
 // src/lib/A-Scope/A-Scope.error.ts
 var A_ScopeError = class extends A_Error {
@@ -4884,7 +4962,7 @@ A_ContextError.ComponentNotRegisteredError = "Component not registered in the co
 A_ContextError.InvalidDeregisterParameterError = "Invalid parameter provided to deregister component";
 
 // src/lib/A-Context/A-Context.class.ts
-var A_Context = class _A_Context {
+var _A_Context = class _A_Context {
   /**
    * Private constructor to enforce singleton pattern.
    * 
@@ -4911,6 +4989,18 @@ var A_Context = class _A_Context {
      * Meta provides to store extra information about the class behavior and configuration.
      */
     this._metaStorage = /* @__PURE__ */ new Map();
+    /**
+     * Monotonically increasing version counter for _metaStorage.
+     * Incremented whenever a new entry is added to _metaStorage so that
+     * caches depending on meta content can detect staleness.
+     */
+    this._metaVersion = 0;
+    /**
+     * Cache for featureExtensions results.
+     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
+     * Automatically invalidated when scope version or meta version changes.
+     */
+    this._featureExtensionsCache = /* @__PURE__ */ new Map();
     this._globals = /* @__PURE__ */ new Map();
     const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     this._root = new A_Scope({ name });
@@ -5114,6 +5204,7 @@ var A_Context = class _A_Context {
       if (!inheritedMeta)
         inheritedMeta = new metaType();
       instance._metaStorage.set(property, inheritedMeta.clone());
+      instance._metaVersion++;
     }
     return instance._metaStorage.get(property);
   }
@@ -5122,6 +5213,7 @@ var A_Context = class _A_Context {
     const existingMeta = _A_Context.meta(param1);
     const constructor = typeof param1 === "function" ? param1 : param1.constructor;
     instance._metaStorage.set(constructor, existingMeta ? meta.from(existingMeta) : meta);
+    instance._metaVersion++;
   }
   /**
    * 
@@ -5177,11 +5269,10 @@ var A_Context = class _A_Context {
    * @param name 
    */
   static featureTemplate(name, component, scope = this.scope(component)) {
-    const componentName = A_CommonHelper.getComponentName(component);
     if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
-      throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
+      throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
     const steps = [
       // 1) Get the base feature definition from the component
       ...this.featureDefinition(name, component),
@@ -5204,59 +5295,116 @@ var A_Context = class _A_Context {
    */
   static featureExtensions(name, component, scope) {
     const instance = this.getInstance();
-    const componentName = A_CommonHelper.getComponentName(component);
     if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
-      throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${componentName} is not allowed for feature definition.`);
+      throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
+    const componentCtor = typeof component === "function" ? component : component.constructor;
+    const effectiveScope = scope.parent || scope;
+    const cacheKey = `${String(name)}::${componentCtor.name}::s${effectiveScope.uid}v${effectiveScope.version}::m${instance._metaVersion}`;
+    const cached = instance._featureExtensionsCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const callNames = A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity).map((c) => `${c.name}.${name}`);
     const steps = /* @__PURE__ */ new Map();
     const allowedComponents = /* @__PURE__ */ new Set();
+    const componentNameCache = /* @__PURE__ */ new Map();
+    const dependencyCache = /* @__PURE__ */ new Map();
+    const getNameCached = (cmp) => {
+      let n = componentNameCache.get(cmp);
+      if (n === void 0) {
+        n = A_CommonHelper.getComponentName(cmp);
+        componentNameCache.set(cmp, n);
+      }
+      return n;
+    };
+    const getDependencyCached = (cmp) => {
+      let d = dependencyCache.get(cmp);
+      if (!d) {
+        d = new A_Dependency(cmp);
+        dependencyCache.set(cmp, d);
+      }
+      return d;
+    };
+    const scopeFilteredMetas = [];
+    for (const [cmp, meta] of instance._metaStorage) {
+      if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
+        scopeFilteredMetas.push([cmp, meta]);
+      }
+    }
     for (const callName of callNames) {
-      for (const [cmp, meta] of instance._metaStorage) {
-        if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
-          allowedComponents.add(cmp);
-          meta.extensions(callName).forEach((declaration) => {
-            const inherited = Array.from(allowedComponents).reverse().find((c) => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
-            if (inherited) {
-              steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
-            }
-            if (declaration.override) {
-              const overrideRegexp = new RegExp(declaration.override);
-              for (const [stepKey, step] of steps) {
-                if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
-                  steps.delete(stepKey);
-                }
+      for (const [cmp, meta] of scopeFilteredMetas) {
+        allowedComponents.add(cmp);
+        const extensions = meta.extensions(callName);
+        for (let i = 0; i < extensions.length; i++) {
+          const declaration = extensions[i];
+          const inherited = Array.from(allowedComponents).reverse().find((c) => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+          if (inherited) {
+            steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
+          }
+          if (declaration.override) {
+            const overrideRegexp = new RegExp(declaration.override);
+            for (const [stepKey, step] of steps) {
+              if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
+                steps.delete(stepKey);
               }
             }
-            steps.set(`${A_CommonHelper.getComponentName(cmp)}.${declaration.handler}`, {
-              dependency: new A_Dependency(cmp),
-              ...declaration
-            });
+          }
+          steps.set(`${getNameCached(cmp)}.${declaration.handler}`, {
+            dependency: getDependencyCached(cmp),
+            ...declaration
           });
         }
       }
     }
-    return instance.filterToMostDerived(scope, Array.from(steps.values()));
+    const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
+    if (instance._featureExtensionsCache.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
+      instance._featureExtensionsCache.clear();
+    }
+    instance._featureExtensionsCache.set(cacheKey, result);
+    return result;
   }
   /**
    * method helps to filter steps in a way that only the most derived classes are kept.
+   * 
+   * Optimized: Uses a pre-built constructor→class map and single-pass prototype chain
+   * walk to eliminate parent classes in O(n·d) where d is inheritance depth,
+   * instead of the previous O(n²) with isPrototypeOf checks.
    * 
    * @param scope 
    * @param items 
    * @returns 
    */
   filterToMostDerived(scope, items) {
-    return items.filter((item) => {
-      const currentClass = scope.resolveConstructor(item.dependency.name);
-      const isParentOfAnother = items.some((other) => {
-        if (other === item) return false;
-        const otherClass = scope.resolveConstructor(other.dependency.name);
-        if (!currentClass || !otherClass) return false;
-        return currentClass.prototype.isPrototypeOf(otherClass.prototype);
-      });
-      return !isParentOfAnother;
-    });
+    if (items.length <= 1) return items;
+    const resolvedClasses = /* @__PURE__ */ new Map();
+    const presentNames = /* @__PURE__ */ new Set();
+    for (const item of items) {
+      const depName = item.dependency.name;
+      if (!resolvedClasses.has(depName)) {
+        resolvedClasses.set(depName, scope.resolveConstructor(depName));
+      }
+      presentNames.add(depName);
+    }
+    const parentNames = /* @__PURE__ */ new Set();
+    const ctorToName = /* @__PURE__ */ new Map();
+    for (const [depName, ctor] of resolvedClasses) {
+      if (ctor) ctorToName.set(ctor, depName);
+    }
+    for (const [depName, ctor] of resolvedClasses) {
+      if (!ctor) continue;
+      let ancestor = Object.getPrototypeOf(ctor.prototype);
+      while (ancestor && ancestor !== Object.prototype) {
+        const ancestorCtor = ancestor.constructor;
+        const ancestorName = ctorToName.get(ancestorCtor);
+        if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
+          parentNames.add(ancestorName);
+        }
+        ancestor = Object.getPrototypeOf(ancestor);
+      }
+    }
+    return items.filter((item) => !parentNames.has(item.dependency.name));
   }
   /**
    * This method returns the feature template definition without any extensions.
@@ -5371,6 +5519,8 @@ var A_Context = class _A_Context {
   static reset() {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
+    instance._featureExtensionsCache.clear();
+    instance._metaVersion++;
     const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     instance._root = new A_Scope({ name });
   }
@@ -5414,6 +5564,12 @@ var A_Context = class _A_Context {
     return A_TypeGuards.isContainerConstructor(param) || A_TypeGuards.isComponentConstructor(param) || A_TypeGuards.isEntityConstructor(param);
   }
 };
+/**
+ * Maximum number of entries in the featureExtensions cache.
+ * When exceeded, the entire cache is cleared to prevent unbounded growth.
+ */
+_A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
+var A_Context = _A_Context;
 
 // src/lib/A-Abstraction/A-Abstraction.error.ts
 var A_AbstractionError = class extends A_Error {
