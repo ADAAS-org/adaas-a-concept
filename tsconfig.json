@@ -48,6 +48,7 @@
 
    "include": [
       "src/**/*",
+      "dist/**/*",
       "tests/**/*",
       "benchmarks/**/*.ts",
       "examples/**/*.ts",

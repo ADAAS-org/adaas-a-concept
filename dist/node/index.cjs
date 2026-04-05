@@ -3431,8 +3431,26 @@ var A_Feature = class _A_Feature {
       if (this.isProcessed)
         return;
       this._state = "PROCESSING" /* PROCESSING */;
-      const stages = Array.from(this);
-      return this.processStagesSequentially(stages, scope, 0);
+      for (const stage of this) {
+        if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
+        let result;
+        try {
+          result = stage.process(scope);
+        } catch (error) {
+          throw this.createStageError(error, stage);
+        }
+        if (A_TypeGuards.isPromiseInstance(result)) {
+          return result.then(() => {
+            if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
+            return this.processRemainingStagesAsync(scope);
+          }).catch((error) => {
+            throw this.createStageError(error, stage);
+          });
+        }
+      }
+      if (this.state !== "INTERRUPTED" /* INTERRUPTED */) {
+        this.completed();
+      }
     } catch (error) {
       throw this.failed(new A_FeatureError({
         title: A_FeatureError.FeatureProcessingError,
@@ -3443,27 +3461,18 @@ var A_Feature = class _A_Feature {
     }
   }
   /**
-   * Process stages one by one, ensuring each stage completes before starting the next
+   * Async continuation — processes remaining stages after the first async pivot.
+   * Resumes from the current iterator position (this._index).
    */
-  processStagesSequentially(stages, scope, index) {
-    while (index < stages.length) {
+  async processRemainingStagesAsync(scope) {
+    for (const stage of this) {
       if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
-      const stage = stages[index];
-      let result;
       try {
-        result = stage.process(scope);
+        const result = stage.process(scope);
+        if (A_TypeGuards.isPromiseInstance(result)) await result;
       } catch (error) {
         throw this.createStageError(error, stage);
       }
-      if (A_TypeGuards.isPromiseInstance(result)) {
-        return result.then(() => {
-          if (this.state === "INTERRUPTED" /* INTERRUPTED */) return;
-          return this.processStagesSequentially(stages, scope, index + 1);
-        }).catch((error) => {
-          throw this.createStageError(error, stage);
-        });
-      }
-      index++;
     }
     if (this.state !== "INTERRUPTED" /* INTERRUPTED */) {
       this.completed();
@@ -3682,13 +3691,8 @@ var A_ComponentMeta = class extends A_Meta {
 };
 
 // src/lib/A-Scope/A-Scope.class.ts
-var _A_Scope = class _A_Scope {
+var A_Scope = class {
   constructor(param1, param2) {
-    /**
-     * Unique numeric ID for this scope instance. Used as a cache key discriminator
-     * to prevent collisions between scopes with the same name or version.
-     */
-    this.uid = _A_Scope._nextUid++;
     /**
      * Internal meta storage using A_Meta for type-safe key-value operations.
      * This stores all the scope's runtime data that can be accessed and modified
@@ -3712,6 +3716,7 @@ var _A_Scope = class _A_Scope {
      * Invalidated by incrementing _version (cache is cleared on bump).
      */
     this._resolveConstructorCache = /* @__PURE__ */ new Map();
+    this._cachedFingerprintVersion = -1;
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
     // ===========================================================================
@@ -3804,6 +3809,20 @@ var _A_Scope = class _A_Scope {
   get version() {
     return this._version;
   }
+  /**
+   * Returns a content-addressable fingerprint of the scope.
+   * Two scopes with identical content (components, entities, fragments, errors, imports, parent)
+   * will produce the same fingerprint. Dynamically recomputed when scope content changes.
+   */
+  get fingerprint() {
+    const aggregateVersion = this.aggregateVersion(/* @__PURE__ */ new Set());
+    if (this._cachedFingerprint !== void 0 && this._cachedFingerprintVersion === aggregateVersion) {
+      return this._cachedFingerprint;
+    }
+    this._cachedFingerprint = this.computeFingerprint(/* @__PURE__ */ new Set());
+    this._cachedFingerprintVersion = aggregateVersion;
+    return this._cachedFingerprint;
+  }
   // ===========================================================================
   // --------------------Readonly Registered Properties--------------------------
   // ===========================================================================
@@ -3862,6 +3881,45 @@ var _A_Scope = class _A_Scope {
   bumpVersion() {
     this._version++;
     this._resolveConstructorCache.clear();
+    this._cachedFingerprint = void 0;
+  }
+  /**
+   * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
+   * Used to detect when any transitive dependency has changed, so the fingerprint cache can be invalidated.
+   */
+  aggregateVersion(visited) {
+    if (visited.has(this)) return 0;
+    visited.add(this);
+    let v = this._version;
+    if (this._parent) v += this._parent.aggregateVersion(visited);
+    for (const imp of this._imports) v += imp.aggregateVersion(visited);
+    return v;
+  }
+  /**
+   * Computes a deterministic content-addressable fingerprint string.
+   * Includes components, entities, fragments, errors, parent, and imports.
+   */
+  computeFingerprint(visited) {
+    if (visited.has(this)) return "~circular~";
+    visited.add(this);
+    const parts = [];
+    parts.push("P:" + (this._parent ? this._parent.computeFingerprint(visited) : "-"));
+    const allowedComponentNames = Array.from(this._allowedComponents).map((c) => A_CommonHelper.getComponentName(c.name)).sort();
+    parts.push("AC:" + allowedComponentNames.join(","));
+    const allowedEntityNames = Array.from(this._allowedEntities).map((e) => A_CommonHelper.getComponentName(e.name)).sort();
+    parts.push("AE:" + allowedEntityNames.join(","));
+    const allowedFragmentNames = Array.from(this._allowedFragments).map((f) => A_CommonHelper.getComponentName(f.name)).sort();
+    parts.push("AF:" + allowedFragmentNames.join(","));
+    const allowedErrorNames = Array.from(this._allowedErrors).map((e) => A_CommonHelper.getComponentName(e.name)).sort();
+    parts.push("AR:" + allowedErrorNames.join(","));
+    const importFingerprints = Array.from(this._imports).map((s) => s.computeFingerprint(visited)).sort();
+    parts.push("I:" + importFingerprints.join(","));
+    const raw = parts.join("|");
+    let hash = 5381;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) + hash + raw.charCodeAt(i) | 0;
+    }
+    return (hash >>> 0).toString(16);
   }
   /**
    * Generator to iterate through all parent scopes
@@ -3993,9 +4051,6 @@ var _A_Scope = class _A_Scope {
     this._fragments.clear();
     this._entities.clear();
     this._imports.clear();
-    if (this.issuer()) {
-      A_Context.deallocate(this);
-    }
     this.bumpVersion();
   }
   /**
@@ -4144,29 +4199,26 @@ var _A_Scope = class _A_Scope {
       }
       // 3) Check if it's a Component
       case A_TypeGuards.isComponentConstructor(ctor): {
-        found = this.isAllowedComponent(ctor) || !![...this.allowedComponents].find((c) => A_CommonHelper.isInheritedFrom(c, ctor));
+        found = this.isAllowedComponent(ctor) || !!A_Context.findDescendantIn(ctor, this.allowedComponents);
         break;
       }
       // 4) Check if it's an Entity
       case A_TypeGuards.isEntityConstructor(ctor): {
-        found = this.isAllowedEntity(ctor) || !![...this.allowedEntities].find((e) => A_CommonHelper.isInheritedFrom(e, ctor));
+        found = this.isAllowedEntity(ctor) || !!A_Context.findDescendantIn(ctor, this.allowedEntities);
         break;
       }
       // 5) Check if it's a Fragment
       case A_TypeGuards.isFragmentConstructor(ctor): {
-        found = this.isAllowedFragment(ctor) || !![...this.allowedFragments].find((f) => A_CommonHelper.isInheritedFrom(f, ctor));
+        found = this.isAllowedFragment(ctor) || !!A_Context.findDescendantIn(ctor, this.allowedFragments);
         break;
       }
       // 6) Check if it's an Error
       case A_TypeGuards.isErrorConstructor(ctor): {
-        found = this.isAllowedError(ctor) || !![...this.allowedErrors].find((e) => A_CommonHelper.isInheritedFrom(e, ctor));
+        found = this.isAllowedError(ctor) || !!A_Context.findDescendantIn(ctor, this.allowedErrors);
         break;
       }
       // 7) Check scope issuer
-      case (this.issuer() && (this.issuer().constructor === ctor || A_CommonHelper.isInheritedFrom(
-        this.issuer().constructor,
-        ctor
-      ))): {
+      case (this.issuer() && (this.issuer().constructor === ctor || A_Context.isIndexedInheritedFrom(this.issuer().constructor, ctor))): {
         found = true;
         break;
       }
@@ -4238,13 +4290,13 @@ var _A_Scope = class _A_Scope {
   resolveConstructor(name) {
     switch (true) {
       case A_TypeGuards.isComponentConstructor(name):
-        return Array.from(this.allowedComponents).find((c) => A_CommonHelper.isInheritedFrom(c, name));
+        return A_Context.findDescendantIn(name, this.allowedComponents);
       case A_TypeGuards.isEntityConstructor(name):
-        return Array.from(this.allowedEntities).find((e) => A_CommonHelper.isInheritedFrom(e, name));
+        return A_Context.findDescendantIn(name, this.allowedEntities);
       case A_TypeGuards.isFragmentConstructor(name):
-        return Array.from(this.allowedFragments).find((f) => A_CommonHelper.isInheritedFrom(f, name));
+        return A_Context.findDescendantIn(name, this.allowedFragments);
       case A_TypeGuards.isErrorConstructor(name):
-        return Array.from(this.allowedErrors).find((e) => A_CommonHelper.isInheritedFrom(e, name));
+        return A_Context.findDescendantIn(name, this.allowedErrors);
     }
     if (!A_TypeGuards.isString(name))
       throw new A_ScopeError(
@@ -4270,19 +4322,15 @@ var _A_Scope = class _A_Scope {
     );
     if (component) return component;
     else {
-      const protoComponent = Array.from(this.allowedComponents).find(
-        //  it should go rthough prototyopes and check their names to be equal to the provided name
-        (c) => {
-          let current = c;
-          while (current) {
-            if (current.name === name || current.name === A_FormatterHelper.toPascalCase(name)) {
-              return true;
-            }
-            current = Object.getPrototypeOf(current);
-          }
-          return false;
+      const pascalName = A_FormatterHelper.toPascalCase(name);
+      const protoComponent = Array.from(this.allowedComponents).find((c) => {
+        const ancestors = A_Context.getAncestors(c);
+        if (!ancestors) return false;
+        for (const ancestor of ancestors) {
+          if (ancestor.name === name || ancestor.name === pascalName) return true;
         }
-      );
+        return false;
+      });
       if (protoComponent) return protoComponent;
     }
     const entity = Array.from(this.allowedEntities).find(
@@ -4290,9 +4338,15 @@ var _A_Scope = class _A_Scope {
     );
     if (entity) return entity;
     else {
-      const protoEntity = Array.from(this.allowedEntities).find(
-        (e) => A_CommonHelper.isInheritedFrom(e, name)
-      );
+      const pascalName = A_FormatterHelper.toPascalCase(name);
+      const protoEntity = Array.from(this.allowedEntities).find((e) => {
+        const ancestors = A_Context.getAncestors(e);
+        if (!ancestors) return false;
+        for (const ancestor of ancestors) {
+          if (ancestor.name === name || ancestor.name === pascalName) return true;
+        }
+        return false;
+      });
       if (protoEntity) return protoEntity;
     }
     const fragment = Array.from(this.allowedFragments).find(
@@ -4300,9 +4354,15 @@ var _A_Scope = class _A_Scope {
     );
     if (fragment) return fragment;
     else {
-      const protoFragment = Array.from(this.allowedFragments).find(
-        (f) => A_CommonHelper.isInheritedFrom(f, name)
-      );
+      const pascalName = A_FormatterHelper.toPascalCase(name);
+      const protoFragment = Array.from(this.allowedFragments).find((f) => {
+        const ancestors = A_Context.getAncestors(f);
+        if (!ancestors) return false;
+        for (const ancestor of ancestors) {
+          if (ancestor.name === name || ancestor.name === pascalName) return true;
+        }
+        return false;
+      });
       if (protoFragment) return protoFragment;
     }
     for (const importedScope of this._imports) {
@@ -4340,7 +4400,7 @@ var _A_Scope = class _A_Scope {
       // 1) if a parameter is a component constructor
       case A_TypeGuards.isComponentConstructor(param1): {
         this.allowedComponents.forEach((ctor) => {
-          if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(ctor, param1)) {
             const instance = this.resolveOnce(ctor);
             if (instance) results.push(instance);
           }
@@ -4350,7 +4410,7 @@ var _A_Scope = class _A_Scope {
       // 2) if a parameter is a fragment constructor
       case A_TypeGuards.isFragmentConstructor(param1): {
         this.allowedFragments.forEach((ctor) => {
-          if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(ctor, param1)) {
             const instance = this.resolveOnce(ctor);
             if (instance) results.push(instance);
           }
@@ -4359,7 +4419,7 @@ var _A_Scope = class _A_Scope {
       }
       case A_TypeGuards.isEntityConstructor(param1): {
         this.entities.forEach((entity) => {
-          if (A_CommonHelper.isInheritedFrom(entity.constructor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(entity.constructor, param1)) {
             results.push(entity);
           }
         });
@@ -4505,7 +4565,7 @@ var _A_Scope = class _A_Scope {
    */
   resolveIssuer(ctor) {
     const issuer = this.issuer();
-    if (issuer && (issuer.constructor === ctor || A_CommonHelper.isInheritedFrom(issuer?.constructor, ctor))) {
+    if (issuer && (issuer.constructor === ctor || A_Context.isIndexedInheritedFrom(issuer?.constructor, ctor))) {
       return issuer;
     }
     return void 0;
@@ -4548,9 +4608,10 @@ var _A_Scope = class _A_Scope {
     switch (true) {
       case (fragmentInstancePresented && this._fragments.has(fragment)):
         return fragmentInstancePresented;
-      // 3) In case when there's a component that is inherited from the required component
-      case (!fragmentInstancePresented && Array.from(this._allowedFragments).some((el) => A_CommonHelper.isInheritedFrom(el, fragment))): {
-        const found = Array.from(this._allowedFragments).find((el) => A_CommonHelper.isInheritedFrom(el, fragment));
+      // 3) In case when there's a fragment that is inherited from the required fragment
+      case !fragmentInstancePresented: {
+        const found = A_Context.findDescendantIn(fragment, this._allowedFragments);
+        if (!found) return void 0;
         return this.resolveFragment(found);
       }
       default:
@@ -4590,8 +4651,9 @@ var _A_Scope = class _A_Scope {
         return this._components.get(component);
       }
       // 3) In case when there's a component that is inherited from the required component
-      case (!this.allowedComponents.has(component) && Array.from(this.allowedComponents).some((el) => A_CommonHelper.isInheritedFrom(el, component))): {
-        const found = Array.from(this.allowedComponents).find((el) => A_CommonHelper.isInheritedFrom(el, component));
+      case !this.allowedComponents.has(component): {
+        const found = A_Context.findDescendantIn(component, this.allowedComponents);
+        if (!found) return void 0;
         return this.resolveComponent(found);
       }
       default:
@@ -4611,6 +4673,7 @@ var _A_Scope = class _A_Scope {
           param1.constructor,
           param1
         );
+        A_Context.indexConstructor(param1.constructor);
         A_Context.register(this, param1);
         this.bumpVersion();
         break;
@@ -4620,6 +4683,7 @@ var _A_Scope = class _A_Scope {
         if (!this.allowedEntities.has(param1.constructor))
           this.allowedEntities.add(param1.constructor);
         this._entities.set(param1.aseid.toString(), param1);
+        A_Context.indexConstructor(param1.constructor);
         A_Context.register(this, param1);
         this.bumpVersion();
         break;
@@ -4632,6 +4696,7 @@ var _A_Scope = class _A_Scope {
           param1.constructor,
           param1
         );
+        A_Context.indexConstructor(param1.constructor);
         A_Context.register(this, param1);
         this.bumpVersion();
         break;
@@ -4644,6 +4709,7 @@ var _A_Scope = class _A_Scope {
           param1.code,
           param1
         );
+        A_Context.indexConstructor(param1.constructor);
         A_Context.register(this, param1);
         this.bumpVersion();
         break;
@@ -4655,6 +4721,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isComponentConstructor(param1): {
         if (!this.allowedComponents.has(param1)) {
           this.allowedComponents.add(param1);
+          A_Context.indexConstructor(param1);
           this.bumpVersion();
         }
         break;
@@ -4663,6 +4730,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isFragmentConstructor(param1): {
         if (!this.allowedFragments.has(param1)) {
           this.allowedFragments.add(param1);
+          A_Context.indexConstructor(param1);
           this.bumpVersion();
         }
         break;
@@ -4671,6 +4739,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isEntityConstructor(param1): {
         if (!this.allowedEntities.has(param1)) {
           this.allowedEntities.add(param1);
+          A_Context.indexConstructor(param1);
           this.bumpVersion();
         }
         break;
@@ -4679,6 +4748,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isErrorConstructor(param1): {
         if (!this.allowedErrors.has(param1)) {
           this.allowedErrors.add(param1);
+          A_Context.indexConstructor(param1);
           this.bumpVersion();
         }
         break;
@@ -4772,7 +4842,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isFragmentConstructor(param1): {
         this.allowedFragments.delete(param1);
         Array.from(this._fragments.entries()).forEach(([ctor, instance]) => {
-          if (A_CommonHelper.isInheritedFrom(ctor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(ctor, param1)) {
             this._fragments.delete(ctor);
             A_Context.deregister(instance);
           }
@@ -4784,7 +4854,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isEntityConstructor(param1): {
         this.allowedEntities.delete(param1);
         Array.from(this._entities.entries()).forEach(([aseid, instance]) => {
-          if (A_CommonHelper.isInheritedFrom(instance.constructor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(instance.constructor, param1)) {
             this._entities.delete(aseid);
             A_Context.deregister(instance);
           }
@@ -4796,7 +4866,7 @@ var _A_Scope = class _A_Scope {
       case A_TypeGuards.isErrorConstructor(param1): {
         this.allowedErrors.delete(param1);
         Array.from(this._errors.entries()).forEach(([code, instance]) => {
-          if (A_CommonHelper.isInheritedFrom(instance.constructor, param1)) {
+          if (A_Context.isIndexedInheritedFrom(instance.constructor, param1)) {
             this._errors.delete(code);
             A_Context.deregister(instance);
           }
@@ -4922,11 +4992,6 @@ var _A_Scope = class _A_Scope {
     console.log(chain.join(" -> "));
   }
 };
-/**
- * Auto-incrementing counter for generating unique scope IDs.
- */
-_A_Scope._nextUid = 0;
-var A_Scope = _A_Scope;
 
 // src/lib/A-Scope/A-Scope.error.ts
 var A_ScopeError = class extends A_Error {
@@ -5001,7 +5066,20 @@ var _A_Context = class _A_Context {
      * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
      * Automatically invalidated when scope version or meta version changes.
      */
-    this._featureExtensionsCache = /* @__PURE__ */ new Map();
+    this._featureCache = /* @__PURE__ */ new Map();
+    // ====================================================================================================
+    // ================================ INHERITANCE INDEX ==================================================
+    // ====================================================================================================
+    /**
+     * For each indexed constructor, stores the set of all its ancestor constructors
+     * (walking up the prototype chain). Enables O(1) isInheritedFrom checks.
+     */
+    this._ancestors = /* @__PURE__ */ new Map();
+    /**
+     * For each constructor, stores the set of all known descendant constructors.
+     * Enables O(1) "find a descendant in a Set" lookups.
+     */
+    this._descendants = /* @__PURE__ */ new Map();
     this._globals = /* @__PURE__ */ new Map();
     const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     this._root = new A_Scope({ name });
@@ -5077,17 +5155,18 @@ var _A_Context = class _A_Context {
    * @param component - Component to deregister from the context.
    */
   static deregister(component) {
-    const componentName = A_CommonHelper.getComponentName(component);
-    const instance = this.getInstance();
     if (!component) throw new A_ContextError(
       A_ContextError.InvalidDeregisterParameterError,
       `Unable to deregister component. Component cannot be null or undefined.`
     );
-    if (!instance._scopeStorage.has(component)) throw new A_ContextError(
-      A_ContextError.ComponentNotRegisteredError,
-      `Unable to deregister component. Component ${componentName} is not registered.`
-    );
-    instance._scopeStorage.delete(component);
+    const instance = this.getInstance();
+    if (!instance._scopeStorage.delete(component)) {
+      const componentName = A_CommonHelper.getComponentName(component);
+      throw new A_ContextError(
+        A_ContextError.ComponentNotRegisteredError,
+        `Unable to deregister component. Component ${componentName} is not registered.`
+      );
+    }
   }
   static allocate(component, importing) {
     const componentName = A_CommonHelper.getComponentName(component);
@@ -5206,6 +5285,7 @@ var _A_Context = class _A_Context {
         inheritedMeta = new metaType();
       instance._metaStorage.set(property, inheritedMeta.clone());
       instance._metaVersion++;
+      this.indexConstructor(property);
     }
     return instance._metaStorage.get(property);
   }
@@ -5274,12 +5354,22 @@ var _A_Context = class _A_Context {
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
       throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
+    const instance = this.getInstance();
+    const cacheKey = `${String(name)}::${A_CommonHelper.getComponentName(component)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+    const cached = instance._featureCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
     const steps = [
       // 1) Get the base feature definition from the component
       ...this.featureDefinition(name, component),
       // 2) Get all extensions for the feature from other components in the scope
       ...this.featureExtensions(name, component, scope)
     ];
+    if (instance._featureCache.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
+      instance._featureCache.clear();
+    }
+    instance._featureCache.set(cacheKey, steps);
     return steps;
   }
   // ----------------------------------------------------------------------------------------------------------
@@ -5300,13 +5390,6 @@ var _A_Context = class _A_Context {
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
       throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
-    const componentCtor = typeof component === "function" ? component : component.constructor;
-    const effectiveScope = scope.parent || scope;
-    const cacheKey = `${String(name)}::${componentCtor.name}::s${effectiveScope.uid}v${effectiveScope.version}::m${instance._metaVersion}`;
-    const cached = instance._featureExtensionsCache.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
     const callNames = A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity).map((c) => `${c.name}.${name}`);
     const steps = /* @__PURE__ */ new Map();
     const allowedComponents = /* @__PURE__ */ new Set();
@@ -5340,7 +5423,7 @@ var _A_Context = class _A_Context {
         const extensions = meta.extensions(callName);
         for (let i = 0; i < extensions.length; i++) {
           const declaration = extensions[i];
-          const inherited = Array.from(allowedComponents).reverse().find((c) => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+          const inherited = Array.from(allowedComponents).reverse().find((c) => _A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
           if (inherited) {
             steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
           }
@@ -5360,10 +5443,6 @@ var _A_Context = class _A_Context {
       }
     }
     const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
-    if (instance._featureExtensionsCache.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
-      instance._featureExtensionsCache.clear();
-    }
-    instance._featureExtensionsCache.set(cacheKey, result);
     return result;
   }
   /**
@@ -5395,14 +5474,14 @@ var _A_Context = class _A_Context {
     }
     for (const [depName, ctor] of resolvedClasses) {
       if (!ctor) continue;
-      let ancestor = Object.getPrototypeOf(ctor.prototype);
-      while (ancestor && ancestor !== Object.prototype) {
-        const ancestorCtor = ancestor.constructor;
-        const ancestorName = ctorToName.get(ancestorCtor);
-        if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
-          parentNames.add(ancestorName);
+      const ancestors = _A_Context.getAncestors(ctor);
+      if (ancestors) {
+        for (const ancestor of ancestors) {
+          const ancestorName = ctorToName.get(ancestor);
+          if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
+            parentNames.add(ancestorName);
+          }
         }
-        ancestor = Object.getPrototypeOf(ancestor);
       }
     }
     return items.filter((item) => !parentNames.has(item.dependency.name));
@@ -5501,7 +5580,7 @@ var _A_Context = class _A_Context {
       if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
         allowedComponents.add(cmp);
         meta.abstractions(abstraction).forEach((declaration) => {
-          const inherited = Array.from(allowedComponents).reverse().find((c) => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+          const inherited = Array.from(allowedComponents).reverse().find((c) => _A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
           if (inherited) {
             steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
           }
@@ -5520,10 +5599,130 @@ var _A_Context = class _A_Context {
   static reset() {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
-    instance._featureExtensionsCache.clear();
+    instance._featureCache.clear();
+    instance._ancestors.clear();
+    instance._descendants.clear();
     instance._metaVersion++;
     const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     instance._root = new A_Scope({ name });
+  }
+  // ====================================================================================================================
+  // ====================================== INHERITANCE INDEX ============================================================
+  // ====================================================================================================================
+  /**
+   * Index a constructor's full prototype chain into the inheritance graph.
+   * Safe to call multiple times for the same constructor — it's a no-op if already indexed.
+   * 
+   * After indexing, `A_Context.isIndexedInheritedFrom(child, parent)` becomes O(1).
+   */
+  static indexConstructor(ctor) {
+    const instance = this.getInstance();
+    if (instance._ancestors.has(ctor)) return;
+    const ancestors = /* @__PURE__ */ new Set();
+    let current = Object.getPrototypeOf(ctor);
+    while (current && current !== Function.prototype && current !== Object) {
+      ancestors.add(current);
+      let desc = instance._descendants.get(current);
+      if (!desc) {
+        desc = /* @__PURE__ */ new Set();
+        instance._descendants.set(current, desc);
+      }
+      desc.add(ctor);
+      const existingAncestors = instance._ancestors.get(current);
+      if (existingAncestors) {
+        for (const a of existingAncestors) {
+          ancestors.add(a);
+          let desc2 = instance._descendants.get(a);
+          if (!desc2) {
+            desc2 = /* @__PURE__ */ new Set();
+            instance._descendants.set(a, desc2);
+          }
+          desc2.add(ctor);
+        }
+        break;
+      }
+      current = Object.getPrototypeOf(current);
+    }
+    instance._ancestors.set(ctor, ancestors);
+    if (!instance._descendants.has(ctor)) {
+      instance._descendants.set(ctor, /* @__PURE__ */ new Set());
+    }
+  }
+  /**
+   * O(1) check whether `child` inherits from `parent` using the pre-built index.
+   * Falls back to prototype chain walking if either is not yet indexed.
+   * 
+   * [!] Handles the same-class case: returns true if child === parent.
+   */
+  static isIndexedInheritedFrom(child, parent) {
+    if (child === parent) return true;
+    const instance = this.getInstance();
+    const ancestors = instance._ancestors.get(child);
+    if (ancestors) return ancestors.has(parent);
+    return A_CommonHelper.isInheritedFrom(child, parent);
+  }
+  /**
+   * Find the first constructor in `candidates` that is a descendant of (or equal to) `parent`.
+   * Returns undefined if none found.
+   * 
+   * Uses the optimal strategy based on set sizes:
+   * - If candidates is small, iterates candidates and checks ancestry (O(c))
+   * - If descendants is small, iterates descendants and checks membership (O(d))
+   */
+  static findDescendantIn(parent, candidates) {
+    const candidateSize = candidates instanceof Set ? candidates.size : candidates.length;
+    if (candidates instanceof Set) {
+      if (candidates.has(parent)) return parent;
+    } else {
+      if (candidates.includes(parent)) return parent;
+    }
+    const instance = this.getInstance();
+    const descendants = instance._descendants.get(parent);
+    const descendantSize = descendants ? descendants.size : 0;
+    if (descendantSize === 0) {
+      if (candidates instanceof Set) {
+        for (const c of candidates) {
+          const ancestors = instance._ancestors.get(c);
+          if (ancestors && ancestors.has(parent)) return c;
+        }
+      } else {
+        for (const c of candidates) {
+          const ancestors = instance._ancestors.get(c);
+          if (ancestors && ancestors.has(parent)) return c;
+        }
+      }
+      return void 0;
+    }
+    if (candidateSize <= descendantSize) {
+      if (candidates instanceof Set) {
+        for (const c of candidates) {
+          if (c === parent) return c;
+          const ancestors = instance._ancestors.get(c);
+          if (ancestors && ancestors.has(parent)) return c;
+        }
+      } else {
+        for (const c of candidates) {
+          if (c === parent) return c;
+          const ancestors = instance._ancestors.get(c);
+          if (ancestors && ancestors.has(parent)) return c;
+        }
+      }
+    } else {
+      for (const desc of descendants) {
+        if (candidates instanceof Set) {
+          if (candidates.has(desc)) return desc;
+        } else {
+          if (candidates.includes(desc)) return desc;
+        }
+      }
+    }
+    return void 0;
+  }
+  /**
+   * Returns the set of indexed ancestors for a constructor, or undefined if not indexed.
+   */
+  static getAncestors(ctor) {
+    return this.getInstance()._ancestors.get(ctor);
   }
   // ====================================================================================================================
   // ====================================== HELPERS & GUARDS ============================================================

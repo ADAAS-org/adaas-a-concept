@@ -332,6 +332,7 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         // 4) allocate new scope for the feature
         const scope = A_Context.allocate(this);
+        // const scope = componentScope || externalScope!
 
         // 5) ensure that the scope of the caller component is inherited by the feature scope
         scope.inherit(componentScope || externalScope!);
@@ -375,10 +376,34 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
             this._state = A_TYPES__FeatureState.PROCESSING;
 
-            // Convert iterator to array to get all stages
-            const stages = Array.from(this);
+            for (const stage of this) {
+                if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
 
-            return this.processStagesSequentially(stages, scope, 0);
+                let result: Promise<void> | void
+
+                try {
+                    result = stage.process(scope)
+                } catch (error) {
+                    throw this.createStageError(error, stage)
+                }
+
+                // ── Async stage — pivot to async continuation ─────────────────────
+                if (A_TypeGuards.isPromiseInstance(result)) {
+                    return result
+                        .then(() => {
+                            if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
+                            return this.processRemainingStagesAsync(scope)
+                        })
+                        .catch(error => {
+                            throw this.createStageError(error, stage)
+                        })
+                }
+            }
+
+            // ── All stages complete ───────────────────────────────────────────────
+            if (this.state !== A_TYPES__FeatureState.INTERRUPTED) {
+                this.completed()
+            }
 
         } catch (error) {
             throw this.failed(new A_FeatureError({
@@ -391,41 +416,19 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     }
 
     /**
-     * Process stages one by one, ensuring each stage completes before starting the next
+     * Async continuation — processes remaining stages after the first async pivot.
+     * Resumes from the current iterator position (this._index).
      */
-    private processStagesSequentially(
-        stages: A_Stage[],
-        scope: A_Scope | undefined,
-        index: number
-    ): Promise<void> | void {
-
-        // ── Sync loop — avoids stack overflow for all-sync chains ────────────────
-        while (index < stages.length) {
-
+    private async processRemainingStagesAsync(scope: A_Scope | undefined): Promise<void> {
+        for (const stage of this) {
             if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
 
-            const stage = stages[index]
-            let result: Promise<void> | void
-
             try {
-                result = stage.process(scope)
+                const result = stage.process(scope)
+                if (A_TypeGuards.isPromiseInstance(result)) await result
             } catch (error) {
                 throw this.createStageError(error, stage)
             }
-
-            // ── Async stage — hand off to promise chain ───────────────────────────
-            if (A_TypeGuards.isPromiseInstance(result)) {
-                return result
-                    .then(() => {
-                        if (this.state === A_TYPES__FeatureState.INTERRUPTED) return
-                        return this.processStagesSequentially(stages, scope, index + 1)
-                    })
-                    .catch(error => {
-                        throw this.createStageError(error, stage)
-                    })
-            }
-
-            index++
         }
 
         // ── All stages complete ───────────────────────────────────────────────────

@@ -2010,9 +2010,10 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     scope?: A_Scope): Promise<void> | void;
     /**
-     * Process stages one by one, ensuring each stage completes before starting the next
+     * Async continuation — processes remaining stages after the first async pivot.
+     * Resumes from the current iterator position (this._index).
      */
-    private processStagesSequentially;
+    private processRemainingStagesAsync;
     private createStageError;
     /**
      * This method moves the feature to the next stage
@@ -2989,15 +2990,6 @@ type A_TYPES_ScopeIndependentComponents = A_Error | A_Scope | A_Caller;
 
 declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentType extends A_TYPES__Component_Constructor[] = A_TYPES__Component_Constructor[], _ErrorType extends A_TYPES__Error_Constructor[] = A_TYPES__Error_Constructor[], _EntityType extends A_TYPES__Entity_Constructor[] = A_TYPES__Entity_Constructor[], _FragmentType extends A_Fragment[] = A_Fragment[]> {
     /**
-     * Auto-incrementing counter for generating unique scope IDs.
-     */
-    private static _nextUid;
-    /**
-     * Unique numeric ID for this scope instance. Used as a cache key discriminator
-     * to prevent collisions between scopes with the same name or version.
-     */
-    readonly uid: number;
-    /**
      * Scope Name uses for identification and logging purposes
      */
     protected _name: string;
@@ -3025,6 +3017,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Invalidated by incrementing _version (cache is cleared on bump).
      */
     protected _resolveConstructorCache: Map<string | Function, Function | null>;
+    /**
+     * Cached fingerprint string. Invalidated on every bumpVersion() call.
+     */
+    private _cachedFingerprint;
+    private _cachedFingerprintVersion;
     /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
@@ -3092,6 +3089,12 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     get version(): number;
     /**
+     * Returns a content-addressable fingerprint of the scope.
+     * Two scopes with identical content (components, entities, fragments, errors, imports, parent)
+     * will produce the same fingerprint. Dynamically recomputed when scope content changes.
+     */
+    get fingerprint(): string;
+    /**
      * Returns an Array of entities registered in the scope
      *
      * [!] One entity per aseid
@@ -3132,6 +3135,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
      */
     protected bumpVersion(): void;
+    /**
+     * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
+     * Used to detect when any transitive dependency has changed, so the fingerprint cache can be invalidated.
+     */
+    private aggregateVersion;
+    /**
+     * Computes a deterministic content-addressable fingerprint string.
+     * Includes components, entities, fragments, errors, parent, and imports.
+     */
+    private computeFingerprint;
     /**
      * A_Scope is a unique A-Concept Structure that allows to operate with A-Concept Primitives and Models in a specific context and with specific rules.
      *  It refers to the visibility and accessibility of :
@@ -4210,12 +4223,22 @@ declare class A_Context {
      * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
      * Automatically invalidated when scope version or meta version changes.
      */
-    protected _featureExtensionsCache: Map<string, Array<A_TYPES__A_StageStep>>;
+    protected _featureCache: Map<string, Array<A_TYPES__A_StageStep>>;
     /**
      * Maximum number of entries in the featureExtensions cache.
      * When exceeded, the entire cache is cleared to prevent unbounded growth.
      */
     protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
+    /**
+     * For each indexed constructor, stores the set of all its ancestor constructors
+     * (walking up the prototype chain). Enables O(1) isInheritedFrom checks.
+     */
+    protected _ancestors: Map<Function, Set<Function>>;
+    /**
+     * For each constructor, stores the set of all known descendant constructors.
+     * Enables O(1) "find a descendant in a Set" lookups.
+     */
+    protected _descendants: Map<Function, Set<Function>>;
     protected _globals: Map<string, any>;
     /**
      * Private constructor to enforce singleton pattern.
@@ -4531,6 +4554,33 @@ declare class A_Context {
      * Resets the Context to its initial state.
      */
     static reset(): void;
+    /**
+     * Index a constructor's full prototype chain into the inheritance graph.
+     * Safe to call multiple times for the same constructor — it's a no-op if already indexed.
+     *
+     * After indexing, `A_Context.isIndexedInheritedFrom(child, parent)` becomes O(1).
+     */
+    static indexConstructor(ctor: Function): void;
+    /**
+     * O(1) check whether `child` inherits from `parent` using the pre-built index.
+     * Falls back to prototype chain walking if either is not yet indexed.
+     *
+     * [!] Handles the same-class case: returns true if child === parent.
+     */
+    static isIndexedInheritedFrom(child: Function, parent: Function): boolean;
+    /**
+     * Find the first constructor in `candidates` that is a descendant of (or equal to) `parent`.
+     * Returns undefined if none found.
+     *
+     * Uses the optimal strategy based on set sizes:
+     * - If candidates is small, iterates candidates and checks ancestry (O(c))
+     * - If descendants is small, iterates descendants and checks membership (O(d))
+     */
+    static findDescendantIn<T extends Function>(parent: Function, candidates: Set<T> | Array<T>): T | undefined;
+    /**
+     * Returns the set of indexed ancestors for a constructor, or undefined if not indexed.
+     */
+    static getAncestors(ctor: Function): Set<Function> | undefined;
     /**
      * Type guard to check if the param is allowed for scope allocation.
      *

@@ -20,6 +20,51 @@ import { A_Caller } from "@adaas/a-concept/a-caller";
 import { A_Entity } from "@adaas/a-concept/a-entity";
 import { A_Context } from "@adaas/a-concept/a-context";
 import { createSuite, BenchResult, printSummary } from './helpers';
+import Table from 'cli-table3';
+
+// ──────────────────────────────────────────────────────────────
+// Heap measurement helpers
+// ──────────────────────────────────────────────────────────────
+
+interface HeapSnapshot {
+    benchName: string;
+    heapBefore: number;   // bytes
+    heapAfter: number;    // bytes
+    heapDelta: number;    // bytes
+}
+
+function takeHeapSnapshot(): number {
+    try { global.gc!(); } catch (_) { /* --expose-gc not set */ }
+    return process.memoryUsage().heapUsed;
+}
+
+function formatBytes(bytes: number): string {
+    const mb = bytes / (1024 * 1024);
+    return `${mb >= 0 ? '+' : ''}${mb.toFixed(2)} MB`;
+}
+
+function printHeapTable(title: string, snapshots: HeapSnapshot[]) {
+    console.log(`\n${'─'.repeat(70)}`);
+    console.log(`  🧠  ${title} — Heap Usage`);
+    console.log(`${'─'.repeat(70)}`);
+
+    const table = new Table({
+        head: ['Benchmark', 'Heap Before', 'Heap After', 'Δ Heap'],
+        colWidths: [40, 14, 14, 14],
+        style: { head: ['yellow'] },
+    });
+
+    for (const s of snapshots) {
+        table.push([
+            s.benchName,
+            (s.heapBefore / 1024 / 1024).toFixed(2) + ' MB',
+            (s.heapAfter / 1024 / 1024).toFixed(2) + ' MB',
+            formatBytes(s.heapDelta),
+        ]);
+    }
+
+    console.log(table.toString());
+}
 
 
 
@@ -93,6 +138,7 @@ export class ChainingComponent extends A_Component {
 
 export async function runFeatureChainingBenchmarks(): Promise<any> {
     const allResults: BenchResult[] = [];
+    const heapSnapshots: HeapSnapshot[] = [];
 
 
 
@@ -111,80 +157,109 @@ export async function runFeatureChainingBenchmarks(): Promise<any> {
 
         entity.scope.inherit(childScope);
 
-
-
+        // Heap tracking state — shared across benchmarks in this suite
+        let currentHeapBefore = 0;
 
         suite
-            .add('new Feature instantiation (A_Context.featureTemplate)', () => {
-                const definition = A_Context.featureTemplate('entityFeature', entity);
-
-            })
-            .add('new Feature instantiation (new A_Feature)', () => {
-                const feature = new A_Feature({
-                    name: 'entityFeature',
-                    component: entity,
-                    scope: entity.scope
+            .on('cycle', (event: any) => {
+                const heapAfter = takeHeapSnapshot();
+                heapSnapshots.push({
+                    benchName: event.target.name,
+                    heapBefore: currentHeapBefore,
+                    heapAfter,
+                    heapDelta: heapAfter - currentHeapBefore,
                 });
             })
-            .add('new Feature execution (direct)', () => {
-                const feature = new A_Feature({
-                    name: 'entityFeature',
-                    component: entity,
-                    scope: entity.scope
-                });
 
-                for (const stage of feature) {
-                    stage.process(entity.scope)
+        suite
+            .add('new Feature instantiation (A_Context.featureTemplate)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const definition = A_Context.featureTemplate('entityFeature', entity);
                 }
             })
-            .add('new Feature execution (direct entity.call)', () => {
-                
-                const res = entity.call('entityFeature', entity.scope);
-
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
+            .add('new Feature instantiation (new A_Feature)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const feature = new A_Feature({
+                        name: 'entityFeature',
+                        component: entity,
+                        scope: entity.scope
+                    });
+                }
             })
-            .add('new Feature execution (wrapped entity.call)', () => {
+            .add('new Feature execution (direct)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const feature = new A_Feature({
+                        name: 'entityFeature',
+                        component: entity,
+                        scope: entity.scope
+                    });
 
-                const res = entity.entityFeature();
-
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
-
+                    for (const stage of feature) {
+                        stage.process(entity.scope)
+                    }
+                }
             })
-            .add('[duplicated 1] new Feature execution (wrapped entity.call)', () => {
+            .add('new Feature execution (direct entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.call('entityFeature', entity.scope);
 
-                const res = entity.entityFeature();
-
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
-
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
             })
-            .add('[duplicated 2] new Feature execution (wrapped entity.call)', () => {
+            .add('new Feature execution (wrapped entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.entityFeature();
 
-                const res = entity.entityFeature();
-
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
-
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
             })
-            .add('[duplicated 3] new Feature execution (wrapped entity.call)', () => {
+            .add('[duplicated 1] new Feature execution (wrapped entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.entityFeature();
 
-                const res = entity.entityFeature();
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
-
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
             })
-            .add('[duplicated 4] new Feature execution (wrapped entity.call)', () => {
-                
-                const res = entity.entityFeature();
+            .add('[duplicated 2] new Feature execution (wrapped entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.entityFeature();
 
-                if (res instanceof Promise)
-                    throw new Error('Expected synchronous execution for baseline feature call');
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
+            })
+            .add('[duplicated 3] new Feature execution (wrapped entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.entityFeature();
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
+            })
+            .add('[duplicated 4] new Feature execution (wrapped entity.call)', {
+                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
+                fn: () => {
+                    const res = entity.entityFeature();
 
+                    if (res instanceof Promise)
+                        throw new Error('Expected synchronous execution for baseline feature call');
+                }
             })
     });
     allResults.push(...baselineResults);
+
+    // Print heap summary
+    printHeapTable('Feature Call — Baseline (no chain)', heapSnapshots);
 
     return allResults;
 }

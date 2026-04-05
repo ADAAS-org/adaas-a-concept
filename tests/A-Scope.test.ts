@@ -828,4 +828,192 @@ describe('A-Scope tests', () => {
         expect(scope.resolve(MyFragment)).toBe(fragmentA2);
         expect(fragmentA2.array.length).toBe(0);
     });
+
+    // =========================================================================
+    // --------------------Fingerprint Tests-------------------------------------
+    // =========================================================================
+
+    it('Should return a fingerprint string', async () => {
+        const scope = new A_Scope({ name: 'TestScope' });
+        expect(typeof scope.fingerprint).toBe('string');
+        expect(scope.fingerprint.length).toBeGreaterThan(0);
+    });
+
+    it('Should return the same fingerprint for two empty scopes', async () => {
+        const scope1 = new A_Scope({ name: 'Scope1' });
+        const scope2 = new A_Scope({ name: 'Scope2' });
+        expect(scope1.fingerprint).toBe(scope2.fingerprint);
+    });
+
+    it('Should return the same fingerprint for two scopes with identical components', async () => {
+        class MyComponentA extends A_Component { }
+        class MyComponentB extends A_Component { }
+
+        const scope1 = new A_Scope({ name: 'Scope1' });
+        scope1.register(MyComponentA);
+        scope1.register(MyComponentB);
+
+        const scope2 = new A_Scope({ name: 'Scope2' });
+        scope2.register(MyComponentA);
+        scope2.register(MyComponentB);
+
+        expect(scope1.fingerprint).toBe(scope2.fingerprint);
+    });
+
+    it('Should return the same fingerprint regardless of registration order', async () => {
+        class MyComponentA extends A_Component { }
+        class MyComponentB extends A_Component { }
+
+        const scope1 = new A_Scope({ name: 'Scope1' });
+        scope1.register(MyComponentA);
+        scope1.register(MyComponentB);
+
+        const scope2 = new A_Scope({ name: 'Scope2' });
+        scope2.register(MyComponentB);
+        scope2.register(MyComponentA);
+
+        expect(scope1.fingerprint).toBe(scope2.fingerprint);
+    });
+
+    it('Should return different fingerprints for scopes with different components', async () => {
+        class MyComponentA extends A_Component { }
+        class MyComponentB extends A_Component { }
+
+        const scope1 = new A_Scope({ name: 'Scope1' });
+        scope1.register(MyComponentA);
+
+        const scope2 = new A_Scope({ name: 'Scope2' });
+        scope2.register(MyComponentB);
+
+        expect(scope1.fingerprint).not.toBe(scope2.fingerprint);
+    });
+
+    it('Should change fingerprint when a component is registered', async () => {
+        class MyComponentA extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const before = scope.fingerprint;
+
+        scope.register(MyComponentA);
+        const after = scope.fingerprint;
+
+        expect(before).not.toBe(after);
+    });
+
+    it('Should change fingerprint when a component is deregistered', async () => {
+        class MyComponentA extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.register(MyComponentA);
+        const before = scope.fingerprint;
+
+        scope.deregister(MyComponentA);
+        const after = scope.fingerprint;
+
+        expect(before).not.toBe(after);
+    });
+
+    it('Should return original fingerprint after register then deregister', async () => {
+        class MyComponentA extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const original = scope.fingerprint;
+
+        scope.register(MyComponentA);
+        expect(scope.fingerprint).not.toBe(original);
+
+        scope.deregister(MyComponentA);
+        expect(scope.fingerprint).toBe(original);
+    });
+
+    it('Should change fingerprint when an entity is registered', async () => {
+        class MyEntity extends A_Entity { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const before = scope.fingerprint;
+
+        scope.register(new MyEntity());
+        expect(scope.fingerprint).not.toBe(before);
+    });
+
+    it('Should change fingerprint when a fragment is registered', async () => {
+        class MyFragment extends A_Fragment { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const before = scope.fingerprint;
+
+        scope.register(new MyFragment());
+        expect(scope.fingerprint).not.toBe(before);
+    });
+
+    it('Should change fingerprint when an error is registered', async () => {
+        class MyError extends A_Error {
+            static code = 'MY_ERROR';
+        }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const before = scope.fingerprint;
+
+        scope.register(MyError);
+        expect(scope.fingerprint).not.toBe(before);
+    });
+
+    it('Should return same fingerprint for two empty scopes inherited from the same parent', async () => {
+        const parent = new A_Scope({ name: 'Parent' });
+        parent.register(A_Component);
+
+        const child1 = new A_Scope({ name: 'Child1' }).inherit(parent);
+        const child2 = new A_Scope({ name: 'Child2' }).inherit(parent);
+
+        expect(child1.fingerprint).toBe(child2.fingerprint);
+    });
+
+    it('Should change fingerprint when parent scope content changes', async () => {
+        class MyComponentA extends A_Component { }
+
+        const parent = new A_Scope({ name: 'Parent' });
+        const child = new A_Scope({ name: 'Child' }).inherit(parent);
+
+        const before = child.fingerprint;
+
+        parent.register(MyComponentA);
+        expect(child.fingerprint).not.toBe(before);
+    });
+
+    it('Should change fingerprint when an import is added', async () => {
+        class MyComponentA extends A_Component { }
+
+        const importedScope = new A_Scope({ name: 'Imported' });
+        importedScope.register(MyComponentA);
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        const before = scope.fingerprint;
+
+        scope.import(importedScope);
+        expect(scope.fingerprint).not.toBe(before);
+    });
+
+    it('Should change fingerprint when imported scope content changes', async () => {
+        class MyComponentA extends A_Component { }
+
+        const importedScope = new A_Scope({ name: 'Imported' });
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.import(importedScope);
+
+        const before = scope.fingerprint;
+
+        importedScope.register(MyComponentA);
+        expect(scope.fingerprint).not.toBe(before);
+    });
+
+    it('Should cache fingerprint and return same value on repeated access', async () => {
+        class MyComponentA extends A_Component { }
+
+        const scope = new A_Scope({ name: 'TestScope' });
+        scope.register(MyComponentA);
+
+        const first = scope.fingerprint;
+        const second = scope.fingerprint;
+        expect(first).toBe(second);
+    });
 });

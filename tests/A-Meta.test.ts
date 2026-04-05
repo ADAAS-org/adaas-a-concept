@@ -9,6 +9,8 @@ import { A_Context } from "@adaas/a-concept/a-context";
 import { A_Feature } from "@adaas/a-concept/a-feature";
 import { A_Meta } from "@adaas/a-concept/a-meta";
 import { A_Inject } from "@adaas/a-concept/a-inject";
+import { A_Entity } from "@adaas/a-concept/a-entity";
+import { A_Scope } from "@adaas/a-concept/a-scope";
 
 jest.retryTimes(0);
 
@@ -173,7 +175,7 @@ describe('A-Meta tests', () => {
         expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.size()).toBe(1);
         expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.has('.*\\.testFeature$')).toBe(true);
     })
-    it('Should propagate a custom me', async () => {
+    it('Should propagate a custom meta', async () => {
 
         class InjectableComponent extends A_Component { }
 
@@ -205,7 +207,7 @@ describe('A-Meta tests', () => {
             }
         }
 
-        class SubCustomComponent extends CustomComponent {}
+        class SubCustomComponent extends CustomComponent { }
 
 
         const meta = A_Context.meta<CustomComponentMeta>(SubCustomComponent);
@@ -215,5 +217,47 @@ describe('A-Meta tests', () => {
 
         expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.size()).toBe(1);
         expect(meta.get(A_TYPES__ComponentMetaKey.EXTENSIONS)?.has('.*\\.testFeature$')).toBe(true);
+    })
+    it('Should inherit properly extends methods when they are bind to entity', async () => {
+
+
+        const results: string[] = [];
+
+        class CustomComponentMeta extends A_ComponentMeta<{ customField: string } & A_TYPES__ComponentMeta> {
+
+            get customField(): string | undefined {
+                return this.get('customField');
+            }
+        }
+
+
+        class MyEntity extends A_Entity {
+            feature() {
+                this.call('testFeature');
+            }
+        }
+
+
+        @A_Meta.Define(CustomComponentMeta)
+        class CustomComponent extends A_Component {
+
+            @A_Feature.Extend({
+                name: 'testFeature',
+                scope: [MyEntity]
+            })
+            async feature() {
+                results.push('feature called');
+            }
+        }
+
+        const scope = new A_Scope({ name: 'testScope', components: [CustomComponent] });
+
+        const entity = new MyEntity();
+
+        scope.register(entity);
+
+        entity.feature();
+
+        expect(results).toContain('feature called');
     })
 })  

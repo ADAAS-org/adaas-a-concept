@@ -131,7 +131,7 @@ export class A_Context {
      * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
      * Automatically invalidated when scope version or meta version changes.
      */
-    protected _featureExtensionsCache: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
+    protected _featureCache: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
 
     /**
      * Maximum number of entries in the featureExtensions cache.
@@ -139,7 +139,20 @@ export class A_Context {
      */
     protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
 
+    // ====================================================================================================
+    // ================================ INHERITANCE INDEX ==================================================
+    // ====================================================================================================
+    /**
+     * For each indexed constructor, stores the set of all its ancestor constructors
+     * (walking up the prototype chain). Enables O(1) isInheritedFrom checks.
+     */
+    protected _ancestors: Map<Function, Set<Function>> = new Map();
 
+    /**
+     * For each constructor, stores the set of all known descendant constructors.
+     * Enables O(1) "find a descendant in a Set" lookups.
+     */
+    protected _descendants: Map<Function, Set<Function>> = new Map();
 
 
     protected _globals = new Map<string, any>();
@@ -225,20 +238,19 @@ export class A_Context {
          */
         component: A_TYPES_ScopeDependentComponents,
     ): void {
-        // uses only for error messages
-        const componentName = A_CommonHelper.getComponentName(component);
-
-        const instance = this.getInstance();
-
         if (!component) throw new A_ContextError(
             A_ContextError.InvalidDeregisterParameterError,
             `Unable to deregister component. Component cannot be null or undefined.`);
 
-        if (!instance._scopeStorage.has(component)) throw new A_ContextError(
-            A_ContextError.ComponentNotRegisteredError,
-            `Unable to deregister component. Component ${componentName} is not registered.`);
+        const instance = this.getInstance();
 
-        instance._scopeStorage.delete(component);
+        if (!instance._scopeStorage.delete(component)) {
+            const componentName = A_CommonHelper.getComponentName(component)
+            throw new A_ContextError(
+                A_ContextError.ComponentNotRegisteredError,
+                `Unable to deregister component. Component ${componentName} is not registered.`
+            )
+        }
     }
 
     /**
@@ -350,6 +362,7 @@ export class A_Context {
         const component = A_TypeGuards.isComponentInstance(param1)
             ? param1
             : this.issuer(scope);
+
 
         if (component)
             instance._registry.delete(component);
@@ -568,6 +581,9 @@ export class A_Context {
 
             instance._metaStorage.set(property, inheritedMeta.clone());
             instance._metaVersion++;
+
+            // Index the constructor in the inheritance graph
+            this.indexConstructor(property);
         }
 
         // Return the meta for the property
@@ -773,12 +789,31 @@ export class A_Context {
         if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
             throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
 
+        const instance = this.getInstance();
+
+        // ---- Optimization 1: Check featureExtensions cache ----
+        // Use the effective scope for cache key — the scope that actually contains registered components.
+        // Feature scopes are ephemeral (unique uid per call) and only inherit from the component scope,
+        // so use the parent scope identity when available to enable cache hits across feature calls.
+        const cacheKey = `${String(name)}::${A_CommonHelper.getComponentName(component)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+
+        const cached = instance._featureCache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         const steps: A_TYPES__A_StageStep[] = [
             // 1) Get the base feature definition from the component
             ...this.featureDefinition(name, component),
             // 2) Get all extensions for the feature from other components in the scope
             ...this.featureExtensions(name, component, scope)
         ];
+
+        // ---- Store result in cache ----
+        if (instance._featureCache.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
+            instance._featureCache.clear();
+        }
+        instance._featureCache.set(cacheKey, steps);
 
         return steps;
     }
@@ -819,18 +854,7 @@ export class A_Context {
         if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
             throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
 
-        // ---- Optimization 1: Check featureExtensions cache ----
-        // Use the effective scope for cache key — the scope that actually contains registered components.
-        // Feature scopes are ephemeral (unique uid per call) and only inherit from the component scope,
-        // so use the parent scope identity when available to enable cache hits across feature calls.
-        const componentCtor = typeof component === 'function' ? component : component.constructor;
-        const effectiveScope = scope.parent || scope;
-        const cacheKey = `${String(name)}::${componentCtor.name}::s${effectiveScope.uid}v${effectiveScope.version}::m${instance._metaVersion}`;
 
-        const cached = instance._featureExtensionsCache.get(cacheKey);
-        if (cached) {
-            return cached;
-        }
 
         const callNames = A_CommonHelper.getClassInheritanceChain(component)
             .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
@@ -884,7 +908,7 @@ export class A_Context {
 
                 for (let i = 0; i < extensions.length; i++) {
                     const declaration = extensions[i];
-                    const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+                    const inherited = Array.from(allowedComponents).reverse().find(c => A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
 
                     if (inherited) {
                         steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
@@ -910,12 +934,6 @@ export class A_Context {
         }
 
         const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
-
-        // ---- Store result in cache ----
-        if (instance._featureExtensionsCache.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
-            instance._featureExtensionsCache.clear();
-        }
-        instance._featureExtensionsCache.set(cacheKey, result);
 
         return result;
     }
@@ -952,11 +970,10 @@ export class A_Context {
         }
 
         // 2) Build a set of dependency names that are parents of at least one other item.
-        //    For each resolved class, walk up its prototype chain and mark any ancestor
-        //    that also appears in presentNames as "is parent of another".
+        //    Use the inheritance index for O(1) ancestor lookups instead of walking prototypes.
         const parentNames = new Set<string>();
 
-        // Build reverse map: constructor → dependency name (for fast lookup when walking prototypes)
+        // Build reverse map: constructor → dependency name (for fast lookup)
         const ctorToName = new Map<Function, string>();
         for (const [depName, ctor] of resolvedClasses) {
             if (ctor) ctorToName.set(ctor, depName);
@@ -965,15 +982,15 @@ export class A_Context {
         for (const [depName, ctor] of resolvedClasses) {
             if (!ctor) continue;
 
-            // Walk prototype chain of this class's prototype to find ancestors
-            let ancestor = Object.getPrototypeOf(ctor.prototype);
-            while (ancestor && ancestor !== Object.prototype) {
-                const ancestorCtor = ancestor.constructor;
-                const ancestorName = ctorToName.get(ancestorCtor);
-                if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
-                    parentNames.add(ancestorName);
+            // Use indexed ancestors instead of walking prototype chain
+            const ancestors = A_Context.getAncestors(ctor);
+            if (ancestors) {
+                for (const ancestor of ancestors) {
+                    const ancestorName = ctorToName.get(ancestor);
+                    if (ancestorName && ancestorName !== depName && presentNames.has(ancestorName)) {
+                        parentNames.add(ancestorName);
+                    }
                 }
-                ancestor = Object.getPrototypeOf(ancestor);
             }
         }
 
@@ -1138,7 +1155,7 @@ export class A_Context {
                 meta
                     .abstractions(abstraction)
                     .forEach((declaration) => {
-                        const inherited = Array.from(allowedComponents).reverse().find(c => A_CommonHelper.isInheritedFrom(cmp, c) && c !== cmp);
+                        const inherited = Array.from(allowedComponents).reverse().find(c => A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
 
                         if (inherited) {
                             steps.delete(`${A_CommonHelper.getComponentName(inherited)}.${declaration.handler}`);
@@ -1163,7 +1180,9 @@ export class A_Context {
         const instance = A_Context.getInstance();
 
         instance._registry = new WeakMap();
-        instance._featureExtensionsCache.clear();
+        instance._featureCache.clear();
+        instance._ancestors.clear();
+        instance._descendants.clear();
         instance._metaVersion++;
 
         const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || 'root';
@@ -1172,6 +1191,160 @@ export class A_Context {
     }
 
 
+    // ====================================================================================================================
+    // ====================================== INHERITANCE INDEX ============================================================
+    // ====================================================================================================================
+
+    /**
+     * Index a constructor's full prototype chain into the inheritance graph.
+     * Safe to call multiple times for the same constructor — it's a no-op if already indexed.
+     * 
+     * After indexing, `A_Context.isIndexedInheritedFrom(child, parent)` becomes O(1).
+     */
+    static indexConstructor(ctor: Function): void {
+        const instance = this.getInstance();
+
+        // Already indexed — skip
+        if (instance._ancestors.has(ctor)) return;
+
+        const ancestors = new Set<Function>();
+        let current = Object.getPrototypeOf(ctor);
+
+        while (current && current !== Function.prototype && current !== Object) {
+            ancestors.add(current);
+
+            // Also register `ctor` as a descendant of `current`
+            let desc = instance._descendants.get(current);
+            if (!desc) {
+                desc = new Set();
+                instance._descendants.set(current, desc);
+            }
+            desc.add(ctor);
+
+            // If ancestor is already indexed, merge its ancestors transitively and stop walking
+            const existingAncestors = instance._ancestors.get(current);
+            if (existingAncestors) {
+                for (const a of existingAncestors) {
+                    ancestors.add(a);
+                    let desc2 = instance._descendants.get(a);
+                    if (!desc2) {
+                        desc2 = new Set();
+                        instance._descendants.set(a, desc2);
+                    }
+                    desc2.add(ctor);
+                }
+                break;
+            }
+
+            current = Object.getPrototypeOf(current);
+        }
+
+        instance._ancestors.set(ctor, ancestors);
+
+        // Ensure ctor has a descendants entry (possibly empty)
+        if (!instance._descendants.has(ctor)) {
+            instance._descendants.set(ctor, new Set());
+        }
+
+        // Update existing descendants: if any already-indexed class lists an ancestor of ctor,
+        // and ctor is more specific, those descendants are also descendants of ctor's ancestors.
+        // This is already handled transitively above.
+    }
+
+    /**
+     * O(1) check whether `child` inherits from `parent` using the pre-built index.
+     * Falls back to prototype chain walking if either is not yet indexed.
+     * 
+     * [!] Handles the same-class case: returns true if child === parent.
+     */
+    static isIndexedInheritedFrom(child: Function, parent: Function): boolean {
+        if (child === parent) return true;
+
+        const instance = this.getInstance();
+        const ancestors = instance._ancestors.get(child);
+        if (ancestors) return ancestors.has(parent);
+
+        // Fallback to manual walk (shouldn't happen if indexing is comprehensive)
+        return A_CommonHelper.isInheritedFrom(child, parent);
+    }
+
+    /**
+     * Find the first constructor in `candidates` that is a descendant of (or equal to) `parent`.
+     * Returns undefined if none found.
+     * 
+     * Uses the optimal strategy based on set sizes:
+     * - If candidates is small, iterates candidates and checks ancestry (O(c))
+     * - If descendants is small, iterates descendants and checks membership (O(d))
+     */
+    static findDescendantIn<T extends Function>(
+        parent: Function,
+        candidates: Set<T> | Array<T>
+    ): T | undefined {
+        const candidateSize = candidates instanceof Set ? candidates.size : candidates.length;
+
+        // Direct hit — O(1) for Set
+        if (candidates instanceof Set) {
+            if (candidates.has(parent as T)) return parent as T;
+        } else {
+            if (candidates.includes(parent as T)) return parent as T;
+        }
+
+        const instance = this.getInstance();
+        const descendants = instance._descendants.get(parent);
+        const descendantSize = descendants ? descendants.size : 0;
+
+        // Pick the smaller set to iterate
+        if (descendantSize === 0) {
+            // No indexed descendants — fall back to checking each candidate's ancestors
+            if (candidates instanceof Set) {
+                for (const c of candidates) {
+                    const ancestors = instance._ancestors.get(c);
+                    if (ancestors && ancestors.has(parent)) return c;
+                }
+            } else {
+                for (const c of candidates) {
+                    const ancestors = instance._ancestors.get(c);
+                    if (ancestors && ancestors.has(parent)) return c;
+                }
+            }
+            return undefined;
+        }
+
+        if (candidateSize <= descendantSize) {
+            // Candidates is smaller — iterate candidates and check if each is a descendant of parent
+            if (candidates instanceof Set) {
+                for (const c of candidates) {
+                    if (c === parent) return c;
+                    const ancestors = instance._ancestors.get(c);
+                    if (ancestors && ancestors.has(parent)) return c;
+                }
+            } else {
+                for (const c of candidates) {
+                    if (c === parent) return c;
+                    const ancestors = instance._ancestors.get(c);
+                    if (ancestors && ancestors.has(parent)) return c;
+                }
+            }
+        } else {
+            // Descendants is smaller — iterate descendants and check membership in candidates
+            for (const desc of descendants!) {
+                if (candidates instanceof Set) {
+                    if (candidates.has(desc as T)) return desc as T;
+                } else {
+                    if (candidates.includes(desc as T)) return desc as T;
+                }
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Returns the set of indexed ancestors for a constructor, or undefined if not indexed.
+     */
+    static getAncestors(ctor: Function): Set<Function> | undefined {
+        return this.getInstance()._ancestors.get(ctor);
+    }
 
 
     // ====================================================================================================================
