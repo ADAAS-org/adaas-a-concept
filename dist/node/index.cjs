@@ -1634,7 +1634,8 @@ A_FeatureError.FeatureDefinitionError = "Unable to define A-Feature";
 A_FeatureError.FeatureExtensionError = "Unable to extend A-Feature";
 
 // src/helpers/A_Common.helper.ts
-var A_CommonHelper = class {
+var _componentNameCache = /* @__PURE__ */ new WeakMap();
+var A_CommonHelper = class _A_CommonHelper {
   /**
    * A simple promise that resolves immediately.
    * Can be used in async functions to create a resolved promise.
@@ -1821,6 +1822,16 @@ var A_CommonHelper = class {
    * Falls back to sensible defaults ("Unknown" / "Anonymous").
    */
   static getComponentName(component) {
+    if (component !== null && component !== void 0 && !Array.isArray(component) && (typeof component === "object" || typeof component === "function")) {
+      const cached = _componentNameCache.get(component);
+      if (cached !== void 0) return cached;
+      const result = _A_CommonHelper._computeComponentName(component);
+      _componentNameCache.set(component, result);
+      return result;
+    }
+    return _A_CommonHelper._computeComponentName(component);
+  }
+  static _computeComponentName(component) {
     const UNKNOWN = "Unknown";
     const ANONYMOUS = "Anonymous";
     if (component === null || component === void 0) {
@@ -3753,6 +3764,21 @@ var A_Scope = class {
      * Invalidated by incrementing _version (cache is cleared on bump).
      */
     this._resolveConstructorCache = /* @__PURE__ */ new Map();
+    /**
+     * Cache for resolveOnce results. Key = constructor reference or string name.
+     * Cleared on every bumpVersion() call (direct mutations + inherit + import).
+     */
+    this._resolveCache = /* @__PURE__ */ new Map();
+    /**
+     * Caches resolveFlatAll (current-scope-only) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    this._resolveFlatAllCache = /* @__PURE__ */ new Map();
+    /**
+     * Caches resolveAll (full-tree traversal) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    this._resolveAllCache = /* @__PURE__ */ new Map();
     this._cachedFingerprintVersion = -1;
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -3920,6 +3946,9 @@ var A_Scope = class {
   bumpVersion() {
     this._version++;
     this._resolveConstructorCache.clear();
+    this._resolveCache.clear();
+    this._resolveFlatAllCache.clear();
+    this._resolveAllCache.clear();
     this._cachedFingerprint = void 0;
   }
   /**
@@ -4416,6 +4445,9 @@ var A_Scope = class {
     return void 0;
   }
   resolveAll(param1) {
+    if (this._resolveAllCache.has(param1)) {
+      return this._resolveAllCache.get(param1);
+    }
     const results = /* @__PURE__ */ new Set();
     const currentResults = this.resolveFlatAll(param1);
     currentResults.forEach((result) => results.add(result));
@@ -4431,9 +4463,14 @@ var A_Scope = class {
       parentResults.forEach((result) => results.add(result));
       parentScope = parentScope._parent;
     }
-    return Array.from(results);
+    const output = Array.from(results);
+    this._resolveAllCache.set(param1, output);
+    return output;
   }
   resolveFlatAll(param1) {
+    if (this._resolveFlatAllCache.has(param1)) {
+      return this._resolveFlatAllCache.get(param1);
+    }
     const results = [];
     switch (true) {
       // 1) if a parameter is a component constructor
@@ -4484,6 +4521,7 @@ var A_Scope = class {
           `Invalid parameter provided to resolveAll method: ${param1} in scope ${this.name}`
         );
     }
+    this._resolveFlatAllCache.set(param1, results);
     return results;
   }
   resolve(param1) {
@@ -4491,20 +4529,27 @@ var A_Scope = class {
     return this.resolveDependency(dependency);
   }
   resolveOnce(param1) {
+    if (this._resolveCache.has(param1)) {
+      return this._resolveCache.get(param1);
+    }
     const value = this.resolveFlatOnce(param1);
     if (!value) {
       for (const importedScope of this._imports) {
         if (importedScope.has(param1)) {
           const importedValue = importedScope.resolveFlatOnce(param1);
           if (importedValue) {
+            this._resolveCache.set(param1, importedValue);
             return importedValue;
           }
         }
       }
     }
     if (!value && !!this.parent) {
-      return this.parent.resolveOnce(param1);
+      const parentValue = this.parent.resolveOnce(param1);
+      this._resolveCache.set(param1, parentValue);
+      return parentValue;
     }
+    this._resolveCache.set(param1, value);
     return value;
   }
   resolveFlat(param1) {
@@ -4518,8 +4563,7 @@ var A_Scope = class {
    */
   resolveFlatOnce(component) {
     let value = void 0;
-    const componentName = A_CommonHelper.getComponentName(component);
-    if (!component || !this.has(component)) {
+    if (!component || !this.hasFlat(component)) {
       return void 0;
     }
     switch (true) {
@@ -4554,7 +4598,7 @@ var A_Scope = class {
       default:
         throw new A_ScopeError(
           A_ScopeError.ResolutionError,
-          `Injected Component ${componentName} not found in the scope`
+          `Injected Component ${A_CommonHelper.getComponentName(component)} not found in the scope`
         );
     }
     return value;
@@ -5101,11 +5145,12 @@ var _A_Context = class _A_Context {
      */
     this._metaVersion = 0;
     /**
-     * Cache for featureExtensions results.
-     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
-     * Automatically invalidated when scope version or meta version changes.
+     * Two-level cache for featureTemplate results.
+     * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
+     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Automatically invalidated when scope fingerprint or meta version changes.
      */
-    this._featureCache = /* @__PURE__ */ new Map();
+    this._featureCache = /* @__PURE__ */ new WeakMap();
     /**
      * Cache for topologically-sorted step arrays keyed by the template array reference.
      * Since `featureTemplate` returns the same array object on cache hits, this WeakMap
@@ -5415,21 +5460,28 @@ var _A_Context = class _A_Context {
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
       throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
     const instance = this.getInstance();
-    const cacheKey = `${String(name)}::${A_CommonHelper.getComponentName(component)}::s${scope.fingerprint}::m${instance._metaVersion}`;
-    const cached = instance._featureCache.get(cacheKey);
-    if (cached) {
-      return cached;
+    const componentCtor = typeof component === "function" ? component : component.constructor;
+    let l2 = instance._featureCache.get(componentCtor);
+    if (l2) {
+      const cacheKey2 = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+      const cached = l2.get(cacheKey2);
+      if (cached) return cached;
+      const steps2 = [
+        ...this.featureDefinition(name, component),
+        ...this.featureExtensions(name, component, scope)
+      ];
+      if (l2.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
+      l2.set(cacheKey2, steps2);
+      return steps2;
     }
+    const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
     const steps = [
-      // 1) Get the base feature definition from the component
       ...this.featureDefinition(name, component),
-      // 2) Get all extensions for the feature from other components in the scope
       ...this.featureExtensions(name, component, scope)
     ];
-    if (instance._featureCache.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
-      instance._featureCache.clear();
-    }
-    instance._featureCache.set(cacheKey, steps);
+    const innerMap = /* @__PURE__ */ new Map();
+    innerMap.set(cacheKey, steps);
+    instance._featureCache.set(componentCtor, innerMap);
     return steps;
   }
   // ----------------------------------------------------------------------------------------------------------
@@ -5659,7 +5711,7 @@ var _A_Context = class _A_Context {
   static reset() {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
-    instance._featureCache.clear();
+    instance._featureCache = /* @__PURE__ */ new WeakMap();
     instance._ancestors.clear();
     instance._descendants.clear();
     instance._metaVersion++;

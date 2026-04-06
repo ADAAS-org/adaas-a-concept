@@ -3036,6 +3036,21 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _resolveConstructorCache: Map<string | Function, Function | null>;
     /**
+     * Cache for resolveOnce results. Key = constructor reference or string name.
+     * Cleared on every bumpVersion() call (direct mutations + inherit + import).
+     */
+    protected _resolveCache: Map<Function | string, any>;
+    /**
+     * Caches resolveFlatAll (current-scope-only) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    protected _resolveFlatAllCache: Map<Function | string, any[]>;
+    /**
+     * Caches resolveAll (full-tree traversal) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    protected _resolveAllCache: Map<Function | string, any[]>;
+    /**
      * Cached fingerprint string. Invalidated on every bumpVersion() call.
      */
     private _cachedFingerprint;
@@ -4237,11 +4252,12 @@ declare class A_Context {
      */
     protected _metaVersion: number;
     /**
-     * Cache for featureExtensions results.
-     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
-     * Automatically invalidated when scope version or meta version changes.
+     * Two-level cache for featureTemplate results.
+     * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
+     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Automatically invalidated when scope fingerprint or meta version changes.
      */
-    protected _featureCache: Map<string, Array<A_TYPES__A_StageStep>>;
+    protected _featureCache: WeakMap<object, Map<string, Array<A_TYPES__A_StageStep>>>;
     /**
      * Maximum number of entries in the featureExtensions cache.
      * When exceeded, the entire cache is cleared to prevent unbounded growth.
@@ -4831,6 +4847,7 @@ declare class A_CommonHelper {
      * Falls back to sensible defaults ("Unknown" / "Anonymous").
      */
     static getComponentName(component: any): string;
+    private static _computeComponentName;
 }
 
 /**

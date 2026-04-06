@@ -1,5 +1,9 @@
 import { A_TYPES__DeepPartial } from "@adaas/a-concept/types";
 
+// Module-level cache: avoids re-computing the name for the same object/function reference.
+// WeakMap keys must be objects or functions — primitives are handled inline below.
+const _componentNameCache = new WeakMap<object, string>();
+
 export class A_CommonHelper {
 
     /**
@@ -278,6 +282,21 @@ export class A_CommonHelper {
      * Falls back to sensible defaults ("Unknown" / "Anonymous").
      */
     static getComponentName(component: any): string {
+        // Fast path: return cached name for objects and functions (the common hot path).
+        // Arrays are objects too but excluded: the result depends on their first element.
+        if (component !== null && component !== undefined
+            && !Array.isArray(component)
+            && (typeof component === 'object' || typeof component === 'function')) {
+            const cached = _componentNameCache.get(component as object);
+            if (cached !== undefined) return cached;
+            const result = A_CommonHelper._computeComponentName(component);
+            _componentNameCache.set(component as object, result);
+            return result;
+        }
+        return A_CommonHelper._computeComponentName(component);
+    }
+
+    private static _computeComponentName(component: any): string {
         const UNKNOWN = 'Unknown';
         const ANONYMOUS = 'Anonymous';
 

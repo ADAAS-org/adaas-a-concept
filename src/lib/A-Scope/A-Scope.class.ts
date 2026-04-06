@@ -87,6 +87,24 @@ export class A_Scope<
     protected _resolveConstructorCache: Map<string | Function, Function | null> = new Map();
 
     /**
+     * Cache for resolveOnce results. Key = constructor reference or string name.
+     * Cleared on every bumpVersion() call (direct mutations + inherit + import).
+     */
+    protected _resolveCache: Map<Function | string, any> = new Map();
+
+    /**
+     * Caches resolveFlatAll (current-scope-only) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    protected _resolveFlatAllCache: Map<Function | string, any[]> = new Map();
+
+    /**
+     * Caches resolveAll (full-tree traversal) results. Key = constructor or string name.
+     * Cleared on every bumpVersion() call.
+     */
+    protected _resolveAllCache: Map<Function | string, any[]> = new Map();
+
+    /**
      * Cached fingerprint string. Invalidated on every bumpVersion() call.
      */
     private _cachedFingerprint: string | undefined;
@@ -239,6 +257,9 @@ export class A_Scope<
     protected bumpVersion(): void {
         this._version++;
         this._resolveConstructorCache.clear();
+        this._resolveCache.clear();
+        this._resolveFlatAllCache.clear();
+        this._resolveAllCache.clear();
         this._cachedFingerprint = undefined;
     }
 
@@ -1164,6 +1185,11 @@ export class A_Scope<
         param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
     ): Array<T> {
 
+        // ── Fast path: return cached result ────────────────────────────────────
+        if (this._resolveAllCache.has(param1)) {
+            return this._resolveAllCache.get(param1) as Array<T>;
+        }
+
         const results: Set<T> = new Set();
 
         // 1) Resolve all in the current scope
@@ -1193,9 +1219,9 @@ export class A_Scope<
             parentScope = parentScope._parent;
         }
 
-
-
-        return Array.from(results);
+        const output = Array.from(results);
+        this._resolveAllCache.set(param1, output);
+        return output;
     }
 
 
@@ -1245,6 +1271,11 @@ export class A_Scope<
          */
         param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string,
     ): Array<T> {
+
+        // ── Fast path: return cached result ────────────────────────────────────
+        if (this._resolveFlatAllCache.has(param1)) {
+            return this._resolveFlatAllCache.get(param1) as Array<T>;
+        }
 
         const results: Array<T> = [];
 
@@ -1309,7 +1340,7 @@ export class A_Scope<
                     `Invalid parameter provided to resolveAll method: ${param1} in scope ${this.name}`);
         }
 
-
+        this._resolveFlatAllCache.set(param1, results);
         return results;
     }
 
@@ -1422,6 +1453,11 @@ export class A_Scope<
         param1: A_TYPES__Ctor<A_TYPES__A_DependencyInjectable> | string
     ): T | undefined {
 
+        // ── Fast path: return cached result ────────────────────────────────────
+        if (this._resolveCache.has(param1)) {
+            return this._resolveCache.get(param1) as T | undefined;
+        }
+
         const value = this.resolveFlatOnce(param1);
 
         // if not found in the current scope, check imported scopes
@@ -1430,6 +1466,7 @@ export class A_Scope<
                 if (importedScope.has(param1 as any)) {
                     const importedValue = importedScope.resolveFlatOnce<T>(param1 as any);
                     if (importedValue) {
+                        this._resolveCache.set(param1, importedValue);
                         return importedValue;
                     }
                 }
@@ -1439,9 +1476,12 @@ export class A_Scope<
         //  The idea here that in case when Scope has no exact component we have to resolve it from the _parent
         //  That means that we should ensure that there's no components that are children of the required component
         if (!value && !!this.parent) {
-            return this.parent.resolveOnce<T>(param1);
+            const parentValue = this.parent.resolveOnce<T>(param1);
+            this._resolveCache.set(param1, parentValue);
+            return parentValue;
         }
 
+        this._resolveCache.set(param1, value);
         return value as T;
     }
 
@@ -1525,10 +1565,7 @@ export class A_Scope<
 
         let value: T | undefined = undefined;
 
-        const componentName = A_CommonHelper.getComponentName(component);
-
-
-        if (!component || !this.has(component)) {
+        if (!component || !this.hasFlat(component as any)) {
             return undefined;
         }
 
@@ -1564,7 +1601,7 @@ export class A_Scope<
             default:
                 throw new A_ScopeError(
                     A_ScopeError.ResolutionError,
-                    `Injected Component ${componentName} not found in the scope`
+                    `Injected Component ${A_CommonHelper.getComponentName(component)} not found in the scope`
                 );
         }
 

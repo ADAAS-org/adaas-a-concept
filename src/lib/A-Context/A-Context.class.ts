@@ -127,11 +127,12 @@ export class A_Context {
     protected _metaVersion: number = 0;
 
     /**
-     * Cache for featureExtensions results.
-     * Key format: `${featureName}::${componentConstructorName}::${scopeVersion}::${metaVersion}`
-     * Automatically invalidated when scope version or meta version changes.
+     * Two-level cache for featureTemplate results.
+     * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
+     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Automatically invalidated when scope fingerprint or meta version changes.
      */
-    protected _featureCache: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
+    protected _featureCache: WeakMap<object, Map<string, Array<A_TYPES__A_StageStep>>> = new WeakMap();
 
     /**
      * Maximum number of entries in the featureExtensions cache.
@@ -815,30 +816,38 @@ export class A_Context {
 
         const instance = this.getInstance();
 
-        // ---- Optimization 1: Check featureExtensions cache ----
-        // Use the effective scope for cache key — the scope that actually contains registered components.
-        // Feature scopes are ephemeral (unique uid per call) and only inherit from the component scope,
-        // so use the parent scope identity when available to enable cache hits across feature calls.
-        const cacheKey = `${String(name)}::${A_CommonHelper.getComponentName(component)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+        // ---- Two-level WeakMap cache ----
+        // Outer key = component CONSTRUCTOR (not the instance) so all 1111 Node instances share
+        // ONE inner Map instead of creating one Map per instance.
+        // Inner key = name + scope fingerprint + metaVersion (no getComponentName needed).
+        const componentCtor: object = typeof component === 'function'
+            ? component
+            : (component as any).constructor;
 
-        const cached = instance._featureCache.get(cacheKey);
-        if (cached) {
-            return cached;
+        let l2 = instance._featureCache.get(componentCtor);
+        if (l2) {
+            const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+            const cached = l2.get(cacheKey);
+            if (cached) return cached;
+
+            const steps: A_TYPES__A_StageStep[] = [
+                ...this.featureDefinition(name, component),
+                ...this.featureExtensions(name, component, scope)
+            ];
+            if (l2.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
+            l2.set(cacheKey, steps);
+            return steps;
         }
 
+        // First visit for this constructor — build inner Map.
+        const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
         const steps: A_TYPES__A_StageStep[] = [
-            // 1) Get the base feature definition from the component
             ...this.featureDefinition(name, component),
-            // 2) Get all extensions for the feature from other components in the scope
             ...this.featureExtensions(name, component, scope)
         ];
-
-        // ---- Store result in cache ----
-        if (instance._featureCache.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) {
-            instance._featureCache.clear();
-        }
-        instance._featureCache.set(cacheKey, steps);
-
+        const innerMap: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
+        innerMap.set(cacheKey, steps);
+        instance._featureCache.set(componentCtor, innerMap);
         return steps;
     }
     // ----------------------------------------------------------------------------------------------------------
@@ -1204,7 +1213,7 @@ export class A_Context {
         const instance = A_Context.getInstance();
 
         instance._registry = new WeakMap();
-        instance._featureCache.clear();
+        instance._featureCache = new WeakMap();
         instance._ancestors.clear();
         instance._descendants.clear();
         instance._metaVersion++;
