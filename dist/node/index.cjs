@@ -3173,6 +3173,14 @@ var A_StepsManager = class {
     });
     return this.sortedEntities;
   }
+  /**
+   * Returns the steps array in topologically sorted order, without wrapping in A_Stage.
+   * Use this to cache the sorted steps and create A_Stage objects on demand.
+   */
+  toSortedSteps() {
+    const sortedNames = this.toSortedArray();
+    return sortedNames.map((id) => this.entities.find((entity) => this.ID(entity) === id));
+  }
   // Sort the entities based on dependencies
   toStages(feature) {
     const sortedNames = this.toSortedArray();
@@ -3208,6 +3216,11 @@ var A_Feature = class _A_Feature {
      * The current state of the Feature
      */
     this._state = "INITIALIZED" /* INITIALIZED */;
+    /**
+     * Tracks whether the feature scope has been lazily allocated.
+     * Guards `scope.destroy()` calls so we don't allocate just to immediately destroy.
+     */
+    this._scopeAllocated = false;
     this.validateParams(params);
     const initializer = this.getInitializer(params);
     initializer.call(this, params);
@@ -3264,9 +3277,16 @@ var A_Feature = class _A_Feature {
     return this._caller;
   }
   /**
-   * The Scope allocated for the Feature Execution
+   * The Scope allocated for the Feature Execution.
+   * Lazily allocated on first access to avoid the overhead of scope creation + destruction
+   * for synchronous features that never actually need their own scope.
    */
   get scope() {
+    if (!this._scopeAllocated) {
+      this._scopeAllocated = true;
+      const s = A_Context.allocate(this);
+      s.inherit(this._effectiveScope);
+    }
     return A_Context.scope(this);
   }
   /**
@@ -3381,10 +3401,14 @@ var A_Feature = class _A_Feature {
       externalScope.inherit(componentScope);
     }
     this._caller = new A_Caller(params.component || new A_Component());
-    const scope = A_Context.allocate(this);
-    scope.inherit(componentScope || externalScope);
-    this._SM = new A_StepsManager(params.template);
-    this._stages = this._SM.toStages(this);
+    this._effectiveScope = componentScope || externalScope;
+    let sortedSteps = A_Context.getSortedStepsFor(params.template);
+    if (!sortedSteps) {
+      this._SM = new A_StepsManager(params.template);
+      sortedSteps = this._SM.toSortedSteps();
+      A_Context.setSortedStepsFor(params.template, sortedSteps);
+    }
+    this._stages = sortedSteps.map((step) => new A_Stage(this, step));
     this._current = this._stages[0];
   }
   /**
@@ -3412,11 +3436,16 @@ var A_Feature = class _A_Feature {
       externalScope.inherit(componentScope);
     }
     this._caller = new A_Caller(params.component);
-    const scope = A_Context.allocate(this);
-    scope.inherit(componentScope || externalScope);
-    const template = A_Context.featureTemplate(this._name, this._caller.component, scope);
-    this._SM = new A_StepsManager(template);
-    this._stages = this._SM.toStages(this);
+    const effectiveScope = componentScope || externalScope;
+    const template = A_Context.featureTemplate(this._name, this._caller.component, effectiveScope);
+    let sortedSteps = A_Context.getSortedStepsFor(template);
+    if (!sortedSteps) {
+      this._SM = new A_StepsManager(template);
+      sortedSteps = this._SM.toSortedSteps();
+      A_Context.setSortedStepsFor(template, sortedSteps);
+    }
+    this._effectiveScope = effectiveScope;
+    this._stages = sortedSteps.map((step) => new A_Stage(this, step));
     this._current = this._stages[0];
   }
   // ============================================================================
@@ -3517,7 +3546,9 @@ var A_Feature = class _A_Feature {
       return;
     }
     this._state = "COMPLETED" /* COMPLETED */;
-    this.scope.destroy();
+    if (this._scopeAllocated) {
+      this.scope.destroy();
+    }
   }
   /**
    * This method marks the feature as failed and returns the error
@@ -3530,7 +3561,9 @@ var A_Feature = class _A_Feature {
     if (this.isProcessed) return this._error;
     this._state = "FAILED" /* FAILED */;
     this._error = error;
-    this.scope.destroy();
+    if (this._scopeAllocated) {
+      this.scope.destroy();
+    }
     return this._error;
   }
   /**
@@ -3559,7 +3592,9 @@ var A_Feature = class _A_Feature {
         this._error = new A_FeatureError(A_FeatureError.Interruption, "Feature was interrupted");
         break;
     }
-    this.scope.destroy();
+    if (this._scopeAllocated) {
+      this.scope.destroy();
+    }
     return this._error;
   }
   chain(param1, param2, param3) {
@@ -3691,6 +3726,8 @@ var A_ComponentMeta = class extends A_Meta {
 };
 
 // src/lib/A-Scope/A-Scope.class.ts
+var _avVisited = /* @__PURE__ */ new Set();
+var _fpVisited = /* @__PURE__ */ new Set();
 var A_Scope = class {
   constructor(param1, param2) {
     /**
@@ -3815,11 +3852,13 @@ var A_Scope = class {
    * will produce the same fingerprint. Dynamically recomputed when scope content changes.
    */
   get fingerprint() {
-    const aggregateVersion = this.aggregateVersion(/* @__PURE__ */ new Set());
+    _avVisited.clear();
+    const aggregateVersion = this.aggregateVersion(_avVisited);
     if (this._cachedFingerprint !== void 0 && this._cachedFingerprintVersion === aggregateVersion) {
       return this._cachedFingerprint;
     }
-    this._cachedFingerprint = this.computeFingerprint(/* @__PURE__ */ new Set());
+    _fpVisited.clear();
+    this._cachedFingerprint = this.computeFingerprint(_fpVisited);
     this._cachedFingerprintVersion = aggregateVersion;
     return this._cachedFingerprint;
   }
@@ -5067,6 +5106,13 @@ var _A_Context = class _A_Context {
      * Automatically invalidated when scope version or meta version changes.
      */
     this._featureCache = /* @__PURE__ */ new Map();
+    /**
+     * Cache for topologically-sorted step arrays keyed by the template array reference.
+     * Since `featureTemplate` returns the same array object on cache hits, this WeakMap
+     * enables O(1) sorted-steps lookup and avoids rebuilding A_StepsManager on every call.
+     * Entries are automatically GC-d when the template array is no longer referenced.
+     */
+    this._sortedStepsForTemplate = /* @__PURE__ */ new WeakMap();
     // ====================================================================================================
     // ================================ INHERITANCE INDEX ==================================================
     // ====================================================================================================
@@ -5349,6 +5395,20 @@ var _A_Context = class _A_Context {
    * 
    * @param name 
    */
+  /**
+   * Retrieves the cached topologically-sorted step array for the provided template reference.
+   * Returns `undefined` on a cache miss (first call for this template).
+   * Use `setSortedStepsFor` to populate the cache after building a new A_StepsManager.
+   */
+  static getSortedStepsFor(template) {
+    return this.getInstance()._sortedStepsForTemplate.get(template);
+  }
+  /**
+   * Stores the topologically-sorted steps for the provided template in the WeakMap cache.
+   */
+  static setSortedStepsFor(template, sorted) {
+    this.getInstance()._sortedStepsForTemplate.set(template, sorted);
+  }
   static featureTemplate(name, component, scope = this.scope(component)) {
     if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);

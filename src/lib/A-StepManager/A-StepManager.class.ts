@@ -200,6 +200,17 @@ export class A_StepsManager {
         return this.sortedEntities;
     }
 
+    /**
+     * Returns the steps array in topologically sorted order, without wrapping in A_Stage.
+     * Use this to cache the sorted steps and create A_Stage objects on demand.
+     */
+    toSortedSteps(): Array<A_TYPES__A_StageStep> {
+        const sortedNames = this.toSortedArray();
+
+        return sortedNames
+            .map(id => this.entities.find(entity => this.ID(entity) === id)!);
+    }
+
     // Sort the entities based on dependencies
     toStages(feature: A_Feature): Array<A_Stage> {
 

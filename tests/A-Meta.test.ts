@@ -232,8 +232,18 @@ describe('A-Meta tests', () => {
 
 
         class MyEntity extends A_Entity {
+            protected _scope!: A_Scope
+
+            get scope(): A_Scope {
+                if (!this._scope) {
+                    this._scope = A_Context.allocate(this, new A_Scope({ name: `${this.aseid.id}-scope` }));
+                }
+
+                return this._scope;
+            }
+
             feature() {
-                this.call('testFeature');
+                this.call('testFeature', this.scope);
             }
         }
 

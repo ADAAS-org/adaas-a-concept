@@ -36,6 +36,13 @@ import { A_TYPES__Ctor } from '@adaas/a-concept/types';
 import { ASEID } from '@adaas/a-concept/aseid';
 
 
+// ─── Module-level reusable Sets for traversal ─────────────────────────────────
+// JS is single-threaded: scope traversals are never interleaved, so we can
+// safely reuse a single Set per traversal type instead of allocating a new
+// Set on every fingerprint access.
+const _avVisited: Set<A_Scope> = new Set();
+const _fpVisited: Set<A_Scope> = new Set();
+// ──────────────────────────────────────────────────────────────────────────────
 
 
 export class A_Scope<
@@ -172,11 +179,13 @@ export class A_Scope<
      * will produce the same fingerprint. Dynamically recomputed when scope content changes.
      */
     get fingerprint(): string {
-        const aggregateVersion = this.aggregateVersion(new Set());
+        _avVisited.clear();
+        const aggregateVersion = this.aggregateVersion(_avVisited);
         if (this._cachedFingerprint !== undefined && this._cachedFingerprintVersion === aggregateVersion) {
             return this._cachedFingerprint;
         }
-        this._cachedFingerprint = this.computeFingerprint(new Set());
+        _fpVisited.clear();
+        this._cachedFingerprint = this.computeFingerprint(_fpVisited);
         this._cachedFingerprintVersion = aggregateVersion;
         return this._cachedFingerprint;
     }

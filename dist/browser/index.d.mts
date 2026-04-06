@@ -1819,6 +1819,11 @@ declare class A_StepsManager {
     private matchEntities;
     private visit;
     toSortedArray(): Array<string>;
+    /**
+     * Returns the steps array in topologically sorted order, without wrapping in A_Stage.
+     * Use this to cache the sorted steps and create A_Stage objects on demand.
+     */
+    toSortedSteps(): Array<A_TYPES__A_StageStep>;
     toStages(feature: A_Feature): Array<A_Stage>;
 }
 
@@ -1912,6 +1917,17 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     protected _error?: A_FeatureError;
     /**
+     * The effective scope (caller scope or external scope) stored for lazy feature-scope allocation.
+     * The feature's own scope is created on first access via `this.scope`, avoiding the allocation
+     * cost entirely for synchronous features that never need it.
+     */
+    protected _effectiveScope: A_Scope;
+    /**
+     * Tracks whether the feature scope has been lazily allocated.
+     * Guards `scope.destroy()` calls so we don't allocate just to immediately destroy.
+     */
+    protected _scopeAllocated: boolean;
+    /**
      * A-Feature is a pipeline distributed by multiple components that can be easily attached or detached from the scope.
      * Feature itself does not have scope, but attached to the caller who dictates how feature should be processed.
      *
@@ -1951,7 +1967,9 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     get caller(): A_Caller<T>;
     /**
-     * The Scope allocated for the Feature Execution
+     * The Scope allocated for the Feature Execution.
+     * Lazily allocated on first access to avoid the overhead of scope creation + destruction
+     * for synchronous features that never actually need their own scope.
      */
     get scope(): A_Scope;
     /**
@@ -4230,6 +4248,13 @@ declare class A_Context {
      */
     protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
     /**
+     * Cache for topologically-sorted step arrays keyed by the template array reference.
+     * Since `featureTemplate` returns the same array object on cache hits, this WeakMap
+     * enables O(1) sorted-steps lookup and avoids rebuilding A_StepsManager on every call.
+     * Entries are automatically GC-d when the template array is no longer referenced.
+     */
+    protected _sortedStepsForTemplate: WeakMap<object, Array<A_TYPES__A_StageStep>>;
+    /**
      * For each indexed constructor, stores the set of all its ancestor constructors
      * (walking up the prototype chain). Enables O(1) isInheritedFrom checks.
      */
@@ -4458,6 +4483,16 @@ declare class A_Context {
      *
      * @param name
      */
+    /**
+     * Retrieves the cached topologically-sorted step array for the provided template reference.
+     * Returns `undefined` on a cache miss (first call for this template).
+     * Use `setSortedStepsFor` to populate the cache after building a new A_StepsManager.
+     */
+    static getSortedStepsFor(template: object): Array<A_TYPES__A_StageStep> | undefined;
+    /**
+     * Stores the topologically-sorted steps for the provided template in the WeakMap cache.
+     */
+    static setSortedStepsFor(template: object, sorted: Array<A_TYPES__A_StageStep>): void;
     static featureTemplate(
     /**
      * Provide the name of the feature to get the template for. Regular expressions are also supported to match multiple features.

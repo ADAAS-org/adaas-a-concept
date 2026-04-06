@@ -81,6 +81,17 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      * The error that caused the Feature to be interrupted
      */
     protected _error?: A_FeatureError
+    /**
+     * The effective scope (caller scope or external scope) stored for lazy feature-scope allocation.
+     * The feature's own scope is created on first access via `this.scope`, avoiding the allocation
+     * cost entirely for synchronous features that never need it.
+     */
+    protected _effectiveScope!: A_Scope;
+    /**
+     * Tracks whether the feature scope has been lazily allocated.
+     * Guards `scope.destroy()` calls so we don't allocate just to immediately destroy.
+     */
+    protected _scopeAllocated: boolean = false;
 
 
 
@@ -134,9 +145,18 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
      */
     get caller(): A_Caller<T> { return this._caller; }
     /**
-     * The Scope allocated for the Feature Execution
+     * The Scope allocated for the Feature Execution.
+     * Lazily allocated on first access to avoid the overhead of scope creation + destruction
+     * for synchronous features that never actually need their own scope.
      */
-    get scope(): A_Scope { return A_Context.scope(this); }
+    get scope(): A_Scope {
+        if (!this._scopeAllocated) {
+            this._scopeAllocated = true;
+            const s = A_Context.allocate(this);
+            s.inherit(this._effectiveScope);
+        }
+        return A_Context.scope(this);
+    }
     /**
      * The number of stages in the feature
      */
@@ -278,17 +298,22 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         //   - TODO: maybe would be better to allow passing caller in params?
         this._caller = new A_Caller<T>(params.component || new A_Component() as T);
 
-        // 4) allocate new scope for the feature
-        const scope = A_Context.allocate(this);
+        // 4) store effective scope for lazy feature-scope allocation.
+        //    The feature scope is deferred to first access of this.scope, so features
+        //    whose execution never needs the feature-level scope pay zero allocation cost.
+        this._effectiveScope = componentScope || externalScope!;
 
-        // 5) ensure that the scope of the caller component is inherited by the feature scope
-        scope.inherit(componentScope || externalScope!);
+        // 6) create steps manager to organize steps into stages, using sorted-steps cache
+        //    when the same template reference is provided across calls
+        let sortedSteps = A_Context.getSortedStepsFor(params.template);
+        if (!sortedSteps) {
+            this._SM = new A_StepsManager(params.template);
+            sortedSteps = this._SM.toSortedSteps();
+            A_Context.setSortedStepsFor(params.template, sortedSteps);
+        }
 
-        // 6) create steps manager to organize steps into stages
-        this._SM = new A_StepsManager(params.template);
-
-        // 7) create stages from the steps
-        this._stages = this._SM.toStages(this);
+        // 7) create stages from sorted steps
+        this._stages = sortedSteps.map(step => new A_Stage(this, step));
 
         // 8) set the first stage as current
         this._current = this._stages[0];
@@ -330,21 +355,31 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         // 3) create caller wrapper for the simple injection of the caller component
         this._caller = new A_Caller<T>(params.component);
 
-        // 4) allocate new scope for the feature
-        const scope = A_Context.allocate(this);
-        // const scope = componentScope || externalScope!
+        // 4) retrieve the template using the stable caller scope instead of an ephemeral
+        //    feature scope. The ephemeral scope is always empty and only inherits from
+        //    componentScope/externalScope, so the effective component set is identical.
+        //    This allows featureTemplate's fingerprint-based cache to stay warm between
+        //    calls because the caller scope's fingerprint is cached and stable.
+        const effectiveScope = componentScope || externalScope!;
+        const template = A_Context.featureTemplate(this._name, this._caller.component, effectiveScope);
 
-        // 5) ensure that the scope of the caller component is inherited by the feature scope
-        scope.inherit(componentScope || externalScope!);
+        // 5) get or build the topologically-sorted step array from the cache.
+        //    When featureTemplate returns a cached reference, getSortedStepsFor hits in O(1)
+        //    and avoids rebuilding the A_StepsManager graph on every call.
+        let sortedSteps = A_Context.getSortedStepsFor(template);
+        if (!sortedSteps) {
+            this._SM = new A_StepsManager(template);
+            sortedSteps = this._SM.toSortedSteps();
+            A_Context.setSortedStepsFor(template, sortedSteps);
+        }
 
-        // 6) retrieve the template from the context
-        const template = A_Context.featureTemplate(this._name, this._caller.component, scope);
+        // 6) store effective scope for lazy feature-scope allocation.
+        //    Avoids creating a new A_Scope on every feature call for synchronous features
+        //    that never access feature.scope.
+        this._effectiveScope = effectiveScope;
 
-        // 7) create steps manager to organize steps into stages
-        this._SM = new A_StepsManager(template);
-
-        // 8) create stages from the steps
-        this._stages = this._SM.toStages(this);
+        // 8) create stages from sorted steps
+        this._stages = sortedSteps.map(step => new A_Stage(this, step));
 
         // 9) set the first stage as current
         this._current = this._stages[0];
@@ -483,7 +518,9 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         this._state = A_TYPES__FeatureState.COMPLETED;
 
-        this.scope.destroy();
+        if (this._scopeAllocated) {
+            this.scope.destroy();
+        }
     }
     /**
      * This method marks the feature as failed and returns the error
@@ -499,7 +536,9 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         this._error = error;
 
-        this.scope.destroy();
+        if (this._scopeAllocated) {
+            this.scope.destroy();
+        }
 
         return this._error;
     }
@@ -539,7 +578,9 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
                 break;
         }
 
-        this.scope.destroy();
+        if (this._scopeAllocated) {
+            this.scope.destroy();
+        }
 
         return this._error;
     }

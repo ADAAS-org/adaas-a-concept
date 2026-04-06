@@ -68,71 +68,6 @@ function printHeapTable(title: string, snapshots: HeapSnapshot[]) {
 
 
 
-// ──────────────────────────────────────────────────────────────
-// Fixture: Components — Multiple extensions converging + chain
-// ──────────────────────────────────────────────────────────────
-
-export class ExtStepA extends A_Component {
-    @A_Feature.Extend({ name: 'componentFeature', scope: [ExtStepA] })
-    stepA() {
-    }
-}
-
-
-// ──────────────────────────────────────────────────────────────
-// Fixture: Entities
-// ──────────────────────────────────────────────────────────────
-
-export class BenchEntity extends A_Entity {
-
-    protected _scope!: A_Scope;
-
-    get scope(): A_Scope {
-        if (!this._scope) {
-            this._scope = A_Context.allocate(this, new A_Scope({ name: `${this.aseid.id}-scope` }));
-        }
-        return this._scope;
-    }
-
-    get targetComponent() {
-        return this.scope.resolve(ExtStepA)!;
-    }
-
-    entityFeature() {
-        return this.call('entityFeature', this.scope);
-    }
-}
-
-export class ExtStepB extends A_Component {
-    @A_Feature.Extend({ name: 'entityFeature', })
-    stepB() {
-    }
-}
-
-export class ExtStepC extends A_Component {
-    @A_Feature.Extend({ name: 'entityFeature', })
-    stepC() {
-    }
-}
-
-export class ChainingComponent extends A_Component {
-
-    @A_Feature.Extend({
-        name: 'entityFeature',
-        after: /.*/,
-    })
-    convergentStep(
-        @A_Inject(A_Caller) entity: BenchEntity,
-        @A_Inject(A_Scope) scope: A_Scope,
-        @A_Inject(A_Feature) feature: A_Feature
-    ) {
-        feature.chain(entity.targetComponent, 'componentFeature', scope);
-    }
-}
-
-
-
-
 class Node extends A_Entity {
 
     protected _scope!: A_Scope;
@@ -177,7 +112,7 @@ class NodeUpdateComponent extends A_Component {
             child.update();
         }
     }
-} 
+}
 
 // ──────────────────────────────────────────────────────────────
 // Benchmark Suites
@@ -190,27 +125,38 @@ export async function runFeatureChainingBenchmarks(): Promise<any> {
 
 
     // ── Suite 3: Feature Call — Baseline (no chain) ─────────
-    const baselineResults = await createSuite('Feature Call — Baseline (no chain)', (suite) => {
-        const parentScope = new A_Scope({ name: 'parent-scope', components: [ExtStepA] });
+    const baselineResults = await createSuite('Feature Tree Call', (suite) => {
+        const scope = new A_Scope({
+            name: 'base',
+            components: [NodeUpdateComponent]
+        });
 
-        const childScope = new A_Scope({
-            name: 'base-3',
-            components: [ChainingComponent, ExtStepB, ExtStepC]
-        }).inherit(parentScope);
+        const entity = new Node();
 
-        const entity = new BenchEntity();
+        scope.register(entity);
 
-        childScope.register(entity);
-
-        entity.scope.inherit(childScope);
+        entity.scope.inherit(scope);
 
         // Heap tracking state — shared across benchmarks in this suite
         let currentHeapBefore = 0;
 
-
         /**
-         * Fill in entityTree
+         * Fill entity tree with 3 levels and 10 children at each level (total 111 nodes)
          */
+        for (let i = 0; i < 10; i++) {
+            const child = new Node();
+            entity.addChild(child);
+
+            for (let j = 0; j < 10; j++) {
+                const grandChild = new Node();
+                child.addChild(grandChild);
+
+                for (let k = 0; k < 10; k++) {
+                    const greatGrandChild = new Node();
+                    grandChild.addChild(greatGrandChild);
+                }
+            }
+        }
 
 
 
@@ -226,64 +172,12 @@ export async function runFeatureChainingBenchmarks(): Promise<any> {
             })
 
         suite
-            .add('new Feature instantiation (A_Context.featureTemplate)', {
+            .add('Feature Tree Call', {
                 onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
                 fn: () => {
-                    const definition = A_Context.featureTemplate('entityFeature', entity);
+                    entity.update();
                 }
             })
-            .add('new Feature instantiation (new A_Feature)', {
-                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
-                fn: () => {
-                    const feature = new A_Feature({
-                        name: 'entityFeature',
-                        component: entity,
-                        scope: entity.scope
-                    });
-                }
-            })
-            .add('new Feature execution (direct)', {
-                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
-                fn: () => {
-                    const feature = new A_Feature({
-                        name: 'entityFeature',
-                        component: entity,
-                        scope: entity.scope
-                    });
-
-                    for (const stage of feature) {
-                        stage.process(entity.scope)
-                    }
-                }
-            })
-            .add('new Feature execution (direct entity.call)', {
-                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
-                fn: () => {
-                    const res = entity.call('entityFeature', entity.scope);
-
-                    if (res instanceof Promise)
-                        throw new Error('Expected synchronous execution for baseline feature call');
-                }
-            })
-            .add('new Feature execution (wrapped entity.call)', {
-                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
-                fn: () => {
-                    const res = entity.entityFeature();
-
-                    if (res instanceof Promise)
-                        throw new Error('Expected synchronous execution for baseline feature call');
-                }
-            })
-            .add('loop call', {
-                onStart: () => { currentHeapBefore = takeHeapSnapshot(); },
-                fn: () => {
-                    const res = entity.entityFeature();
-
-                    if (res instanceof Promise)
-                        throw new Error('Expected synchronous execution for baseline feature call');
-                }
-            })
-
 
     });
     allResults.push(...baselineResults);

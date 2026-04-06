@@ -139,6 +139,14 @@ export class A_Context {
      */
     protected static readonly FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
 
+    /**
+     * Cache for topologically-sorted step arrays keyed by the template array reference.
+     * Since `featureTemplate` returns the same array object on cache hits, this WeakMap
+     * enables O(1) sorted-steps lookup and avoids rebuilding A_StepsManager on every call.
+     * Entries are automatically GC-d when the template array is no longer referenced.
+     */
+    protected _sortedStepsForTemplate: WeakMap<object, Array<A_TYPES__A_StageStep>> = new WeakMap();
+
     // ====================================================================================================
     // ================================ INHERITANCE INDEX ==================================================
     // ====================================================================================================
@@ -767,6 +775,22 @@ export class A_Context {
      * 
      * @param name 
      */
+    /**
+     * Retrieves the cached topologically-sorted step array for the provided template reference.
+     * Returns `undefined` on a cache miss (first call for this template).
+     * Use `setSortedStepsFor` to populate the cache after building a new A_StepsManager.
+     */
+    static getSortedStepsFor(template: object): Array<A_TYPES__A_StageStep> | undefined {
+        return this.getInstance()._sortedStepsForTemplate.get(template);
+    }
+
+    /**
+     * Stores the topologically-sorted steps for the provided template in the WeakMap cache.
+     */
+    static setSortedStepsFor(template: object, sorted: Array<A_TYPES__A_StageStep>): void {
+        this.getInstance()._sortedStepsForTemplate.set(template, sorted);
+    }
+
     static featureTemplate(
         /**
          * Provide the name of the feature to get the template for. Regular expressions are also supported to match multiple features.
