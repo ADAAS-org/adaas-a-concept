@@ -211,7 +211,7 @@ export function A_Inject<T extends A_TYPES__A_DependencyInjectable>(
         // get existing meta or create a new one —
         // always clone it so we don't mutate a shared inner meta inherited from a parent class
         const inheritedMeta = A_Context.meta(target).get(metaKey);
-        const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+        const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
         // get existing injections for the method or create a new array
         const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) ? [...existedMeta.get(method)!] : [];
 

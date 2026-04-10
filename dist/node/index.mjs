@@ -1967,7 +1967,7 @@ function A_Dependency_Default(...args) {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       create: true,
@@ -2005,7 +2005,7 @@ function A_Dependency_Flat() {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       flat: true
@@ -2042,7 +2042,7 @@ function A_Dependency_Load() {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       load: true
@@ -2079,7 +2079,7 @@ function A_Dependency_Parent(layerOffset = -1) {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       parent: layerOffset
@@ -2116,7 +2116,7 @@ function A_Dependency_Require() {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       require: true
@@ -2153,7 +2153,7 @@ function A_Dependency_All() {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       pagination: {
@@ -2193,7 +2193,7 @@ function A_Dependency_Query(query, pagination) {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
       query: {
@@ -6308,7 +6308,7 @@ function A_Inject(param1, param2) {
         break;
     }
     const inheritedMeta = A_Context.meta(target).get(metaKey);
-    const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+    const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex] = param1 instanceof A_Dependency ? param1 : new A_Dependency(param1, param2);
     existedMeta.set(method, paramsArray);

@@ -1331,4 +1331,72 @@ describe('A-Feature tests', () => {
         }
     })
 
+    it('Should resolve @Dependency.Required dep registered by a before:/.*/ extension into the same call scope (A_SignalBus pattern)', async () => {
+        // Regression test for the meta-subtype bug:
+        //   new A_Meta() was used instead of inheritedMeta.clone() when no existing inner meta
+        //   existed. This caused A_ComponentMeta to be replaced with a plain A_Meta at the
+        //   INJECTIONS key, breaking injection lookup for @A_Dependency.Required() decorators.
+        //
+        // Pattern mirrors A_SignalBus exactly:
+        //   - onBeforeNext (before: /.*/) — registers StateFragment into call scope via @A_Inject(A_Scope)
+        //   - onNext                      — requires StateFragment via @A_Dependency.Required() @A_Inject(StateFragment)
+        //   - ListenerComponent.onNext    — also extends onNext, receives StateFragment optionally
+
+        class StateFragment extends A_Fragment {
+            value: number = 0;
+            constructor(v: number) { super({ name: 'StateFragment' }); this.value = v; }
+        }
+
+        const ON_BEFORE = 'onBeforeNext';
+        const ON_NEXT = 'onNext';
+
+        let receivedState: StateFragment | undefined;
+        let onNextFired = false;
+
+        class BusComponent extends A_Component {
+
+            @A_Feature.Extend({ before: /.*/ })
+            async onBeforeNext(
+                @A_Inject(A_Scope) scope: A_Scope,
+            ) {
+                scope.register(new StateFragment(42));
+            }
+
+            @A_Feature.Extend()
+            async onNext(
+                @A_Dependency.Required()
+                @A_Inject(StateFragment) state: StateFragment,
+            ) {
+                onNextFired = true;
+                receivedState = state;
+            }
+        }
+
+        class ListenerComponent extends A_Component {
+            @A_Feature.Extend()
+            async onNext(
+                @A_Inject(StateFragment) state: StateFragment,
+            ) {
+                receivedState = state;
+            }
+        }
+
+        const scope = new A_Scope({ name: 'test-scope' });
+        scope.register(BusComponent);
+        scope.register(ListenerComponent);
+
+        const bus = scope.resolve(BusComponent)!;
+        expect(bus).toBeInstanceOf(BusComponent);
+
+        const callScope = new A_Scope({ name: 'call-scope' }).inherit(A_Context.scope(bus));
+
+        await bus.call(ON_BEFORE, callScope);
+        await bus.call(ON_NEXT, callScope);
+
+        expect(onNextFired).toBe(true);
+        expect(receivedState).toBeDefined();
+        expect(receivedState).toBeInstanceOf(StateFragment);
+        expect(receivedState!.value).toBe(42);
+    });
+
 });
