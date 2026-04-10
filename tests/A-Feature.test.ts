@@ -10,6 +10,7 @@ import { A_Context } from '@adaas/a-concept/a-context';
 import { A_Dependency } from "@adaas/a-concept/a-dependency";
 import { A_Error } from "@adaas/a-concept/a-error";
 import { A_Entity } from "@adaas/a-concept/a-entity";
+import { A_Fragment } from "@adaas/a-concept/a-fragment";
 
 jest.retryTimes(0);
 
@@ -1205,5 +1206,129 @@ describe('A-Feature tests', () => {
         ]);
     })
 
+    it('Should allow extension B to receive a fragment registered into scope by extension A (runs first via before:/.*/)', async () => {
+        // Regression test for a-utils A-Signal pattern:
+        // ComponentA.onEvent runs first (before: /.*/), registers a result Fragment into the
+        // passed scope, then ComponentB.onEvent runs and receives that Fragment via injection.
+
+        class ResultFragment extends A_Fragment {
+            value: string = '';
+            constructor(v: string) { super({ name: 'ResultFragment' }); this.value = v; }
+        }
+
+        const FEATURE = 'onEvent';
+        let bReceivedFragment: ResultFragment | undefined;
+
+        class BusComponent extends A_Component {
+            @A_Feature.Extend({ before: /.*/ })
+            async onEvent(
+                @A_Inject(A_Scope) scope: A_Scope,
+            ) {
+                scope.register(new ResultFragment('hello'));
+            }
+        }
+
+        class ListenerComponent extends A_Component {
+            @A_Feature.Extend()
+            async onEvent(
+                @A_Inject(ResultFragment) fragment: ResultFragment,
+            ) {
+                bReceivedFragment = fragment;
+            }
+        }
+
+        // Set up a single scope with both components registered
+        const scope = new A_Scope({ name: 'test-scope' });
+        scope.register(BusComponent);
+        scope.register(ListenerComponent);
+
+        const bus = scope.resolve(BusComponent)!;
+        expect(bus).toBeInstanceOf(BusComponent);
+
+        // Create a call scope that inherits from the component scope
+        const callScope = new A_Scope({ name: 'call-scope' }).inherit(A_Context.scope(bus));
+
+        // Call the feature — BusComponent.onEvent should run first and register
+        // ResultFragment into callScope, then ListenerComponent.onEvent should receive it
+        await bus.call(FEATURE, callScope);
+
+        expect(bReceivedFragment).toBeDefined();
+        expect(bReceivedFragment).toBeInstanceOf(ResultFragment);
+        expect(bReceivedFragment!.value).toBe('hello');
+    });
+    it('Should return different set of injected arguments for each call', async () => {
+        try {
+            const results: string[] = [];
+
+            class TestEntity extends A_Entity {
+
+                static get Feature() {
+                    return (target: any, propertyKey: string, descriptor: PropertyDescriptor) => {
+                        return A_Feature.Extend({
+                            name: 'feature',
+                            scope: [TestEntity],
+                        })(target, propertyKey, descriptor);
+                    }
+                }
+
+                @A_Feature.Define({ invoke: true })
+                feature() {
+                    results.push('step1')
+                }
+            }
+
+            class InjectableComponentA extends A_Component { }
+            class InjectableComponentB extends A_Component { }
+
+            class BaseComponent extends A_Component {
+
+                @TestEntity.Feature
+                feature(
+                    @A_Inject(InjectableComponentA) a: InjectableComponentA
+                ) {
+                    expect(a).toBeInstanceOf(InjectableComponentA);
+                    results.push('baseStep');
+                }
+            }
+
+
+            class ComponentA extends BaseComponent {
+                @TestEntity.Feature
+                feature(
+                    @A_Inject(InjectableComponentA) a: InjectableComponentA
+                ) {
+                    expect(a).toBeInstanceOf(InjectableComponentA);
+                    results.push('step2');
+                }
+            }
+
+            class ComponentB extends BaseComponent {
+
+                @TestEntity.Feature
+                feature(
+                    @A_Inject(InjectableComponentB) b: InjectableComponentB
+                ) {
+                    expect(b).toBeInstanceOf(InjectableComponentB);
+                    results.push('step3');
+                }
+            }
+
+            const scope = new A_Scope({ name: 'TestScope', components: [ComponentA, ComponentB, InjectableComponentA, InjectableComponentB] });
+
+            const entity = new TestEntity({ name: 'test-entity' });
+            scope.register(entity);
+
+            entity.feature();
+
+            expect(results).toEqual([
+                'step1',
+                'step2',
+                'step3'
+            ]);
+
+        } catch (error) {
+            console.log((error as A_Error).toJSON())
+        }
+    })
 
 });

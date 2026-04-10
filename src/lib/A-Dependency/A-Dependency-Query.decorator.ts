@@ -59,10 +59,11 @@ export function A_Dependency_Query<T extends A_Entity = A_Entity>(
                 break;
         }
 
-        // get existing meta or create a new one
-        const existedMeta = A_Context.meta(target).get(metaKey) || new A_Meta();
-        // get existing injections for the method or create a new array
-        const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) || [];
+        // get existing meta or create a new one (always clone to avoid mutating shared inherited meta)
+        const inheritedMeta = A_Context.meta(target).get(metaKey);
+        const existedMeta = inheritedMeta ? new A_Meta().from(inheritedMeta) : new A_Meta();
+        // get existing injections for the method or create a new array (clone to avoid mutating shared array)
+        const paramsArray: A_TYPES__A_InjectDecorator_Meta = existedMeta.get(method) ? [...existedMeta.get(method)!] : [];
 
         // set the parameter injection info
         paramsArray[parameterIndex].resolutionStrategy = {
