@@ -6188,7 +6188,7 @@ var A_Concept = class {
       name: "load" /* Load */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Run the concept.
@@ -6198,7 +6198,7 @@ var A_Concept = class {
       name: "run" /* Run */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Start the concept.
@@ -6210,7 +6210,7 @@ var A_Concept = class {
       name: "start" /* Start */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Stop the concept.
@@ -6222,7 +6222,7 @@ var A_Concept = class {
       name: "stop" /* Stop */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Build the concept.
@@ -6232,7 +6232,7 @@ var A_Concept = class {
       name: "build" /* Build */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Deploy the concept.
@@ -6242,7 +6242,7 @@ var A_Concept = class {
       name: "deploy" /* Deploy */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   /**
    * Publish the concept.
@@ -6252,7 +6252,7 @@ var A_Concept = class {
       name: "publish" /* Publish */,
       containers: this._containers
     });
-    await abstraction.process(scope);
+    await abstraction.process(scope || this.scope);
   }
   // =======================================================================
   // ==========================  CALL  =====================================
