@@ -4,6 +4,7 @@ import { A_TYPES__Abstraction_Init } from "./A-Abstraction.types";
 import { A_Scope } from "@adaas/a-concept/a-scope";
 import { A_Context } from "@adaas/a-concept/a-context";
 import { A_TYPES__ConceptAbstractions } from "@adaas/a-concept/a-concept";
+import type { A_Container } from "@adaas/a-concept/a-container";
 
 
 
@@ -16,7 +17,7 @@ export class A_Abstraction {
     /**
      * List of features that are part of this Abstraction
      */
-    protected _features: A_Feature[] = [];
+    protected _featuresMap: Map<A_Container, A_Feature> = new Map();
     /**
      * The Feature currently being processed
      */
@@ -52,19 +53,21 @@ export class A_Abstraction {
     ) {
         this._name = params.name;
 
-        this._features = params.containers.map(container => {
+        params.containers.map(container => {
             const template = A_Context.abstractionTemplate(
                 this._name,
                 container
             );
-            return new A_Feature({
+            const feature = new A_Feature({
                 name: this._name,
                 component: container,
                 template
-            })
+            });
+            this._featuresMap.set(container, feature);
+            return feature;
         });
 
-        this._current = this._features[0];
+        this._current = this._featuresMap.values().next().value;
     }
 
     /**
@@ -84,7 +87,7 @@ export class A_Abstraction {
      */
     get isDone(): boolean {
         return !this.feature
-            || this._index >= this._features.length
+            || this._index >= this._featuresMap.size
 
     }
 
@@ -95,7 +98,7 @@ export class A_Abstraction {
             next: (): IteratorResult<A_Feature, any> => {
                 if (!this.isDone) {
 
-                    this._current = this._features[this._index];
+                    this._current = Array.from(this._featuresMap.values())[this._index];
 
                     return {
                         value: this._current,
@@ -120,11 +123,11 @@ export class A_Abstraction {
      * @param stage 
      */
     next(stage) {
-        if (this._index >= this._features.length) {
+        if (this._index >= this._featuresMap.size) {
             return;
         }
 
-        const stageIndex = this._features.indexOf(stage);
+        const stageIndex = Array.from(this._featuresMap.values()).indexOf(stage);
 
         this._index = stageIndex + 1;
     }
@@ -146,9 +149,9 @@ export class A_Abstraction {
         if (this.isDone)
             return;
 
-        for (const feature of this._features) {
+        for (const [container, feature] of this._featuresMap.entries()) {
 
-            await feature.process(scope);
+            await feature.process(scope || container.scope);
         }
     }
 }

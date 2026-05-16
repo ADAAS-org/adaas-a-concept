@@ -336,4 +336,56 @@ describe('A-Abstraction Tests', () => {
 
         expect(executionOrder).toEqual(['stepTwo']);
     });
+
+    it('Should use container scope for dependency injection when no explicit scope is provided', async () => {
+        A_Context.reset();
+
+        let injectedInA: MyComponentA | undefined;
+        let injectedInB: MyComponentB | undefined;
+
+        class MyComponentA extends A_Component {
+            readonly tag = 'component-a';
+        }
+
+        class MyComponentB extends A_Component {
+            readonly tag = 'component-b';
+        }
+
+        class MyContainerA extends A_Container {
+            @A_Concept.Load()
+            async loadStep(
+                @A_Inject(MyComponentA) component: MyComponentA,
+            ) {
+                injectedInA = component;
+            }
+        }
+
+        class MyContainerB extends A_Container {
+            @A_Concept.Load()
+            async loadStep(
+                @A_Inject(MyComponentB) component: MyComponentB,
+            ) {
+                injectedInB = component;
+            }
+        }
+
+        const containerA = new MyContainerA({ name: 'ContainerA', components: [MyComponentA] });
+        const containerB = new MyContainerB({ name: 'ContainerB', components: [MyComponentB] });
+
+        const concept = new A_Concept({
+            name: 'TestConcept',
+            containers: [containerA, containerB]
+        });
+
+        // No explicit scope passed — stages must resolve deps from each container's own scope
+        await concept.load();
+
+        // Each container's load stage received its own container-specific component
+        expect(injectedInA).toBeInstanceOf(MyComponentA);
+        expect(injectedInB).toBeInstanceOf(MyComponentB);
+
+        // The injected instances match what the container scopes actually hold
+        expect(injectedInA).toBe(containerA.scope.resolve(MyComponentA));
+        expect(injectedInB).toBe(containerB.scope.resolve(MyComponentB));
+    });
 });

@@ -4120,7 +4120,7 @@ declare class A_Abstraction {
     /**
      * List of features that are part of this Abstraction
      */
-    protected _features: A_Feature[];
+    protected _featuresMap: Map<A_Container, A_Feature>;
     /**
      * The Feature currently being processed
      */

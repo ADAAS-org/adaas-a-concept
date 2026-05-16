@@ -200,7 +200,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
     /**
      * Run the concept.
@@ -213,7 +213,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
     /**
      * Start the concept.
@@ -228,7 +228,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
     /**
      * Stop the concept.
@@ -243,7 +243,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
     /**
      * Build the concept.
@@ -256,7 +256,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
     /**
      * Deploy the concept.
@@ -269,7 +269,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
 
     }
     /**
@@ -283,7 +283,7 @@ export class A_Concept<
             containers: this._containers,
         });
 
-        await abstraction.process(scope || this.scope);
+        await abstraction.process(scope);
     }
 
 

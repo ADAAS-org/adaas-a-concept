@@ -5965,24 +5965,26 @@ var A_Abstraction = class {
     /**
      * List of features that are part of this Abstraction
      */
-    this._features = [];
+    this._featuresMap = /* @__PURE__ */ new Map();
     /**
      * Actual Index of the current Feature being processed
      */
     this._index = 0;
     this._name = params.name;
-    this._features = params.containers.map((container) => {
+    params.containers.map((container) => {
       const template = A_Context.abstractionTemplate(
         this._name,
         container
       );
-      return new A_Feature({
+      const feature = new A_Feature({
         name: this._name,
         component: container,
         template
       });
+      this._featuresMap.set(container, feature);
+      return feature;
     });
-    this._current = this._features[0];
+    this._current = this._featuresMap.values().next().value;
   }
   /**
    * Allows to extends A-Abstraction with additional methods
@@ -6008,14 +6010,14 @@ var A_Abstraction = class {
    * @returns 
    */
   get isDone() {
-    return !this.feature || this._index >= this._features.length;
+    return !this.feature || this._index >= this._featuresMap.size;
   }
   [Symbol.iterator]() {
     return {
       // Custom next method
       next: () => {
         if (!this.isDone) {
-          this._current = this._features[this._index];
+          this._current = Array.from(this._featuresMap.values())[this._index];
           return {
             value: this._current,
             done: false
@@ -6036,10 +6038,10 @@ var A_Abstraction = class {
    * @param stage 
    */
   next(stage) {
-    if (this._index >= this._features.length) {
+    if (this._index >= this._featuresMap.size) {
       return;
     }
-    const stageIndex = this._features.indexOf(stage);
+    const stageIndex = Array.from(this._featuresMap.values()).indexOf(stage);
     this._index = stageIndex + 1;
   }
   /**
@@ -6050,8 +6052,8 @@ var A_Abstraction = class {
   async process(scope) {
     if (this.isDone)
       return;
-    for (const feature of this._features) {
-      await feature.process(scope);
+    for (const [container, feature] of this._featuresMap.entries()) {
+      await feature.process(scope || container.scope);
     }
   }
 };
@@ -6186,7 +6188,7 @@ var A_Concept = class {
       name: "load" /* Load */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Run the concept.
@@ -6196,7 +6198,7 @@ var A_Concept = class {
       name: "run" /* Run */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Start the concept.
@@ -6208,7 +6210,7 @@ var A_Concept = class {
       name: "start" /* Start */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Stop the concept.
@@ -6220,7 +6222,7 @@ var A_Concept = class {
       name: "stop" /* Stop */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Build the concept.
@@ -6230,7 +6232,7 @@ var A_Concept = class {
       name: "build" /* Build */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Deploy the concept.
@@ -6240,7 +6242,7 @@ var A_Concept = class {
       name: "deploy" /* Deploy */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   /**
    * Publish the concept.
@@ -6250,7 +6252,7 @@ var A_Concept = class {
       name: "publish" /* Publish */,
       containers: this._containers
     });
-    await abstraction.process(scope || this.scope);
+    await abstraction.process(scope);
   }
   // =======================================================================
   // ==========================  CALL  =====================================
