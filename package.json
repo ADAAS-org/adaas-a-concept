@@ -1,6 +1,6 @@
 {
   "name": "@adaas/a-concept",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "description": "A-Concept is a framework of the new generation that is tailored to use AI, enabling developers to create AI-powered applications with ease. It provides a structured approach to building, managing, and deploying AI-driven solutions.",
   "license": "Apache-2.0",
   "author": {
@@ -35,11 +35,13 @@
         "types": "./dist/node/index.d.ts",
         "import": "./dist/node/index.mjs",
         "require": "./dist/node/index.cjs"
-      }    },
+      }
+    },
     "./docs": {
       "types": "./dist/node/docs.d.ts",
       "import": "./dist/node/docs.mjs",
-      "require": "./dist/node/docs.cjs"    }
+      "require": "./dist/node/docs.cjs"
+    }
   },
   "sideEffects": false,
   "nodemonConfig": {
