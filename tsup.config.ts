@@ -73,6 +73,8 @@ export default defineConfig([
     entry: {
       // Same public API as browser
       index: "src/index.ts",
+      // Monaco syntax helpers — node only
+      docs: "docs/syntax/index.ts",
     },
 
     tsconfig: "./.conf/tsconfig.node.json", // Separate tsconfig for node build

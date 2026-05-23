@@ -35,8 +35,11 @@
         "types": "./dist/node/index.d.ts",
         "import": "./dist/node/index.mjs",
         "require": "./dist/node/index.cjs"
-      }
-    }
+      }    },
+    "./docs": {
+      "types": "./dist/node/docs.d.ts",
+      "import": "./dist/node/docs.mjs",
+      "require": "./dist/node/docs.cjs"    }
   },
   "sideEffects": false,
   "nodemonConfig": {
