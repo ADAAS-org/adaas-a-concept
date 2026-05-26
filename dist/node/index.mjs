@@ -5528,9 +5528,22 @@ var _A_Context = class _A_Context {
       }
       return d;
     };
+    const callerChain = new Set(
+      A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity)
+    );
+    const isSiblingOrUnrelatedDescendant = (cmp) => {
+      if (callerChain.has(cmp)) return false;
+      const ancestors = _A_Context.getAncestors(cmp);
+      if (!ancestors) return false;
+      for (const a of callerChain) {
+        if (ancestors.has(a)) return true;
+      }
+      return false;
+    };
     const scopeFilteredMetas = [];
     for (const [cmp, meta] of instance._metaStorage) {
       if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
+        if (isSiblingOrUnrelatedDescendant(cmp)) continue;
         scopeFilteredMetas.push([cmp, meta]);
       }
     }

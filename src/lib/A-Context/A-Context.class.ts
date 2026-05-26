@@ -918,6 +918,35 @@ export class A_Context {
             return d;
         };
 
+        // ---- Sibling-cross-talk filter ----
+        // When a base class declares `@A_Feature.Extend()` without an explicit `scope:`,
+        // the resulting regex is a wildcard (e.g. `.*\.featureName$`). That regex is then
+        // cloned (via meta inheritance) into every subclass's _metaStorage entry, so when
+        // we iterate sibling subclass metas for callName "CmdA.featureName", the wildcard
+        // in CmdB's / CmdC's cloned metas ALSO matches and produces stage steps whose
+        // `dependency` is a sibling class — leading to "Unable to resolve component"
+        // failures at execution time.
+        //
+        // Build the caller's inheritance chain as a Set, and treat any `cmp` that is NOT
+        // in this chain but DOES inherit from a class in the chain as a "sibling" — those
+        // are skipped. Unrelated handler components (e.g. classes that only extend
+        // A_Component / A_Container / A_Entity) are still included so they can declare
+        // scoped extensions for any caller class.
+        const callerChain: Set<Function> = new Set(
+            A_CommonHelper.getClassInheritanceChain(component)
+                .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
+        );
+
+        const isSiblingOrUnrelatedDescendant = (cmp: Function): boolean => {
+            if (callerChain.has(cmp)) return false;
+            const ancestors = A_Context.getAncestors(cmp);
+            if (!ancestors) return false;
+            for (const a of callerChain) {
+                if (ancestors.has(a)) return true;
+            }
+            return false;
+        };
+
         // ---- Optimization 3: Build a local set of metas that are in scope ----
         // Pre-filter _metaStorage entries to only those present in scope,
         // avoiding repeated scope.has() calls per callName iteration.
@@ -928,6 +957,9 @@ export class A_Context {
                 ||
                 A_TypeGuards.isContainerMetaInstance(meta)
             )) {
+                // Skip sibling subclasses of any class in the caller's inheritance chain
+                // (see comment block above for rationale).
+                if (isSiblingOrUnrelatedDescendant(cmp as Function)) continue;
                 scopeFilteredMetas.push([cmp, meta as A_ComponentMeta | A_ContainerMeta]);
             }
         }

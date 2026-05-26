@@ -1399,4 +1399,99 @@ describe('A-Feature tests', () => {
         expect(receivedState!.value).toBe(42);
     });
 
+    it('Should not pull in sibling subclass extensions when calling a base-class feature (cc4db Command pattern)', async () => {
+        // This test reproduces a bug observed in cc4db where a base class (A_Command)
+        // declares @A_Feature.Extend() with no `scope:` filter, producing a wildcard
+        // regex (e.g. `.*\.featureName$`) in the base meta. That meta is then cloned
+        // into each subclass's _metaStorage entry. When multiple sibling subclasses
+        // are registered in the scope and one of them is invoked, the wildcard regex
+        // in each *sibling*'s cloned meta also matches the caller's callName, and
+        // the framework emits steps whose `dependency` is the sibling class.
+        // Resolving those siblings from the caller's execution scope then fails with
+        // "Unable to resolve component <Sibling> from scope ...".
+
+        const executionOrder: string[] = [];
+
+        class BaseCommand extends A_Component {
+            async run() {
+                await this.call('cmdExecute');
+            }
+
+            @A_Feature.Extend({ name: 'cmdExecute' })
+            async _baseStep() {
+                executionOrder.push(`${this.constructor.name}._baseStep`);
+            }
+        }
+
+        class SearchCmd  extends BaseCommand {}
+        class CompactCmd extends BaseCommand {}
+        class SchemaCmd  extends BaseCommand {}
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            components: [SearchCmd, CompactCmd, SchemaCmd],
+        });
+
+        const compact = scope.resolve(CompactCmd)!;
+
+        // Should NOT throw "Unable to resolve component SearchCmd / SchemaCmd ..."
+        await compact.run();
+
+        // The base step should run exactly once, on the caller (CompactCmd) — not also
+        // on SearchCmd or SchemaCmd.
+        expect(executionOrder).toEqual(['CompactCmd._baseStep']);
+    });
+
+    it('Should allow a handler component to extend the same base feature for multiple sibling subclass scopes', async () => {
+        // This is the cc4db CC4CommandHandlers pattern: a single component declares
+        // multiple @A_Feature.Extend handlers each scoped to a different sibling
+        // subclass of a common base. Each scoped handler must fire only for its
+        // own scope class, never for the others.
+
+        const calls: string[] = [];
+
+        class BaseCmd extends A_Component {
+            async run() { await this.call('cmdExec'); }
+
+            @A_Feature.Extend({ name: 'cmdExec' })
+            async _base() { calls.push(`base:${this.constructor.name}`); }
+        }
+        class CmdA extends BaseCmd {}
+        class CmdB extends BaseCmd {}
+        class CmdC extends BaseCmd {}
+
+        class Handlers extends A_Component {
+            @A_Feature.Extend({ name: 'cmdExec', scope: [CmdA] })
+            async onA(@A_Inject(A_Caller) c: CmdA) { calls.push('onA'); }
+
+            @A_Feature.Extend({ name: 'cmdExec', scope: [CmdB] })
+            async onB(@A_Inject(A_Caller) c: CmdB) { calls.push('onB'); }
+
+            @A_Feature.Extend({ name: 'cmdExec', scope: [CmdC] })
+            async onC(@A_Inject(A_Caller) c: CmdC) { calls.push('onC'); }
+        }
+
+        const scope = new A_Scope({
+            name: 'TestScope',
+            components: [CmdA, CmdB, CmdC, Handlers],
+        });
+
+        // For each sibling, exactly the matching scoped handler must run — never
+        // a sibling's handler. (Order between the base wildcard `_base` and the
+        // scoped handler is not asserted here because it depends on meta
+        // registration order; both must fire.)
+
+        calls.length = 0;
+        await scope.resolve(CmdA)!.run();
+        expect(calls.sort()).toEqual(['base:CmdA', 'onA'].sort());
+
+        calls.length = 0;
+        await scope.resolve(CmdB)!.run();
+        expect(calls.sort()).toEqual(['base:CmdB', 'onB'].sort());
+
+        calls.length = 0;
+        await scope.resolve(CmdC)!.run();
+        expect(calls.sort()).toEqual(['base:CmdC', 'onC'].sort());
+    });
+
 });
