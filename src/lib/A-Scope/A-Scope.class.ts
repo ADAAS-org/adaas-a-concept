@@ -157,6 +157,17 @@ export class A_Scope<
      */
     protected _imports: Set<A_Scope> = new Set();
 
+    /**
+     * Downstream scopes whose `_resolveCache` (and friends) depend on this scope.
+     * Populated when another scope `inherit()`s from us or `import()`s us; on
+     * `bumpVersion()` we recursively bump each live subscriber so cached
+     * lookups (including cached `undefined` negatives) never go stale.
+     *
+     * Held as `WeakRef`s so abandoned child scopes don't keep their parents
+     * pinned in memory. Dead refs are pruned lazily inside `bumpVersion()`.
+     */
+    protected _subscribers: Set<WeakRef<A_Scope>> = new Set();
+
 
 
     // ===========================================================================
@@ -253,6 +264,11 @@ export class A_Scope<
     /**
      * Increments the scope version and clears internal caches.
      * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
+     *
+     * Also propagates the bump to every live downstream subscriber so their
+     * caches — which may include `undefined` negative entries that were
+     * resolved through us — are invalidated atomically. Dead `WeakRef`s are
+     * pruned in the same pass.
      */
     protected bumpVersion(): void {
         this._version++;
@@ -261,6 +277,37 @@ export class A_Scope<
         this._resolveFlatAllCache.clear();
         this._resolveAllCache.clear();
         this._cachedFingerprint = undefined;
+
+        if (this._subscribers.size === 0) return;
+        for (const ref of this._subscribers) {
+            const sub = ref.deref();
+            if (!sub) {
+                this._subscribers.delete(ref);
+                continue;
+            }
+            sub.bumpVersion();
+        }
+    }
+
+    /**
+     * Register `child` as a downstream subscriber so any future mutation on
+     * `this` invalidates the child's resolution caches.
+     */
+    protected _addSubscriber(child: A_Scope): void {
+        for (const ref of this._subscribers) {
+            if (ref.deref() === child) return;
+        }
+        this._subscribers.add(new WeakRef(child));
+    }
+
+    /**
+     * Stop notifying `child` of mutations and prune any stale WeakRefs.
+     */
+    protected _removeSubscriber(child: A_Scope): void {
+        for (const ref of this._subscribers) {
+            const r = ref.deref();
+            if (!r || r === child) this._subscribers.delete(ref);
+        }
     }
 
     /**
@@ -432,6 +479,7 @@ export class A_Scope<
 
         if (config.parent) {
             this._parent = config.parent;
+            (config.parent as A_Scope)._addSubscriber(this);
         }
     }
 
@@ -510,7 +558,13 @@ export class A_Scope<
         this._errors.clear();
         this._fragments.clear();
         this._entities.clear();
+        for (const imp of this._imports) {
+            (imp as A_Scope)._removeSubscriber(this);
+        }
         this._imports.clear();
+        if (this._parent) {
+            (this._parent as A_Scope)._removeSubscriber(this);
+        }
 
         /**
          * Since the scope is being destroyed, we can assume that all components, fragments and entities registered in the scope are no longer needed and can be garbage collected.
@@ -612,7 +666,11 @@ export class A_Scope<
             );
 
 
+        if (this._parent) {
+            (this._parent as A_Scope)._removeSubscriber(this);
+        }
         this._parent = parent;
+        (parent as A_Scope)._addSubscriber(this);
         this.bumpVersion();
         return this;
     }
@@ -640,6 +698,7 @@ export class A_Scope<
                 return;
 
             this._imports.add(scope);
+            (scope as A_Scope)._addSubscriber(this);
             this.bumpVersion();
         });
 
@@ -658,6 +717,7 @@ export class A_Scope<
         scopes.forEach(scope => {
             if (this._imports.has(scope)) {
                 this._imports.delete(scope);
+                (scope as A_Scope)._removeSubscriber(this);
                 this.bumpVersion();
             }
         });

@@ -3093,6 +3093,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _imports: Set<A_Scope>;
     /**
+     * Downstream scopes whose `_resolveCache` (and friends) depend on this scope.
+     * Populated when another scope `inherit()`s from us or `import()`s us; on
+     * `bumpVersion()` we recursively bump each live subscriber so cached
+     * lookups (including cached `undefined` negatives) never go stale.
+     *
+     * Held as `WeakRef`s so abandoned child scopes don't keep their parents
+     * pinned in memory. Dead refs are pruned lazily inside `bumpVersion()`.
+     */
+    protected _subscribers: Set<WeakRef<A_Scope>>;
+    /**
      * Returns the name of the scope
      */
     get name(): string;
@@ -3166,8 +3176,22 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     /**
      * Increments the scope version and clears internal caches.
      * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
+     *
+     * Also propagates the bump to every live downstream subscriber so their
+     * caches — which may include `undefined` negative entries that were
+     * resolved through us — are invalidated atomically. Dead `WeakRef`s are
+     * pruned in the same pass.
      */
     protected bumpVersion(): void;
+    /**
+     * Register `child` as a downstream subscriber so any future mutation on
+     * `this` invalidates the child's resolution caches.
+     */
+    protected _addSubscriber(child: A_Scope): void;
+    /**
+     * Stop notifying `child` of mutations and prune any stale WeakRefs.
+     */
+    protected _removeSubscriber(child: A_Scope): void;
     /**
      * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
      * Used to detect when any transitive dependency has changed, so the fingerprint cache can be invalidated.

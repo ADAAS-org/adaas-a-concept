@@ -1016,4 +1016,69 @@ describe('A-Scope tests', () => {
         const second = scope.fingerprint;
         expect(first).toBe(second);
     });
+
+    // ── Downward cache invalidation ─────────────────────────────────────
+
+    it('Should invalidate child resolve cache when parent registers a new entity (negative cache)', async () => {
+        class MyEntity extends A_Entity<any> { }
+
+        const parent = new A_Scope({ name: 'Parent' });
+        const child = new A_Scope({ name: 'Child' }).inherit(parent);
+
+        // First resolve caches `undefined` in the child.
+        expect(child.resolve(MyEntity)).toBeUndefined();
+
+        // Register in parent — child cache must be invalidated downward.
+        const entity = new MyEntity();
+        parent.register(entity);
+
+        expect(child.resolve(MyEntity)).toBe(entity);
+    });
+
+    it('Should invalidate grandchild resolve cache when parent mutates', async () => {
+        class MyEntity extends A_Entity<any> { }
+
+        const parent = new A_Scope({ name: 'Parent' });
+        const child = new A_Scope({ name: 'Child' }).inherit(parent);
+        const grandchild = new A_Scope({ name: 'Grandchild' }).inherit(child);
+
+        expect(grandchild.resolve(MyEntity)).toBeUndefined();
+
+        const entity = new MyEntity();
+        parent.register(entity);
+
+        expect(grandchild.resolve(MyEntity)).toBe(entity);
+    });
+
+    it('Should invalidate child resolve cache when an imported scope mutates', async () => {
+        class MyComponentA extends A_Component { }
+
+        const imported = new A_Scope({ name: 'Imported' });
+        const scope = new A_Scope({ name: 'Scope' }).import(imported);
+
+        expect(scope.resolve(MyComponentA)).toBeUndefined();
+
+        imported.register(MyComponentA);
+
+        expect(scope.resolve(MyComponentA)).toBeInstanceOf(MyComponentA);
+    });
+
+    it('Should stop notifying a child after deimport', async () => {
+        class MyComponentA extends A_Component { }
+
+        const imported = new A_Scope({ name: 'Imported' });
+        const scope = new A_Scope({ name: 'Scope' }).import(imported);
+
+        imported.register(MyComponentA);
+        expect(scope.resolve(MyComponentA)).toBeInstanceOf(MyComponentA);
+
+        scope.deimport(imported);
+        expect(scope.resolve(MyComponentA)).toBeUndefined();
+
+        // Further mutations on the deimported scope must NOT bump the child.
+        const versionBefore = (scope as any)._version;
+        class MyComponentB extends A_Component { }
+        imported.register(MyComponentB);
+        expect((scope as any)._version).toBe(versionBefore);
+    });
 });
