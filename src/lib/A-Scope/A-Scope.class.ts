@@ -19,6 +19,10 @@ import {
     A_Entity,
     A_TYPES__Entity_Constructor
 } from "@adaas/a-concept/a-entity";
+import {
+    A_Container,
+    A_TYPES__Container_Constructor
+} from "@adaas/a-concept/a-container";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import { A_FormatterHelper } from "@adaas/a-concept/helpers/A_Formatter.helper";
 import { A_CommonHelper } from "@adaas/a-concept/helpers/A_Common.helper";
@@ -999,14 +1003,25 @@ export class A_Scope<
         const slice = result.slice(startSliceIndex, endSliceIndex);
 
         /**
-         * Default behavior is to return single instance if count is 1
-         * 
-         * If Directive All (-1) is provided or count > 1, an array is returned
-         * 
-         * If no instances found, undefined is returned
+         * Default behavior is to return a single instance if `count === 1`
+         * (preserves the historical "single dependency" contract — used by
+         * default `@A_Inject` parameters and `@A_Dependency.Query` with no
+         * `count` override).
+         *
+         * When the caller explicitly asked for "all" (`count === -1`, set by
+         * `@A_Dependency.All` and `resolveAll(...)`-style usage), this method
+         * MUST return an array — including the empty array — so callers can
+         * safely chain `.find` / `.map` / `.length` without null-checks. Prior
+         * to this guard, an empty match with `count === -1` returned
+         * `undefined`, which broke
+         * `await componentInstance?.call(...)` patterns that expected
+         * `entities: T[]`.
          */
+        if (count === -1) {
+            return slice;
+        }
+
         return slice.length === 1
-            && count !== -1
             ? slice[0]
             : slice.length
                 ? slice
@@ -1214,6 +1229,18 @@ export class A_Scope<
          */
         component: A_TYPES__Component_Constructor<T>
     ): Array<T>
+    resolveAll<T extends A_Container>(
+        /**
+         * Provide a container constructor to enumerate all live container
+         * instances of that class (or subclasses) from the runtime-global
+         * A_Context container registry.
+         *
+         * [!] Containers are runtime-global, so this resolution intentionally
+         * bypasses scope inheritance and import walks — every scope returns
+         * the same canonical set.
+         */
+        container: A_TYPES__Container_Constructor<T>
+    ): Array<T>
     resolveAll<T extends A_Fragment>(
         /**
          * Provide a fragment constructor to resolve its instance from the scope
@@ -1248,6 +1275,18 @@ export class A_Scope<
         // ── Fast path: return cached result ────────────────────────────────────
         if (this._resolveAllCache.has(param1)) {
             return this._resolveAllCache.get(param1) as Array<T>;
+        }
+
+        // ── Containers: enumerate from the global A_Context registry ──────────
+        // Containers are runtime-global (each container allocates its own scope
+        // and is not "owned" by any other scope). Resolving them by walking
+        // imports/parent would be both incorrect (it would miss sibling
+        // containers) and wasteful (every scope would return the same set),
+        // so we short-circuit straight to A_Context.containers().
+        if (A_TypeGuards.isContainerConstructor(param1)) {
+            const containers = A_Context.containers(param1 as any) as unknown as Array<T>;
+            this._resolveAllCache.set(param1, containers);
+            return containers;
         }
 
         const results: Set<T> = new Set();
@@ -1466,6 +1505,17 @@ export class A_Scope<
          */
         component: A_TYPES__Component_Constructor<T>
     ): T | undefined
+    resolveOnce<T extends A_Container>(
+        /**
+         * Provide a container constructor to fetch the first matching live
+         * container from the runtime-global A_Context container registry.
+         *
+         * [!] Containers are runtime-global, so this resolution intentionally
+         * bypasses scope inheritance and import walks. Use `resolveAll` when
+         * multiple containers of the same class can coexist.
+         */
+        container: A_TYPES__Container_Constructor<T>
+    ): T | undefined
     resolveOnce<T extends A_Fragment>(
         /**
          * Provide a fragment constructor to resolve its instance from the scope
@@ -1537,8 +1587,24 @@ export class A_Scope<
         //  That means that we should ensure that there's no components that are children of the required component
         if (!value && !!this.parent) {
             const parentValue = this.parent.resolveOnce<T>(param1);
-            this._resolveCache.set(param1, parentValue);
-            return parentValue;
+            if (parentValue) {
+                this._resolveCache.set(param1, parentValue);
+                return parentValue;
+            }
+        }
+
+        // ── Containers: fall back to the runtime-global registry ──────────────
+        // Containers are not "owned" by any scope, so if normal scope/import
+        // /parent resolution didn't find one (e.g. the caller is a sibling
+        // container's scope looking up a peer by class), pick the first
+        // matching container from A_Context.containers(). Local matches via
+        // `resolveFlatOnce` / `resolveIssuer` still win, which preserves the
+        // "container.scope.resolve(MyContainer) === container" affinity.
+        if (!value && A_TypeGuards.isContainerConstructor(param1)) {
+            const matched = A_Context.containers(param1 as any);
+            const first = (matched[0] as unknown) as T | undefined;
+            this._resolveCache.set(param1, first);
+            return first;
         }
 
         this._resolveCache.set(param1, value);

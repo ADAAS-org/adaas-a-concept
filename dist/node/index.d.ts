@@ -3526,6 +3526,17 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide a component constructor to resolve its instance from the scope
      */
     component: A_TYPES__Component_Constructor<T>): Array<T>;
+    resolveAll<T extends A_Container>(
+    /**
+     * Provide a container constructor to enumerate all live container
+     * instances of that class (or subclasses) from the runtime-global
+     * A_Context container registry.
+     *
+     * [!] Containers are runtime-global, so this resolution intentionally
+     * bypasses scope inheritance and import walks — every scope returns
+     * the same canonical set.
+     */
+    container: A_TYPES__Container_Constructor<T>): Array<T>;
     resolveAll<T extends A_Fragment>(
     /**
      * Provide a fragment constructor to resolve its instance from the scope
@@ -3621,6 +3632,16 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide a component constructor to resolve its instance from the scope
      */
     component: A_TYPES__Component_Constructor<T>): T | undefined;
+    resolveOnce<T extends A_Container>(
+    /**
+     * Provide a container constructor to fetch the first matching live
+     * container from the runtime-global A_Context container registry.
+     *
+     * [!] Containers are runtime-global, so this resolution intentionally
+     * bypasses scope inheritance and import walks. Use `resolveAll` when
+     * multiple containers of the same class can coexist.
+     */
+    container: A_TYPES__Container_Constructor<T>): T | undefined;
     resolveOnce<T extends A_Fragment>(
     /**
      * Provide a fragment constructor to resolve its instance from the scope
@@ -4262,6 +4283,24 @@ declare class A_Context {
      */
     protected _registry: WeakMap<A_TYPES__ScopeLinkedComponents, A_Scope>;
     /**
+     * Enumerable registry of all live A_Container instances.
+     *
+     * Containers are inherently global, top-level "runnables" in a Concept
+     * (HTTP server, daemon, CLI script, micro-service, etc.). Unlike
+     * components/fragments/entities they are NOT registered into a single
+     * owning scope — instead each container self-allocates its own scope on
+     * construction via `A_Context.allocate(this, this.config)`.
+     *
+     * This Set is the single source of truth for "all containers known to the
+     * runtime" and powers `A_Context.containers()` and the
+     * `scope.resolveAll(A_Container)` / `scope.resolve(A_Container)` resolution
+     * paths in `A_Scope`. Populated by `allocate()`, drained by `deallocate()`.
+     *
+     * [!] Containers register themselves automatically — application code does
+     * NOT need to add them here manually.
+     */
+    protected _containers: Set<A_Container>;
+    /**
      * This is a registry that stores an issuer of each scope allocation.
      * It helps to track which component (Container, Feature, Command) allocated a specific scope.
      */
@@ -4489,6 +4528,39 @@ declare class A_Context {
      * Provide the scope to get its issuer.
      */
     scope: A_Scope): A_TYPES__ScopeLinkedComponents | undefined;
+    /**
+     * Enumerate all live A_Container instances known to the runtime.
+     *
+     * Containers are not held by any single scope (each container allocates
+     * its own scope), so this method provides the canonical way for any code
+     * — including cross-container communication patterns — to discover them.
+     *
+     * @example
+     *   // All containers in the runtime
+     *   const all = A_Context.containers();
+     *
+     *   // Filter by concrete container class
+     *   const servers = A_Context.containers(MyHttpServerContainer);
+     *
+     * @param filter - Optional container constructor. When provided, only
+     *                 containers that are instances of (or extend) this
+     *                 constructor are returned.
+     * @returns       Array of matching containers (empty when none).
+     */
+    static containers<T extends A_Container = A_Container>(filter?: A_TYPES__Container_Constructor<T>): Array<T>;
+    /**
+     * Look up a single live container by its `name` (the value returned by
+     * `container.name`, which defaults to the container's class name unless
+     * overridden in its config).
+     *
+     * Convenience wrapper around `A_Context.containers()` for the common
+     * "find peer container by name" cross-container communication pattern.
+     *
+     * @param name - The container name to match.
+     * @returns     The matching container, or `undefined` when no container
+     *              with that name is currently registered.
+     */
+    static container(name: string): A_Container | undefined;
     /**
      * Get the scope of the specific class or instance.
      *

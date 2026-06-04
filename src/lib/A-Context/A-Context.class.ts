@@ -104,6 +104,24 @@ export class A_Context {
      */
     protected _registry: WeakMap<A_TYPES__ScopeLinkedComponents, A_Scope> = new WeakMap();
     /**
+     * Enumerable registry of all live A_Container instances.
+     *
+     * Containers are inherently global, top-level "runnables" in a Concept
+     * (HTTP server, daemon, CLI script, micro-service, etc.). Unlike
+     * components/fragments/entities they are NOT registered into a single
+     * owning scope — instead each container self-allocates its own scope on
+     * construction via `A_Context.allocate(this, this.config)`.
+     *
+     * This Set is the single source of truth for "all containers known to the
+     * runtime" and powers `A_Context.containers()` and the
+     * `scope.resolveAll(A_Container)` / `scope.resolve(A_Container)` resolution
+     * paths in `A_Scope`. Populated by `allocate()`, drained by `deallocate()`.
+     *
+     * [!] Containers register themselves automatically — application code does
+     * NOT need to add them here manually.
+     */
+    protected _containers: Set<A_Container> = new Set();
+    /**
      * This is a registry that stores an issuer of each scope allocation.
      * It helps to track which component (Container, Feature, Command) allocated a specific scope.
      */
@@ -332,6 +350,14 @@ export class A_Context {
         // Also register the issuer of the scope for faster tracking
         instance._scopeIssuers.set(newScope, component);
 
+        // 5.1) Track containers in the global container registry so that
+        //      `A_Context.containers()` and `scope.resolveAll(A_Container)` can
+        //      enumerate them without each caller having to plumb a reference
+        //      around manually.
+        if (A_TypeGuards.isContainerInstance(component)) {
+            instance._containers.add(component);
+        }
+
         // 6) Return the newly created scope
         return newScope;
     }
@@ -377,6 +403,12 @@ export class A_Context {
             instance._registry.delete(component);
         if (scope)
             instance._scopeIssuers.delete(scope);
+
+        // Mirror the registration done in `allocate()` — keep the enumerable
+        // container registry in sync so disposed containers don't linger.
+        if (component && A_TypeGuards.isContainerInstance(component)) {
+            instance._containers.delete(component);
+        }
     }
 
 
@@ -669,6 +701,72 @@ export class A_Context {
         // );
 
         return instance._scopeIssuers.get(scope)!;
+    }
+
+
+
+    /**
+     * Enumerate all live A_Container instances known to the runtime.
+     *
+     * Containers are not held by any single scope (each container allocates
+     * its own scope), so this method provides the canonical way for any code
+     * — including cross-container communication patterns — to discover them.
+     *
+     * @example
+     *   // All containers in the runtime
+     *   const all = A_Context.containers();
+     *
+     *   // Filter by concrete container class
+     *   const servers = A_Context.containers(MyHttpServerContainer);
+     *
+     * @param filter - Optional container constructor. When provided, only
+     *                 containers that are instances of (or extend) this
+     *                 constructor are returned.
+     * @returns       Array of matching containers (empty when none).
+     */
+    static containers<T extends A_Container = A_Container>(
+        filter?: A_TYPES__Container_Constructor<T>
+    ): Array<T> {
+        const instance = this.getInstance();
+
+        if (!filter) return Array.from(instance._containers) as Array<T>;
+
+        const matches: Array<T> = [];
+        instance._containers.forEach(container => {
+            if (
+                container instanceof (filter as unknown as new (...args: any[]) => T)
+                || container.constructor === filter
+                || A_Context.isIndexedInheritedFrom(container.constructor, filter)
+            ) {
+                matches.push(container as T);
+            }
+        });
+
+        return matches;
+    }
+
+
+
+    /**
+     * Look up a single live container by its `name` (the value returned by
+     * `container.name`, which defaults to the container's class name unless
+     * overridden in its config).
+     *
+     * Convenience wrapper around `A_Context.containers()` for the common
+     * "find peer container by name" cross-container communication pattern.
+     *
+     * @param name - The container name to match.
+     * @returns     The matching container, or `undefined` when no container
+     *              with that name is currently registered.
+     */
+    static container(name: string): A_Container | undefined {
+        const instance = this.getInstance();
+
+        for (const container of instance._containers) {
+            if (container.name === name) return container;
+        }
+
+        return undefined;
     }
 
 
@@ -1267,6 +1365,7 @@ export class A_Context {
         instance._featureCache = new WeakMap();
         instance._ancestors.clear();
         instance._descendants.clear();
+        instance._containers.clear();
         instance._metaVersion++;
 
         const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || 'root';

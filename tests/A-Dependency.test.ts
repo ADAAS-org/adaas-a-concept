@@ -522,4 +522,84 @@ describe('A-Dependency tests', () => {
 
     });
 
+
+    // ──────────────────────────────────────────────────────────────────────
+    // Regression: @A_Dependency.All() / resolveAll-style resolution must
+    // always yield an array — never `undefined` — so callers can safely
+    // chain `.find` / `.map` / `.length` without null-checks.
+    //
+    // Before the fix, `resolveDependency` returned `undefined` whenever
+    // `slice.length === 0`, including when the caller explicitly asked for
+    // a collection (`count === -1` via `@A_Dependency.All()`).
+    // ──────────────────────────────────────────────────────────────────────
+
+    it('Should resolve @A_Dependency.All() as an empty array when no matching entity exists', async () => {
+        const captured: { entities: any }[] = [];
+
+        class MissingEntity extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(p: { name: string }): void {
+                super.fromNew(p);
+                this.name = p.name;
+            }
+        }
+
+        class Probe extends A_Component {
+            @A_Feature.Extend()
+            async collect(
+                @A_Dependency.All()
+                @A_Inject(MissingEntity) entities: MissingEntity[],
+            ) {
+                // Capturing by reference proves we got an Array, not undefined.
+                captured.push({ entities });
+            }
+        }
+
+        // Scope has the component but NO entities of MissingEntity.
+        const scope = new A_Scope({
+            name: 'empty-collection-scope',
+            components: [Probe],
+            entities: [MissingEntity],
+        });
+
+        const probe = scope.resolve(Probe);
+        await probe?.call('collect');
+
+        expect(captured).toHaveLength(1);
+        // The fix: a collection-style dependency must hand back [], never undefined.
+        expect(captured[0].entities).toBeDefined();
+        expect(Array.isArray(captured[0].entities)).toBe(true);
+        expect(captured[0].entities).toEqual([]);
+        // And `.find` on the result must not throw.
+        expect(captured[0].entities.find((e: any) => e?.name === 'anything')).toBeUndefined();
+    });
+
+    it('Should resolve a non-required A_Dependency({count: -1}) as an empty array directly', () => {
+        class MissingEntity extends A_Entity<{ name: string }> {
+            name!: string;
+
+            fromNew(p: { name: string }): void {
+                super.fromNew(p);
+                this.name = p.name;
+            }
+        }
+
+        const scope = new A_Scope({
+            name: 'direct-empty-collection',
+            entities: [MissingEntity],
+        });
+
+        // Use the public `resolve(dependency)` path, which delegates to
+        // `resolveDependency` — the method whose return shape we just fixed.
+        const dep = new A_Dependency(MissingEntity, {
+            pagination: { count: -1 },
+        });
+
+        const result = scope.resolve(dep);
+        expect(result).toBeDefined();
+        expect(Array.isArray(result)).toBe(true);
+        expect(result).toEqual([]);
+    });
+
 });

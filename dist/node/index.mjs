@@ -4453,7 +4453,10 @@ var A_Scope = class {
     const startSliceIndex = from === "end" ? count === -1 ? 0 : Math.max(result.length - count, 0) : 0;
     const endSliceIndex = from === "end" ? result.length : count === -1 ? result.length : Math.min(count, result.length);
     const slice = result.slice(startSliceIndex, endSliceIndex);
-    return slice.length === 1 && count !== -1 ? slice[0] : slice.length ? slice : void 0;
+    if (count === -1) {
+      return slice;
+    }
+    return slice.length === 1 ? slice[0] : slice.length ? slice : void 0;
   }
   resolveConstructor(name) {
     switch (true) {
@@ -4547,6 +4550,11 @@ var A_Scope = class {
   resolveAll(param1) {
     if (this._resolveAllCache.has(param1)) {
       return this._resolveAllCache.get(param1);
+    }
+    if (A_TypeGuards.isContainerConstructor(param1)) {
+      const containers = A_Context.containers(param1);
+      this._resolveAllCache.set(param1, containers);
+      return containers;
     }
     const results = /* @__PURE__ */ new Set();
     const currentResults = this.resolveFlatAll(param1);
@@ -4646,8 +4654,16 @@ var A_Scope = class {
     }
     if (!value && !!this.parent) {
       const parentValue = this.parent.resolveOnce(param1);
-      this._resolveCache.set(param1, parentValue);
-      return parentValue;
+      if (parentValue) {
+        this._resolveCache.set(param1, parentValue);
+        return parentValue;
+      }
+    }
+    if (!value && A_TypeGuards.isContainerConstructor(param1)) {
+      const matched = A_Context.containers(param1);
+      const first = matched[0];
+      this._resolveCache.set(param1, first);
+      return first;
     }
     this._resolveCache.set(param1, value);
     return value;
@@ -5204,6 +5220,24 @@ var _A_Context = class _A_Context {
      */
     this._registry = /* @__PURE__ */ new WeakMap();
     /**
+     * Enumerable registry of all live A_Container instances.
+     *
+     * Containers are inherently global, top-level "runnables" in a Concept
+     * (HTTP server, daemon, CLI script, micro-service, etc.). Unlike
+     * components/fragments/entities they are NOT registered into a single
+     * owning scope — instead each container self-allocates its own scope on
+     * construction via `A_Context.allocate(this, this.config)`.
+     *
+     * This Set is the single source of truth for "all containers known to the
+     * runtime" and powers `A_Context.containers()` and the
+     * `scope.resolveAll(A_Container)` / `scope.resolve(A_Container)` resolution
+     * paths in `A_Scope`. Populated by `allocate()`, drained by `deallocate()`.
+     *
+     * [!] Containers register themselves automatically — application code does
+     * NOT need to add them here manually.
+     */
+    this._containers = /* @__PURE__ */ new Set();
+    /**
      * This is a registry that stores an issuer of each scope allocation.
      * It helps to track which component (Container, Feature, Command) allocated a specific scope.
      */
@@ -5353,6 +5387,9 @@ var _A_Context = class _A_Context {
       newScope.inherit(_A_Context.root);
     instance._registry.set(component, newScope);
     instance._scopeIssuers.set(newScope, component);
+    if (A_TypeGuards.isContainerInstance(component)) {
+      instance._containers.add(component);
+    }
     return newScope;
   }
   static deallocate(param1) {
@@ -5364,6 +5401,9 @@ var _A_Context = class _A_Context {
       instance._registry.delete(component);
     if (scope)
       instance._scopeIssuers.delete(scope);
+    if (component && A_TypeGuards.isContainerInstance(component)) {
+      instance._containers.delete(component);
+    }
   }
   static meta(param1) {
     const componentName = A_CommonHelper.getComponentName(param1);
@@ -5481,6 +5521,55 @@ var _A_Context = class _A_Context {
       `Invalid parameter provided to get scope issuer. Parameter cannot be null or undefined.`
     );
     return instance._scopeIssuers.get(scope);
+  }
+  /**
+   * Enumerate all live A_Container instances known to the runtime.
+   *
+   * Containers are not held by any single scope (each container allocates
+   * its own scope), so this method provides the canonical way for any code
+   * — including cross-container communication patterns — to discover them.
+   *
+   * @example
+   *   // All containers in the runtime
+   *   const all = A_Context.containers();
+   *
+   *   // Filter by concrete container class
+   *   const servers = A_Context.containers(MyHttpServerContainer);
+   *
+   * @param filter - Optional container constructor. When provided, only
+   *                 containers that are instances of (or extend) this
+   *                 constructor are returned.
+   * @returns       Array of matching containers (empty when none).
+   */
+  static containers(filter) {
+    const instance = this.getInstance();
+    if (!filter) return Array.from(instance._containers);
+    const matches = [];
+    instance._containers.forEach((container) => {
+      if (container instanceof filter || container.constructor === filter || _A_Context.isIndexedInheritedFrom(container.constructor, filter)) {
+        matches.push(container);
+      }
+    });
+    return matches;
+  }
+  /**
+   * Look up a single live container by its `name` (the value returned by
+   * `container.name`, which defaults to the container's class name unless
+   * overridden in its config).
+   *
+   * Convenience wrapper around `A_Context.containers()` for the common
+   * "find peer container by name" cross-container communication pattern.
+   *
+   * @param name - The container name to match.
+   * @returns     The matching container, or `undefined` when no container
+   *              with that name is currently registered.
+   */
+  static container(name) {
+    const instance = this.getInstance();
+    for (const container of instance._containers) {
+      if (container.name === name) return container;
+    }
+    return void 0;
   }
   static scope(param1) {
     const name = param1?.constructor?.name || String(param1);
@@ -5815,6 +5904,7 @@ var _A_Context = class _A_Context {
     instance._featureCache = /* @__PURE__ */ new WeakMap();
     instance._ancestors.clear();
     instance._descendants.clear();
+    instance._containers.clear();
     instance._metaVersion++;
     const name = String(A_CONCEPT_ENV.A_CONCEPT_ROOT_SCOPE) || "root";
     instance._root = new A_Scope({ name });
