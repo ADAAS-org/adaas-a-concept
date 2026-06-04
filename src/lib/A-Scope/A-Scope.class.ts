@@ -2141,17 +2141,22 @@ export class A_Scope<
             // ------------ Instances ----------------
             // ------------------------------------------
             // 1) In case when it's a A-Component instance
-            case param1 instanceof A_Component: {
+            case A_TypeGuards.isComponentInstance(param1): {
 
                 this._components.delete(param1.constructor as _ComponentType[number]);
                 A_Context.deregister(param1);
 
-                const ctor = param1.constructor as _ComponentType[number];
+                /**
+                 * [!] This is not needed since we can use more and more times components of the same constructor in the scope, 
+                 *     even if NOW we don't have such
+                 */
 
-                const hasComponent = this._components.has(ctor);
-                if (!hasComponent) {
-                    this.allowedComponents.delete(ctor);
-                }
+                // const ctor = param1.constructor as _ComponentType[number];
+
+                // const hasComponent = this._components.has(ctor);
+                // if (!hasComponent) {
+                //     this.allowedComponents.delete(ctor);
+                // }
 
                 this.bumpVersion();
                 break;
@@ -2162,12 +2167,21 @@ export class A_Scope<
                 this._entities.delete(param1.aseid.toString());
                 A_Context.deregister(param1);
 
-                const ctor = param1.constructor as _EntityType[number];
 
-                const hasEntity = Array.from(this._entities.values()).some(entity => entity instanceof ctor);
-                if (!hasEntity) {
-                    this.allowedEntities.delete(ctor);
-                }
+                /**
+                 * 
+                 *[!] This is not needed since we can use more and more times entities of the same constructor in the scope, 
+                 *    even if NOW we don't have such
+                 * 
+                 */
+
+                // const ctor = param1.constructor as _EntityType[number];
+
+                // const hasEntity = Array.from(this._entities.values()).some(entity => entity instanceof ctor);
+
+                // if (!hasEntity) {
+                //     this.allowedEntities.delete(ctor);
+                // }
 
                 this.bumpVersion();
                 break;
@@ -2177,12 +2191,16 @@ export class A_Scope<
                 this._fragments.delete(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
                 A_Context.deregister(param1);
 
-                const ctor = param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>;
+                /**
+                 * [!] This is not needed since we can use more and more times fragments of the same constructor in the scope,
+                 */
 
-                const hasFragment = Array.from(this._fragments.values()).some(fragment => fragment instanceof ctor);
-                if (!hasFragment) {
-                    this.allowedFragments.delete(ctor);
-                }
+                // const ctor = param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>;
+
+                // const hasFragment = Array.from(this._fragments.values()).some(fragment => fragment instanceof ctor);
+                // if (!hasFragment) {
+                //     this.allowedFragments.delete(ctor);
+                // }
 
                 this.bumpVersion();
                 break;
@@ -2193,12 +2211,17 @@ export class A_Scope<
                 this._errors.delete((param1 as any).code);
                 A_Context.deregister((param1 as any));
 
-                const ctor = (param1 as any).constructor as _ErrorType[number];
+                /**
+                 * [!] This is not needed since we can use more and more times errors of the same constructor in the scope,
+                 *     even if NOW we don't have such
+                 */
 
-                const hasError = Array.from(this._errors.values()).some(error => error instanceof ctor);
-                if (!hasError) {
-                    this.allowedErrors.delete(ctor);
-                }
+                // const ctor = (param1 as any).constructor as _ErrorType[number];
+
+                // const hasError = Array.from(this._errors.values()).some(error => error instanceof ctor);
+                // if (!hasError) {
+                //     this.allowedErrors.delete(ctor);
+                // }
 
                 this.bumpVersion();
                 break;

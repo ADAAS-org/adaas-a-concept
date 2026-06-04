@@ -4928,14 +4928,9 @@ var A_Scope = class {
       // ------------ Instances ----------------
       // ------------------------------------------
       // 1) In case when it's a A-Component instance
-      case param1 instanceof A_Component: {
+      case A_TypeGuards.isComponentInstance(param1): {
         this._components.delete(param1.constructor);
         A_Context.deregister(param1);
-        const ctor = param1.constructor;
-        const hasComponent = this._components.has(ctor);
-        if (!hasComponent) {
-          this.allowedComponents.delete(ctor);
-        }
         this.bumpVersion();
         break;
       }
@@ -4943,11 +4938,6 @@ var A_Scope = class {
       case A_TypeGuards.isEntityInstance(param1): {
         this._entities.delete(param1.aseid.toString());
         A_Context.deregister(param1);
-        const ctor = param1.constructor;
-        const hasEntity = Array.from(this._entities.values()).some((entity) => entity instanceof ctor);
-        if (!hasEntity) {
-          this.allowedEntities.delete(ctor);
-        }
         this.bumpVersion();
         break;
       }
@@ -4955,11 +4945,6 @@ var A_Scope = class {
       case A_TypeGuards.isFragmentInstance(param1): {
         this._fragments.delete(param1.constructor);
         A_Context.deregister(param1);
-        const ctor = param1.constructor;
-        const hasFragment = Array.from(this._fragments.values()).some((fragment) => fragment instanceof ctor);
-        if (!hasFragment) {
-          this.allowedFragments.delete(ctor);
-        }
         this.bumpVersion();
         break;
       }
@@ -4967,11 +4952,6 @@ var A_Scope = class {
       case A_TypeGuards.isErrorInstance(param1): {
         this._errors.delete(param1.code);
         A_Context.deregister(param1);
-        const ctor = param1.constructor;
-        const hasError = Array.from(this._errors.values()).some((error) => error instanceof ctor);
-        if (!hasError) {
-          this.allowedErrors.delete(ctor);
-        }
         this.bumpVersion();
         break;
       }

@@ -739,6 +739,8 @@ describe('A-Scope tests', () => {
         const entity = new MyEntity();
         const fragment = new MyFragment();
 
+        const aseid = entity.aseid.toString();
+
         scope.register(entity);
         scope.register(fragment);
         scope.register(MyComponent);
@@ -751,9 +753,13 @@ describe('A-Scope tests', () => {
         scope.deregister(fragment);
         scope.deregister(MyComponent);
 
-        expect(scope.has(MyEntity)).toBe(false);
-        expect(scope.has(MyFragment)).toBe(false);
+        expect(scope.has(MyEntity)).toBe(true);
+        expect(scope.has(MyFragment)).toBe(true);
         expect(scope.has(MyComponent)).toBe(false);
+
+        expect(scope.resolve(new A_Dependency(MyEntity, {
+            query: { aseid: aseid }
+        }))).toBe(undefined);
     });
 
     it('Should deregister all entities by class', async () => {
@@ -818,7 +824,7 @@ describe('A-Scope tests', () => {
         fragmentA1.array.push('newData');
 
 
-        expect(scope.has(MyFragment)).toBe(false);
+        expect(scope.has(MyFragment)).toBe(true);
 
         const fragmentA2 = new MyFragment('fragmentA');
 
