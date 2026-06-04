@@ -751,10 +751,17 @@ describe('A-Scope tests', () => {
 
         scope.deregister(entity);
         scope.deregister(fragment);
-        scope.deregister(MyComponent);
 
         expect(scope.has(MyEntity)).toBe(true);
         expect(scope.has(MyFragment)).toBe(true);
+
+        scope.deregister(MyEntity);
+        scope.deregister(MyFragment);
+
+        expect(scope.has(MyEntity)).toBe(false);
+        expect(scope.has(MyFragment)).toBe(false);
+
+        scope.deregister(MyComponent);
         expect(scope.has(MyComponent)).toBe(false);
 
         expect(scope.resolve(new A_Dependency(MyEntity, {
@@ -823,8 +830,11 @@ describe('A-Scope tests', () => {
 
         fragmentA1.array.push('newData');
 
-
         expect(scope.has(MyFragment)).toBe(true);
+
+        scope.deregister(MyFragment);
+
+        expect(scope.has(MyFragment)).toBe(false);
 
         const fragmentA2 = new MyFragment('fragmentA');
 

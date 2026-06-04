@@ -947,6 +947,23 @@ export class A_Context {
             return false;
         };
 
+        // ---- Entity isolation filter ----
+        // When the caller is an A_Entity, every OTHER A_Entity class in the
+        // scope must be treated as foreign: its extensions are class-private
+        // by default, since the same feature name on two unrelated entity
+        // classes (e.g. both declaring `@A_Feature.Extend() async test()`)
+        // means "this entity reacts to its own test", not "every entity class
+        // in the scope should fan out". Cross-entity-class handlers must be
+        // explicit via `@A_Feature.Extend({ scope: [TargetEntity] })` on a
+        // non-entity component.
+        const callerIsEntity = component instanceof A_Entity;
+        const isForeignEntityClass = (cmp: Function): boolean => {
+            if (!callerIsEntity) return false;
+            if (callerChain.has(cmp)) return false;
+            if (typeof cmp !== 'function') return false;
+            return (cmp.prototype instanceof A_Entity) || cmp === A_Entity;
+        };
+
         // ---- Optimization 3: Build a local set of metas that are in scope ----
         // Pre-filter _metaStorage entries to only those present in scope,
         // avoiding repeated scope.has() calls per callName iteration.
@@ -960,6 +977,8 @@ export class A_Context {
                 // Skip sibling subclasses of any class in the caller's inheritance chain
                 // (see comment block above for rationale).
                 if (isSiblingOrUnrelatedDescendant(cmp as Function)) continue;
+                // Skip foreign A_Entity classes when the caller is itself an entity.
+                if (isForeignEntityClass(cmp as Function)) continue;
                 scopeFilteredMetas.push([cmp, meta as A_ComponentMeta | A_ContainerMeta]);
             }
         }

@@ -2949,6 +2949,7 @@ var A_Stage = class {
    */
   getStepArgs(scope, step) {
     let resolverConstructor = step.dependency.target || scope.resolveConstructor(step.dependency.name);
+    const caller = this._feature.caller?.component;
     return A_Context.meta(resolverConstructor).injections(step.handler).map((dependency) => {
       switch (true) {
         case A_TypeGuards.isCallerConstructor(dependency.target):
@@ -2956,10 +2957,28 @@ var A_Stage = class {
         case A_TypeGuards.isFeatureConstructor(dependency.target):
           return this._feature;
         default: {
+          if (caller && this.isCallerOfDependency(caller, dependency.target)) {
+            return caller;
+          }
           return scope.resolve(dependency);
         }
       }
     });
+  }
+  /**
+   * True if `caller` is an instance of (or subclass of) the dependency's target class.
+   * Used to short-circuit instance resolution to the actual caller instead of
+   * scope.resolve(ctor), which is not safe for components that may have multiple
+   * instances of the same class registered in the same scope (e.g. A_Entity).
+   */
+  isCallerOfDependency(caller, target) {
+    if (!caller || !target || typeof target !== "function") return false;
+    if (caller.constructor === target) return true;
+    try {
+      return caller instanceof target;
+    } catch {
+      return false;
+    }
   }
   /**
    * Resolves the component of the step
@@ -2969,12 +2988,26 @@ var A_Stage = class {
    */
   getStepComponent(scope, step) {
     const { dependency, handler } = step;
+    const caller = this._feature.caller?.component;
+    if (caller && this.isCallerOfDependency(caller, dependency.target)) {
+      if (!caller[handler])
+        throw new A_StageError(
+          A_StageError.CompileError,
+          `Handler ${handler} not found in ${caller.constructor.name}`
+        );
+      return caller;
+    }
     let instance = scope.resolve(dependency) || this.feature.scope.resolve(dependency);
-    if (!instance)
+    if (!instance) {
+      const depCtor = dependency.target;
+      if (depCtor && A_TypeGuards.isEntityConstructor(depCtor)) {
+        return void 0;
+      }
       throw new A_StageError(
         A_StageError.CompileError,
         `Unable to resolve component ${dependency.name} from scope ${scope.name}`
       );
+    }
     if (!instance[handler])
       throw new A_StageError(
         A_StageError.CompileError,
@@ -2990,6 +3023,7 @@ var A_Stage = class {
    */
   callStepHandler(step, scope) {
     const component = this.getStepComponent(scope, step);
+    if (!component) return void 0;
     const callArgs = this.getStepArgs(scope, step);
     return {
       handler: component[step.handler].bind(component),
@@ -3008,7 +3042,12 @@ var A_Stage = class {
     const targetScope = A_TypeGuards.isScopeInstance(scope) ? scope : this._feature.scope;
     if (!this.isProcessed) {
       this._status = "PROCESSING" /* PROCESSING */;
-      const { handler, params } = this.callStepHandler(this._definition, targetScope);
+      const call = this.callStepHandler(this._definition, targetScope);
+      if (!call) {
+        this.skip();
+        return;
+      }
+      const { handler, params } = call;
       const result = handler(...params);
       if (A_TypeGuards.isPromiseInstance(result)) {
         return new Promise(
@@ -5576,10 +5615,18 @@ var _A_Context = class _A_Context {
       }
       return false;
     };
+    const callerIsEntity = component instanceof A_Entity;
+    const isForeignEntityClass = (cmp) => {
+      if (!callerIsEntity) return false;
+      if (callerChain.has(cmp)) return false;
+      if (typeof cmp !== "function") return false;
+      return cmp.prototype instanceof A_Entity || cmp === A_Entity;
+    };
     const scopeFilteredMetas = [];
     for (const [cmp, meta] of instance._metaStorage) {
       if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
         if (isSiblingOrUnrelatedDescendant(cmp)) continue;
+        if (isForeignEntityClass(cmp)) continue;
         scopeFilteredMetas.push([cmp, meta]);
       }
     }

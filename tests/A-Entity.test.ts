@@ -285,5 +285,79 @@ describe('A-Entity tests', () => {
         expect(entity2.aseid.toString()).toBe(aseid);
         expect(entity2.aseid.toString()).toBe(entity.aseid.toString());
     });
+    it('Should execute only once feature event with 2 or more copies of entity in scope', async () => {
+            const all: string[] = [];
+
+            class MyEntity extends A_Entity<{ foo: string }, { foo: string } & A_TYPES__Entity_Serialized> {
+
+                public foo!: string;
+
+                fromNew(newEntity: { foo: string; }): void {
+                    super.fromNew(newEntity);
+                    this.foo = newEntity.foo;
+                }
+
+                @A_Feature.Extend()
+                async test() {
+                    all.push(`test_${this.foo}`);
+                }
+
+            }
+
+            class MyEntityB extends A_Entity<{ bar: string }, { fobaro: string } & A_TYPES__Entity_Serialized> {
+
+                public bar!: string;
+
+                fromNew(newEntity: { bar: string; }): void {
+                    super.fromNew(newEntity);
+                    this.bar = newEntity.bar;
+                }
+
+                @A_Feature.Extend()
+                async test() {
+                    all.push(`test_${this.bar}`);
+                }
+
+            }
+
+            const executionScope = new A_Scope({
+                name: 'execution-scope', entities: [
+                    MyEntity,
+                    MyEntityB,
+                ]
+            });
+
+            const entity1 = new MyEntity({ foo: 'entity1' });
+            const entity2 = new MyEntity({ foo: 'entity2' });
+
+            executionScope.register(entity1);
+
+            await entity1.call('test');
+
+            expect(all).toEqual(['test_entity1']);
+
+            executionScope.register(entity2);
+
+            await entity2.call('test');
+
+            expect(all).toEqual(['test_entity1', 'test_entity2']);
+
+
+            const entityB1 = new MyEntityB({ bar: 'entityB1' });
+            const entityB2 = new MyEntityB({ bar: 'entityB2' });
+
+            executionScope.register(entityB1);
+
+            await entityB1.call('test');
+
+            expect(all).toEqual(['test_entity1', 'test_entity2', 'test_entityB1']);
+
+            executionScope.register(entityB2);
+
+            await entityB2.call('test');
+
+            expect(all).toEqual(['test_entity1', 'test_entity2', 'test_entityB1', 'test_entityB2']);
+       
+    });
 
 });

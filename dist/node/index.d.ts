@@ -40,6 +40,106 @@ type A_ID_TYPES__TimeId_Parts = {
     random: string;
 };
 
+declare enum A_TYPES__A_Stage_Status {
+    /**
+     * The stage is currently being processed
+     */
+    PROCESSING = "PROCESSING",
+    /**
+     * The stage has been completed
+     */
+    COMPLETED = "COMPLETED",
+    /**
+     * The stage has failed
+     */
+    FAILED = "FAILED",
+    /**
+     * The stage has been skipped
+     */
+    SKIPPED = "SKIPPED",
+    /**
+     * The stage has been paused
+     */
+    /**
+     * The stage has been stopped
+     */
+    /**
+     * The stage has been started
+     */
+    /**
+     * The stage has been initialized
+     */
+    INITIALIZED = "INITIALIZED",
+    /**
+     * The stage has been aborted
+     */
+    ABORTED = "ABORTED"
+}
+type A_TYPES_StageExecutionBehavior = 'async' | 'sync';
+type A_TYPES__A_StageStep = {
+    /**
+     * The component to be called
+     */
+    dependency: A_Dependency;
+    /**
+     * The method to be called on the component
+     */
+    handler: string;
+    /**
+     * Original Feature Extension name
+     *
+     * [!] could be string or regex
+     *
+     */
+    name: string;
+    /**
+     * In case its async it will be executed independently from the main thread.
+     *
+     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
+     *
+     */
+    behavior: A_TYPES_StageExecutionBehavior;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    before: string;
+    /**
+     * Allows to define the order of the execution of the method.
+     *
+     * [!] In case the method has circular dependencies it will Throw an error.
+     *
+     */
+    after: string;
+    /**
+     * Indicates whether to throw an error if the step fails.
+     *
+     * [!] By default is true
+     */
+    throwOnError: boolean;
+    /**
+     *
+     */
+    override: string;
+};
+type A_TYPES__Stage_Serialized = {
+    /**
+     * The name of the stage
+     */
+    name: string;
+    /**
+     *  The status of the stage
+     *
+     */
+    status: A_TYPES__A_Stage_Status;
+};
+type A_TYPES__A_StageStepProcessingExtraParams = {
+    steps: A_TYPES__A_StageStep[];
+    filter: (step: A_TYPES__A_StageStep) => boolean;
+};
+
 /**
  * Entity constructor type
  * Uses the generic type T to specify the type of the entity
@@ -577,6 +677,124 @@ declare const A_CONSTANTS__ERROR_CODES: {
     readonly VALIDATION_ERROR: "A-Error Validation Error";
 };
 declare const A_CONSTANTS__ERROR_DESCRIPTION = "If you see this error please let us know.";
+
+declare class A_Stage {
+    /**
+     * The feature that owns this stage
+     */
+    private readonly _feature;
+    /**
+     * Initial Instructions to process the stage
+     */
+    private readonly _definition;
+    /**
+     * Possible errors during stage processing
+     */
+    private _error?;
+    /**
+     * Indicates the current status of the stage
+     */
+    private _status;
+    /**
+     * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
+     * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
+     *
+     * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
+     */
+    constructor(
+    /**
+     * The feature that owns this stage
+     */
+    feature: A_Feature, 
+    /**
+     * The step definitions of the stage
+     */
+    step: A_TYPES__A_StageStep);
+    /**
+     * Returns the name of the stage
+     */
+    get name(): string;
+    /**
+     * Returns the definition of the stage
+     */
+    get definition(): A_TYPES__A_StageStep;
+    /**
+     * Returns the current status of the stage
+     */
+    get status(): A_TYPES__A_Stage_Status;
+    /**
+     * Returns the feature that owns this stage
+     */
+    get feature(): A_Feature;
+    /**
+     * Returns true if the stage is processed (completed, failed, or skipped)
+     */
+    get isProcessed(): boolean;
+    /**
+     * Returns the error of the stage
+     */
+    get error(): A_Error | undefined;
+    /**
+     * Resolves the arguments of the step
+     *
+     * @param step
+     * @returns
+     */
+    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): any[];
+    /**
+     * True if `caller` is an instance of (or subclass of) the dependency's target class.
+     * Used to short-circuit instance resolution to the actual caller instead of
+     * scope.resolve(ctor), which is not safe for components that may have multiple
+     * instances of the same class registered in the same scope (e.g. A_Entity).
+     */
+    protected isCallerOfDependency(caller: any, target: Function | undefined): boolean;
+    /**
+     * Resolves the component of the step
+     *
+     * @param step
+     * @returns
+     */
+    protected getStepComponent(scope: A_Scope, step: A_TYPES__A_StageStep): any;
+    /**
+     * Calls the handler of the step
+     *
+     * @param step
+     * @returns
+     */
+    protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): {
+        handler: Function;
+        params: any[];
+    } | undefined;
+    skip(): void;
+    /**
+     * This method processes the stage by executing all the steps
+     *
+     * @param scope - Scope to be used to resolve the steps dependencies
+     */
+    process(
+    /**
+     * Scope to be used to resolve the steps dependencies
+     */
+    scope?: A_Scope): Promise<void> | void;
+    protected completed(): void;
+    protected failed(error: Error | A_Error | any): void;
+    /**
+     * Serializes the stage to JSON
+     *
+     */
+    toJSON(): A_TYPES__Stage_Serialized;
+    /**
+     * Returns a string representation of the stage
+     *
+     * @returns
+     */
+    toString(): string;
+}
+
+declare class A_StageError extends A_Error {
+    static readonly ArgumentsResolutionError = "A-Stage Arguments Resolution Error";
+    static get CompileError(): string;
+}
 
 /**
  * Fragment constructor type
@@ -1173,217 +1391,6 @@ declare class A_EntityError extends A_Error {
      * Error code for validation errors.
      */
     static readonly ValidationError = "A-Entity Validation Error";
-}
-
-declare enum A_TYPES__A_Stage_Status {
-    /**
-     * The stage is currently being processed
-     */
-    PROCESSING = "PROCESSING",
-    /**
-     * The stage has been completed
-     */
-    COMPLETED = "COMPLETED",
-    /**
-     * The stage has failed
-     */
-    FAILED = "FAILED",
-    /**
-     * The stage has been skipped
-     */
-    SKIPPED = "SKIPPED",
-    /**
-     * The stage has been paused
-     */
-    /**
-     * The stage has been stopped
-     */
-    /**
-     * The stage has been started
-     */
-    /**
-     * The stage has been initialized
-     */
-    INITIALIZED = "INITIALIZED",
-    /**
-     * The stage has been aborted
-     */
-    ABORTED = "ABORTED"
-}
-type A_TYPES_StageExecutionBehavior = 'async' | 'sync';
-type A_TYPES__A_StageStep = {
-    /**
-     * The component to be called
-     */
-    dependency: A_Dependency;
-    /**
-     * The method to be called on the component
-     */
-    handler: string;
-    /**
-     * Original Feature Extension name
-     *
-     * [!] could be string or regex
-     *
-     */
-    name: string;
-    /**
-     * In case its async it will be executed independently from the main thread.
-     *
-     * [!] However, in case of sync, it will be executed in the main thread.in the order of the declaration.
-     *
-     */
-    behavior: A_TYPES_StageExecutionBehavior;
-    /**
-     * Allows to define the order of the execution of the method.
-     *
-     * [!] In case the method has circular dependencies it will Throw an error.
-     *
-     */
-    before: string;
-    /**
-     * Allows to define the order of the execution of the method.
-     *
-     * [!] In case the method has circular dependencies it will Throw an error.
-     *
-     */
-    after: string;
-    /**
-     * Indicates whether to throw an error if the step fails.
-     *
-     * [!] By default is true
-     */
-    throwOnError: boolean;
-    /**
-     *
-     */
-    override: string;
-};
-type A_TYPES__Stage_Serialized = {
-    /**
-     * The name of the stage
-     */
-    name: string;
-    /**
-     *  The status of the stage
-     *
-     */
-    status: A_TYPES__A_Stage_Status;
-};
-type A_TYPES__A_StageStepProcessingExtraParams = {
-    steps: A_TYPES__A_StageStep[];
-    filter: (step: A_TYPES__A_StageStep) => boolean;
-};
-
-declare class A_Stage {
-    /**
-     * The feature that owns this stage
-     */
-    private readonly _feature;
-    /**
-     * Initial Instructions to process the stage
-     */
-    private readonly _definition;
-    /**
-     * Possible errors during stage processing
-     */
-    private _error?;
-    /**
-     * Indicates the current status of the stage
-     */
-    private _status;
-    /**
-     * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
-     * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
-     *
-     * A-Stage is a common object that uses to simplify logic and re-use of A-Feature internals for better composition.
-     */
-    constructor(
-    /**
-     * The feature that owns this stage
-     */
-    feature: A_Feature, 
-    /**
-     * The step definitions of the stage
-     */
-    step: A_TYPES__A_StageStep);
-    /**
-     * Returns the name of the stage
-     */
-    get name(): string;
-    /**
-     * Returns the definition of the stage
-     */
-    get definition(): A_TYPES__A_StageStep;
-    /**
-     * Returns the current status of the stage
-     */
-    get status(): A_TYPES__A_Stage_Status;
-    /**
-     * Returns the feature that owns this stage
-     */
-    get feature(): A_Feature;
-    /**
-     * Returns true if the stage is processed (completed, failed, or skipped)
-     */
-    get isProcessed(): boolean;
-    /**
-     * Returns the error of the stage
-     */
-    get error(): A_Error | undefined;
-    /**
-     * Resolves the arguments of the step
-     *
-     * @param step
-     * @returns
-     */
-    protected getStepArgs(scope: A_Scope, step: A_TYPES__A_StageStep): (A_Component | A_Container | A_Entity<any, A_TYPES__Entity_Serialized> | A_Fragment<A_TYPES__Fragment_Serialized> | A_Feature<A_TYPES__FeatureAvailableComponents> | A_Caller<A_TYPES__FeatureAvailableComponents> | A_Error<A_TYPES__Error_Init, A_TYPES__Error_Serialized> | A_Scope<any, A_TYPES__Component_Constructor[], A_TYPES__Error_Constructor[], A_TYPES__Entity_Constructor[], A_Fragment<A_TYPES__Fragment_Serialized>[]> | A_TYPES__A_DependencyInjectable[] | undefined)[];
-    /**
-     * Resolves the component of the step
-     *
-     * @param step
-     * @returns
-     */
-    protected getStepComponent(scope: A_Scope, step: A_TYPES__A_StageStep): A_TYPES__A_DependencyInjectable;
-    /**
-     * Calls the handler of the step
-     *
-     * @param step
-     * @returns
-     */
-    protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): {
-        handler: Function;
-        params: any[];
-    };
-    skip(): void;
-    /**
-     * This method processes the stage by executing all the steps
-     *
-     * @param scope - Scope to be used to resolve the steps dependencies
-     */
-    process(
-    /**
-     * Scope to be used to resolve the steps dependencies
-     */
-    scope?: A_Scope): Promise<void> | void;
-    protected completed(): void;
-    protected failed(error: Error | A_Error | any): void;
-    /**
-     * Serializes the stage to JSON
-     *
-     */
-    toJSON(): A_TYPES__Stage_Serialized;
-    /**
-     * Returns a string representation of the stage
-     *
-     * @returns
-     */
-    toString(): string;
-}
-
-declare class A_StageError extends A_Error {
-    static readonly ArgumentsResolutionError = "A-Stage Arguments Resolution Error";
-    static get CompileError(): string;
 }
 
 /**
