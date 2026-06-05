@@ -1396,6 +1396,14 @@ export class A_Context {
 
         instance._registry = new WeakMap();
         instance._featureCache = new WeakMap();
+        // Reset the per-instance scope ownership map as well — otherwise
+        // class-level singletons (e.g. fragments with cached `_instance`)
+        // remain "owned" by the previous, soon-to-be-garbage-collected root
+        // scope in the WeakMap. `A_Context.has(singleton)` would then keep
+        // reporting true after `reset()`, and any caller that conditionally
+        // re-registers the singleton in the NEW root would silently skip,
+        // leaving the singleton unresolvable from the fresh scope.
+        instance._scopeStorage = new WeakMap();
         instance._ancestors.clear();
         instance._descendants.clear();
         instance._containers.clear();

@@ -6080,6 +6080,7 @@ var _A_Context = class _A_Context {
     const instance = _A_Context.getInstance();
     instance._registry = /* @__PURE__ */ new WeakMap();
     instance._featureCache = /* @__PURE__ */ new WeakMap();
+    instance._scopeStorage = /* @__PURE__ */ new WeakMap();
     instance._ancestors.clear();
     instance._descendants.clear();
     instance._containers.clear();
