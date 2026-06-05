@@ -94,7 +94,15 @@ export type A_TYPES__Error_Serialized = {
      */
     scope: string,
     /**
-     * Original error message if any
+     * Serialized original error (if any).
+     *
+     * For nested A_Error chains this is a recursively-serialized
+     * `A_TYPES__Error_Serialized` so the full causal chain survives
+     * transport / persistence.
+     *
+     * For plain `Error` instances this is `{ name, message, stack }`.
+     * For non-error throwables this is the value itself (when JSON-safe)
+     * or its `String(value)` rendition.
      */
-    originalError?: string
+    originalError?: A_TYPES__Error_Serialized | { name?: string; message?: string; stack?: string } | any
 };

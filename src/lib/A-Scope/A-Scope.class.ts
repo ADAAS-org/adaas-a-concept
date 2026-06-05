@@ -2075,6 +2075,13 @@ export class A_Scope<
             // 1) In case when it's a A-Component instance
             case param1 instanceof A_Component: {
 
+                // Register with A_Context FIRST so a cross-scope ownership
+                // violation throws BEFORE we mutate this scope's local maps.
+                // Otherwise the rejected instance would linger in _components
+                // and the next destroy() would strict-deregister it and fail.
+                A_Context.indexConstructor(param1.constructor);
+                A_Context.register(this, param1);
+
                 if (!this.allowedComponents.has(param1.constructor as _ComponentType[number]))
                     this.allowedComponents.add(param1.constructor as _ComponentType[number]);
 
@@ -2083,8 +2090,6 @@ export class A_Scope<
                     param1 as InstanceType<_ComponentType[number]>
                 );
 
-                A_Context.indexConstructor(param1.constructor);
-                A_Context.register(this, param1);
                 this.bumpVersion();
 
                 break;
@@ -2092,17 +2097,23 @@ export class A_Scope<
             // 3) In case when it's a A-Entity instance
             case A_TypeGuards.isEntityInstance(param1) && !this._entities.has(param1.aseid.toString()): {
 
+                // Register with A_Context FIRST — see Component branch.
+                A_Context.indexConstructor(param1.constructor);
+                A_Context.register(this, param1);
+
                 if (!this.allowedEntities.has(param1.constructor as _EntityType[number]))
                     this.allowedEntities.add(param1.constructor as _EntityType[number]);
 
                 this._entities.set(param1.aseid.toString(), param1 as InstanceType<_EntityType[number]>);
-                A_Context.indexConstructor(param1.constructor);
-                A_Context.register(this, param1);
                 this.bumpVersion();
                 break;
             }
             // 4) In case when it's a A-Fragment instance
             case A_TypeGuards.isFragmentInstance(param1): {
+
+                // Register with A_Context FIRST — see Component branch.
+                A_Context.indexConstructor(param1.constructor);
+                A_Context.register(this, param1);
 
                 if (!this.allowedFragments.has(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>))
                     this.allowedFragments.add(param1.constructor as A_TYPES__Fragment_Constructor<_FragmentType[number]>);
@@ -2112,14 +2123,16 @@ export class A_Scope<
                     param1 as _FragmentType[number]
                 );
 
-                A_Context.indexConstructor(param1.constructor);
-                A_Context.register(this, param1);
                 this.bumpVersion();
 
                 break;
             }
             // 5) In case when it's a A-Error instance
             case A_TypeGuards.isErrorInstance(param1): {
+                // Register with A_Context FIRST — see Component branch.
+                A_Context.indexConstructor(param1.constructor);
+                A_Context.register(this, (param1 as any));
+
                 if (!this.allowedErrors.has(param1.constructor as _ErrorType[number]))
                     this.allowedErrors.add(param1.constructor as _ErrorType[number]);
 
@@ -2128,8 +2141,6 @@ export class A_Scope<
                     param1 as InstanceType<_ErrorType[number]>
                 );
 
-                A_Context.indexConstructor(param1.constructor);
-                A_Context.register(this, (param1 as any));
                 this.bumpVersion();
                 break;
             }

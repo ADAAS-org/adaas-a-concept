@@ -13,7 +13,7 @@ import {
 } from "@adaas/a-concept/a-stage";
 import { A_StepsManager } from "@adaas/a-concept/a-step-manager";
 import { A_TypeGuards } from "@adaas/a-concept/helpers/A_TypeGuards.helper";
-import { A_FeatureError } from "./A-Feature.error";
+import { A_FeatureError, A_FeatureInterruption } from "./A-Feature.error";
 import { A_Context } from "@adaas/a-concept/a-context";
 import { A_Caller } from "@adaas/a-concept/a-caller";
 import { A_Scope } from "@adaas/a-concept/a-scope";
@@ -441,12 +441,18 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             }
 
         } catch (error) {
-            throw this.failed(new A_FeatureError({
-                title: A_FeatureError.FeatureProcessingError,
-                description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
-                stage: this.stage,
-                originalError: error
-            }));
+            // Wrap once at the feature boundary. If `error` is already a
+            // FeatureError that we threw from `createStageError` upstream,
+            // do NOT re-wrap — just route it through `failed()` and rethrow.
+            const featureError = error instanceof A_FeatureError
+                ? error
+                : new A_FeatureError({
+                    title: A_FeatureError.FeatureProcessingError,
+                    description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || 'N/A'}.`,
+                    stage: this.stage,
+                    originalError: error
+                });
+            throw this.failed(featureError);
         }
     }
 
@@ -473,19 +479,25 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
     }
 
     private createStageError(error: unknown, stage: A_Stage): A_FeatureError {
-        this.failed(new A_FeatureError({
-            title: A_FeatureError.FeatureProcessingError,
-            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-            stage,
-            originalError: error,
-        }))
+        // Build EXACTLY ONE error instance so `feature.error === thrownError`
+        // by reference. Prior implementation built two distinct instances —
+        // one stored on the feature, one thrown — which broke any consumer
+        // doing identity comparison or attaching breadcrumbs after the fact.
+        //
+        // If the caller is already throwing an A_FeatureError (e.g. a nested
+        // feature failure surfaced through the handler) we pass it through
+        // verbatim, preserving the original stage context.
+        const featureError = error instanceof A_FeatureError
+            ? error
+            : new A_FeatureError({
+                title: A_FeatureError.FeatureProcessingError,
+                description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
+                stage,
+                originalError: error,
+            });
 
-        return new A_FeatureError({
-            title: A_FeatureError.FeatureProcessingError,
-            description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-            stage,
-            originalError: error,
-        })
+        this.failed(featureError);
+        return featureError;
     }
     /**
      * This method moves the feature to the next stage
@@ -558,13 +570,20 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
 
         this._state = A_TYPES__FeatureState.INTERRUPTED;
 
+        // Use A_FeatureInterruption so caller code can distinguish operator-
+        // driven cancellation from real failures via `instanceof` instead of
+        // string-matching on the error code.
         switch (true) {
             case A_TypeGuards.isString(reason):
-                this._error = new A_FeatureError(A_FeatureError.Interruption, reason as string);
+                this._error = new A_FeatureInterruption({
+                    title: A_FeatureError.Interruption,
+                    description: reason as string,
+                    stage: this.stage,
+                });
                 break;
 
             case A_TypeGuards.isErrorInstance(reason):
-                this._error = new A_FeatureError({
+                this._error = new A_FeatureInterruption({
                     code: A_FeatureError.Interruption,
                     title: (reason as any).title || 'Feature Interrupted',
                     description: (reason as any).description || (reason as Error).message,
@@ -574,7 +593,10 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
                 break;
 
             default:
-                this._error = new A_FeatureError(A_FeatureError.Interruption, 'Feature was interrupted');
+                this._error = new A_FeatureInterruption(
+                    A_FeatureError.Interruption,
+                    'Feature was interrupted',
+                );
                 break;
         }
 

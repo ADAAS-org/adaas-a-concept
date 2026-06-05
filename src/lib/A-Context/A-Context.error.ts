@@ -45,4 +45,6 @@ export class A_ContextError extends A_Error {
     static ComponentNotRegisteredError = 'Component not registered in the context';
 
     static InvalidDeregisterParameterError = 'Invalid parameter provided to deregister component';
+
+    static ComponentAlreadyRegisteredInOtherScopeError = 'Instance already owned by another scope';
 }

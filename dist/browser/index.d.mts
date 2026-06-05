@@ -227,9 +227,21 @@ type A_TYPES__Error_Serialized = {
      */
     scope: string;
     /**
-     * Original error message if any
+     * Serialized original error (if any).
+     *
+     * For nested A_Error chains this is a recursively-serialized
+     * `A_TYPES__Error_Serialized` so the full causal chain survives
+     * transport / persistence.
+     *
+     * For plain `Error` instances this is `{ name, message, stack }`.
+     * For non-error throwables this is the value itself (when JSON-safe)
+     * or its `String(value)` rendition.
      */
-    originalError?: string;
+    originalError?: A_TYPES__Error_Serialized | {
+        name?: string;
+        message?: string;
+        stack?: string;
+    } | any;
 };
 
 interface A_TYPES__ASEID_Constructor {
@@ -621,8 +633,29 @@ declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TYPES__Er
      * This can be useful for debugging purposes to see the original stack trace or error message
      *
      * [!] Note: Original error is optional and may not be present in all cases
+     * [!] Note: This is the IMMEDIATE cause — use `rootCause` to walk to the deepest non-A_Error origin.
      */
     get originalError(): Error | any | undefined;
+    /**
+     * Walks the `originalError` chain and returns the deepest cause.
+     *
+     * Stops at the first non-A_Error (the actual domain/runtime error) or at
+     * an A_Error with no further `originalError`. Returns `undefined` when
+     * there is no chain at all.
+     *
+     * Useful for logs/dashboards that want "what really went wrong" without
+     * caring about the framework wrappers (A_FeatureError → A_StageError → ...).
+     */
+    get rootCause(): Error | any | undefined;
+    /**
+     * Returns the full causal chain starting from `this` and walking the
+     * `originalError` links. The first element is always `this`.
+     *
+     * Stops walking at the first non-A_Error link (which is included as the
+     * last entry). Useful for structured logging:
+     *   `for (const link of err.chain) logger.error(link.title, link.message);`
+     */
+    get chain(): Array<A_Error | Error | any>;
     /**
      * Determines which initializer method to use based on the type of the first parameter.
      *
@@ -657,12 +690,35 @@ declare class A_Error<_ConstructorType extends A_TYPES__Error_Init = A_TYPES__Er
      */
     protected fromConstructor(params: _ConstructorType): void;
     /**
+     * Appends the `originalError` stack to `this.stack` using a Java/Python
+     * style "Caused by:" separator. This keeps the standard error printer
+     * useful for layered errors without forcing callers to walk the chain
+     * manually.
+     *
+     * No-op when there is no `originalError`, when stacks are unavailable
+     * (some runtimes / serialized errors), or when the original stack is
+     * already a suffix of `this.stack` (defensive against double-append on
+     * re-wrap).
+     */
+    protected appendCausedByStack(): void;
+    /**
      * Serializes the A_Error instance to a plain object.
      *
+     * `originalError` is serialized as a structured object (recursively for
+     * A_Error chains) instead of the original message-only string so that
+     * transport / log sinks preserve the full causal chain.
      *
      * @returns
      */
     toJSON(): _SerializedType;
+    /**
+     * Recursively serializes the immediate `originalError`:
+     *  - `undefined` if absent.
+     *  - For nested A_Error: full `toJSON()` (chain preserved).
+     *  - For plain Error: `{ name, message, stack }` minimal shape.
+     *  - For non-error throwables: the value itself if JSON-safe, else `String(value)`.
+     */
+    protected serializeOriginalError(err: any): any;
     /**
      * Checks if the provided title exceeds 60 characters.
      * If it does, throws a validation A_Error.
@@ -1481,10 +1537,46 @@ declare enum A_TYPES__FeatureState {
 }
 type A_TYPES__FeatureError_Init = {
     /**
-     * Stage where the error occurred
+     * Live stage reference where the error occurred. Used for in-process
+     * inspection and to derive `featureName`/`stageName`/`handler`/`component`
+     * when those are not provided explicitly.
      */
     stage?: A_Stage;
+    /**
+     * Optional explicit override for the feature name (kebab/upper-snake id).
+     * When omitted it is derived from `stage.feature.name`.
+     */
+    featureName?: string;
+    /**
+     * Optional explicit override for the stage path
+     * (`A-Stage(<feature>::<behavior>@<handler>)`). Derived from `stage.name`
+     * when omitted.
+     */
+    stageName?: string;
+    /**
+     * Optional explicit override for the handler method name. Derived from
+     * the stage definition when omitted.
+     */
+    handler?: string;
+    /**
+     * Optional explicit override for the component class name. Derived from
+     * the stage's dependency target when omitted.
+     */
+    component?: string;
 } & A_TYPES__Error_Init;
+/**
+ * Serialized payload for `A_FeatureError.toJSON()`.
+ *
+ * Extends the base error envelope with the structured stage context so log
+ * sinks / transports preserve "which feature, which stage, which handler,
+ * which component" without having to parse the description string.
+ */
+type A_TYPES__FeatureError_Serialized = A_TYPES__Error_Serialized & {
+    featureName?: string;
+    stageName?: string;
+    handler?: string;
+    component?: string;
+};
 /**
  * A list of component where features can be Defined
  *
@@ -1838,7 +1930,7 @@ declare class A_StepManagerError extends A_Error {
     static readonly CircularDependencyError = "A-StepManager Circular Dependency Error";
 }
 
-declare class A_FeatureError extends A_Error<A_TYPES__FeatureError_Init> {
+declare class A_FeatureError extends A_Error<A_TYPES__FeatureError_Init, A_TYPES__FeatureError_Serialized> {
     /**
      * Indicates that the Feature has been interrupted
      */
@@ -1868,10 +1960,46 @@ declare class A_FeatureError extends A_Error<A_TYPES__FeatureError_Init> {
      */
     static readonly FeatureExtensionError = "Unable to extend A-Feature";
     /**
-     * Stage where the error occurred
+     * Live stage reference (when available). Convenience for in-process
+     * inspection. NOT serialized — use the string fields below for that.
      */
     stage?: A_Stage;
+    /**
+     * Name of the feature that failed (e.g. "_A_FRAME_STORAGE_SAVE_KNOWLEDGE").
+     * Serialized.
+     */
+    featureName?: string;
+    /**
+     * Stage path: `A-Stage(<feature>::<behavior>@<handler>)`. Serialized.
+     */
+    stageName?: string;
+    /**
+     * Handler method name on the component (e.g. "saveKnowledgeToDisk").
+     * Serialized.
+     */
+    handler?: string;
+    /**
+     * Component class name that owns the failing handler (e.g.
+     * "A_FrameNodeStorage"). Serialized.
+     */
+    component?: string;
     protected fromConstructor(params: A_TYPES__FeatureError_Init): void;
+    /**
+     * Serialize the structured stage context alongside the base A_Error fields.
+     * The live `stage` reference is intentionally dropped (circular and not
+     * portable); the string projections are sufficient for logs / transport.
+     */
+    toJSON(): A_TYPES__FeatureError_Serialized;
+}
+/**
+ * Distinct error subclass for operator-driven interruption.
+ *
+ * Lets caller code do `err instanceof A_FeatureInterruption` instead of
+ * inspecting the error code string. Treated as a NORMAL termination by
+ * dashboards/log sinks that filter on the class hierarchy rather than on
+ * the generic `A_FeatureError` (which now implies an actual failure).
+ */
+declare class A_FeatureInterruption extends A_FeatureError {
 }
 
 /**
@@ -4381,6 +4509,16 @@ declare class A_Context {
      */
     static getInstance(): A_Context;
     /**
+     * Returns `true` when the given component/fragment/entity instance is
+     * currently registered (owned) by some scope in the context.
+     *
+     * Useful for callers that build transient execution scopes and need
+     * to decide whether to register a shared instance themselves or to
+     * rely on inheritance from the owning scope. Cheap O(1) WeakMap lookup,
+     * no exception path.
+     */
+    static has(component: A_TYPES_ScopeDependentComponents): boolean;
+    /**
      * Register method allows to register a component with a specific scope in the context.
      *
      * @param component - Component to register with a specific scope. Can be either A_Container, A_Feature.
@@ -4800,6 +4938,7 @@ declare class A_ContextError extends A_Error {
     static InvalidComponentParameterError: string;
     static ComponentNotRegisteredError: string;
     static InvalidDeregisterParameterError: string;
+    static ComponentAlreadyRegisteredInOtherScopeError: string;
 }
 
 declare class A_CONCEPT_BASE_ENV {
@@ -5314,4 +5453,4 @@ declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES: {
 type A_TYPES__ConceptENVVariables = (typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES)[keyof typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES][];
 declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY: readonly ["A_CONCEPT_NAME", "A_CONCEPT_ROOT_SCOPE", "A_CONCEPT_ENVIRONMENT", "A_CONCEPT_RUNTIME_ENVIRONMENT", "A_CONCEPT_ROOT_FOLDER", "A_ERROR_DEFAULT_DESCRIPTION"];
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_QueryDecoratorReturn, type A_TYPES__A_Dependency_QueryTarget, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, type A_TYPES__EntityFeatureNames, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_FeatureInterruption, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_QueryDecoratorReturn, type A_TYPES__A_Dependency_QueryTarget, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, type A_TYPES__EntityFeatureNames, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureError_Serialized, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

@@ -131,7 +131,23 @@ export class A_Stage {
                         if (caller && this.isCallerOfDependency(caller, dependency.target)) {
                             return caller;
                         }
-                        return scope.resolve(dependency);
+                        // Wrap dependency-resolution failures so they surface as a
+                        // typed A_StageError(ArgumentsResolutionError) instead of
+                        // bubbling up untyped. The dependency name and handler are
+                        // included in the description so investigators can spot the
+                        // exact @A_Inject() target without reading a stack trace.
+                        try {
+                            return scope.resolve(dependency);
+                        } catch (error) {
+                            const depName = (dependency.target as any)?.name
+                                ?? (dependency as any)?.name
+                                ?? '<unknown>';
+                            throw new A_StageError({
+                                title: A_StageError.ArgumentsResolutionError,
+                                description: `Failed to resolve @A_Inject(${depName}) for handler '${step.handler}' in stage ${this.name} (scope: ${scope.name}).`,
+                                originalError: error,
+                            });
+                        }
                     }
                 }
             })
@@ -292,14 +308,22 @@ export class A_Stage {
 
                             return resolve();
                         } catch (error) {
-                            const wrappedError = new A_Error(error as any);
-
-                            this.failed(wrappedError);
+                            // Propagate the error AS-IS so the sync and async
+                            // paths behave identically. Previously we wrapped
+                            // every async failure into `new A_Error(error)`,
+                            // which collapsed the domain title into
+                            // UNEXPECTED_ERROR and made async vs. sync
+                            // failures look superficially different in logs
+                            // for the same handler.
+                            //
+                            // `failed()` still records the original error on
+                            // the stage for in-process introspection.
+                            this.failed(error);
 
                             if (this._definition.throwOnError) {
                                 return resolve();
                             } else {
-                                return reject(wrappedError);
+                                return reject(error);
                             }
                         }
                     });
@@ -322,7 +346,13 @@ export class A_Stage {
     protected failed(
         error: Error | A_Error | any
     ) {
-        this._error = new A_Error(error);
+        // Preserve the original error instance when it is already an A_Error
+        // (or subclass). Wrapping with `new A_Error(error)` here used to flatten
+        // the domain title into UNEXPECTED_ERROR and erase any structured fields
+        // a subclass had attached. Only wrap plain non-Error throwables.
+        this._error = error instanceof A_Error
+            ? error
+            : new A_Error(error);
 
         this._status = A_TYPES__A_Stage_Status.FAILED;
     }

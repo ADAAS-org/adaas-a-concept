@@ -792,9 +792,46 @@ var A_Error = class _A_Error extends Error {
    * This can be useful for debugging purposes to see the original stack trace or error message
    * 
    * [!] Note: Original error is optional and may not be present in all cases
+   * [!] Note: This is the IMMEDIATE cause — use `rootCause` to walk to the deepest non-A_Error origin.
    */
   get originalError() {
     return this._originalError;
+  }
+  /**
+   * Walks the `originalError` chain and returns the deepest cause.
+   *
+   * Stops at the first non-A_Error (the actual domain/runtime error) or at
+   * an A_Error with no further `originalError`. Returns `undefined` when
+   * there is no chain at all.
+   *
+   * Useful for logs/dashboards that want "what really went wrong" without
+   * caring about the framework wrappers (A_FeatureError → A_StageError → ...).
+   */
+  get rootCause() {
+    let current = this._originalError;
+    if (!current) return void 0;
+    while (current instanceof _A_Error && current.originalError !== void 0) {
+      current = current.originalError;
+    }
+    return current;
+  }
+  /**
+   * Returns the full causal chain starting from `this` and walking the
+   * `originalError` links. The first element is always `this`.
+   *
+   * Stops walking at the first non-A_Error link (which is included as the
+   * last entry). Useful for structured logging:
+   *   `for (const link of err.chain) logger.error(link.title, link.message);`
+   */
+  get chain() {
+    const out = [this];
+    let current = this._originalError;
+    while (current) {
+      out.push(current);
+      if (!(current instanceof _A_Error)) break;
+      current = current.originalError;
+    }
+    return out;
   }
   /**
    * Determines which initializer method to use based on the type of the first parameter.
@@ -836,6 +873,7 @@ var A_Error = class _A_Error extends Error {
       id: this.code
     });
     this._originalError = error;
+    this.appendCausedByStack();
   }
   /**
    * Initializes the A_Error instance from a message.
@@ -866,7 +904,21 @@ var A_Error = class _A_Error extends Error {
     this._code = serialized.code;
     this._scope = serialized.scope;
     this._description = serialized.description;
-    this._originalError = serialized.originalError ? new _A_Error(serialized.originalError) : void 0;
+    const oe = serialized.originalError;
+    if (oe === void 0 || oe === null) {
+      this._originalError = void 0;
+    } else if (typeof oe === "string") {
+      this._originalError = new _A_Error(oe);
+    } else if (typeof oe === "object" && "aseid" in oe && "title" in oe) {
+      this._originalError = new _A_Error(oe);
+    } else if (typeof oe === "object" && ("message" in oe || "name" in oe)) {
+      const e = new Error(oe.message ?? "");
+      if (oe.name) e.name = oe.name;
+      if (oe.stack) e.stack = oe.stack;
+      this._originalError = e;
+    } else {
+      this._originalError = oe;
+    }
     this._link = serialized.link;
   }
   fromTitle(title, description) {
@@ -900,21 +952,39 @@ var A_Error = class _A_Error extends Error {
     });
     this._description = params.description;
     this._link = params.link;
-    if (params.originalError instanceof _A_Error) {
-      let rootError = params.originalError;
-      while (rootError.originalError instanceof _A_Error) {
-        rootError = rootError.originalError;
-      }
-      this._originalError = rootError.originalError || rootError;
-    } else {
-      this._originalError = params.originalError;
-    }
+    this._originalError = params.originalError;
+    this.appendCausedByStack();
+  }
+  /**
+   * Appends the `originalError` stack to `this.stack` using a Java/Python
+   * style "Caused by:" separator. This keeps the standard error printer
+   * useful for layered errors without forcing callers to walk the chain
+   * manually.
+   *
+   * No-op when there is no `originalError`, when stacks are unavailable
+   * (some runtimes / serialized errors), or when the original stack is
+   * already a suffix of `this.stack` (defensive against double-append on
+   * re-wrap).
+   */
+  appendCausedByStack() {
+    const orig = this._originalError;
+    if (!orig) return;
+    const origStack = typeof orig.stack === "string" ? orig.stack : void 0;
+    if (!origStack) return;
+    const myStack = typeof this.stack === "string" ? this.stack : void 0;
+    if (!myStack) return;
+    if (myStack.includes(origStack)) return;
+    this.stack = `${myStack}
+Caused by: ${origStack}`;
   }
   /**
    * Serializes the A_Error instance to a plain object.
-   * 
-   * 
-   * @returns 
+   *
+   * `originalError` is serialized as a structured object (recursively for
+   * A_Error chains) instead of the original message-only string so that
+   * transport / log sinks preserve the full causal chain.
+   *
+   * @returns
    */
   toJSON() {
     return {
@@ -926,8 +996,32 @@ var A_Error = class _A_Error extends Error {
       link: this.link,
       scope: this.scope,
       description: this.description,
-      originalError: this.originalError?.message
+      originalError: this.serializeOriginalError(this._originalError)
     };
+  }
+  /**
+   * Recursively serializes the immediate `originalError`:
+   *  - `undefined` if absent.
+   *  - For nested A_Error: full `toJSON()` (chain preserved).
+   *  - For plain Error: `{ name, message, stack }` minimal shape.
+   *  - For non-error throwables: the value itself if JSON-safe, else `String(value)`.
+   */
+  serializeOriginalError(err) {
+    if (err === void 0 || err === null) return void 0;
+    if (err instanceof _A_Error) return err.toJSON();
+    if (err instanceof Error) {
+      return {
+        name: err.name,
+        message: err.message,
+        stack: err.stack
+      };
+    }
+    try {
+      JSON.stringify(err);
+      return err;
+    } catch {
+      return String(err);
+    }
   }
   // --------------------------------------------------------------------------
   // ----------------------- PROTECTED HELPERS --------------------------------
@@ -1597,6 +1691,25 @@ var A_FeatureError = class extends A_Error {
   fromConstructor(params) {
     super.fromConstructor(params);
     this.stage = params.stage;
+    this.featureName = params.featureName ?? params.stage?.feature?.name;
+    this.stageName = params.stageName ?? params.stage?.name;
+    const def = params.stage?.definition;
+    this.handler = params.handler ?? def?.handler;
+    this.component = params.component ?? def?.dependency?.target?.name ?? def?.dependency?.name;
+  }
+  /**
+   * Serialize the structured stage context alongside the base A_Error fields.
+   * The live `stage` reference is intentionally dropped (circular and not
+   * portable); the string projections are sufficient for logs / transport.
+   */
+  toJSON() {
+    return {
+      ...super.toJSON(),
+      featureName: this.featureName,
+      stageName: this.stageName,
+      handler: this.handler,
+      component: this.component
+    };
   }
 };
 /**
@@ -1630,6 +1743,8 @@ A_FeatureError.FeatureDefinitionError = "Unable to define A-Feature";
  * Failed during the @A_Feature.Extend() decorator execution
  */
 A_FeatureError.FeatureExtensionError = "Unable to extend A-Feature";
+var A_FeatureInterruption = class extends A_FeatureError {
+};
 
 // src/helpers/A_Common.helper.ts
 var _componentNameCache = /* @__PURE__ */ new WeakMap();
@@ -2960,7 +3075,16 @@ var A_Stage = class {
           if (caller && this.isCallerOfDependency(caller, dependency.target)) {
             return caller;
           }
-          return scope.resolve(dependency);
+          try {
+            return scope.resolve(dependency);
+          } catch (error) {
+            const depName = dependency.target?.name ?? dependency?.name ?? "<unknown>";
+            throw new A_StageError({
+              title: A_StageError.ArgumentsResolutionError,
+              description: `Failed to resolve @A_Inject(${depName}) for handler '${step.handler}' in stage ${this.name} (scope: ${scope.name}).`,
+              originalError: error
+            });
+          }
         }
       }
     });
@@ -3057,12 +3181,11 @@ var A_Stage = class {
               this.completed();
               return resolve();
             } catch (error) {
-              const wrappedError = new A_Error(error);
-              this.failed(wrappedError);
+              this.failed(error);
               if (this._definition.throwOnError) {
                 return resolve();
               } else {
-                return reject(wrappedError);
+                return reject(error);
               }
             }
           }
@@ -3079,7 +3202,7 @@ var A_Stage = class {
     this._status = "COMPLETED" /* COMPLETED */;
   }
   failed(error) {
-    this._error = new A_Error(error);
+    this._error = error instanceof A_Error ? error : new A_Error(error);
     this._status = "FAILED" /* FAILED */;
   }
   // ==========================================
@@ -3536,12 +3659,13 @@ var A_Feature = class _A_Feature {
         this.completed();
       }
     } catch (error) {
-      throw this.failed(new A_FeatureError({
+      const featureError = error instanceof A_FeatureError ? error : new A_FeatureError({
         title: A_FeatureError.FeatureProcessingError,
         description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${this.stage?.name || "N/A"}.`,
         stage: this.stage,
         originalError: error
-      }));
+      });
+      throw this.failed(featureError);
     }
   }
   /**
@@ -3563,18 +3687,14 @@ var A_Feature = class _A_Feature {
     }
   }
   createStageError(error, stage) {
-    this.failed(new A_FeatureError({
-      title: A_FeatureError.FeatureProcessingError,
-      description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
-      stage,
-      originalError: error
-    }));
-    return new A_FeatureError({
+    const featureError = error instanceof A_FeatureError ? error : new A_FeatureError({
       title: A_FeatureError.FeatureProcessingError,
       description: `An error occurred while processing the A-Feature: ${this.name}. Failed at stage: ${stage.name}.`,
       stage,
       originalError: error
     });
+    this.failed(featureError);
+    return featureError;
   }
   /**
    * This method moves the feature to the next stage
@@ -3632,10 +3752,14 @@ var A_Feature = class _A_Feature {
     this._state = "INTERRUPTED" /* INTERRUPTED */;
     switch (true) {
       case A_TypeGuards.isString(reason):
-        this._error = new A_FeatureError(A_FeatureError.Interruption, reason);
+        this._error = new A_FeatureInterruption({
+          title: A_FeatureError.Interruption,
+          description: reason,
+          stage: this.stage
+        });
         break;
       case A_TypeGuards.isErrorInstance(reason):
-        this._error = new A_FeatureError({
+        this._error = new A_FeatureInterruption({
           code: A_FeatureError.Interruption,
           title: reason.title || "Feature Interrupted",
           description: reason.description || reason.message,
@@ -3644,7 +3768,10 @@ var A_Feature = class _A_Feature {
         });
         break;
       default:
-        this._error = new A_FeatureError(A_FeatureError.Interruption, "Feature was interrupted");
+        this._error = new A_FeatureInterruption(
+          A_FeatureError.Interruption,
+          "Feature was interrupted"
+        );
         break;
     }
     if (this._scopeAllocated) {
@@ -4896,50 +5023,50 @@ var A_Scope = class {
       // ------------------------------------------
       // 1) In case when it's a A-Component instance
       case param1 instanceof A_Component: {
+        A_Context.indexConstructor(param1.constructor);
+        A_Context.register(this, param1);
         if (!this.allowedComponents.has(param1.constructor))
           this.allowedComponents.add(param1.constructor);
         this._components.set(
           param1.constructor,
           param1
         );
-        A_Context.indexConstructor(param1.constructor);
-        A_Context.register(this, param1);
         this.bumpVersion();
         break;
       }
       // 3) In case when it's a A-Entity instance
       case (A_TypeGuards.isEntityInstance(param1) && !this._entities.has(param1.aseid.toString())): {
+        A_Context.indexConstructor(param1.constructor);
+        A_Context.register(this, param1);
         if (!this.allowedEntities.has(param1.constructor))
           this.allowedEntities.add(param1.constructor);
         this._entities.set(param1.aseid.toString(), param1);
-        A_Context.indexConstructor(param1.constructor);
-        A_Context.register(this, param1);
         this.bumpVersion();
         break;
       }
       // 4) In case when it's a A-Fragment instance
       case A_TypeGuards.isFragmentInstance(param1): {
+        A_Context.indexConstructor(param1.constructor);
+        A_Context.register(this, param1);
         if (!this.allowedFragments.has(param1.constructor))
           this.allowedFragments.add(param1.constructor);
         this._fragments.set(
           param1.constructor,
           param1
         );
-        A_Context.indexConstructor(param1.constructor);
-        A_Context.register(this, param1);
         this.bumpVersion();
         break;
       }
       // 5) In case when it's a A-Error instance
       case A_TypeGuards.isErrorInstance(param1): {
+        A_Context.indexConstructor(param1.constructor);
+        A_Context.register(this, param1);
         if (!this.allowedErrors.has(param1.constructor))
           this.allowedErrors.add(param1.constructor);
         this._errors.set(
           param1.code,
           param1
         );
-        A_Context.indexConstructor(param1.constructor);
-        A_Context.register(this, param1);
         this.bumpVersion();
         break;
       }
@@ -5235,6 +5362,7 @@ A_ContextError.InvalidRegisterParameterError = "Invalid parameter provided to re
 A_ContextError.InvalidComponentParameterError = "Invalid component provided";
 A_ContextError.ComponentNotRegisteredError = "Component not registered in the context";
 A_ContextError.InvalidDeregisterParameterError = "Invalid parameter provided to deregister component";
+A_ContextError.ComponentAlreadyRegisteredInOtherScopeError = "Instance already owned by another scope";
 
 // src/lib/A-Context/A-Context.class.ts
 var _A_Context = class _A_Context {
@@ -5360,6 +5488,19 @@ var _A_Context = class _A_Context {
     return _A_Context._instance;
   }
   /**
+   * Returns `true` when the given component/fragment/entity instance is
+   * currently registered (owned) by some scope in the context.
+   *
+   * Useful for callers that build transient execution scopes and need
+   * to decide whether to register a shared instance themselves or to
+   * rely on inheritance from the owning scope. Cheap O(1) WeakMap lookup,
+   * no exception path.
+   */
+  static has(component) {
+    if (!component) return false;
+    return this.getInstance()._scopeStorage.has(component);
+  }
+  /**
    * Register method allows to register a component with a specific scope in the context.
    * 
    * @param component - Component to register with a specific scope. Can be either A_Container, A_Feature.
@@ -5381,6 +5522,13 @@ var _A_Context = class _A_Context {
       A_ContextError.NotAllowedForScopeAllocationError,
       `Component ${componentName} is not allowed for scope allocation.`
     );
+    const existingOwner = instance._scopeStorage.get(component);
+    if (existingOwner && existingOwner !== scope) {
+      throw new A_ContextError(
+        A_ContextError.ComponentAlreadyRegisteredInOtherScopeError,
+        `Unable to register component. Component ${componentName} is already registered in scope "${existingOwner.name ?? "<unnamed>"}". An instance can be registered in at most one scope; inherit or import the owning scope instead of re-registering the same instance.`
+      );
+    }
     instance._scopeStorage.set(component, scope);
     return scope;
   }
@@ -6537,6 +6685,6 @@ function A_Inject(param1, param2) {
   };
 }
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ConceptAbstractions, A_TYPES__ConceptMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_FeatureInterruption, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, A_TYPES__A_Stage_Status, A_TYPES__ComponentMetaKey, A_TYPES__ConceptAbstractions, A_TYPES__ConceptMetaKey, A_TYPES__ContainerMetaKey, A_TYPES__EntityFeatures, A_TYPES__EntityMetaKey, A_TYPES__FeatureState, A_TypeGuards };
 //# sourceMappingURL=index.mjs.map
 //# sourceMappingURL=index.mjs.map

@@ -19,7 +19,7 @@ import {
     A_TYPES__Required
 } from "@adaas/a-concept/types";
 import { A_Scope } from "@adaas/a-concept/a-scope"
-import { A_TYPES__Error_Init } from "@adaas/a-concept/a-error"
+import { A_TYPES__Error_Init, A_TYPES__Error_Serialized } from "@adaas/a-concept/a-error"
 
 
 // ============================================================================
@@ -122,11 +122,49 @@ export enum A_TYPES__FeatureState {
 
 export type A_TYPES__FeatureError_Init = {
     /**
-     * Stage where the error occurred
+     * Live stage reference where the error occurred. Used for in-process
+     * inspection and to derive `featureName`/`stageName`/`handler`/`component`
+     * when those are not provided explicitly.
      */
     stage?: A_Stage
+    /**
+     * Optional explicit override for the feature name (kebab/upper-snake id).
+     * When omitted it is derived from `stage.feature.name`.
+     */
+    featureName?: string
+    /**
+     * Optional explicit override for the stage path
+     * (`A-Stage(<feature>::<behavior>@<handler>)`). Derived from `stage.name`
+     * when omitted.
+     */
+    stageName?: string
+    /**
+     * Optional explicit override for the handler method name. Derived from
+     * the stage definition when omitted.
+     */
+    handler?: string
+    /**
+     * Optional explicit override for the component class name. Derived from
+     * the stage's dependency target when omitted.
+     */
+    component?: string
 
 } & A_TYPES__Error_Init
+
+
+/**
+ * Serialized payload for `A_FeatureError.toJSON()`.
+ *
+ * Extends the base error envelope with the structured stage context so log
+ * sinks / transports preserve "which feature, which stage, which handler,
+ * which component" without having to parse the description string.
+ */
+export type A_TYPES__FeatureError_Serialized = A_TYPES__Error_Serialized & {
+    featureName?: string
+    stageName?: string
+    handler?: string
+    component?: string
+}
 
 
 

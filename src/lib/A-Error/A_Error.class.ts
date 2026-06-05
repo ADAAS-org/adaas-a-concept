@@ -294,9 +294,48 @@ export class A_Error<
      * This can be useful for debugging purposes to see the original stack trace or error message
      * 
      * [!] Note: Original error is optional and may not be present in all cases
+     * [!] Note: This is the IMMEDIATE cause — use `rootCause` to walk to the deepest non-A_Error origin.
      */
     get originalError(): Error | any | undefined {
         return this._originalError;
+    }
+
+    /**
+     * Walks the `originalError` chain and returns the deepest cause.
+     *
+     * Stops at the first non-A_Error (the actual domain/runtime error) or at
+     * an A_Error with no further `originalError`. Returns `undefined` when
+     * there is no chain at all.
+     *
+     * Useful for logs/dashboards that want "what really went wrong" without
+     * caring about the framework wrappers (A_FeatureError → A_StageError → ...).
+     */
+    get rootCause(): Error | any | undefined {
+        let current: any = this._originalError;
+        if (!current) return undefined;
+        while (current instanceof A_Error && current.originalError !== undefined) {
+            current = current.originalError;
+        }
+        return current;
+    }
+
+    /**
+     * Returns the full causal chain starting from `this` and walking the
+     * `originalError` links. The first element is always `this`.
+     *
+     * Stops walking at the first non-A_Error link (which is included as the
+     * last entry). Useful for structured logging:
+     *   `for (const link of err.chain) logger.error(link.title, link.message);`
+     */
+    get chain(): Array<A_Error | Error | any> {
+        const out: Array<A_Error | Error | any> = [this];
+        let current: any = this._originalError;
+        while (current) {
+            out.push(current);
+            if (!(current instanceof A_Error)) break;
+            current = current.originalError;
+        }
+        return out;
     }
 
 
@@ -353,6 +392,7 @@ export class A_Error<
         });
 
         this._originalError = error;
+        this.appendCausedByStack();
     }
     /**
      * Initializes the A_Error instance from a message.
@@ -385,8 +425,28 @@ export class A_Error<
         this._code = serialized.code;
         this._scope = serialized.scope;
         this._description = serialized.description;
-        // Note: originalError is deserialized as message only
-        this._originalError = serialized.originalError ? new A_Error(serialized.originalError) : undefined;
+        // Rehydrate the original error. We accept three shapes for backward
+        // compatibility:
+        //   - undefined / null  → no chain.
+        //   - string            → legacy (pre-PR2) format: only a message survived.
+        //   - object            → either a full A_TYPES__Error_Serialized (has
+        //                         `aseid`/`title`) → rehydrate as A_Error, or
+        //                         a `{ name, message, stack }` shape → plain Error.
+        const oe: any = serialized.originalError;
+        if (oe === undefined || oe === null) {
+            this._originalError = undefined;
+        } else if (typeof oe === 'string') {
+            this._originalError = new A_Error(oe);
+        } else if (typeof oe === 'object' && 'aseid' in oe && 'title' in oe) {
+            this._originalError = new A_Error(oe as _SerializedType);
+        } else if (typeof oe === 'object' && ('message' in oe || 'name' in oe)) {
+            const e = new Error(oe.message ?? '');
+            if (oe.name) e.name = oe.name;
+            if (oe.stack) e.stack = oe.stack;
+            this._originalError = e;
+        } else {
+            this._originalError = oe;
+        }
         this._link = serialized.link;
     }
 
@@ -430,26 +490,50 @@ export class A_Error<
         this._description = params.description;
         this._link = params.link;
 
-        // Handle originalError: if it's an A_Error, we should trace back to the root cause
-        // to avoid infinite nesting of A_Error instances
-        if (params.originalError instanceof A_Error) {
-            // Find the root original error by traversing the chain
-            let rootError = params.originalError;
-            while (rootError.originalError instanceof A_Error) {
-                rootError = rootError.originalError;
-            }
-            // Set the root cause as the original error
-            this._originalError = rootError.originalError || rootError;
-        } else {
-            this._originalError = params.originalError;
-        }
+        // Preserve the full causal chain. We used to collapse every A_Error
+        // chain to its deepest root here, which silently dropped every
+        // intermediate framework wrapper (e.g. Feature → Stage → Domain
+        // would surface as just Domain). Investigators then could not tell
+        // whether the failure happened in stage compilation, argument
+        // resolution, or inside the handler.
+        //
+        // Now `originalError` holds the IMMEDIATE cause as-passed; callers
+        // who want the deepest origin can use the `rootCause` getter.
+        this._originalError = params.originalError;
+
+        this.appendCausedByStack();
+    }
+
+    /**
+     * Appends the `originalError` stack to `this.stack` using a Java/Python
+     * style "Caused by:" separator. This keeps the standard error printer
+     * useful for layered errors without forcing callers to walk the chain
+     * manually.
+     *
+     * No-op when there is no `originalError`, when stacks are unavailable
+     * (some runtimes / serialized errors), or when the original stack is
+     * already a suffix of `this.stack` (defensive against double-append on
+     * re-wrap).
+     */
+    protected appendCausedByStack(): void {
+        const orig: any = this._originalError;
+        if (!orig) return;
+        const origStack: string | undefined = typeof orig.stack === 'string' ? orig.stack : undefined;
+        if (!origStack) return;
+        const myStack: string | undefined = typeof this.stack === 'string' ? this.stack : undefined;
+        if (!myStack) return;
+        if (myStack.includes(origStack)) return;
+        this.stack = `${myStack}\nCaused by: ${origStack}`;
     }
 
     /**
      * Serializes the A_Error instance to a plain object.
-     * 
-     * 
-     * @returns 
+     *
+     * `originalError` is serialized as a structured object (recursively for
+     * A_Error chains) instead of the original message-only string so that
+     * transport / log sinks preserve the full causal chain.
+     *
+     * @returns
      */
     toJSON(): _SerializedType {
         return {
@@ -461,8 +545,34 @@ export class A_Error<
             link: this.link,
             scope: this.scope,
             description: this.description,
-            originalError: this.originalError?.message
+            originalError: this.serializeOriginalError(this._originalError),
         } as _SerializedType;
+    }
+
+    /**
+     * Recursively serializes the immediate `originalError`:
+     *  - `undefined` if absent.
+     *  - For nested A_Error: full `toJSON()` (chain preserved).
+     *  - For plain Error: `{ name, message, stack }` minimal shape.
+     *  - For non-error throwables: the value itself if JSON-safe, else `String(value)`.
+     */
+    protected serializeOriginalError(err: any): any {
+        if (err === undefined || err === null) return undefined;
+        if (err instanceof A_Error) return err.toJSON();
+        if (err instanceof Error) {
+            return {
+                name: err.name,
+                message: err.message,
+                stack: err.stack,
+            };
+        }
+        try {
+            // JSON-safe scalar / plain object
+            JSON.stringify(err);
+            return err;
+        } catch {
+            return String(err);
+        }
     }
 
 

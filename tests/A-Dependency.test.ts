@@ -4,6 +4,7 @@ import { A_Entity } from "@adaas/a-concept/a-entity";
 import { A_Feature, A_FeatureError } from "@adaas/a-concept/a-feature";
 import { A_Inject } from "@adaas/a-concept/a-inject";
 import { A_Scope, A_ScopeError } from "@adaas/a-concept/a-scope";
+import { A_StageError } from "@adaas/a-concept/a-stage";
 
 
 
@@ -85,9 +86,22 @@ describe('A-Dependency tests', () => {
         try {
             await entityInstance?.call('test');
         } catch (error) {
+            // The error chain is now preserved end-to-end:
+            //   A_FeatureError(FeatureProcessingError)
+            //     └─ originalError: A_StageError(ArgumentsResolutionError)
+            //          └─ originalError: A_ScopeError(ResolutionError)   ← rootCause
+            // Prior to the error-handling refactor the middle
+            // A_StageError layer was collapsed away, hiding *where* in
+            // stage processing the failure happened (arg-resolution vs.
+            // handler vs. component-resolution).
             expect(error).toBeInstanceOf(A_FeatureError);
-            expect((error as A_FeatureError).originalError).toBeInstanceOf(A_ScopeError);
-            expect((error as A_FeatureError).originalError.title).toBe(A_ScopeError.ResolutionError);
+            const featureErr = error as A_FeatureError;
+            expect(featureErr.originalError).toBeInstanceOf(A_StageError);
+            expect((featureErr.originalError as A_StageError).title)
+                .toBe(A_StageError.ArgumentsResolutionError);
+            expect(featureErr.rootCause).toBeInstanceOf(A_ScopeError);
+            expect((featureErr.rootCause as A_ScopeError).title)
+                .toBe(A_ScopeError.ResolutionError);
         }
 
     });

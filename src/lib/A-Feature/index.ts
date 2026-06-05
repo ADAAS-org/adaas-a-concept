@@ -1,6 +1,6 @@
 export { A_Feature } from './A-Feature.class';
 // export { A_FeatureMeta } from './A-Feature.meta';
-export { A_FeatureError } from './A-Feature.error';
+export { A_FeatureError, A_FeatureInterruption } from './A-Feature.error';
 export * from './A-Feature.types';
 // export * from './A-Feature.constants';
 

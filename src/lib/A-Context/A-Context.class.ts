@@ -213,6 +213,22 @@ export class A_Context {
     }
 
 
+    /**
+     * Returns `true` when the given component/fragment/entity instance is
+     * currently registered (owned) by some scope in the context.
+     *
+     * Useful for callers that build transient execution scopes and need
+     * to decide whether to register a shared instance themselves or to
+     * rely on inheritance from the owning scope. Cheap O(1) WeakMap lookup,
+     * no exception path.
+     */
+    static has(
+        component: A_TYPES_ScopeDependentComponents,
+    ): boolean {
+        if (!component) return false;
+        return this.getInstance()._scopeStorage.has(component);
+    }
+
 
     /**
      * Register method allows to register a component with a specific scope in the context.
@@ -248,6 +264,23 @@ export class A_Context {
         if (!this.isAllowedToBeRegistered(component)) throw new A_ContextError(
             A_ContextError.NotAllowedForScopeAllocationError,
             `Component ${componentName} is not allowed for scope allocation.`);
+
+        // Strict ownership invariant: an instance can be registered in
+        // EXACTLY ONE scope. Re-registering the SAME instance into a
+        // different scope used to silently overwrite the WeakMap entry,
+        // which broke the outer scope's `destroy()` (deregister threw
+        // "not registered") and corrupted resolution. The correct way to
+        // share a fragment/component/entity across scopes is to inherit
+        // (or import) the owning scope so resolution walks up the chain.
+        // Same-scope re-registration is a no-op (idempotent).
+        const existingOwner = instance._scopeStorage.get(component);
+        if (existingOwner && existingOwner !== scope) {
+            throw new A_ContextError(
+                A_ContextError.ComponentAlreadyRegisteredInOtherScopeError,
+                `Unable to register component. Component ${componentName} is already registered in scope "${(existingOwner as any).name ?? '<unnamed>'}". ` +
+                `An instance can be registered in at most one scope; inherit or import the owning scope instead of re-registering the same instance.`,
+            );
+        }
 
         instance._scopeStorage.set(component, scope);
 
