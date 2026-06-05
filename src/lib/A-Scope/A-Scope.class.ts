@@ -172,6 +172,19 @@ export class A_Scope<
      */
     protected _subscribers: Set<WeakRef<A_Scope>> = new Set();
 
+    /**
+     * Side-index for O(1) subscriber lookup/removal. Maps each subscribing
+     * child scope to the `WeakRef` instance stored in `_subscribers`, so
+     * `_removeSubscriber(child)` can delete the entry in constant time
+     * without iterating the full set. The WeakMap auto-cleans when the
+     * child scope is garbage-collected.
+     *
+     * Lazily instantiated on first subscribe to keep `new A_Scope()` cheap
+     * for the common case of leaf scopes that never have downstream
+     * subscribers.
+     */
+    protected _subscriberTokens?: WeakMap<A_Scope, WeakRef<A_Scope>>;
+
 
 
     // ===========================================================================
@@ -296,22 +309,30 @@ export class A_Scope<
     /**
      * Register `child` as a downstream subscriber so any future mutation on
      * `this` invalidates the child's resolution caches.
+     *
+     * O(1) via the `_subscriberTokens` side-index.
      */
     protected _addSubscriber(child: A_Scope): void {
-        for (const ref of this._subscribers) {
-            if (ref.deref() === child) return;
+        if (!this._subscriberTokens) {
+            this._subscriberTokens = new WeakMap();
         }
-        this._subscribers.add(new WeakRef(child));
+        if (this._subscriberTokens.has(child)) return;
+        const ref = new WeakRef(child);
+        this._subscribers.add(ref);
+        this._subscriberTokens.set(child, ref);
     }
 
     /**
-     * Stop notifying `child` of mutations and prune any stale WeakRefs.
+     * Stop notifying `child` of mutations. O(1) via the `_subscriberTokens`
+     * side-index — no full-set iteration required.
      */
     protected _removeSubscriber(child: A_Scope): void {
-        for (const ref of this._subscribers) {
-            const r = ref.deref();
-            if (!r || r === child) this._subscribers.delete(ref);
-        }
+        const tokens = this._subscriberTokens;
+        if (!tokens) return;
+        const token = tokens.get(child);
+        if (!token) return;
+        this._subscribers.delete(token);
+        tokens.delete(child);
     }
 
     /**
@@ -562,24 +583,64 @@ export class A_Scope<
         this._errors.clear();
         this._fragments.clear();
         this._entities.clear();
+
+        // Clear allow-lists so post-destroy resolveFragment / resolveEntity /
+        // resolveError don't try to look up descendants of constructors that
+        // no longer have any registered instance — which causes infinite
+        // recursion in resolveFragment when the orphaned constructor still
+        // matches itself in `findDescendantIn`.
+        this._allowedComponents.clear();
+        this._allowedFragments.clear();
+        this._allowedEntities.clear();
+        this._allowedErrors.clear();
+
+        // Detach from upstream scopes so they stop notifying us.
         for (const imp of this._imports) {
             (imp as A_Scope)._removeSubscriber(this);
         }
         this._imports.clear();
         if (this._parent) {
             (this._parent as A_Scope)._removeSubscriber(this);
+            this._parent = undefined;
         }
 
-        /**
-         * Since the scope is being destroyed, we can assume that all components, fragments and entities registered in the scope are no longer needed and can be garbage collected.
-         * And scope lives in WeakMap in the A_Context, so it will be garbage collected as well, so we don't need to manually deallocate it from the A_Context.
-         * 
-         Verdict: The comment is accurate. Keeping deallocate() commented out is safe. The WeakMap design handles cleanup correctly in connection to A_Feature's lifecycle (as long as features properly destroy their scopes).
-         */
-        // if (this.issuer()) {
-        //     A_Context.deallocate(this);
-        // }
+        // Detach live downstream subscribers (children that inherit from us
+        // and consumers that import us). Without this step, destroying a
+        // parent would leave children with a strong reference back to us
+        // (`child._parent === this`, or `consumer._imports.has(this)`),
+        // pinning the destroyed scope in memory and causing children to
+        // serve stale negative-lookup cache entries that were resolved
+        // through us.
+        if (this._subscribers.size > 0) {
+            for (const ref of this._subscribers) {
+                const sub = ref.deref();
+                if (!sub) continue;
+                if (sub._parent === this) {
+                    sub._parent = undefined;
+                }
+                if (sub._imports.has(this)) {
+                    sub._imports.delete(this);
+                }
+                sub.bumpVersion();
+            }
+            this._subscribers.clear();
+            // _subscriberTokens (WeakMap) auto-cleans as `this` is collected.
+        }
 
+        // Drain A_Context registry / container set for scopes that were
+        // explicitly allocated by an issuer (Feature, Container). The
+        // previous "WeakMap will GC" rationale was inaccurate for long-lived
+        // Container instances: A_Context._containers strongly holds them, so
+        // their scope entries in `_registry: WeakMap` are never auto-pruned.
+        // For Feature-allocated scopes the explicit deallocate is cheap and
+        // makes the post-destroy state observable from `A_Context.scope()`.
+        if (this.issuer()) {
+            A_Context.deallocate(this);
+        }
+
+        // `bumpVersion()` clears all four resolution caches and the cached
+        // fingerprint, so we don't need to clear them explicitly above. It
+        // also walks `_subscribers`, but that set was just cleared.
         this.bumpVersion();
     }
 

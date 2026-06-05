@@ -3110,6 +3110,18 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _subscribers: Set<WeakRef<A_Scope>>;
     /**
+     * Side-index for O(1) subscriber lookup/removal. Maps each subscribing
+     * child scope to the `WeakRef` instance stored in `_subscribers`, so
+     * `_removeSubscriber(child)` can delete the entry in constant time
+     * without iterating the full set. The WeakMap auto-cleans when the
+     * child scope is garbage-collected.
+     *
+     * Lazily instantiated on first subscribe to keep `new A_Scope()` cheap
+     * for the common case of leaf scopes that never have downstream
+     * subscribers.
+     */
+    protected _subscriberTokens?: WeakMap<A_Scope, WeakRef<A_Scope>>;
+    /**
      * Returns the name of the scope
      */
     get name(): string;
@@ -3193,10 +3205,13 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     /**
      * Register `child` as a downstream subscriber so any future mutation on
      * `this` invalidates the child's resolution caches.
+     *
+     * O(1) via the `_subscriberTokens` side-index.
      */
     protected _addSubscriber(child: A_Scope): void;
     /**
-     * Stop notifying `child` of mutations and prune any stale WeakRefs.
+     * Stop notifying `child` of mutations. O(1) via the `_subscriberTokens`
+     * side-index — no full-set iteration required.
      */
     protected _removeSubscriber(child: A_Scope): void;
     /**

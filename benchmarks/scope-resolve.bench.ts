@@ -235,6 +235,59 @@ export async function runScopeResolveBenchmarks(): Promise<BenchResult[]> {
     });
     allResults.push(...registerResults);
 
+    // Suite 7: destroy() — Scope teardown
+    const destroyResults = await createSuite('A_Scope.destroy — Teardown', (suite) => {
+        suite
+            .add('destroy (empty scope)', () => {
+                const scope = new A_Scope({ name: 'EmptyDestroy' });
+                scope.destroy();
+            })
+            .add('destroy (flat, 5 components)', () => {
+                const scope = new A_Scope({
+                    name: 'FlatDestroy',
+                    components: [ComponentA, ComponentB, ComponentC, ComponentD, ComponentE]
+                });
+                scope.destroy();
+            })
+            .add('destroy (nested, 3 levels w/ child first)', () => {
+                const gp = new A_Scope({ name: 'GP', components: [ComponentA] });
+                const p = new A_Scope({ name: 'P', components: [ComponentB] });
+                const c = new A_Scope({ name: 'C', components: [ComponentC] });
+                c.inherit(p);
+                p.inherit(gp);
+                c.destroy();
+                p.destroy();
+                gp.destroy();
+            })
+            .add('destroy (nested, 3 levels w/ parent first)', () => {
+                const gp = new A_Scope({ name: 'GP', components: [ComponentA] });
+                const p = new A_Scope({ name: 'P', components: [ComponentB] });
+                const c = new A_Scope({ name: 'C', components: [ComponentC] });
+                c.inherit(p);
+                p.inherit(gp);
+                gp.destroy();
+                p.destroy();
+                c.destroy();
+            })
+            .add('destroy (with 20 entities)', () => {
+                const scope = new A_Scope({ name: 'EntityDestroy' });
+                for (let i = 0; i < 20; i++) {
+                    scope.register(new TestEntity({ foo: `e${i}` }));
+                }
+                scope.destroy();
+            })
+            .add('create + register + resolve + destroy (lifecycle)', () => {
+                const scope = new A_Scope({
+                    name: 'Lifecycle',
+                    components: [ComponentA, ComponentB, ComponentC]
+                });
+                scope.resolve(ComponentA);
+                scope.resolve(ComponentB);
+                scope.destroy();
+            });
+    });
+    allResults.push(...destroyResults);
+
     return allResults;
 }
 

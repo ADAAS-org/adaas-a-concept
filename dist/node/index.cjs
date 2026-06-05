@@ -4024,21 +4024,29 @@ var A_Scope = class {
   /**
    * Register `child` as a downstream subscriber so any future mutation on
    * `this` invalidates the child's resolution caches.
+   *
+   * O(1) via the `_subscriberTokens` side-index.
    */
   _addSubscriber(child) {
-    for (const ref of this._subscribers) {
-      if (ref.deref() === child) return;
+    if (!this._subscriberTokens) {
+      this._subscriberTokens = /* @__PURE__ */ new WeakMap();
     }
-    this._subscribers.add(new WeakRef(child));
+    if (this._subscriberTokens.has(child)) return;
+    const ref = new WeakRef(child);
+    this._subscribers.add(ref);
+    this._subscriberTokens.set(child, ref);
   }
   /**
-   * Stop notifying `child` of mutations and prune any stale WeakRefs.
+   * Stop notifying `child` of mutations. O(1) via the `_subscriberTokens`
+   * side-index — no full-set iteration required.
    */
   _removeSubscriber(child) {
-    for (const ref of this._subscribers) {
-      const r = ref.deref();
-      if (!r || r === child) this._subscribers.delete(ref);
-    }
+    const tokens = this._subscriberTokens;
+    if (!tokens) return;
+    const token = tokens.get(child);
+    if (!token) return;
+    this._subscribers.delete(token);
+    tokens.delete(child);
   }
   /**
    * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
@@ -4208,12 +4216,34 @@ var A_Scope = class {
     this._errors.clear();
     this._fragments.clear();
     this._entities.clear();
+    this._allowedComponents.clear();
+    this._allowedFragments.clear();
+    this._allowedEntities.clear();
+    this._allowedErrors.clear();
     for (const imp of this._imports) {
       imp._removeSubscriber(this);
     }
     this._imports.clear();
     if (this._parent) {
       this._parent._removeSubscriber(this);
+      this._parent = void 0;
+    }
+    if (this._subscribers.size > 0) {
+      for (const ref of this._subscribers) {
+        const sub = ref.deref();
+        if (!sub) continue;
+        if (sub._parent === this) {
+          sub._parent = void 0;
+        }
+        if (sub._imports.has(this)) {
+          sub._imports.delete(this);
+        }
+        sub.bumpVersion();
+      }
+      this._subscribers.clear();
+    }
+    if (this.issuer()) {
+      A_Context.deallocate(this);
     }
     this.bumpVersion();
   }
