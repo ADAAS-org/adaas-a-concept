@@ -1,5 +1,7 @@
 'use strict';
 
+var chunkPK6SKIKE_cjs = require('./chunk-PK6SKIKE.cjs');
+
 // docs/syntax/adaas-concept.tokens.ts
 var TOKEN_CORE_CLASS = "adaas.coreClass";
 var TOKEN_META_CLASS = "adaas.metaClass";
@@ -440,6 +442,7 @@ function buildRules(palette) {
     { token: TOKEN_CONSTANT, foreground: palette.constant }
   ];
 }
+chunkPK6SKIKE_cjs.__name(buildRules, "buildRules");
 var adaasConceptDarkTheme = {
   base: "vs-dark",
   inherit: true,
@@ -513,6 +516,7 @@ function registerAdaasConceptLanguage(monaco) {
   monaco.editor.defineTheme("adaas-dark", adaasConceptDarkTheme);
   monaco.editor.defineTheme("adaas-light", adaasConceptLightTheme);
 }
+chunkPK6SKIKE_cjs.__name(registerAdaasConceptLanguage, "registerAdaasConceptLanguage");
 
 exports.ADAAS_CONCEPT_LANGUAGE_ID = ADAAS_CONCEPT_LANGUAGE_ID;
 exports.ADAAS_CORE_CLASSES = ADAAS_CORE_CLASSES;

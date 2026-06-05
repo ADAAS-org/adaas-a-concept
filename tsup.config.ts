@@ -47,6 +47,15 @@ export default defineConfig([
 
     minify: true, // Minify browser build for smaller size
 
+    // Preserve original class/function names in the minified output.
+    // Critical for `A_Entity.entity` (and any other code that reads
+    // `SomeClass.name`) — without this, esbuild renames classes to short
+    // identifiers like `$` and `toKebabCase(this.name)` collapses to "",
+    // breaking ASEID generation at decoration time.
+    esbuildOptions(options) {
+      options.keepNames = true;
+    },
+
     // Ensure .mjs extension for ESM output
     outExtension({ format }) {
       return {
@@ -102,6 +111,12 @@ export default defineConfig([
     dts: true,
 
     minify: false, // Don't minify Node build for better readability
+
+    // Preserve original class/function names (consistency with browser
+    // build — same `Class.name` semantics everywhere).
+    esbuildOptions(options) {
+      options.keepNames = true;
+    },
 
     // Ensure .cjs extension for CommonJS output
     outExtension({ format }) {

@@ -1,3 +1,5 @@
+import { __name } from './chunk-PAWJFY3S.mjs';
+
 // docs/syntax/adaas-concept.tokens.ts
 var TOKEN_CORE_CLASS = "adaas.coreClass";
 var TOKEN_META_CLASS = "adaas.metaClass";
@@ -438,6 +440,7 @@ function buildRules(palette) {
     { token: TOKEN_CONSTANT, foreground: palette.constant }
   ];
 }
+__name(buildRules, "buildRules");
 var adaasConceptDarkTheme = {
   base: "vs-dark",
   inherit: true,
@@ -511,6 +514,7 @@ function registerAdaasConceptLanguage(monaco) {
   monaco.editor.defineTheme("adaas-dark", adaasConceptDarkTheme);
   monaco.editor.defineTheme("adaas-light", adaasConceptLightTheme);
 }
+__name(registerAdaasConceptLanguage, "registerAdaasConceptLanguage");
 
 export { ADAAS_CONCEPT_LANGUAGE_ID, ADAAS_CORE_CLASSES, ADAAS_DECORATOR_METHODS, ADAAS_DECORATOR_NAMESPACES, ADAAS_ERROR_CLASSES, ADAAS_HELPER_CLASSES, ADAAS_META_CLASSES, ADAAS_RAW_DECORATORS, TOKEN_CONSTANT, TOKEN_CORE_CLASS, TOKEN_DECORATOR, TOKEN_DECORATOR_METHOD, TOKEN_DECORATOR_NS, TOKEN_ERROR_CLASS, TOKEN_HELPER_CLASS, TOKEN_META_CLASS, TOKEN_TYPE_IDENT, adaasConceptDarkTheme, adaasConceptLightTheme, adaasConceptMonarch, registerAdaasConceptLanguage };
 //# sourceMappingURL=docs.mjs.map

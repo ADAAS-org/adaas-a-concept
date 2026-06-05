@@ -1,7 +1,9 @@
 'use strict';
 
+var chunkPK6SKIKE_cjs = require('./chunk-PK6SKIKE.cjs');
+
 // src/lib/A-Fragment/A-Fragment.class.ts
-var A_Fragment = class {
+var _A_Fragment = class _A_Fragment {
   /**
    * Creates a new A_Fragment instance.
    * 
@@ -66,6 +68,8 @@ var A_Fragment = class {
     return result;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Fragment, "A_Fragment");
+var A_Fragment = _A_Fragment;
 
 // src/lib/A-Feature/A-Feature.types.ts
 var A_TYPES__FeatureState = /* @__PURE__ */ ((A_TYPES__FeatureState2) => {
@@ -78,7 +82,7 @@ var A_TYPES__FeatureState = /* @__PURE__ */ ((A_TYPES__FeatureState2) => {
 })(A_TYPES__FeatureState || {});
 
 // src/helpers/A_Formatter.helper.ts
-var A_FormatterHelper = class {
+var _A_FormatterHelper = class _A_FormatterHelper {
   /**
    * Convert string to UPPER_SNAKE_CASE
    * 
@@ -121,9 +125,11 @@ var A_FormatterHelper = class {
     return str.replace(/[^a-zA-Z0-9]+/g, " ").replace(/([a-z0-9])([A-Z])/g, "$1 $2").trim().replace(/\s+/g, "-").toLowerCase();
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_FormatterHelper, "A_FormatterHelper");
+var A_FormatterHelper = _A_FormatterHelper;
 
 // src/helpers/A_Identity.helper.ts
-var A_IdentityHelper = class {
+var _A_IdentityHelper = class _A_IdentityHelper {
   /**
   * Generates a short, time-based unique ID.
   * Encodes current time (ms since epoch) and random bits in base36.
@@ -178,9 +184,11 @@ var A_IdentityHelper = class {
     return hash.toString();
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_IdentityHelper, "A_IdentityHelper");
+var A_IdentityHelper = _A_IdentityHelper;
 
 // src/helpers/A_BasicTypeGuards.helper.ts
-var A_BasicTypeGuards = class _A_BasicTypeGuards {
+var _A_BasicTypeGuards = class _A_BasicTypeGuards {
   /**
    * Check if value is a string
    * 
@@ -248,6 +256,8 @@ var A_BasicTypeGuards = class _A_BasicTypeGuards {
     return !!scope && typeof scope === "object" && "name" in scope && "aseid" in scope;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_BasicTypeGuards, "A_BasicTypeGuards");
+var A_BasicTypeGuards = _A_BasicTypeGuards;
 
 // src/lib/ASEID/ASEID.class.ts
 var _ASEID = class _ASEID {
@@ -410,6 +420,7 @@ var _ASEID = class _ASEID {
     }
   }
 };
+chunkPK6SKIKE_cjs.__name(_ASEID, "ASEID");
 //==========================================================================
 //============================= STATIC METHODS ===========================
 //==========================================================================
@@ -477,7 +488,7 @@ var A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY = [
 ];
 
 // src/env/env.base.ts
-var A_CONCEPT_BASE_ENV = class {
+var _A_CONCEPT_BASE_ENV = class _A_CONCEPT_BASE_ENV {
   // ----------------------------------------------------------
   // A-Concept Core Environment Variables
   // ----------------------------------------------------------
@@ -563,9 +574,11 @@ var A_CONCEPT_BASE_ENV = class {
     return [];
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_CONCEPT_BASE_ENV, "A_CONCEPT_BASE_ENV");
+var A_CONCEPT_BASE_ENV = _A_CONCEPT_BASE_ENV;
 
 // src/env/env-node.ts
-var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
+var _A_CONCEPT_ENV = class _A_CONCEPT_ENV extends A_CONCEPT_BASE_ENV {
   // ----------------------------------------------------------
   // A-Concept Core Environment Variables
   // ----------------------------------------------------------
@@ -639,9 +652,11 @@ var A_CONCEPT_ENV = class extends A_CONCEPT_BASE_ENV {
     ];
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_CONCEPT_ENV, "A_CONCEPT_ENV");
+var A_CONCEPT_ENV = _A_CONCEPT_ENV;
 
 // src/lib/A-Error/A_Error.class.ts
-var A_Error = class _A_Error extends Error {
+var _A_Error = class _A_Error extends Error {
   // ====================================================================
   // ================== Static A-Error Information ======================
   // ====================================================================
@@ -1049,14 +1064,18 @@ Caused by: ${origStack}`;
     }
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Error, "A_Error");
+var A_Error = _A_Error;
 
 // src/lib/A-Entity/A-Entity.error.ts
-var A_EntityError = class extends A_Error {
+var _A_EntityError = class _A_EntityError extends A_Error {
 };
+chunkPK6SKIKE_cjs.__name(_A_EntityError, "A_EntityError");
 /**
  * Error code for validation errors.
  */
-A_EntityError.ValidationError = "A-Entity Validation Error";
+_A_EntityError.ValidationError = "A-Entity Validation Error";
+var A_EntityError = _A_EntityError;
 
 // src/lib/A-Entity/A-Entity.constants.ts
 var A_TYPES__EntityMetaKey = /* @__PURE__ */ ((A_TYPES__EntityMetaKey2) => {
@@ -1073,7 +1092,7 @@ var A_TYPES__EntityFeatures = {
 };
 
 // src/lib/A-Entity/A-Entity.class.ts
-var A_Entity = class {
+var _A_Entity = class _A_Entity {
   // ====================================================================
   // ================== Static A-Entity Information ============================
   // ====================================================================
@@ -1319,6 +1338,8 @@ var A_Entity = class {
     return this.aseid ? this.aseid.toString() : this.constructor.name;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Entity, "A_Entity");
+var A_Entity = _A_Entity;
 
 // src/lib/A-Meta/A-Meta.decorator.ts
 function A_MetaDecorator(constructor) {
@@ -1327,9 +1348,10 @@ function A_MetaDecorator(constructor) {
     return target;
   };
 }
+chunkPK6SKIKE_cjs.__name(A_MetaDecorator, "A_MetaDecorator");
 
 // src/lib/A-Meta/A-Meta.class.ts
-var A_Meta = class _A_Meta {
+var _A_Meta = class _A_Meta {
   constructor() {
     this.meta = /* @__PURE__ */ new Map();
   }
@@ -1350,7 +1372,7 @@ var A_Meta = class _A_Meta {
   [Symbol.iterator]() {
     const iterator = this.meta.entries();
     return {
-      next: () => iterator.next()
+      next: /* @__PURE__ */ chunkPK6SKIKE_cjs.__name(() => iterator.next(), "next")
     };
   }
   // ===================================================================================================
@@ -1535,9 +1557,11 @@ var A_Meta = class _A_Meta {
     return json;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Meta, "A_Meta");
+var A_Meta = _A_Meta;
 
 // src/lib/A-Entity/A-Entity.meta.ts
-var A_EntityMeta = class extends A_Meta {
+var _A_EntityMeta = class _A_EntityMeta extends A_Meta {
   /**
    * Returns all features defined in the Container
    * 
@@ -1559,9 +1583,11 @@ var A_EntityMeta = class extends A_Meta {
     return args;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_EntityMeta, "A_EntityMeta");
+var A_EntityMeta = _A_EntityMeta;
 
 // src/lib/A-Container/A-Container.class.ts
-var A_Container = class {
+var _A_Container = class _A_Container {
   /**
    * Name of the container
    */
@@ -1608,6 +1634,8 @@ var A_Container = class {
     return await newFeature.process(scope);
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Container, "A_Container");
+var A_Container = _A_Container;
 
 // src/lib/A-Container/A-Container.constants.ts
 var A_TYPES__ContainerMetaKey = /* @__PURE__ */ ((A_TYPES__ContainerMetaKey2) => {
@@ -1619,7 +1647,7 @@ var A_TYPES__ContainerMetaKey = /* @__PURE__ */ ((A_TYPES__ContainerMetaKey2) =>
 })(A_TYPES__ContainerMetaKey || {});
 
 // src/lib/A-Container/A-Container.meta.ts
-var A_ContainerMeta = class extends A_Meta {
+var _A_ContainerMeta = class _A_ContainerMeta extends A_Meta {
   /**
    * Allows to get all the injections for a given handler
    * 
@@ -1687,9 +1715,11 @@ var A_ContainerMeta = class extends A_Meta {
     return steps;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_ContainerMeta, "A_ContainerMeta");
+var A_ContainerMeta = _A_ContainerMeta;
 
 // src/lib/A-Feature/A-Feature.error.ts
-var A_FeatureError = class extends A_Error {
+var _A_FeatureError = class _A_FeatureError extends A_Error {
   fromConstructor(params) {
     super.fromConstructor(params);
     this.stage = params.stage;
@@ -1714,22 +1744,23 @@ var A_FeatureError = class extends A_Error {
     };
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_FeatureError, "A_FeatureError");
 /**
  * Indicates that the Feature has been interrupted
  */
-A_FeatureError.Interruption = "Feature Interrupted";
+_A_FeatureError.Interruption = "Feature Interrupted";
 /**
  * Indicates that there was an error initializing the Feature
  * 
  * Failed during the A-Feature initialization process
  */
-A_FeatureError.FeatureInitializationError = "Unable to initialize A-Feature";
+_A_FeatureError.FeatureInitializationError = "Unable to initialize A-Feature";
 /**
  * Indicates that there was an error processing the Feature
  * 
  * Failed during the A-Feature processing
  */
-A_FeatureError.FeatureProcessingError = "Error occurred during A-Feature processing";
+_A_FeatureError.FeatureProcessingError = "Error occurred during A-Feature processing";
 // =======================================================================
 // ---------------------- Decorator Errors -----------------------------
 // =======================================================================
@@ -1738,19 +1769,22 @@ A_FeatureError.FeatureProcessingError = "Error occurred during A-Feature process
  * 
  * Failed during the @A_Feature.Define() decorator execution
  */
-A_FeatureError.FeatureDefinitionError = "Unable to define A-Feature";
+_A_FeatureError.FeatureDefinitionError = "Unable to define A-Feature";
 /**
  * Indicates that there was an error extending the Feature
  * 
  * Failed during the @A_Feature.Extend() decorator execution
  */
-A_FeatureError.FeatureExtensionError = "Unable to extend A-Feature";
-var A_FeatureInterruption = class extends A_FeatureError {
+_A_FeatureError.FeatureExtensionError = "Unable to extend A-Feature";
+var A_FeatureError = _A_FeatureError;
+var _A_FeatureInterruption = class _A_FeatureInterruption extends A_FeatureError {
 };
+chunkPK6SKIKE_cjs.__name(_A_FeatureInterruption, "A_FeatureInterruption");
+var A_FeatureInterruption = _A_FeatureInterruption;
 
 // src/helpers/A_Common.helper.ts
 var _componentNameCache = /* @__PURE__ */ new WeakMap();
-var A_CommonHelper = class _A_CommonHelper {
+var _A_CommonHelper = class _A_CommonHelper {
   /**
    * A simple promise that resolves immediately.
    * Can be used in async functions to create a resolved promise.
@@ -1831,6 +1865,7 @@ var A_CommonHelper = class _A_CommonHelper {
         removeProperties(target[currKey], currPath.slice(1));
       }
     }
+    chunkPK6SKIKE_cjs.__name(removeProperties, "removeProperties");
     paths.forEach((path) => {
       const pathKeys = path.split(".");
       removeProperties(result, pathKeys);
@@ -2009,17 +2044,21 @@ var A_CommonHelper = class _A_CommonHelper {
     }
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_CommonHelper, "A_CommonHelper");
+var A_CommonHelper = _A_CommonHelper;
 
 // src/lib/A-Caller/A_Caller.error.ts
-var A_CallerError = class extends Error {
+var _A_CallerError = class _A_CallerError extends Error {
 };
+chunkPK6SKIKE_cjs.__name(_A_CallerError, "A_CallerError");
 /**
  * This error code indicates that there was an issue initializing the A-Caller
  */
-A_CallerError.CallerInitializationError = "Unable to initialize A-Caller";
+_A_CallerError.CallerInitializationError = "Unable to initialize A-Caller";
+var A_CallerError = _A_CallerError;
 
 // src/lib/A-Caller/A_Caller.class.ts
-var A_Caller = class {
+var _A_Caller = class _A_Caller {
   /**
    * A_Caller allows to get the component that initiated the feature call
    * 
@@ -2050,15 +2089,19 @@ var A_Caller = class {
     }
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Caller, "A_Caller");
+var A_Caller = _A_Caller;
 
 // src/lib/A-Dependency/A-Dependency.error.ts
-var A_DependencyError = class extends A_Error {
+var _A_DependencyError = class _A_DependencyError extends A_Error {
 };
-A_DependencyError.InvalidDependencyTarget = "Invalid Dependency Target";
-A_DependencyError.InvalidLoadTarget = "Invalid Load Target";
-A_DependencyError.InvalidLoadPath = "Invalid Load Path";
-A_DependencyError.InvalidDefaultTarget = "Invalid Default Target";
-A_DependencyError.ResolutionParametersError = "Dependency Resolution Parameters Error";
+chunkPK6SKIKE_cjs.__name(_A_DependencyError, "A_DependencyError");
+_A_DependencyError.InvalidDependencyTarget = "Invalid Dependency Target";
+_A_DependencyError.InvalidLoadTarget = "Invalid Load Target";
+_A_DependencyError.InvalidLoadPath = "Invalid Load Path";
+_A_DependencyError.InvalidDefaultTarget = "Invalid Default Target";
+_A_DependencyError.ResolutionParametersError = "Dependency Resolution Parameters Error";
+var A_DependencyError = _A_DependencyError;
 
 // src/lib/A-Dependency/A-Dependency-Default.decorator.ts
 function A_Dependency_Default(...args) {
@@ -2097,6 +2140,7 @@ function A_Dependency_Default(...args) {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Default, "A_Dependency_Default");
 
 // src/lib/A-Dependency/A-Dependency-Flat.decorator.ts
 function A_Dependency_Flat() {
@@ -2134,6 +2178,7 @@ function A_Dependency_Flat() {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Flat, "A_Dependency_Flat");
 
 // src/lib/A-Dependency/A-Dependency-Load.decorator.ts
 function A_Dependency_Load() {
@@ -2171,6 +2216,7 @@ function A_Dependency_Load() {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Load, "A_Dependency_Load");
 
 // src/lib/A-Dependency/A-Dependency-Parent.decorator.ts
 function A_Dependency_Parent(layerOffset = -1) {
@@ -2208,6 +2254,7 @@ function A_Dependency_Parent(layerOffset = -1) {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Parent, "A_Dependency_Parent");
 
 // src/lib/A-Dependency/A-Dependency-Require.decorator.ts
 function A_Dependency_Require() {
@@ -2245,6 +2292,7 @@ function A_Dependency_Require() {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Require, "A_Dependency_Require");
 
 // src/lib/A-Dependency/A-Dependency-All.decorator.ts
 function A_Dependency_All() {
@@ -2285,6 +2333,7 @@ function A_Dependency_All() {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_All, "A_Dependency_All");
 
 // src/lib/A-Dependency/A-Dependency-Query.decorator.ts
 function A_Dependency_Query(query, pagination) {
@@ -2329,9 +2378,10 @@ function A_Dependency_Query(query, pagination) {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Dependency_Query, "A_Dependency_Query");
 
 // src/lib/A-Dependency/A-Dependency.class.ts
-var A_Dependency = class {
+var _A_Dependency = class _A_Dependency {
   /**
    * Class instances allows to identify dependencies by name and use them for better type checking
    * 
@@ -2520,9 +2570,11 @@ var A_Dependency = class {
     };
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Dependency, "A_Dependency");
+var A_Dependency = _A_Dependency;
 
 // src/helpers/A_TypeGuards.helper.ts
-var A_TypeGuards = class _A_TypeGuards {
+var _A_TypeGuards = class _A_TypeGuards {
   // ===========================================================================
   // ============================= BASE Type Guards ============================
   // ===========================================================================
@@ -2821,6 +2873,8 @@ var A_TypeGuards = class _A_TypeGuards {
     return value instanceof Promise;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_TypeGuards, "A_TypeGuards");
+var A_TypeGuards = _A_TypeGuards;
 
 // src/lib/A-Feature/A-Feature-Define.decorator.ts
 function A_Feature_Define(config = {}) {
@@ -2878,6 +2932,7 @@ function A_Feature_Define(config = {}) {
     return descriptor;
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Feature_Define, "A_Feature_Define");
 
 // src/lib/A-Feature/A-Feature-Extend.decorator.ts
 function A_Feature_Extend(param1) {
@@ -2980,12 +3035,14 @@ function A_Feature_Extend(param1) {
     A_Context.meta(target).set(metaKey, existedMeta);
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Feature_Extend, "A_Feature_Extend");
 function buildTargetRegexp(param1, include, exclude, propertyKey) {
   const includePart = include.length ? `(${include.map((el) => el.name).join("|")})` : `.*`;
   const excludePart = exclude.length ? `(?!${exclude.map((el) => el.name).join("|")})` : ``;
   const pattern = param1.scope ? `^${excludePart}${includePart}\\.${param1.name || propertyKey}$` : `.*\\.${param1.name || propertyKey}$`;
   return new RegExp(pattern);
 }
+chunkPK6SKIKE_cjs.__name(buildTargetRegexp, "buildTargetRegexp");
 
 // src/lib/A-Stage/A-Stage.types.ts
 var A_TYPES__A_Stage_Status = /* @__PURE__ */ ((A_TYPES__A_Stage_Status2) => {
@@ -2999,15 +3056,17 @@ var A_TYPES__A_Stage_Status = /* @__PURE__ */ ((A_TYPES__A_Stage_Status2) => {
 })(A_TYPES__A_Stage_Status || {});
 
 // src/lib/A-Stage/A-Stage.error.ts
-var A_StageError = class extends A_Error {
+var _A_StageError = class _A_StageError extends A_Error {
   static get CompileError() {
     return "Unable to compile A-Stage";
   }
 };
-A_StageError.ArgumentsResolutionError = "A-Stage Arguments Resolution Error";
+chunkPK6SKIKE_cjs.__name(_A_StageError, "A_StageError");
+_A_StageError.ArgumentsResolutionError = "A-Stage Arguments Resolution Error";
+var A_StageError = _A_StageError;
 
 // src/lib/A-Stage/A-Stage.class.ts
-var A_Stage = class {
+var _A_Stage = class _A_Stage {
   /**
    * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
    * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
@@ -3229,14 +3288,18 @@ var A_Stage = class {
     return `A-Stage(${this._feature.name}::${this._definition.behavior}@${this._definition.handler})`;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Stage, "A_Stage");
+var A_Stage = _A_Stage;
 
 // src/lib/A-StepManager/A-StepManager.error.ts
-var A_StepManagerError = class extends A_Error {
+var _A_StepManagerError = class _A_StepManagerError extends A_Error {
 };
-A_StepManagerError.CircularDependencyError = "A-StepManager Circular Dependency Error";
+chunkPK6SKIKE_cjs.__name(_A_StepManagerError, "A_StepManagerError");
+_A_StepManagerError.CircularDependencyError = "A-StepManager Circular Dependency Error";
+var A_StepManagerError = _A_StepManagerError;
 
 // src/lib/A-StepManager/A-StepManager.class.ts
-var A_StepsManager = class {
+var _A_StepsManager = class _A_StepsManager {
   constructor(entities) {
     /**
      * Maps each step instance to a unique ID.
@@ -3370,9 +3433,11 @@ var A_StepsManager = class {
     });
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_StepsManager, "A_StepsManager");
+var A_StepsManager = _A_StepsManager;
 
 // src/lib/A-Feature/A-Feature.class.ts
-var A_Feature = class _A_Feature {
+var _A_Feature = class _A_Feature {
   /**
    * A-Feature is a pipeline distributed by multiple components that can be easily attached or detached from the scope. 
    * Feature itself does not have scope, but attached to the caller who dictates how feature should be processed. 
@@ -3496,7 +3561,7 @@ var A_Feature = class _A_Feature {
    */
   [Symbol.iterator]() {
     return {
-      next: () => {
+      next: /* @__PURE__ */ chunkPK6SKIKE_cjs.__name(() => {
         if (!this.isDone) {
           this._current = this._stages[this._index];
           this._index++;
@@ -3511,7 +3576,7 @@ var A_Feature = class _A_Feature {
             done: true
           };
         }
-      }
+      }, "next")
     };
   }
   // ============================================================================
@@ -3808,9 +3873,11 @@ var A_Feature = class _A_Feature {
     return `A-Feature(${this.caller.component?.constructor?.name || "Unknown"}::${this.name})`;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Feature, "A_Feature");
+var A_Feature = _A_Feature;
 
 // src/lib/A-Component/A-Component.class.ts
-var A_Component = class {
+var _A_Component = class _A_Component {
   /**
    * Calls the feature with the given name in the given scope
    * 
@@ -3828,6 +3895,8 @@ var A_Component = class {
     return newFeature.process(scope);
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Component, "A_Component");
+var A_Component = _A_Component;
 
 // src/lib/A-Component/A-Component.constants.ts
 var A_TYPES__ComponentMetaKey = /* @__PURE__ */ ((A_TYPES__ComponentMetaKey2) => {
@@ -3839,7 +3908,7 @@ var A_TYPES__ComponentMetaKey = /* @__PURE__ */ ((A_TYPES__ComponentMetaKey2) =>
 })(A_TYPES__ComponentMetaKey || {});
 
 // src/lib/A-Component/A-Component.meta.ts
-var A_ComponentMeta = class extends A_Meta {
+var _A_ComponentMeta = class _A_ComponentMeta extends A_Meta {
   /**
    * Allows to get all the injections for a given handler
    * 
@@ -3908,11 +3977,13 @@ var A_ComponentMeta = class extends A_Meta {
     return steps;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_ComponentMeta, "A_ComponentMeta");
+var A_ComponentMeta = _A_ComponentMeta;
 
 // src/lib/A-Scope/A-Scope.class.ts
 var _avVisited = /* @__PURE__ */ new Set();
 var _fpVisited = /* @__PURE__ */ new Set();
-var A_Scope = class {
+var _A_Scope = class _A_Scope {
   constructor(param1, param2) {
     /**
      * Internal meta storage using A_Meta for type-safe key-value operations.
@@ -5330,41 +5401,47 @@ var A_Scope = class {
     console.log(chain.join(" -> "));
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Scope, "A_Scope");
+var A_Scope = _A_Scope;
 
 // src/lib/A-Scope/A-Scope.error.ts
-var A_ScopeError = class extends A_Error {
+var _A_ScopeError = class _A_ScopeError extends A_Error {
 };
-A_ScopeError.InitializationError = "A-Scope Initialization Error";
-A_ScopeError.ConstructorError = "Unable to construct A-Scope instance";
-A_ScopeError.ResolutionError = "A-Scope Resolution Error";
-A_ScopeError.RegistrationError = "A-Scope Registration Error";
-A_ScopeError.CircularInheritanceError = "A-Scope Circular Inheritance Error";
-A_ScopeError.CircularImportError = "A-Scope Circular Import Error";
-A_ScopeError.DeregistrationError = "A-Scope Deregistration Error";
+chunkPK6SKIKE_cjs.__name(_A_ScopeError, "A_ScopeError");
+_A_ScopeError.InitializationError = "A-Scope Initialization Error";
+_A_ScopeError.ConstructorError = "Unable to construct A-Scope instance";
+_A_ScopeError.ResolutionError = "A-Scope Resolution Error";
+_A_ScopeError.RegistrationError = "A-Scope Registration Error";
+_A_ScopeError.CircularInheritanceError = "A-Scope Circular Inheritance Error";
+_A_ScopeError.CircularImportError = "A-Scope Circular Import Error";
+_A_ScopeError.DeregistrationError = "A-Scope Deregistration Error";
+var A_ScopeError = _A_ScopeError;
 
 // src/lib/A-Context/A-Context.error.ts
-var A_ContextError = class extends A_Error {
+var _A_ContextError = class _A_ContextError extends A_Error {
 };
-A_ContextError.NotAllowedForScopeAllocationError = "Component is not allowed for scope allocation";
-A_ContextError.ComponentAlreadyHasScopeAllocatedError = "Component already has scope allocated";
-A_ContextError.InvalidMetaParameterError = "Invalid parameter provided to get meta";
-A_ContextError.InvalidScopeParameterError = "Invalid parameter provided to get scope";
-A_ContextError.ScopeNotFoundError = "Scope not found";
-A_ContextError.InvalidFeatureParameterError = "Invalid parameter provided to get feature";
-A_ContextError.InvalidFeatureDefinitionParameterError = "Invalid parameter provided to define feature";
-A_ContextError.InvalidFeatureTemplateParameterError = "Invalid parameter provided to get feature template";
-A_ContextError.InvalidFeatureExtensionParameterError = "Invalid parameter provided to extend feature";
-A_ContextError.InvalidAbstractionParameterError = "Invalid parameter provided to get abstraction";
-A_ContextError.InvalidAbstractionDefinitionParameterError = "Invalid parameter provided to define abstraction";
-A_ContextError.InvalidAbstractionTemplateParameterError = "Invalid parameter provided to get abstraction template";
-A_ContextError.InvalidAbstractionExtensionParameterError = "Invalid parameter provided to extend abstraction";
-A_ContextError.InvalidInjectionParameterError = "Invalid parameter provided to get injections";
-A_ContextError.InvalidExtensionParameterError = "Invalid parameter provided to get extensions";
-A_ContextError.InvalidRegisterParameterError = "Invalid parameter provided to register component";
-A_ContextError.InvalidComponentParameterError = "Invalid component provided";
-A_ContextError.ComponentNotRegisteredError = "Component not registered in the context";
-A_ContextError.InvalidDeregisterParameterError = "Invalid parameter provided to deregister component";
-A_ContextError.ComponentAlreadyRegisteredInOtherScopeError = "Instance already owned by another scope";
+chunkPK6SKIKE_cjs.__name(_A_ContextError, "A_ContextError");
+_A_ContextError.NotAllowedForScopeAllocationError = "Component is not allowed for scope allocation";
+_A_ContextError.ComponentAlreadyHasScopeAllocatedError = "Component already has scope allocated";
+_A_ContextError.InvalidMetaParameterError = "Invalid parameter provided to get meta";
+_A_ContextError.InvalidScopeParameterError = "Invalid parameter provided to get scope";
+_A_ContextError.ScopeNotFoundError = "Scope not found";
+_A_ContextError.InvalidFeatureParameterError = "Invalid parameter provided to get feature";
+_A_ContextError.InvalidFeatureDefinitionParameterError = "Invalid parameter provided to define feature";
+_A_ContextError.InvalidFeatureTemplateParameterError = "Invalid parameter provided to get feature template";
+_A_ContextError.InvalidFeatureExtensionParameterError = "Invalid parameter provided to extend feature";
+_A_ContextError.InvalidAbstractionParameterError = "Invalid parameter provided to get abstraction";
+_A_ContextError.InvalidAbstractionDefinitionParameterError = "Invalid parameter provided to define abstraction";
+_A_ContextError.InvalidAbstractionTemplateParameterError = "Invalid parameter provided to get abstraction template";
+_A_ContextError.InvalidAbstractionExtensionParameterError = "Invalid parameter provided to extend abstraction";
+_A_ContextError.InvalidInjectionParameterError = "Invalid parameter provided to get injections";
+_A_ContextError.InvalidExtensionParameterError = "Invalid parameter provided to get extensions";
+_A_ContextError.InvalidRegisterParameterError = "Invalid parameter provided to register component";
+_A_ContextError.InvalidComponentParameterError = "Invalid component provided";
+_A_ContextError.ComponentNotRegisteredError = "Component not registered in the context";
+_A_ContextError.InvalidDeregisterParameterError = "Invalid parameter provided to deregister component";
+_A_ContextError.ComponentAlreadyRegisteredInOtherScopeError = "Instance already owned by another scope";
+var A_ContextError = _A_ContextError;
 
 // src/lib/A-Context/A-Context.class.ts
 var _A_Context = class _A_Context {
@@ -5856,26 +5933,26 @@ var _A_Context = class _A_Context {
     const allowedComponents = /* @__PURE__ */ new Set();
     const componentNameCache = /* @__PURE__ */ new Map();
     const dependencyCache = /* @__PURE__ */ new Map();
-    const getNameCached = (cmp) => {
+    const getNameCached = /* @__PURE__ */ chunkPK6SKIKE_cjs.__name((cmp) => {
       let n = componentNameCache.get(cmp);
       if (n === void 0) {
         n = A_CommonHelper.getComponentName(cmp);
         componentNameCache.set(cmp, n);
       }
       return n;
-    };
-    const getDependencyCached = (cmp) => {
+    }, "getNameCached");
+    const getDependencyCached = /* @__PURE__ */ chunkPK6SKIKE_cjs.__name((cmp) => {
       let d = dependencyCache.get(cmp);
       if (!d) {
         d = new A_Dependency(cmp);
         dependencyCache.set(cmp, d);
       }
       return d;
-    };
+    }, "getDependencyCached");
     const callerChain = new Set(
       A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity)
     );
-    const isSiblingOrUnrelatedDescendant = (cmp) => {
+    const isSiblingOrUnrelatedDescendant = /* @__PURE__ */ chunkPK6SKIKE_cjs.__name((cmp) => {
       if (callerChain.has(cmp)) return false;
       const ancestors = _A_Context.getAncestors(cmp);
       if (!ancestors) return false;
@@ -5883,14 +5960,14 @@ var _A_Context = class _A_Context {
         if (ancestors.has(a)) return true;
       }
       return false;
-    };
+    }, "isSiblingOrUnrelatedDescendant");
     const callerIsEntity = component instanceof A_Entity;
-    const isForeignEntityClass = (cmp) => {
+    const isForeignEntityClass = /* @__PURE__ */ chunkPK6SKIKE_cjs.__name((cmp) => {
       if (!callerIsEntity) return false;
       if (callerChain.has(cmp)) return false;
       if (typeof cmp !== "function") return false;
       return cmp.prototype instanceof A_Entity || cmp === A_Entity;
-    };
+    }, "isForeignEntityClass");
     const scopeFilteredMetas = [];
     for (const [cmp, meta] of instance._metaStorage) {
       if (scope.has(cmp) && (A_TypeGuards.isComponentMetaInstance(meta) || A_TypeGuards.isContainerMetaInstance(meta))) {
@@ -6248,6 +6325,7 @@ var _A_Context = class _A_Context {
     return A_TypeGuards.isContainerConstructor(param) || A_TypeGuards.isComponentConstructor(param) || A_TypeGuards.isEntityConstructor(param);
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Context, "A_Context");
 /**
  * Maximum number of entries in the featureExtensions cache.
  * When exceeded, the entire cache is cleared to prevent unbounded growth.
@@ -6256,12 +6334,14 @@ _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE = 1024;
 var A_Context = _A_Context;
 
 // src/lib/A-Abstraction/A-Abstraction.error.ts
-var A_AbstractionError = class extends A_Error {
+var _A_AbstractionError = class _A_AbstractionError extends A_Error {
 };
+chunkPK6SKIKE_cjs.__name(_A_AbstractionError, "A_AbstractionError");
 /**
  * This error code indicates that there was an issue extending the abstraction execution
  */
-A_AbstractionError.AbstractionExtensionError = "Unable to extend abstraction execution";
+_A_AbstractionError.AbstractionExtensionError = "Unable to extend abstraction execution";
+var A_AbstractionError = _A_AbstractionError;
 
 // src/lib/A-Abstraction/A-Abstraction-Extend.decorator.ts
 function A_Abstraction_Extend(name, config = {}) {
@@ -6315,9 +6395,10 @@ function A_Abstraction_Extend(name, config = {}) {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Abstraction_Extend, "A_Abstraction_Extend");
 
 // src/lib/A-Abstraction/A-Abstraction.class.ts
-var A_Abstraction = class {
+var _A_Abstraction = class _A_Abstraction {
   /**
    * A-Abstraction is an object that is common for any application. 
    * By providing components and creating abstraction extensions it's possible to create a unique behavior of the whole solution.
@@ -6382,7 +6463,7 @@ var A_Abstraction = class {
   [Symbol.iterator]() {
     return {
       // Custom next method
-      next: () => {
+      next: /* @__PURE__ */ chunkPK6SKIKE_cjs.__name(() => {
         if (!this.isDone) {
           this._current = Array.from(this._featuresMap.values())[this._index];
           return {
@@ -6396,7 +6477,7 @@ var A_Abstraction = class {
             done: true
           };
         }
-      }
+      }, "next")
     };
   }
   /**
@@ -6424,6 +6505,8 @@ var A_Abstraction = class {
     }
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Abstraction, "A_Abstraction");
+var A_Abstraction = _A_Abstraction;
 
 // src/lib/A-Concept/A-Concept.constants.ts
 var A_TYPES__ConceptAbstractions = /* @__PURE__ */ ((A_TYPES__ConceptAbstractions2) => {
@@ -6442,7 +6525,7 @@ var A_TYPES__ConceptMetaKey = /* @__PURE__ */ ((A_TYPES__ConceptMetaKey2) => {
 })(A_TYPES__ConceptMetaKey || {});
 
 // src/lib/A-Concept/A-Concept.class.ts
-var A_Concept = class {
+var _A_Concept = class _A_Concept {
   // ==============================================================================
   // ==========================  MAIN Methods  ======================================
   // ==============================================================================
@@ -6632,20 +6715,26 @@ var A_Concept = class {
     return await feature.process();
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_Concept, "A_Concept");
+var A_Concept = _A_Concept;
 
 // src/lib/A-Concept/A-Concept.meta.ts
-var A_ConceptMeta = class extends A_Meta {
+var _A_ConceptMeta = class _A_ConceptMeta extends A_Meta {
   constructor(containers) {
     super();
     this.containers = containers;
   }
 };
+chunkPK6SKIKE_cjs.__name(_A_ConceptMeta, "A_ConceptMeta");
+var A_ConceptMeta = _A_ConceptMeta;
 
 // src/lib/A-Inject/A-Inject.error.ts
-var A_InjectError = class extends A_Error {
+var _A_InjectError = class _A_InjectError extends A_Error {
 };
-A_InjectError.InvalidInjectionTarget = "Invalid target for A-Inject decorator";
-A_InjectError.MissingInjectionTarget = "Missing target for A-Inject decorator";
+chunkPK6SKIKE_cjs.__name(_A_InjectError, "A_InjectError");
+_A_InjectError.InvalidInjectionTarget = "Invalid target for A-Inject decorator";
+_A_InjectError.MissingInjectionTarget = "Missing target for A-Inject decorator";
+var A_InjectError = _A_InjectError;
 
 // src/lib/A-Inject/A-Inject.decorator.ts
 function A_Inject(param1, param2) {
@@ -6687,6 +6776,7 @@ function A_Inject(param1, param2) {
     );
   };
 }
+chunkPK6SKIKE_cjs.__name(A_Inject, "A_Inject");
 
 exports.ASEID = ASEID;
 exports.A_Abstraction = A_Abstraction;
