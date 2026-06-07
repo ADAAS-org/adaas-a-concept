@@ -27,6 +27,10 @@ export enum A_TYPES__ConceptAbstractions {
      * Stop the concept.
      */
     Stop = 'stop',
+    /**
+     * Debug the concept.
+     */
+    Debug = 'debug',
 }
 
 

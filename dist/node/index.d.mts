@@ -2794,6 +2794,18 @@ declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
     */
     config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
     /**
+     * initializes the concept in debug mode. In this mode, the concept will log all the steps and actions it performs.
+     *
+     * This mode is useful for development and debugging purposes, as it allows to see the internal workings of the concept and identify any issues or bottlenecks.
+     *
+     * [!] This method is not intended for production use, as it may have a negative impact on performance due to extensive logging.
+     */
+    static Debug(
+    /**
+    * provide additional configuration for the abstraction extension to make it dependent on other factors
+    */
+    config?: Partial<A_TYPES__AbstractionDecoratorConfig>): (target: A_Container | A_Component, propertyKey: string, descriptor: A_TYPES__AbstractionDecoratorDescriptor) => void;
+    /**
      * Name of the concept
      *
      * By default, the name of the Concept is 'a-concept'
@@ -2866,6 +2878,10 @@ declare class A_Concept<_Imports extends A_Container[] = A_Container[]> {
      */
     publish(scope?: A_Scope): Promise<void>;
     /**
+     * Debug the concept.
+     */
+    debug(scope?: A_Scope): Promise<void>;
+    /**
      * Call the specific method of the concept or included modules.
      */
     call<K extends Record<_Imports[number]['name'], string>>(
@@ -2912,7 +2928,11 @@ declare enum A_TYPES__ConceptAbstractions {
     /**
      * Stop the concept.
      */
-    Stop = "stop"
+    Stop = "stop",
+    /**
+     * Debug the concept.
+     */
+    Debug = "debug"
 }
 declare enum A_TYPES__ConceptMetaKey {
     LIFECYCLE = "a-component-extensions"

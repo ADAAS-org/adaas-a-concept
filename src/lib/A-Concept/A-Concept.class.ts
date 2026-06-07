@@ -108,7 +108,21 @@ export class A_Concept<
         return A_Abstraction.Extend(A_TYPES__ConceptAbstractions.Stop, config);
     }
 
-
+    /**
+     * initializes the concept in debug mode. In this mode, the concept will log all the steps and actions it performs.
+     * 
+     * This mode is useful for development and debugging purposes, as it allows to see the internal workings of the concept and identify any issues or bottlenecks.
+     * 
+     * [!] This method is not intended for production use, as it may have a negative impact on performance due to extensive logging.
+     */
+    static Debug(
+        /**
+        * provide additional configuration for the abstraction extension to make it dependent on other factors
+        */
+        config?: Partial<A_TYPES__AbstractionDecoratorConfig>
+    ) {
+        return A_Abstraction.Extend(A_TYPES__ConceptAbstractions.Debug, config);
+    }
     /**
      * Name of the concept
      * 
@@ -286,7 +300,19 @@ export class A_Concept<
         await abstraction.process(scope);
     }
 
+    /**
+     * Debug the concept.
+     */
+    async debug(
+        scope?: A_Scope,
+    ) {
+        const abstraction = new A_Abstraction({
+            name: A_TYPES__ConceptAbstractions.Debug,
+            containers: this._containers,
+        });
 
+        await abstraction.process(scope);
+    }
     // =======================================================================
     // ==========================  CALL  =====================================
     // =======================================================================
