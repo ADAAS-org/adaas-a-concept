@@ -6379,7 +6379,7 @@ function A_Abstraction_Extend(name, config = {}) {
       throwOnError: config.throwOnError !== void 0 ? config.throwOnError : true,
       before: A_TypeGuards.isArray(config.before) ? new RegExp(`^${config.before.join("|").replace(/\./g, "\\.")}$`).source : config.before instanceof RegExp ? config.before.source : "",
       after: A_TypeGuards.isArray(config.after) ? new RegExp(`^${config.after.join("|").replace(/\./g, "\\.")}$`).source : config.after instanceof RegExp ? config.after.source : "",
-      override: A_TypeGuards.isArray(config.override) ? new RegExp(`^${config.override.join("|").replace(/\./g, "\\.")}$`).source : config.after instanceof RegExp ? config.after.source : ""
+      override: A_TypeGuards.isArray(config.override) ? new RegExp(`^${config.override.join("|").replace(/\./g, "\\.")}$`).source : config.override instanceof RegExp ? config.override.source : ""
     };
     if (existedIndex !== -1) {
       existedMetaValue[existedIndex] = abstraction;

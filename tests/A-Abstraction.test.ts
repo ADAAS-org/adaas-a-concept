@@ -388,4 +388,45 @@ describe('A-Abstraction Tests', () => {
         expect(injectedInA).toBe(containerA.scope.resolve(MyComponentA));
         expect(injectedInB).toBe(containerB.scope.resolve(MyComponentB));
     });
+
+    it('Should NOT treat an `after` RegExp as an `override` (regression)', async () => {
+        // Regression for the decorator bug where the `override` field was
+        // derived from `config.after` instead of `config.override`. A hook
+        // that only declared `after` (no `override`) had its `after` pattern
+        // leak into `override`, which then DELETED every step matching it —
+        // e.g. a two-hook component where the second hook runs `after` the
+        // first would silently drop the first hook entirely.
+        A_Context.reset();
+
+        const calls: string[] = [];
+
+        class TwoHookComponent extends A_Component {
+            @A_Concept.Load({ before: /.*/ })
+            first() {
+                calls.push('first');
+            }
+
+            // Declares only `after` (matching `first`). With the bug this
+            // pattern leaked into `override` and removed the `first` step.
+            @A_Concept.Load({ after: /first/ })
+            second() {
+                calls.push('second');
+            }
+        }
+
+        const container = new A_Container({
+            name: 'TwoHookContainer',
+            components: [TwoHookComponent],
+        });
+
+        const concept = new A_Concept({
+            name: 'TwoHookConcept',
+            containers: [container],
+        });
+
+        await concept.load();
+
+        // Both hooks must run, and `first` must run before `second`.
+        expect(calls).toEqual(['first', 'second']);
+    });
 });

@@ -110,8 +110,8 @@ export function A_Abstraction_Extend(
 
             override: A_TypeGuards.isArray(config.override)
                 ? new RegExp(`^${config.override.join('|').replace(/\./g, '\\.')}$`).source
-                : config.after instanceof RegExp
-                    ? config.after.source
+                : config.override instanceof RegExp
+                    ? config.override.source
                     : '',
         }
 
