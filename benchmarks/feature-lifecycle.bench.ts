@@ -157,15 +157,20 @@ export async function runFeatureLifecycleBenchmarks(): Promise<BenchResult[]> {
         });
         const comp5 = scope5.resolve(MultiComponent)!;
 
+        // [!] Always pass the active scope. A scopeless `comp.call(name)` forces
+        //     A_Stage.process to fall back to the lazily-allocated `feature.scope`,
+        //     which allocates + inherits + destroys a fresh scope on EVERY call.
+        //     That per-call churn dominates timing and inflates variance, so we
+        //     measure the representative path real callers use (scope supplied).
         suite
             .add('call feature (1 sync step)', () => {
-                comp1.call('simpleFeature');
+                comp1.call('simpleFeature', scope1);
             })
             .add('call feature (3 sync extensions)', () => {
-                comp3.call('multiFeature');
+                comp3.call('multiFeature', scope3);
             })
             .add('call feature (5 sync extensions)', () => {
-                comp5.call('multiFeature');
+                comp5.call('multiFeature', scope5);
             });
     });
     allResults.push(...execResults);
@@ -187,14 +192,14 @@ export async function runFeatureLifecycleBenchmarks(): Promise<BenchResult[]> {
                     name: 'simpleFeature',
                     component: comp,
                 });
-                feature.process();
+                feature.process(scope);
             })
             .add('construct + process (3 extensions)', () => {
                 const feature = new A_Feature({
                     name: 'multiFeature',
                     component: comp3,
                 });
-                feature.process();
+                feature.process(scope3);
             });
     });
     allResults.push(...fullResults);
@@ -216,21 +221,21 @@ export async function runFeatureLifecycleBenchmarks(): Promise<BenchResult[]> {
                     name: 'inheritedFeature',
                     component: compBase,
                 });
-                feature.process();
+                feature.process(scopeBase);
             })
             .add('construct + process (1-level child)', () => {
                 const feature = new A_Feature({
                     name: 'inheritedFeature',
                     component: compChild,
                 });
-                feature.process();
+                feature.process(scopeChild);
             })
             .add('construct + process (2-level grandchild)', () => {
                 const feature = new A_Feature({
                     name: 'inheritedFeature',
                     component: compGrand,
                 });
-                feature.process();
+                feature.process(scopeGrand);
             });
     });
     allResults.push(...inheritResults);

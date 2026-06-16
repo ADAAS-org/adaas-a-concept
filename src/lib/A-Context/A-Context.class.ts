@@ -136,6 +136,15 @@ export class A_Context {
      * Meta provides to store extra information about the class behavior and configuration.
      */
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta> = new Map();
+    /**
+     * Caches compiled `override` RegExps keyed by their source pattern string.
+     * `meta.extensions()` rebuilds declaration objects on every call, so the
+     * override is only stable as a string — but the set of distinct override
+     * patterns is small and fixed (declared via decorators), so caching by
+     * pattern string avoids recompiling the same RegExp on every feature
+     * resolution in `featureExtensions()`.
+     */
+    protected _overrideRegexpCache: Map<string, RegExp> = new Map();
 
     /**
      * Monotonically increasing version counter for _metaStorage.
@@ -248,9 +257,6 @@ export class A_Context {
         component: A_TYPES_ScopeDependentComponents,
 
     ): A_Scope {
-        // uses only for error messages
-        const componentName = A_CommonHelper.getComponentName(component);
-
         const instance = this.getInstance();
 
         if (!component) throw new A_ContextError(
@@ -263,7 +269,9 @@ export class A_Context {
 
         if (!this.isAllowedToBeRegistered(component)) throw new A_ContextError(
             A_ContextError.NotAllowedForScopeAllocationError,
-            `Component ${componentName} is not allowed for scope allocation.`);
+            // getComponentName is only needed for this error message — keep it
+            // off the happy path so every register() doesn't pay for it.
+            `Component ${A_CommonHelper.getComponentName(component)} is not allowed for scope allocation.`);
 
         // Strict ownership invariant: an instance can be registered in
         // EXACTLY ONE scope. Re-registering the SAME instance into a
@@ -277,7 +285,7 @@ export class A_Context {
         if (existingOwner && existingOwner !== scope) {
             throw new A_ContextError(
                 A_ContextError.ComponentAlreadyRegisteredInOtherScopeError,
-                `Unable to register component. Component ${componentName} is already registered in scope "${(existingOwner as any).name ?? '<unnamed>'}". ` +
+                `Unable to register component. Component ${A_CommonHelper.getComponentName(component)} is already registered in scope "${(existingOwner as any).name ?? '<unnamed>'}". ` +
                 `An instance can be registered in at most one scope; inherit or import the owning scope instead of re-registering the same instance.`,
             );
         }
@@ -923,6 +931,31 @@ export class A_Context {
         this.getInstance()._sortedStepsForTemplate.set(template, sorted);
     }
 
+    /**
+     * Determines whether the named feature resolves to at least one handler
+     * (a `@A_Feature.Define` or `@A_Feature.Extend`) in the provided component's
+     * current scope.
+     *
+     * This is a CHEAP, side-effect-free probe: it reuses the fingerprint-cached
+     * `featureTemplate` against the component's own (stable) scope and never
+     * constructs an `A_Feature`, `A_Caller`, stages, or a call scope. Callers can
+     * use it to skip expensive pre-call setup (e.g. building a dedicated payload
+     * scope) when nobody is subscribed — making "fire-and-forget" feature calls
+     * effectively free on hot paths.
+     *
+     * @param name      - the feature name (or RegExp) to probe for handlers
+     * @param component - the component whose scope dictates active extensions
+     * @param scope     - optional explicit scope (defaults to the component's scope)
+     * @returns true when at least one handler exists, false otherwise
+     */
+    static hasFeature(
+        name: string | RegExp,
+        component: A_TYPES__FeatureAvailableComponents,
+        scope: A_Scope = this.scope(component)
+    ): boolean {
+        return this.featureTemplate(name, component, scope).length > 0;
+    }
+
     static featureTemplate(
         /**
          * Provide the name of the feature to get the template for. Regular expressions are also supported to match multiple features.
@@ -1114,16 +1147,43 @@ export class A_Context {
             }
         }
 
+        // Maintain an insertion-ordered list mirroring `allowedComponents` so the
+        // "inherited ancestor" lookup can scan it in reverse with O(1) Set
+        // membership tests instead of rebuilding `Array.from(set).reverse()` and
+        // re-fetching ancestors on every declaration.
+        const allowedComponentsList: A_TYPES__MetaLinkedComponentConstructors[] = [];
+
         for (const callName of callNames) {
             // Use pre-filtered list instead of iterating all _metaStorage
             for (const [cmp, meta] of scopeFilteredMetas) {
-                allowedComponents.add(cmp);
+                if (!allowedComponents.has(cmp)) {
+                    allowedComponents.add(cmp);
+                    allowedComponentsList.push(cmp);
+                }
                 // Get all extensions for the feature
                 const extensions = meta.extensions(callName);
 
+                // Hoist the ancestor set for `cmp` out of the per-declaration loop;
+                // it is identical for every declaration of this component.
+                const cmpAncestors = A_Context.getAncestors(cmp as Function);
+
                 for (let i = 0; i < extensions.length; i++) {
                     const declaration = extensions[i];
-                    const inherited = Array.from(allowedComponents).reverse().find(c => A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
+
+                    // Find the most-recently-added allowed component that is a strict
+                    // ancestor of `cmp` (mirrors the previous reverse().find()).
+                    let inherited: A_TYPES__MetaLinkedComponentConstructors | undefined;
+                    for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
+                        const c = allowedComponentsList[j];
+                        if (c === cmp) continue;
+                        const isAncestor = cmpAncestors
+                            ? cmpAncestors.has(c as Function)
+                            : A_Context.isIndexedInheritedFrom(cmp as Function, c as Function);
+                        if (isAncestor) {
+                            inherited = c;
+                            break;
+                        }
+                    }
 
                     if (inherited) {
                         steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
@@ -1132,7 +1192,11 @@ export class A_Context {
                     // Check if the declaration has an override regexp and remove matching steps
                     // Match against both the full step key (Component.handler) and the handler alone
                     if (declaration.override) {
-                        const overrideRegexp = new RegExp(declaration.override);
+                        let overrideRegexp = instance._overrideRegexpCache.get(declaration.override);
+                        if (!overrideRegexp) {
+                            overrideRegexp = new RegExp(declaration.override);
+                            instance._overrideRegexpCache.set(declaration.override, overrideRegexp);
+                        }
                         for (const [stepKey, step] of steps) {
                             if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
                                 steps.delete(stepKey);

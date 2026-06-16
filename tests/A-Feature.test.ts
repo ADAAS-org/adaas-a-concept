@@ -1494,4 +1494,77 @@ describe('A-Feature tests', () => {
         expect(calls.sort()).toEqual(['base:CmdC', 'onC'].sort());
     });
 
+    it('Should dynamically resolve feature steps as components (players) attach to and detach from the scope', async () => {
+        // Validates the "distributed workflow" semantics: a feature is an AGGREGATE
+        // of the steps contributed by whatever components are CURRENTLY available in
+        // the scope. The SAME feature, invoked by the SAME entity, produces a
+        // DIFFERENT execution pipeline depending on which "players" (components) are
+        // registered — and correctly resolves to "nothing to do" when none are present.
+        //
+        // This is a guard test: it ensures that changing the set of available
+        // components in a scope (attach / detach) keeps the feature pipeline in sync,
+        // and that an unsubscribed feature call is a no-op.
+
+        const log: string[] = [];
+
+        // 2) An entity that invokes the `process` feature. It owns no steps itself —
+        //    it is a pure invoker; the actual work is contributed by external components.
+        class Workflow extends A_Entity {
+            async process() {
+                await this.call('process');
+            }
+        }
+
+        // 1) A set of components, each extending the same `process` feature with one step.
+        class StepAlpha extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('alpha'); }
+        }
+        class StepBeta extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('beta'); }
+        }
+        class StepGamma extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('gamma'); }
+        }
+        class StepDelta extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('delta'); }
+        }
+
+        // 3) Create the scope, the entity instance, and register the instance.
+        const scope = new A_Scope({ name: 'DynamicWorkflowScope', entities: [Workflow] });
+        const workflow = new Workflow({ name: 'wf-1' });
+        scope.register(workflow);
+
+        // 4) No components registered → the feature aggregates ZERO steps → nothing runs.
+        await workflow.process();
+        expect(log).toEqual([]);
+
+        // 5) Attach a couple of components → only those steps run.
+        scope.register(StepAlpha);
+        scope.register(StepBeta);
+        log.length = 0;
+        await workflow.process();
+        expect(log.sort()).toEqual(['alpha', 'beta']);
+
+        // 6) Detach one component and attach two new ones → the scope (and therefore the
+        //    resolved feature pipeline) updates accordingly.
+        scope.deregister(StepAlpha);
+        scope.register(StepGamma);
+        scope.register(StepDelta);
+        log.length = 0;
+        await workflow.process();
+        expect(log.sort()).toEqual(['beta', 'delta', 'gamma']);
+
+        // 7) Detach every component → we are back to the original "nothing to do" result.
+        scope.deregister(StepBeta);
+        scope.deregister(StepGamma);
+        scope.deregister(StepDelta);
+        log.length = 0;
+        await workflow.process();
+        expect(log).toEqual([]);
+    });
+
 });

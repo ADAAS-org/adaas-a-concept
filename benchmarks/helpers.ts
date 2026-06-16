@@ -39,6 +39,11 @@ export function createSuite(
                     rme: bench.stats.rme.toFixed(2),
                     samples: bench.stats.sample.length,
                 });
+                // Reclaim per-benchmark garbage between benchmarks so heap pressure
+                // from one benchmark does not bleed into the next and inflate its
+                // variance (or accumulate toward an OOM across the whole run).
+                // No-op unless the process was started with `--expose-gc`.
+                (global as any).gc?.();
             })
             .on('complete', () => {
                 printTable(suiteName, results);

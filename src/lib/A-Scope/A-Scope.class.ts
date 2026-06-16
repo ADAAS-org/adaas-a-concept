@@ -361,22 +361,46 @@ export class A_Scope<
         // Parent
         parts.push('P:' + (this._parent ? this._parent.computeFingerprint(visited) : '-'));
 
-        // Allowed constructors (sorted by name for determinism)
-        const allowedComponentNames = Array.from(this._allowedComponents).map(c => A_CommonHelper.getComponentName(c.name)).sort();
-        parts.push('AC:' + allowedComponentNames.join(','));
+        // Allowed constructors (sorted by name for determinism).
+        // `c.name` IS already the constructor's string name — no need to route
+        // it through getComponentName() (which only adds a slow-path branch for
+        // strings). Skip the array/sort/join entirely for empty categories,
+        // which is the common case for transient per-call / per-node scopes.
+        if (this._allowedComponents.size) {
+            const allowedComponentNames = Array.from(this._allowedComponents).map(c => c.name).sort();
+            parts.push('AC:' + allowedComponentNames.join(','));
+        } else {
+            parts.push('AC:');
+        }
 
-        const allowedEntityNames = Array.from(this._allowedEntities).map(e => A_CommonHelper.getComponentName(e.name)).sort();
-        parts.push('AE:' + allowedEntityNames.join(','));
+        if (this._allowedEntities.size) {
+            const allowedEntityNames = Array.from(this._allowedEntities).map(e => e.name).sort();
+            parts.push('AE:' + allowedEntityNames.join(','));
+        } else {
+            parts.push('AE:');
+        }
 
-        const allowedFragmentNames = Array.from(this._allowedFragments).map(f => A_CommonHelper.getComponentName(f.name)).sort();
-        parts.push('AF:' + allowedFragmentNames.join(','));
+        if (this._allowedFragments.size) {
+            const allowedFragmentNames = Array.from(this._allowedFragments).map(f => f.name).sort();
+            parts.push('AF:' + allowedFragmentNames.join(','));
+        } else {
+            parts.push('AF:');
+        }
 
-        const allowedErrorNames = Array.from(this._allowedErrors).map(e => A_CommonHelper.getComponentName(e.name)).sort();
-        parts.push('AR:' + allowedErrorNames.join(','));
+        if (this._allowedErrors.size) {
+            const allowedErrorNames = Array.from(this._allowedErrors).map(e => e.name).sort();
+            parts.push('AR:' + allowedErrorNames.join(','));
+        } else {
+            parts.push('AR:');
+        }
 
         // Imports (sorted by fingerprint for determinism)
-        const importFingerprints = Array.from(this._imports).map(s => s.computeFingerprint(visited)).sort();
-        parts.push('I:' + importFingerprints.join(','));
+        if (this._imports.size) {
+            const importFingerprints = Array.from(this._imports).map(s => s.computeFingerprint(visited)).sort();
+            parts.push('I:' + importFingerprints.join(','));
+        } else {
+            parts.push('I:');
+        }
 
         const raw = parts.join('|');
 
@@ -2095,7 +2119,20 @@ export class A_Scope<
                 break;
             }
             // 3) In case when it's a A-Entity instance
-            case A_TypeGuards.isEntityInstance(param1) && !this._entities.has(param1.aseid.toString()): {
+            case A_TypeGuards.isEntityInstance(param1): {
+
+                // Compute the ASEID string ONCE — toString() rebuilds a
+                // template literal, and this path used to compute it twice
+                // (membership check + map key).
+                const aseidKey = param1.aseid.toString();
+
+                // An entity with the same ASEID is already registered here:
+                // reject with the same error the default branch produced.
+                if (this._entities.has(aseidKey))
+                    throw new A_ScopeError(
+                        A_ScopeError.RegistrationError,
+                        `Entity with ASEID ${aseidKey} is already registered in the scope ${this.name}`
+                    );
 
                 // Register with A_Context FIRST — see Component branch.
                 A_Context.indexConstructor(param1.constructor);
@@ -2104,7 +2141,7 @@ export class A_Scope<
                 if (!this.allowedEntities.has(param1.constructor as _EntityType[number]))
                     this.allowedEntities.add(param1.constructor as _EntityType[number]);
 
-                this._entities.set(param1.aseid.toString(), param1 as InstanceType<_EntityType[number]>);
+                this._entities.set(aseidKey, param1 as InstanceType<_EntityType[number]>);
                 this.bumpVersion();
                 break;
             }

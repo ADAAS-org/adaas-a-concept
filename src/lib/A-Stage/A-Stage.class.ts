@@ -242,7 +242,8 @@ export class A_Stage {
         step: A_TYPES__A_StageStep,
         scope: A_Scope
     ): {
-        handler: Function,
+        component: any,
+        method: string,
         params: any[]
     } | undefined {
         // 1) Resolve component (may be undefined for "skip this stage" scenarios,
@@ -252,9 +253,13 @@ export class A_Stage {
         // 2) Resolve arguments
         const callArgs = this.getStepArgs(scope, step);
 
-        // 3) Call handler
+        // 3) Return the receiver + method name (NOT a bound function). The caller
+        //    invokes `component[method](...params)`, which sets `this` to the
+        //    component automatically — avoiding a per-step `.bind()` allocation
+        //    on every feature execution (a hot path for per-node lifecycle hooks).
         return {
-            handler: component[step.handler].bind(component),
+            component,
+            method: step.handler,
             params: callArgs
         }
     }
@@ -293,9 +298,9 @@ export class A_Stage {
                 return;
             }
 
-            const { handler, params } = call;
+            const { component, method, params } = call;
 
-            const result = handler(...params);
+            const result = component[method](...params);
 
             if (A_TypeGuards.isPromiseInstance(result)) {
 

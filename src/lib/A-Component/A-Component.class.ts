@@ -24,6 +24,12 @@ export class A_Component {
      * 
      * [!] Note: This method creates a new instance of the feature every time it is called
      * 
+     * [!] Fast path: when the feature resolves to ZERO steps (i.e. nothing
+     *     `@A_Feature.Define`s or `@A_Feature.Extend`s it in the current scope),
+     *     there is nothing to execute, so we skip processing entirely. This makes
+     *     "fire-and-forget" feature calls that nobody is subscribed to effectively
+     *     free, which matters on hot paths (e.g. per-log/per-node lifecycle hooks).
+     * 
      * @param feature - the name of the feature to call
      * @param scope  - the scope in which to call the feature
      * @returns  - void
@@ -42,6 +48,11 @@ export class A_Component {
             name: feature,
             component: this
         });
+
+        // No handlers are registered for this feature in the current scope —
+        // nothing to process, so return immediately and avoid the stage machinery.
+        if (newFeature.size === 0)
+            return;
 
         return newFeature.process(scope);
     }

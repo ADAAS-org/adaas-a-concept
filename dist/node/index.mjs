@@ -3209,7 +3209,8 @@ var _A_Stage = class _A_Stage {
     if (!component) return void 0;
     const callArgs = this.getStepArgs(scope, step);
     return {
-      handler: component[step.handler].bind(component),
+      component,
+      method: step.handler,
       params: callArgs
     };
   }
@@ -3230,8 +3231,8 @@ var _A_Stage = class _A_Stage {
         this.skip();
         return;
       }
-      const { handler, params } = call;
-      const result = handler(...params);
+      const { component, method, params } = call;
+      const result = component[method](...params);
       if (A_TypeGuards.isPromiseInstance(result)) {
         return new Promise(
           async (resolve, reject) => {
@@ -3881,6 +3882,12 @@ var _A_Component = class _A_Component {
    * 
    * [!] Note: This method creates a new instance of the feature every time it is called
    * 
+   * [!] Fast path: when the feature resolves to ZERO steps (i.e. nothing
+   *     `@A_Feature.Define`s or `@A_Feature.Extend`s it in the current scope),
+   *     there is nothing to execute, so we skip processing entirely. This makes
+   *     "fire-and-forget" feature calls that nobody is subscribed to effectively
+   *     free, which matters on hot paths (e.g. per-log/per-node lifecycle hooks).
+   * 
    * @param feature - the name of the feature to call
    * @param scope  - the scope in which to call the feature
    * @returns  - void
@@ -3890,6 +3897,8 @@ var _A_Component = class _A_Component {
       name: feature,
       component: this
     });
+    if (newFeature.size === 0)
+      return;
     return newFeature.process(scope);
   }
 };
@@ -4265,16 +4274,36 @@ var _A_Scope = class _A_Scope {
     visited.add(this);
     const parts = [];
     parts.push("P:" + (this._parent ? this._parent.computeFingerprint(visited) : "-"));
-    const allowedComponentNames = Array.from(this._allowedComponents).map((c) => A_CommonHelper.getComponentName(c.name)).sort();
-    parts.push("AC:" + allowedComponentNames.join(","));
-    const allowedEntityNames = Array.from(this._allowedEntities).map((e) => A_CommonHelper.getComponentName(e.name)).sort();
-    parts.push("AE:" + allowedEntityNames.join(","));
-    const allowedFragmentNames = Array.from(this._allowedFragments).map((f) => A_CommonHelper.getComponentName(f.name)).sort();
-    parts.push("AF:" + allowedFragmentNames.join(","));
-    const allowedErrorNames = Array.from(this._allowedErrors).map((e) => A_CommonHelper.getComponentName(e.name)).sort();
-    parts.push("AR:" + allowedErrorNames.join(","));
-    const importFingerprints = Array.from(this._imports).map((s) => s.computeFingerprint(visited)).sort();
-    parts.push("I:" + importFingerprints.join(","));
+    if (this._allowedComponents.size) {
+      const allowedComponentNames = Array.from(this._allowedComponents).map((c) => c.name).sort();
+      parts.push("AC:" + allowedComponentNames.join(","));
+    } else {
+      parts.push("AC:");
+    }
+    if (this._allowedEntities.size) {
+      const allowedEntityNames = Array.from(this._allowedEntities).map((e) => e.name).sort();
+      parts.push("AE:" + allowedEntityNames.join(","));
+    } else {
+      parts.push("AE:");
+    }
+    if (this._allowedFragments.size) {
+      const allowedFragmentNames = Array.from(this._allowedFragments).map((f) => f.name).sort();
+      parts.push("AF:" + allowedFragmentNames.join(","));
+    } else {
+      parts.push("AF:");
+    }
+    if (this._allowedErrors.size) {
+      const allowedErrorNames = Array.from(this._allowedErrors).map((e) => e.name).sort();
+      parts.push("AR:" + allowedErrorNames.join(","));
+    } else {
+      parts.push("AR:");
+    }
+    if (this._imports.size) {
+      const importFingerprints = Array.from(this._imports).map((s) => s.computeFingerprint(visited)).sort();
+      parts.push("I:" + importFingerprints.join(","));
+    } else {
+      parts.push("I:");
+    }
     const raw = parts.join("|");
     let hash = 5381;
     for (let i = 0; i < raw.length; i++) {
@@ -5106,12 +5135,18 @@ var _A_Scope = class _A_Scope {
         break;
       }
       // 3) In case when it's a A-Entity instance
-      case (A_TypeGuards.isEntityInstance(param1) && !this._entities.has(param1.aseid.toString())): {
+      case A_TypeGuards.isEntityInstance(param1): {
+        const aseidKey = param1.aseid.toString();
+        if (this._entities.has(aseidKey))
+          throw new A_ScopeError(
+            A_ScopeError.RegistrationError,
+            `Entity with ASEID ${aseidKey} is already registered in the scope ${this.name}`
+          );
         A_Context.indexConstructor(param1.constructor);
         A_Context.register(this, param1);
         if (!this.allowedEntities.has(param1.constructor))
           this.allowedEntities.add(param1.constructor);
-        this._entities.set(param1.aseid.toString(), param1);
+        this._entities.set(aseidKey, param1);
         this.bumpVersion();
         break;
       }
@@ -5488,6 +5523,15 @@ var _A_Context = class _A_Context {
      */
     this._metaStorage = /* @__PURE__ */ new Map();
     /**
+     * Caches compiled `override` RegExps keyed by their source pattern string.
+     * `meta.extensions()` rebuilds declaration objects on every call, so the
+     * override is only stable as a string — but the set of distinct override
+     * patterns is small and fixed (declared via decorators), so caching by
+     * pattern string avoids recompiling the same RegExp on every feature
+     * resolution in `featureExtensions()`.
+     */
+    this._overrideRegexpCache = /* @__PURE__ */ new Map();
+    /**
      * Monotonically increasing version counter for _metaStorage.
      * Incremented whenever a new entry is added to _metaStorage so that
      * caches depending on meta content can detect staleness.
@@ -5585,7 +5629,6 @@ var _A_Context = class _A_Context {
    * @returns 
    */
   static register(scope, component) {
-    const componentName = A_CommonHelper.getComponentName(component);
     const instance = this.getInstance();
     if (!component) throw new A_ContextError(
       A_ContextError.InvalidRegisterParameterError,
@@ -5597,13 +5640,15 @@ var _A_Context = class _A_Context {
     );
     if (!this.isAllowedToBeRegistered(component)) throw new A_ContextError(
       A_ContextError.NotAllowedForScopeAllocationError,
-      `Component ${componentName} is not allowed for scope allocation.`
+      // getComponentName is only needed for this error message — keep it
+      // off the happy path so every register() doesn't pay for it.
+      `Component ${A_CommonHelper.getComponentName(component)} is not allowed for scope allocation.`
     );
     const existingOwner = instance._scopeStorage.get(component);
     if (existingOwner && existingOwner !== scope) {
       throw new A_ContextError(
         A_ContextError.ComponentAlreadyRegisteredInOtherScopeError,
-        `Unable to register component. Component ${componentName} is already registered in scope "${existingOwner.name ?? "<unnamed>"}". An instance can be registered in at most one scope; inherit or import the owning scope instead of re-registering the same instance.`
+        `Unable to register component. Component ${A_CommonHelper.getComponentName(component)} is already registered in scope "${existingOwner.name ?? "<unnamed>"}". An instance can be registered in at most one scope; inherit or import the owning scope instead of re-registering the same instance.`
       );
     }
     instance._scopeStorage.set(component, scope);
@@ -5878,6 +5923,26 @@ var _A_Context = class _A_Context {
   static setSortedStepsFor(template, sorted) {
     this.getInstance()._sortedStepsForTemplate.set(template, sorted);
   }
+  /**
+   * Determines whether the named feature resolves to at least one handler
+   * (a `@A_Feature.Define` or `@A_Feature.Extend`) in the provided component's
+   * current scope.
+   *
+   * This is a CHEAP, side-effect-free probe: it reuses the fingerprint-cached
+   * `featureTemplate` against the component's own (stable) scope and never
+   * constructs an `A_Feature`, `A_Caller`, stages, or a call scope. Callers can
+   * use it to skip expensive pre-call setup (e.g. building a dedicated payload
+   * scope) when nobody is subscribed — making "fire-and-forget" feature calls
+   * effectively free on hot paths.
+   *
+   * @param name      - the feature name (or RegExp) to probe for handlers
+   * @param component - the component whose scope dictates active extensions
+   * @param scope     - optional explicit scope (defaults to the component's scope)
+   * @returns true when at least one handler exists, false otherwise
+   */
+  static hasFeature(name, component, scope = this.scope(component)) {
+    return this.featureTemplate(name, component, scope).length > 0;
+  }
   static featureTemplate(name, component, scope = this.scope(component)) {
     if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
@@ -5974,18 +6039,36 @@ var _A_Context = class _A_Context {
         scopeFilteredMetas.push([cmp, meta]);
       }
     }
+    const allowedComponentsList = [];
     for (const callName of callNames) {
       for (const [cmp, meta] of scopeFilteredMetas) {
-        allowedComponents.add(cmp);
+        if (!allowedComponents.has(cmp)) {
+          allowedComponents.add(cmp);
+          allowedComponentsList.push(cmp);
+        }
         const extensions = meta.extensions(callName);
+        const cmpAncestors = _A_Context.getAncestors(cmp);
         for (let i = 0; i < extensions.length; i++) {
           const declaration = extensions[i];
-          const inherited = Array.from(allowedComponents).reverse().find((c) => _A_Context.isIndexedInheritedFrom(cmp, c) && c !== cmp);
+          let inherited;
+          for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
+            const c = allowedComponentsList[j];
+            if (c === cmp) continue;
+            const isAncestor = cmpAncestors ? cmpAncestors.has(c) : _A_Context.isIndexedInheritedFrom(cmp, c);
+            if (isAncestor) {
+              inherited = c;
+              break;
+            }
+          }
           if (inherited) {
             steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
           }
           if (declaration.override) {
-            const overrideRegexp = new RegExp(declaration.override);
+            let overrideRegexp = instance._overrideRegexpCache.get(declaration.override);
+            if (!overrideRegexp) {
+              overrideRegexp = new RegExp(declaration.override);
+              instance._overrideRegexpCache.set(declaration.override, overrideRegexp);
+            }
             for (const [stepKey, step] of steps) {
               if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
                 steps.delete(stepKey);

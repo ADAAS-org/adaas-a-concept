@@ -818,7 +818,8 @@ declare class A_Stage {
      * @returns
      */
     protected callStepHandler(step: A_TYPES__A_StageStep, scope: A_Scope): {
-        handler: Function;
+        component: any;
+        method: string;
         params: any[];
     } | undefined;
     skip(): void;
@@ -4150,6 +4151,12 @@ declare class A_Component {
      *
      * [!] Note: This method creates a new instance of the feature every time it is called
      *
+     * [!] Fast path: when the feature resolves to ZERO steps (i.e. nothing
+     *     `@A_Feature.Define`s or `@A_Feature.Extend`s it in the current scope),
+     *     there is nothing to execute, so we skip processing entirely. This makes
+     *     "fire-and-forget" feature calls that nobody is subscribed to effectively
+     *     free, which matters on hot paths (e.g. per-log/per-node lifecycle hooks).
+     *
      * @param feature - the name of the feature to call
      * @param scope  - the scope in which to call the feature
      * @returns  - void
@@ -4479,6 +4486,15 @@ declare class A_Context {
      */
     protected _metaStorage: Map<A_TYPES__MetaLinkedComponentConstructors, A_Meta>;
     /**
+     * Caches compiled `override` RegExps keyed by their source pattern string.
+     * `meta.extensions()` rebuilds declaration objects on every call, so the
+     * override is only stable as a string — but the set of distinct override
+     * patterns is small and fixed (declared via decorators), so caching by
+     * pattern string avoids recompiling the same RegExp on every feature
+     * resolution in `featureExtensions()`.
+     */
+    protected _overrideRegexpCache: Map<string, RegExp>;
+    /**
      * Monotonically increasing version counter for _metaStorage.
      * Incremented whenever a new entry is added to _metaStorage so that
      * caches depending on meta content can detect staleness.
@@ -4785,6 +4801,24 @@ declare class A_Context {
      * Stores the topologically-sorted steps for the provided template in the WeakMap cache.
      */
     static setSortedStepsFor(template: object, sorted: Array<A_TYPES__A_StageStep>): void;
+    /**
+     * Determines whether the named feature resolves to at least one handler
+     * (a `@A_Feature.Define` or `@A_Feature.Extend`) in the provided component's
+     * current scope.
+     *
+     * This is a CHEAP, side-effect-free probe: it reuses the fingerprint-cached
+     * `featureTemplate` against the component's own (stable) scope and never
+     * constructs an `A_Feature`, `A_Caller`, stages, or a call scope. Callers can
+     * use it to skip expensive pre-call setup (e.g. building a dedicated payload
+     * scope) when nobody is subscribed — making "fire-and-forget" feature calls
+     * effectively free on hot paths.
+     *
+     * @param name      - the feature name (or RegExp) to probe for handlers
+     * @param component - the component whose scope dictates active extensions
+     * @param scope     - optional explicit scope (defaults to the component's scope)
+     * @returns true when at least one handler exists, false otherwise
+     */
+    static hasFeature(name: string | RegExp, component: A_TYPES__FeatureAvailableComponents, scope?: A_Scope): boolean;
     static featureTemplate(
     /**
      * Provide the name of the feature to get the template for. Regular expressions are also supported to match multiple features.
