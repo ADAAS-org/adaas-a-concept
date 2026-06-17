@@ -3212,6 +3212,17 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
     private _cachedFingerprint;
     private _cachedFingerprintVersion;
     /**
+     * Cached aggregate version (this scope + all reachable parents/imports).
+     *
+     * The aggregate version only changes when some reachable scope mutates, and
+     * every such mutation already propagates `bumpVersion()` downstream to this
+     * scope (see `inherit`/`import` → `_addSubscriber` + `bumpVersion`), which
+     * clears this cache. Therefore a non-`undefined` value is always current and
+     * we can skip re-walking the scope graph on every `fingerprint` access — the
+     * walk is the dominant cost on the feature-dispatch hot path.
+     */
+    private _cachedAggVersion;
+    /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
      */

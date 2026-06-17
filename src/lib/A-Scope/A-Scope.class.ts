@@ -113,6 +113,17 @@ export class A_Scope<
      */
     private _cachedFingerprint: string | undefined;
     private _cachedFingerprintVersion: number = -1;
+    /**
+     * Cached aggregate version (this scope + all reachable parents/imports).
+     *
+     * The aggregate version only changes when some reachable scope mutates, and
+     * every such mutation already propagates `bumpVersion()` downstream to this
+     * scope (see `inherit`/`import` → `_addSubscriber` + `bumpVersion`), which
+     * clears this cache. Therefore a non-`undefined` value is always current and
+     * we can skip re-walking the scope graph on every `fingerprint` access — the
+     * walk is the dominant cost on the feature-dispatch hot path.
+     */
+    private _cachedAggVersion: number | undefined;
 
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -225,8 +236,16 @@ export class A_Scope<
      * will produce the same fingerprint. Dynamically recomputed when scope content changes.
      */
     get fingerprint(): string {
-        _avVisited.clear();
-        const aggregateVersion = this.aggregateVersion(_avVisited);
+        // Reuse the memoized aggregate version when available. It is cleared by
+        // bumpVersion() on any reachable-scope mutation, so a cached value is
+        // always valid and lets us avoid the O(scope-graph) aggregateVersion walk
+        // on every access (the hot path for feature-template cache keys).
+        let aggregateVersion = this._cachedAggVersion;
+        if (aggregateVersion === undefined) {
+            _avVisited.clear();
+            aggregateVersion = this.aggregateVersion(_avVisited);
+            this._cachedAggVersion = aggregateVersion;
+        }
         if (this._cachedFingerprint !== undefined && this._cachedFingerprintVersion === aggregateVersion) {
             return this._cachedFingerprint;
         }
@@ -294,6 +313,7 @@ export class A_Scope<
         this._resolveFlatAllCache.clear();
         this._resolveAllCache.clear();
         this._cachedFingerprint = undefined;
+        this._cachedAggVersion = undefined;
 
         if (this._subscribers.size === 0) return;
         for (const ref of this._subscribers) {

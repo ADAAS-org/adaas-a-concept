@@ -4141,8 +4141,12 @@ var _A_Scope = class _A_Scope {
    * will produce the same fingerprint. Dynamically recomputed when scope content changes.
    */
   get fingerprint() {
-    _avVisited.clear();
-    const aggregateVersion = this.aggregateVersion(_avVisited);
+    let aggregateVersion = this._cachedAggVersion;
+    if (aggregateVersion === void 0) {
+      _avVisited.clear();
+      aggregateVersion = this.aggregateVersion(_avVisited);
+      this._cachedAggVersion = aggregateVersion;
+    }
     if (this._cachedFingerprint !== void 0 && this._cachedFingerprintVersion === aggregateVersion) {
       return this._cachedFingerprint;
     }
@@ -4218,6 +4222,7 @@ var _A_Scope = class _A_Scope {
     this._resolveFlatAllCache.clear();
     this._resolveAllCache.clear();
     this._cachedFingerprint = void 0;
+    this._cachedAggVersion = void 0;
     if (this._subscribers.size === 0) return;
     for (const ref of this._subscribers) {
       const sub = ref.deref();
