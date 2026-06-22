@@ -269,17 +269,21 @@ export class A_Entity<
      * @param lifecycleMethod 
      * @param args 
      */
-     call(
+    call(
         feature: string,
         scope?: A_Scope
     ): Promise<any> | void {
+        if (!A_Context.hasFeature(feature, this, scope)) {
+            return;
+        }
+
         const newFeature = new A_Feature({
             name: feature,
             component: this,
             scope
         });
 
-        return  newFeature.process(scope);
+        return newFeature.process(scope);
     }
 
 

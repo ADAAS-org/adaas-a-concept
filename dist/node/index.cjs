@@ -1233,6 +1233,9 @@ var _A_Entity = class _A_Entity {
    * @param args 
    */
   call(feature, scope) {
+    if (!A_Context.hasFeature(feature, this, scope)) {
+      return;
+    }
     const newFeature = new A_Feature({
       name: feature,
       component: this,
@@ -3895,12 +3898,13 @@ var _A_Component = class _A_Component {
    * @returns  - void
    */
   call(feature, scope) {
+    if (!A_Context.hasFeature(feature, this, scope)) {
+      return;
+    }
     const newFeature = new A_Feature({
       name: feature,
       component: this
     });
-    if (newFeature.size === 0)
-      return;
     return newFeature.process(scope);
   }
 };
@@ -5947,8 +5951,35 @@ var _A_Context = class _A_Context {
    * @param scope     - optional explicit scope (defaults to the component's scope)
    * @returns true when at least one handler exists, false otherwise
    */
-  static hasFeature(name, component, scope = this.scope(component)) {
-    return this.featureTemplate(name, component, scope).length > 0;
+  static hasFeature(name, component, scope) {
+    if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
+    if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
+    if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
+      throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
+    const instance = this.getInstance();
+    const componentCtor = typeof component === "function" ? component : component.constructor;
+    let componentScope;
+    try {
+      componentScope = this.scope(component);
+    } catch (error) {
+      if (!scope) throw error;
+    }
+    const effectiveScope = componentScope || scope;
+    const cacheKey = this.featureCacheKey(name, effectiveScope, instance);
+    const l2 = instance._featureCache.get(componentCtor);
+    if (l2) {
+      const cached = l2.get(cacheKey);
+      if (cached) return cached.length > 0;
+    }
+    if (this.featureDefinition(name, component).length > 0) return true;
+    const { callNames, scopeFilteredMetas } = this.collectScopedFeatureMetas(name, component, effectiveScope);
+    for (const [, meta] of scopeFilteredMetas) {
+      for (let i = 0; i < callNames.length; i++) {
+        if (meta.extensions(callNames[i]).length > 0) return true;
+      }
+    }
+    this.storeFeatureTemplate(instance, componentCtor, cacheKey, []);
+    return false;
   }
   static featureTemplate(name, component, scope = this.scope(component)) {
     if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
@@ -5957,28 +5988,39 @@ var _A_Context = class _A_Context {
       throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
     const instance = this.getInstance();
     const componentCtor = typeof component === "function" ? component : component.constructor;
-    let l2 = instance._featureCache.get(componentCtor);
+    const cacheKey = this.featureCacheKey(name, scope, instance);
+    const l2 = instance._featureCache.get(componentCtor);
     if (l2) {
-      const cacheKey2 = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
-      const cached = l2.get(cacheKey2);
+      const cached = l2.get(cacheKey);
       if (cached) return cached;
-      const steps2 = [
-        ...this.featureDefinition(name, component),
-        ...this.featureExtensions(name, component, scope)
-      ];
-      if (l2.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
-      l2.set(cacheKey2, steps2);
-      return steps2;
     }
-    const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
     const steps = [
       ...this.featureDefinition(name, component),
       ...this.featureExtensions(name, component, scope)
     ];
-    const innerMap = /* @__PURE__ */ new Map();
-    innerMap.set(cacheKey, steps);
-    instance._featureCache.set(componentCtor, innerMap);
+    this.storeFeatureTemplate(instance, componentCtor, cacheKey, steps);
     return steps;
+  }
+  /**
+   * Builds the `_featureCache` inner-map key. Centralized so every reader/writer
+   * (featureTemplate, hasFeature) uses an identical key and can never drift.
+   */
+  static featureCacheKey(name, scope, instance) {
+    return `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+  }
+  /**
+   * Stores a built feature template in the two-level `_featureCache`, creating
+   * the inner map on first use and enforcing the max-size guard. Shared by
+   * featureTemplate (full build) and hasFeature (provably-empty result).
+   */
+  static storeFeatureTemplate(instance, componentCtor, cacheKey, steps) {
+    let l2 = instance._featureCache.get(componentCtor);
+    if (!l2) {
+      l2 = /* @__PURE__ */ new Map();
+      instance._featureCache.set(componentCtor, l2);
+    }
+    if (l2.size >= _A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
+    l2.set(cacheKey, steps);
   }
   // ----------------------------------------------------------------------------------------------------------
   // -----------------------------------Helper Methods --------------------------------------------------------
@@ -5998,7 +6040,7 @@ var _A_Context = class _A_Context {
     if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
     if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
       throw new A_ContextError(A_ContextError.InvalidFeatureExtensionParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
-    const callNames = A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity).map((c) => `${c.name}.${name}`);
+    const { callNames, scopeFilteredMetas } = this.collectScopedFeatureMetas(name, component, scope);
     const steps = /* @__PURE__ */ new Map();
     const allowedComponents = /* @__PURE__ */ new Set();
     const componentNameCache = /* @__PURE__ */ new Map();
@@ -6019,9 +6061,70 @@ var _A_Context = class _A_Context {
       }
       return d;
     }, "getDependencyCached");
-    const callerChain = new Set(
-      A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity)
-    );
+    const allowedComponentsList = [];
+    for (const callName of callNames) {
+      for (const [cmp, meta] of scopeFilteredMetas) {
+        if (!allowedComponents.has(cmp)) {
+          allowedComponents.add(cmp);
+          allowedComponentsList.push(cmp);
+        }
+        const extensions = meta.extensions(callName);
+        const cmpAncestors = _A_Context.getAncestors(cmp);
+        let inherited;
+        for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
+          const c = allowedComponentsList[j];
+          if (c === cmp) continue;
+          const isAncestor = cmpAncestors ? cmpAncestors.has(c) : _A_Context.isIndexedInheritedFrom(cmp, c);
+          if (isAncestor) {
+            inherited = c;
+            break;
+          }
+        }
+        const inheritedName = inherited !== void 0 ? getNameCached(inherited) : void 0;
+        const cmpName = getNameCached(cmp);
+        const cmpDependency = getDependencyCached(cmp);
+        for (let i = 0; i < extensions.length; i++) {
+          const declaration = extensions[i];
+          if (inheritedName !== void 0) {
+            steps.delete(`${inheritedName}.${declaration.handler}`);
+          }
+          if (declaration.override) {
+            let overrideRegexp = instance._overrideRegexpCache.get(declaration.override);
+            if (!overrideRegexp) {
+              overrideRegexp = new RegExp(declaration.override);
+              instance._overrideRegexpCache.set(declaration.override, overrideRegexp);
+            }
+            for (const [stepKey, step] of steps) {
+              if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
+                steps.delete(stepKey);
+              }
+            }
+          }
+          steps.set(`${cmpName}.${declaration.handler}`, {
+            dependency: cmpDependency,
+            ...declaration
+          });
+        }
+      }
+    }
+    const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
+    return result;
+  }
+  /**
+   * Shared setup for feature-extension resolution. Builds the caller's
+   * `callNames` (its inheritance chain × feature name) and the in-scope,
+   * filtered list of metas that may contribute extensions — applying the
+   * sibling-cross-talk and entity-isolation filters in ONE place so
+   * `featureExtensions` (full build) and `hasFeature` (existence probe) can
+   * never diverge on which handlers they consider.
+   *
+   * [!] Assumes inputs were already validated by the caller.
+   */
+  static collectScopedFeatureMetas(name, component, scope) {
+    const instance = this.getInstance();
+    const chain = A_CommonHelper.getClassInheritanceChain(component).filter((c) => c !== A_Component && c !== A_Container && c !== A_Entity);
+    const callNames = chain.map((c) => `${c.name}.${name}`);
+    const callerChain = new Set(chain);
     const isSiblingOrUnrelatedDescendant = /* @__PURE__ */ chunkPK6SKIKE_cjs.__name((cmp) => {
       if (callerChain.has(cmp)) return false;
       const ancestors = _A_Context.getAncestors(cmp);
@@ -6046,51 +6149,7 @@ var _A_Context = class _A_Context {
         scopeFilteredMetas.push([cmp, meta]);
       }
     }
-    const allowedComponentsList = [];
-    for (const callName of callNames) {
-      for (const [cmp, meta] of scopeFilteredMetas) {
-        if (!allowedComponents.has(cmp)) {
-          allowedComponents.add(cmp);
-          allowedComponentsList.push(cmp);
-        }
-        const extensions = meta.extensions(callName);
-        const cmpAncestors = _A_Context.getAncestors(cmp);
-        for (let i = 0; i < extensions.length; i++) {
-          const declaration = extensions[i];
-          let inherited;
-          for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
-            const c = allowedComponentsList[j];
-            if (c === cmp) continue;
-            const isAncestor = cmpAncestors ? cmpAncestors.has(c) : _A_Context.isIndexedInheritedFrom(cmp, c);
-            if (isAncestor) {
-              inherited = c;
-              break;
-            }
-          }
-          if (inherited) {
-            steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
-          }
-          if (declaration.override) {
-            let overrideRegexp = instance._overrideRegexpCache.get(declaration.override);
-            if (!overrideRegexp) {
-              overrideRegexp = new RegExp(declaration.override);
-              instance._overrideRegexpCache.set(declaration.override, overrideRegexp);
-            }
-            for (const [stepKey, step] of steps) {
-              if (overrideRegexp.test(stepKey) || overrideRegexp.test(step.handler)) {
-                steps.delete(stepKey);
-              }
-            }
-          }
-          steps.set(`${getNameCached(cmp)}.${declaration.handler}`, {
-            dependency: getDependencyCached(cmp),
-            ...declaration
-          });
-        }
-      }
-    }
-    const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
-    return result;
+    return { callNames, scopeFilteredMetas };
   }
   /**
    * method helps to filter steps in a way that only the most derived classes are kept.

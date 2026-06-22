@@ -4844,6 +4844,17 @@ declare class A_Context {
      */
     scope?: A_Scope): Array<A_TYPES__A_StageStep>;
     /**
+     * Builds the `_featureCache` inner-map key. Centralized so every reader/writer
+     * (featureTemplate, hasFeature) uses an identical key and can never drift.
+     */
+    private static featureCacheKey;
+    /**
+     * Stores a built feature template in the two-level `_featureCache`, creating
+     * the inner map on first use and enforcing the max-size guard. Shared by
+     * featureTemplate (full build) and hasFeature (provably-empty result).
+     */
+    private static storeFeatureTemplate;
+    /**
      * Returns all extensions for the specific feature in the specific component within the provided scope.
      * Scope dictates which components are active and can provide extensions for the feature.
      *
@@ -4865,6 +4876,17 @@ declare class A_Context {
      * Provide the scope that dictates which components are active and can provide extensions for the feature.
      */
     scope: A_Scope): Array<A_TYPES__A_StageStep>;
+    /**
+     * Shared setup for feature-extension resolution. Builds the caller's
+     * `callNames` (its inheritance chain × feature name) and the in-scope,
+     * filtered list of metas that may contribute extensions — applying the
+     * sibling-cross-talk and entity-isolation filters in ONE place so
+     * `featureExtensions` (full build) and `hasFeature` (existence probe) can
+     * never diverge on which handlers they consider.
+     *
+     * [!] Assumes inputs were already validated by the caller.
+     */
+    private static collectScopedFeatureMetas;
     /**
      * method helps to filter steps in a way that only the most derived classes are kept.
      *

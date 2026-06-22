@@ -1,5 +1,6 @@
 import { A_Feature } from "@adaas/a-concept/a-feature";
 import { A_Scope } from "@adaas/a-concept/a-scope";
+import { A_Context } from "../A-Context";
 
 
 
@@ -44,15 +45,14 @@ export class A_Component {
          */
         scope?: A_Scope
     ): Promise<any> | void {
+        if(!A_Context.hasFeature(feature, this, scope)) {
+            return;
+        }
+
         const newFeature = new A_Feature({
             name: feature,
             component: this
         });
-
-        // No handlers are registered for this feature in the current scope —
-        // nothing to process, so return immediately and avoid the stage machinery.
-        if (newFeature.size === 0)
-            return;
 
         return newFeature.process(scope);
     }

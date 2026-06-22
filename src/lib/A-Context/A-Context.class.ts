@@ -951,9 +951,69 @@ export class A_Context {
     static hasFeature(
         name: string | RegExp,
         component: A_TYPES__FeatureAvailableComponents,
-        scope: A_Scope = this.scope(component)
+        scope?: A_Scope
     ): boolean {
-        return this.featureTemplate(name, component, scope).length > 0;
+        // Mirror featureTemplate's validation so error semantics are unchanged for
+        // callers that previously reached them through featureTemplate().
+        if (!component) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component cannot be null or undefined.`);
+        if (!name) throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Feature name cannot be null or undefined.`);
+        if (!A_TypeGuards.isAllowedForFeatureDefinition(component))
+            throw new A_ContextError(A_ContextError.InvalidFeatureTemplateParameterError, `Unable to get feature template. Component of type ${A_CommonHelper.getComponentName(component)} is not allowed for feature definition.`);
+
+        const instance = this.getInstance();
+        const componentCtor: object = typeof component === 'function'
+            ? component
+            : (component as any).constructor;
+
+        // Resolve the effective scope EXACTLY like A_Feature.fromComponent: the
+        // component's REGISTERED scope dictates which extensions apply; an explicit
+        // `scope` is only a fallback for components not registered in any scope (it
+        // contributes execution-time injectables, not the set of active extensions).
+        // Probing against the raw external scope would miss extensions contributed
+        // by siblings registered in the component's own scope, wrongly returning
+        // false and skipping a call that fromComponent would have executed.
+        let componentScope: A_Scope | undefined;
+        try {
+            componentScope = this.scope(component);
+        } catch (error) {
+            if (!scope) throw error;
+        }
+        const effectiveScope = componentScope || scope!;
+
+        // Fast path: if the full template was already built+cached (same scope
+        // fingerprint + meta version), reuse it in O(1). We NEVER build, sort,
+        // dedup or cache a full template just to answer a boolean — that's the
+        // entire point of this probe.
+        const cacheKey = this.featureCacheKey(name, effectiveScope, instance);
+        const l2 = instance._featureCache.get(componentCtor);
+        if (l2) {
+            const cached = l2.get(cacheKey);
+            if (cached) return cached.length > 0;
+        }
+
+        // 1) Base definition declared directly on the component — cheap meta lookup.
+        if (this.featureDefinition(name, component).length > 0) return true;
+
+        // 2) Any extension contributed by a component in scope. The final template
+        //    is non-empty IFF at least one in-scope meta has a non-empty
+        //    extensions(callName): dedup only collapses duplicate keys and
+        //    filterToMostDerived only drops ancestors, so neither can ever empty a
+        //    non-empty set. We therefore early-exit on the first hit and skip the
+        //    steps Map, override-regex pass, ancestor scan, filterToMostDerived and
+        //    all the array allocation that featureExtensions performs.
+        const { callNames, scopeFilteredMetas } = this.collectScopedFeatureMetas(name, component, effectiveScope);
+        for (const [, meta] of scopeFilteredMetas) {
+            for (let i = 0; i < callNames.length; i++) {
+                if (meta.extensions(callNames[i]).length > 0) return true;
+            }
+        }
+
+        // 3) No listeners. The full template here is provably the empty array, so
+        //    cache it (fresh instance per key) — future probes AND featureTemplate()
+        //    calls under the same fingerprint then hit the O(1) fast path above,
+        //    preserving the documented "free on hot paths" behavior.
+        this.storeFeatureTemplate(instance, componentCtor, cacheKey, []);
+        return false;
     }
 
     static featureTemplate(
@@ -981,38 +1041,61 @@ export class A_Context {
         const instance = this.getInstance();
 
         // ---- Two-level WeakMap cache ----
-        // Outer key = component CONSTRUCTOR (not the instance) so all 1111 Node instances share
-        // ONE inner Map instead of creating one Map per instance.
+        // Outer key = component CONSTRUCTOR (not the instance) so all Node instances
+        // share ONE inner Map instead of creating one Map per instance.
         // Inner key = name + scope fingerprint + metaVersion (no getComponentName needed).
         const componentCtor: object = typeof component === 'function'
             ? component
             : (component as any).constructor;
 
-        let l2 = instance._featureCache.get(componentCtor);
+        const cacheKey = this.featureCacheKey(name, scope, instance);
+
+        const l2 = instance._featureCache.get(componentCtor);
         if (l2) {
-            const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
             const cached = l2.get(cacheKey);
             if (cached) return cached;
-
-            const steps: A_TYPES__A_StageStep[] = [
-                ...this.featureDefinition(name, component),
-                ...this.featureExtensions(name, component, scope)
-            ];
-            if (l2.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
-            l2.set(cacheKey, steps);
-            return steps;
         }
 
-        // First visit for this constructor — build inner Map.
-        const cacheKey = `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
         const steps: A_TYPES__A_StageStep[] = [
             ...this.featureDefinition(name, component),
             ...this.featureExtensions(name, component, scope)
         ];
-        const innerMap: Map<string, Array<A_TYPES__A_StageStep>> = new Map();
-        innerMap.set(cacheKey, steps);
-        instance._featureCache.set(componentCtor, innerMap);
+
+        this.storeFeatureTemplate(instance, componentCtor, cacheKey, steps);
+
         return steps;
+    }
+
+    /**
+     * Builds the `_featureCache` inner-map key. Centralized so every reader/writer
+     * (featureTemplate, hasFeature) uses an identical key and can never drift.
+     */
+    private static featureCacheKey(
+        name: string | RegExp,
+        scope: A_Scope,
+        instance: A_Context
+    ): string {
+        return `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+    }
+
+    /**
+     * Stores a built feature template in the two-level `_featureCache`, creating
+     * the inner map on first use and enforcing the max-size guard. Shared by
+     * featureTemplate (full build) and hasFeature (provably-empty result).
+     */
+    private static storeFeatureTemplate(
+        instance: A_Context,
+        componentCtor: object,
+        cacheKey: string,
+        steps: Array<A_TYPES__A_StageStep>
+    ): void {
+        let l2 = instance._featureCache.get(componentCtor);
+        if (!l2) {
+            l2 = new Map();
+            instance._featureCache.set(componentCtor, l2);
+        }
+        if (l2.size >= A_Context.FEATURE_EXTENSIONS_CACHE_MAX_SIZE) l2.clear();
+        l2.set(cacheKey, steps);
     }
     // ----------------------------------------------------------------------------------------------------------
     // -----------------------------------Helper Methods --------------------------------------------------------
@@ -1053,9 +1136,7 @@ export class A_Context {
 
 
 
-        const callNames = A_CommonHelper.getClassInheritanceChain(component)
-            .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
-            .map(c => `${c.name}.${name}`);
+        const { callNames, scopeFilteredMetas } = this.collectScopedFeatureMetas(name, component, scope);
 
         const steps: Map<string, A_TYPES__A_StageStep> = new Map();
 
@@ -1082,71 +1163,6 @@ export class A_Context {
             return d;
         };
 
-        // ---- Sibling-cross-talk filter ----
-        // When a base class declares `@A_Feature.Extend()` without an explicit `scope:`,
-        // the resulting regex is a wildcard (e.g. `.*\.featureName$`). That regex is then
-        // cloned (via meta inheritance) into every subclass's _metaStorage entry, so when
-        // we iterate sibling subclass metas for callName "CmdA.featureName", the wildcard
-        // in CmdB's / CmdC's cloned metas ALSO matches and produces stage steps whose
-        // `dependency` is a sibling class — leading to "Unable to resolve component"
-        // failures at execution time.
-        //
-        // Build the caller's inheritance chain as a Set, and treat any `cmp` that is NOT
-        // in this chain but DOES inherit from a class in the chain as a "sibling" — those
-        // are skipped. Unrelated handler components (e.g. classes that only extend
-        // A_Component / A_Container / A_Entity) are still included so they can declare
-        // scoped extensions for any caller class.
-        const callerChain: Set<Function> = new Set(
-            A_CommonHelper.getClassInheritanceChain(component)
-                .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity)
-        );
-
-        const isSiblingOrUnrelatedDescendant = (cmp: Function): boolean => {
-            if (callerChain.has(cmp)) return false;
-            const ancestors = A_Context.getAncestors(cmp);
-            if (!ancestors) return false;
-            for (const a of callerChain) {
-                if (ancestors.has(a)) return true;
-            }
-            return false;
-        };
-
-        // ---- Entity isolation filter ----
-        // When the caller is an A_Entity, every OTHER A_Entity class in the
-        // scope must be treated as foreign: its extensions are class-private
-        // by default, since the same feature name on two unrelated entity
-        // classes (e.g. both declaring `@A_Feature.Extend() async test()`)
-        // means "this entity reacts to its own test", not "every entity class
-        // in the scope should fan out". Cross-entity-class handlers must be
-        // explicit via `@A_Feature.Extend({ scope: [TargetEntity] })` on a
-        // non-entity component.
-        const callerIsEntity = component instanceof A_Entity;
-        const isForeignEntityClass = (cmp: Function): boolean => {
-            if (!callerIsEntity) return false;
-            if (callerChain.has(cmp)) return false;
-            if (typeof cmp !== 'function') return false;
-            return (cmp.prototype instanceof A_Entity) || cmp === A_Entity;
-        };
-
-        // ---- Optimization 3: Build a local set of metas that are in scope ----
-        // Pre-filter _metaStorage entries to only those present in scope,
-        // avoiding repeated scope.has() calls per callName iteration.
-        const scopeFilteredMetas: Array<[A_TYPES__MetaLinkedComponentConstructors, A_ComponentMeta | A_ContainerMeta]> = [];
-        for (const [cmp, meta] of instance._metaStorage) {
-            if (scope.has(cmp) && (
-                A_TypeGuards.isComponentMetaInstance(meta)
-                ||
-                A_TypeGuards.isContainerMetaInstance(meta)
-            )) {
-                // Skip sibling subclasses of any class in the caller's inheritance chain
-                // (see comment block above for rationale).
-                if (isSiblingOrUnrelatedDescendant(cmp as Function)) continue;
-                // Skip foreign A_Entity classes when the caller is itself an entity.
-                if (isForeignEntityClass(cmp as Function)) continue;
-                scopeFilteredMetas.push([cmp, meta as A_ComponentMeta | A_ContainerMeta]);
-            }
-        }
-
         // Maintain an insertion-ordered list mirroring `allowedComponents` so the
         // "inherited ancestor" lookup can scan it in reverse with O(1) Set
         // membership tests instead of rebuilding `Array.from(set).reverse()` and
@@ -1167,26 +1183,34 @@ export class A_Context {
                 // it is identical for every declaration of this component.
                 const cmpAncestors = A_Context.getAncestors(cmp as Function);
 
+                // The "most-recently-added allowed component that is a strict ancestor
+                // of `cmp`" depends ONLY on `cmp` and `allowedComponentsList` — neither
+                // of which changes across this component's extensions — so resolve it
+                // ONCE here instead of re-scanning the list for every declaration below.
+                let inherited: A_TYPES__MetaLinkedComponentConstructors | undefined;
+                for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
+                    const c = allowedComponentsList[j];
+                    if (c === cmp) continue;
+                    const isAncestor = cmpAncestors
+                        ? cmpAncestors.has(c as Function)
+                        : A_Context.isIndexedInheritedFrom(cmp as Function, c as Function);
+                    if (isAncestor) {
+                        inherited = c;
+                        break;
+                    }
+                }
+
+                // `cmp`-keyed values are also loop-invariant — resolve the cached name
+                // and dependency once rather than per declaration.
+                const inheritedName = inherited !== undefined ? getNameCached(inherited) : undefined;
+                const cmpName = getNameCached(cmp);
+                const cmpDependency = getDependencyCached(cmp);
+
                 for (let i = 0; i < extensions.length; i++) {
                     const declaration = extensions[i];
 
-                    // Find the most-recently-added allowed component that is a strict
-                    // ancestor of `cmp` (mirrors the previous reverse().find()).
-                    let inherited: A_TYPES__MetaLinkedComponentConstructors | undefined;
-                    for (let j = allowedComponentsList.length - 1; j >= 0; j--) {
-                        const c = allowedComponentsList[j];
-                        if (c === cmp) continue;
-                        const isAncestor = cmpAncestors
-                            ? cmpAncestors.has(c as Function)
-                            : A_Context.isIndexedInheritedFrom(cmp as Function, c as Function);
-                        if (isAncestor) {
-                            inherited = c;
-                            break;
-                        }
-                    }
-
-                    if (inherited) {
-                        steps.delete(`${getNameCached(inherited)}.${declaration.handler}`);
+                    if (inheritedName !== undefined) {
+                        steps.delete(`${inheritedName}.${declaration.handler}`);
                     }
 
                     // Check if the declaration has an override regexp and remove matching steps
@@ -1204,8 +1228,8 @@ export class A_Context {
                         }
                     }
 
-                    steps.set(`${getNameCached(cmp)}.${declaration.handler}`, {
-                        dependency: getDependencyCached(cmp),
+                    steps.set(`${cmpName}.${declaration.handler}`, {
+                        dependency: cmpDependency,
                         ...declaration
                     });
                 }
@@ -1215,6 +1239,84 @@ export class A_Context {
         const result = instance.filterToMostDerived(scope, Array.from(steps.values()));
 
         return result;
+    }
+
+
+    /**
+     * Shared setup for feature-extension resolution. Builds the caller's
+     * `callNames` (its inheritance chain × feature name) and the in-scope,
+     * filtered list of metas that may contribute extensions — applying the
+     * sibling-cross-talk and entity-isolation filters in ONE place so
+     * `featureExtensions` (full build) and `hasFeature` (existence probe) can
+     * never diverge on which handlers they consider.
+     *
+     * [!] Assumes inputs were already validated by the caller.
+     */
+    private static collectScopedFeatureMetas(
+        name: string | RegExp,
+        component: A_TYPES__FeatureAvailableComponents,
+        scope: A_Scope
+    ): {
+        callNames: string[];
+        scopeFilteredMetas: Array<[A_TYPES__MetaLinkedComponentConstructors, A_ComponentMeta | A_ContainerMeta]>;
+    } {
+        const instance = this.getInstance();
+
+        // Caller inheritance chain (excluding framework base classes) drives both
+        // the callNames and the sibling-relationship checks below.
+        const chain = A_CommonHelper.getClassInheritanceChain(component)
+            .filter(c => c !== A_Component && c !== A_Container && c !== A_Entity);
+
+        const callNames = chain.map(c => `${c.name}.${name}`);
+        const callerChain: Set<Function> = new Set(chain);
+
+        // ---- Sibling-cross-talk filter ----
+        // A base class `@A_Feature.Extend()` with no explicit scope compiles to a
+        // wildcard regex that meta-inheritance clones into every subclass meta.
+        // Iterating a sibling subclass meta for the caller's callName would then
+        // match that wildcard and emit a step whose dependency is a sibling class
+        // (unresolvable at execution). Skip any cmp that is NOT in the caller's
+        // chain but DOES inherit from a class in it. Unrelated handler components
+        // (only extending A_Component/A_Container/A_Entity) are still included.
+        const isSiblingOrUnrelatedDescendant = (cmp: Function): boolean => {
+            if (callerChain.has(cmp)) return false;
+            const ancestors = A_Context.getAncestors(cmp);
+            if (!ancestors) return false;
+            for (const a of callerChain) {
+                if (ancestors.has(a)) return true;
+            }
+            return false;
+        };
+
+        // ---- Entity isolation filter ----
+        // When the caller is an A_Entity, other A_Entity classes are foreign: their
+        // extensions are class-private unless an explicit
+        // `@A_Feature.Extend({ scope: [TargetEntity] })` on a non-entity component
+        // opts in. Prevents same-named entity handlers fanning out across classes.
+        const callerIsEntity = component instanceof A_Entity;
+        const isForeignEntityClass = (cmp: Function): boolean => {
+            if (!callerIsEntity) return false;
+            if (callerChain.has(cmp)) return false;
+            if (typeof cmp !== 'function') return false;
+            return (cmp.prototype instanceof A_Entity) || cmp === A_Entity;
+        };
+
+        // Pre-filter _metaStorage to entries present in scope (avoids repeated
+        // scope.has() per callName) that survive the two filters above.
+        const scopeFilteredMetas: Array<[A_TYPES__MetaLinkedComponentConstructors, A_ComponentMeta | A_ContainerMeta]> = [];
+        for (const [cmp, meta] of instance._metaStorage) {
+            if (scope.has(cmp) && (
+                A_TypeGuards.isComponentMetaInstance(meta)
+                ||
+                A_TypeGuards.isContainerMetaInstance(meta)
+            )) {
+                if (isSiblingOrUnrelatedDescendant(cmp as Function)) continue;
+                if (isForeignEntityClass(cmp as Function)) continue;
+                scopeFilteredMetas.push([cmp, meta as A_ComponentMeta | A_ContainerMeta]);
+            }
+        }
+
+        return { callNames, scopeFilteredMetas };
     }
 
 

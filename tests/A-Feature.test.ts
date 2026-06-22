@@ -1567,4 +1567,102 @@ describe('A-Feature tests', () => {
         expect(log).toEqual([]);
     });
 
+    describe('A_Context.hasFeature (existence probe) parity', () => {
+        // hasFeature now probes meta directly with an early-exit instead of building
+        // a full featureTemplate. These cases lock in the invariant it relies on:
+        //   hasFeature(name, c, s) === (featureTemplate(name, c, s).length > 0)
+
+        it('Should return false when neither a definition nor an extension exists', () => {
+            class Lonely_Component extends A_Component { }
+
+            const scope = new A_Scope({ name: 'LonelyScope', components: [Lonely_Component] });
+            const cmp = scope.resolve(Lonely_Component)!;
+
+            expect(A_Context.hasFeature('missingFeature', cmp, scope)).toBe(false);
+            expect(A_Context.hasFeature('missingFeature', cmp, scope))
+                .toBe(A_Context.featureTemplate('missingFeature', cmp, scope).length > 0);
+        });
+
+        it('Should return true for a feature that only has a base definition', () => {
+            class Defined_Component extends A_Component {
+                @A_Feature.Define({
+                    template: [{
+                        name: 'A_Component.noop',
+                        dependency: new A_Dependency(A_Component),
+                        handler: 'noop',
+                    }]
+                })
+                async onlyDefined() { }
+            }
+
+            const scope = new A_Scope({ name: 'DefinedScope', components: [Defined_Component] });
+            const cmp = scope.resolve(Defined_Component)!;
+
+            expect(A_Context.hasFeature('onlyDefined', cmp, scope)).toBe(true);
+            expect(A_Context.hasFeature('onlyDefined', cmp, scope))
+                .toBe(A_Context.featureTemplate('onlyDefined', cmp, scope).length > 0);
+        });
+
+        it('Should return true for a feature contributed only by an in-scope extension', () => {
+            class Host_Component extends A_Component { }
+
+            class Listener_Component extends A_Component {
+                @A_Feature.Extend({ name: 'pingFeature', scope: [Host_Component] })
+                async onPing() { }
+            }
+
+            const scope = new A_Scope({ name: 'ExtScope', components: [Host_Component, Listener_Component] });
+            const host = scope.resolve(Host_Component)!;
+
+            expect(A_Context.hasFeature('pingFeature', host, scope)).toBe(true);
+            expect(A_Context.hasFeature('pingFeature', host, scope))
+                .toBe(A_Context.featureTemplate('pingFeature', host, scope).length > 0);
+        });
+
+        it('Should respect scope: false when the listener is not in scope', () => {
+            class Host_Component extends A_Component { }
+
+            class Listener_Component extends A_Component {
+                @A_Feature.Extend({ name: 'pingFeature', scope: [Host_Component] })
+                async onPing() { }
+            }
+
+            // Listener is NOT registered in this scope → no extension applies.
+            const scope = new A_Scope({ name: 'NoListenerScope', components: [Host_Component] });
+            const host = scope.resolve(Host_Component)!;
+
+            expect(A_Context.hasFeature('pingFeature', host, scope)).toBe(false);
+            expect(A_Context.hasFeature('pingFeature', host, scope))
+                .toBe(A_Context.featureTemplate('pingFeature', host, scope).length > 0);
+        });
+
+        it('Should match featureTemplate across inheritance, siblings and overrides', () => {
+            class BaseComponent extends A_Component {
+                @A_Feature.Extend({ name: 'testFeature', scope: [BaseComponent] })
+                async test() { }
+            }
+            class ChildComponent_A extends BaseComponent {
+                @A_Feature.Extend({ name: 'testFeature', scope: [ChildComponent_A] })
+                async test() { }
+            }
+            class ChildComponent_B extends BaseComponent {
+                @A_Feature.Extend({ name: 'testFeature', scope: [ChildComponent_B] })
+                async test() { }
+            }
+
+            const scope = new A_Scope({ name: 'ChainScope', components: [ChildComponent_A, ChildComponent_B] });
+            const a = scope.resolve(ChildComponent_A)!;
+            const b = scope.resolve(ChildComponent_B)!;
+
+            expect(A_Context.hasFeature('testFeature', a, scope))
+                .toBe(A_Context.featureTemplate('testFeature', a, scope).length > 0);
+            expect(A_Context.hasFeature('testFeature', b, scope))
+                .toBe(A_Context.featureTemplate('testFeature', b, scope).length > 0);
+            // A different, never-declared feature on the same chain must be false.
+            expect(A_Context.hasFeature('absentFeature', a, scope))
+                .toBe(A_Context.featureTemplate('absentFeature', a, scope).length > 0);
+            expect(A_Context.hasFeature('absentFeature', a, scope)).toBe(false);
+        });
+    });
+
 });

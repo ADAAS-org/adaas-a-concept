@@ -243,6 +243,9 @@ describe('A-Meta tests', () => {
             }
 
             feature() {
+                if(!this.scope.isInheritedFrom(A_Context.scope(this)))
+                    this.scope.inherit(A_Context.scope(this));
+
                 this.call('testFeature', this.scope);
             }
         }
