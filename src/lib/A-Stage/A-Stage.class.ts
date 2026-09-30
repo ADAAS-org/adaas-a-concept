@@ -12,7 +12,14 @@ import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import type { A_TYPES__Container_Constructor } from "@adaas/a-concept/a-container";
 import type { A_TYPES__Component_Constructor } from "@adaas/a-concept/a-component";
 import type { A_TYPES__A_DependencyInjectable } from "@adaas/a-concept/a-dependency";
+import type { A_Dependency } from "@adaas/a-concept/a-dependency";
 
+
+/**
+ * Per-step memo of `A_Stage.needsOwnScope()`. Steps are cached template objects,
+ * so this is computed once per step definition.
+ */
+const _stepNeedsOwnScope = new WeakMap<A_TYPES__A_StageStep, boolean>();
 
 
 export class A_Stage {
@@ -269,6 +276,52 @@ export class A_Stage {
         this._status = A_TYPES__A_Stage_Status.SKIPPED;
     }
 
+    /**
+     * True if resolving this step against the caller scope could differ from
+     * resolving it against the feature's own (empty, inheriting) scope, i.e. the
+     * step injects the scope itself, or uses flat / parent-offset / create /
+     * multi-instance / query / by-name resolution. Conservative: anything not
+     * provably equivalent returns true.
+     */
+    protected needsOwnScope(step: A_TYPES__A_StageStep): boolean {
+        let result = _stepNeedsOwnScope.get(step);
+        if (result !== undefined) return result;
+
+        const resolverConstructor = step.dependency.target as A_TYPES__Container_Constructor | A_TYPES__Component_Constructor | undefined;
+
+        try {
+            result = !resolverConstructor
+                || !A_Stage.isPlainLookup(step.dependency)
+                || A_Context
+                    .meta(resolverConstructor)
+                    .injections(step.handler)
+                    .some(dependency =>
+                        !A_TypeGuards.isCallerConstructor(dependency.target)
+                        && !A_TypeGuards.isFeatureConstructor(dependency.target)
+                        && !A_Stage.isPlainLookup(dependency)
+                    );
+        } catch {
+            // Let the regular path (getStepComponent / getStepArgs) report errors.
+            result = true;
+        }
+
+        _stepNeedsOwnScope.set(step, result);
+        return result;
+    }
+
+    private static isPlainLookup(dependency: A_Dependency<any>): boolean {
+        const target = dependency.target;
+        if (typeof target !== 'function' || A_TypeGuards.isScopeConstructor(target))
+            return false;
+
+        const strategy = dependency.resolutionStrategy;
+        if (strategy.flat || strategy.create || strategy.parent !== 0 || strategy.pagination.count !== 1)
+            return false;
+
+        for (const _ in strategy.query) return false;
+        return true;
+    }
+
 
     /**
      * This method processes the stage by executing all the steps
@@ -284,7 +337,7 @@ export class A_Stage {
 
         const targetScope = A_TypeGuards.isScopeInstance(scope)
             ? scope
-            : this._feature.scope;
+            : this._feature.stepScope(this.needsOwnScope(this._definition));
 
         if (!this.isProcessed) {
             this._status = A_TYPES__A_Stage_Status.PROCESSING;

@@ -158,6 +158,23 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
         return A_Context.scope(this);
     }
     /**
+     * Scope used to resolve a step's dependencies when the feature is processed
+     * without an explicit scope.
+     *
+     * The feature's own scope is an empty child of the effective (caller) scope,
+     * so plain single-instance lookups resolve to the same instances from the
+     * effective scope. The own scope is therefore only allocated when the step
+     * actually depends on it (`needsOwnScope`), or reused when it already exists
+     * (an earlier step may have registered something into it).
+     *
+     * @internal used by A_Stage
+     */
+    stepScope(needsOwnScope: boolean): A_Scope {
+        return (needsOwnScope || this._scopeAllocated)
+            ? this.scope
+            : this._effectiveScope;
+    }
+    /**
      * The number of stages in the feature
      */
     get size(): number {

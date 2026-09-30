@@ -105,4 +105,42 @@ describe('ASEID Tests', () => {
         delete process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_NAME];
         delete process.env[A_CONSTANTS__DEFAULT_ENV_VARIABLES.A_CONCEPT_ROOT_SCOPE];
     });
+
+    it('Should accept "_" in every part and round-trip through the string form', async () => {
+        const aseid = new ASEID({
+            concept: 'my_concept',
+            scope: 'my_scope',
+            entity: 'my_entity',
+            id: 'wf_abc123',
+        });
+
+        const str = aseid.toString();
+        expect(str).toBe('my_concept@my_scope:my_entity:wf_abc123');
+        expect(ASEID.isASEID(str)).toBe(true);
+
+        const parsed = new ASEID(str);
+        expect(parsed.id).toBe('wf_abc123');
+        expect(parsed.entity).toBe('my_entity');
+        expect(ASEID.compare(aseid, str)).toBe(true);
+    });
+
+    it('Should reject "|" and other invalid characters', async () => {
+        expect(ASEID.isASEID('my|concept@scope:entity:id')).toBe(false);
+        expect(ASEID.isASEID('concept@scope:entity:i|d')).toBe(false);
+        expect(ASEID.isASEID('concept@scope:entity:id@v1|2')).toBe(false);
+
+        expect(() => new ASEID({ entity: 'entity', id: 'a|b' })).toThrow();
+        expect(() => new ASEID({ entity: 'ent:ity', id: 'abc' })).toThrow();
+        expect(() => new ASEID({ entity: 'entity', id: 'abc', shard: 's@1' })).toThrow();
+        expect(() => new ASEID({ entity: 'entity', id: 'a.b' })).toThrow();
+    });
+
+    it('Should accept "." in the entity (e.g. event attributes like keydown.enter)', async () => {
+        const aseid = new ASEID({ concept: 'c', scope: 's', entity: 'keydown.enter', id: 'abc' });
+        const parsed = new ASEID(aseid.toString());
+
+        expect(ASEID.isASEID(aseid.toString())).toBe(true);
+        expect(parsed.entity).toBe('keydown.enter');
+        expect(parsed.id).toBe('abc');
+    });
 });

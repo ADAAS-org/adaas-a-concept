@@ -216,9 +216,37 @@ export class A_Context {
     static getInstance() {
         if (!A_Context._instance) {
             A_Context._instance = new A_Context();
+            A_Context.detectDuplicateRuntime();
         }
 
         return A_Context._instance;
+    }
+
+    /**
+     * Warns once when a second copy of `@adaas/a-concept` is loaded in the same
+     * realm (e.g. a library bundled its own copy, or a nested node_modules
+     * resolved a different version). Each copy keeps its own metadata, so
+     * decorators (features, event handlers) registered through one copy are
+     * invisible to the other and silently never run.
+     *
+     * Skipped under Jest, where `resetModules` legitimately reloads the module.
+     */
+    private static detectDuplicateRuntime(): void {
+        const g = globalThis as any;
+        const key = Symbol.for('adaas.a-concept.runtime');
+
+        if (g[key] && g[key] !== A_Context
+            && !(typeof process !== 'undefined' && process.env?.JEST_WORKER_ID)
+        ) {
+            console.warn(
+                '[a-concept] Multiple copies of @adaas/a-concept are loaded. ' +
+                'Metadata registered by decorators in one copy (features, event handlers) is not visible to the other, ' +
+                'so those handlers never run. Make @adaas/* packages external/peer dependencies in library bundles ' +
+                'and deduplicate them in the app (npm dedupe, or a bundler alias).'
+            );
+        }
+
+        g[key] = A_Context;
     }
 
 

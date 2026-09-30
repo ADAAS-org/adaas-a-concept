@@ -18,7 +18,15 @@ export class ASEID {
     /**
      * ASEID Regular Expression
      */
-    static readonly regexp: RegExp = new RegExp(`^[a-z|A-Z|0-9|-]+@[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\-]+:[a-z|A-Z|0-9|\\.|-]+(@v[0-9|\\.]+|@lts)?$`)
+    static readonly regexp: RegExp = /^[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+:[a-zA-Z0-9_.-]+:[a-zA-Z0-9_.-]+(@v[0-9.]+|@lts)?$/
+    /**
+     * Allowed characters for the id and shard parts (`.` separates shard from id)
+     */
+    static readonly partRegexp: RegExp = /^[a-zA-Z0-9_-]+$/
+    /**
+     * Allowed characters for the entity part (e.g. `keydown.enter` event attributes)
+     */
+    static readonly entityRegexp: RegExp = /^[a-zA-Z0-9_.-]+$/
     /**
      * Tests if the identity string is an ASEID
      * 
@@ -293,6 +301,19 @@ export class ASEID {
             case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1) && !param1.entity:
                 throw new Error('ASEID entity is required')
 
+            // 4) object parts must be parseable back from the string form
+            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1) && !ASEID.entityRegexp.test(param1.entity):
+                throw new Error(`Invalid ASEID entity provided: ${param1.entity}`)
+
+            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1)
+                && A_BasicTypeGuards.isString(param1.id)
+                && !ASEID.partRegexp.test(param1.id):
+                throw new Error(`Invalid ASEID id provided: ${param1.id}`)
+
+            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1)
+                && !!param1.shard
+                && !ASEID.partRegexp.test(param1.shard):
+                throw new Error(`Invalid ASEID shard provided: ${param1.shard}`)
         }
     }
 }

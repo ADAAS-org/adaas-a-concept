@@ -293,3 +293,32 @@ describe('A_Context strict ownership: an instance belongs to exactly one scope',
         });
     });
 });
+
+describe('A_Context duplicate runtime detection', () => {
+    const key = Symbol.for('adaas.a-concept.runtime');
+
+    it('warns once a foreign a-concept copy already claimed the realm', () => {
+        const g = globalThis as any;
+        const previousMarker = g[key];
+        const workerId = process.env.JEST_WORKER_ID;
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => { });
+
+        try {
+            delete process.env.JEST_WORKER_ID;
+
+            g[key] = A_Context;
+            (A_Context as any).detectDuplicateRuntime();
+            expect(warn).not.toHaveBeenCalled();
+
+            g[key] = class ForeignContext { };
+            (A_Context as any).detectDuplicateRuntime();
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(String(warn.mock.calls[0][0])).toContain('Multiple copies of @adaas/a-concept');
+            expect(g[key]).toBe(A_Context);
+        } finally {
+            process.env.JEST_WORKER_ID = workerId;
+            g[key] = previousMarker;
+            warn.mockRestore();
+        }
+    });
+});

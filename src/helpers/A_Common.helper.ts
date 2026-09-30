@@ -4,6 +4,11 @@ import { A_TYPES__DeepPartial } from "@adaas/a-concept/types";
 // WeakMap keys must be objects or functions — primitives are handled inline below.
 const _componentNameCache = new WeakMap<object, string>();
 
+// Memo for isInheritedFrom(childClass, parentClass) where childClass is a function.
+// Class prototype chains are fixed after definition, and this check runs on every
+// type guard (hasFlat, getStepArgs, ...), so the prototype walk is done once per pair.
+const _inheritanceCache = new WeakMap<Function, Map<any, boolean>>();
+
 export class A_CommonHelper {
 
     /**
@@ -22,6 +27,23 @@ export class A_CommonHelper {
      * @returns 
      */
     static isInheritedFrom(childClass: any, parentClass: any): boolean {
+        if (childClass === parentClass) return !!childClass;
+        if (typeof childClass !== 'function') return A_CommonHelper.walkInheritance(childClass, parentClass);
+
+        let byParent = _inheritanceCache.get(childClass);
+        if (!byParent) {
+            byParent = new Map();
+            _inheritanceCache.set(childClass, byParent);
+        }
+        let result = byParent.get(parentClass);
+        if (result === undefined) {
+            result = A_CommonHelper.walkInheritance(childClass, parentClass);
+            byParent.set(parentClass, result);
+        }
+        return result;
+    }
+
+    private static walkInheritance(childClass: any, parentClass: any): boolean {
         let current = childClass;
 
         // Traverse the prototype chain

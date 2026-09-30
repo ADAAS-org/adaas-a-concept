@@ -40,13 +40,22 @@ import { A_TYPES__Ctor } from '@adaas/a-concept/types';
 import { ASEID } from '@adaas/a-concept/aseid';
 
 
-// ─── Module-level reusable Sets for traversal ─────────────────────────────────
-// JS is single-threaded: scope traversals are never interleaved, so we can
-// safely reuse a single Set per traversal type instead of allocating a new
-// Set on every fingerprint access.
-const _avVisited: Set<A_Scope> = new Set();
-const _fpVisited: Set<A_Scope> = new Set();
+// ─── Global scope mutation clock ──────────────────────────────────────────────
+// Every scope mutation takes the next tick of this clock as its new `_version`.
+// Because the clock is global and monotonic, "has anything reachable from this
+// scope changed since I cached?" reduces to comparing the MAX version over the
+// reachable graph (self + parents + imports) with the stamp taken when the
+// caches were last validated. See `A_Scope._validateCaches()`.
+let _scopeClock = 0;
+// Set when a `_reachableMax()` walk runs into a scope that is already on the
+// walk stack (import cycles). Results computed under a cycle are exact for the
+// walk root but not for intermediate scopes, so those are not memoized.
+let _reachableCycle = false;
 // ──────────────────────────────────────────────────────────────────────────────
+
+// Duplicate `static entity` name detection (see `A_Scope.warnOnDuplicateEntityName`).
+const _entityNameCache = new WeakMap<Function, string | undefined>();
+const _reportedEntityNameClashes = new Set<string>();
 
 
 export class A_Scope<
@@ -75,12 +84,33 @@ export class A_Scope<
     // --------------------Cache & Versioning--------------------------------------
     // ===========================================================================
     /**
-     * Monotonically increasing version counter. Incremented on every mutation
-     * (register, deregister, import, deimport, inherit, destroy) so that
-     * external caches (e.g. A_Context feature-extension cache) can detect
-     * staleness cheaply via numeric comparison.
+     * Monotonically increasing version. On every mutation (register, deregister,
+     * import, deimport, inherit, destroy) it takes the next tick of the global
+     * scope clock, so external caches can detect staleness cheaply via numeric
+     * comparison, and downstream scopes can detect upstream changes lazily.
      */
     protected _version: number = 0;
+
+    /**
+     * Max `_version` over the reachable graph at the moment the resolution caches
+     * and the fingerprint were last validated (see `_validateCaches`).
+     */
+    private _cacheStamp: number = -1;
+    /**
+     * Clock tick at which `_validateCaches` last ran for this scope.
+     */
+    private _validatedClock: number = -1;
+    /**
+     * Per-clock-tick memo of `_reachableMax()`.
+     */
+    private _rmClock: number = -1;
+    private _rmValue: number = 0;
+    private _rmInProgress: boolean = false;
+    /**
+     * Set while this scope's fingerprint is being computed (cycle guard for
+     * parent-fingerprint reuse through imports).
+     */
+    private _fpComputing: boolean = false;
 
     /**
      * Cache for resolveConstructor results (both positive and negative).
@@ -109,21 +139,9 @@ export class A_Scope<
     protected _resolveAllCache: Map<Function | string, any[]> = new Map();
 
     /**
-     * Cached fingerprint string. Invalidated on every bumpVersion() call.
+     * Cached fingerprint string. Cleared together with the resolution caches.
      */
     private _cachedFingerprint: string | undefined;
-    private _cachedFingerprintVersion: number = -1;
-    /**
-     * Cached aggregate version (this scope + all reachable parents/imports).
-     *
-     * The aggregate version only changes when some reachable scope mutates, and
-     * every such mutation already propagates `bumpVersion()` downstream to this
-     * scope (see `inherit`/`import` → `_addSubscriber` + `bumpVersion`), which
-     * clears this cache. Therefore a non-`undefined` value is always current and
-     * we can skip re-walking the scope graph on every `fingerprint` access — the
-     * walk is the dominant cost on the feature-dispatch hot path.
-     */
-    private _cachedAggVersion: number | undefined;
 
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -173,15 +191,19 @@ export class A_Scope<
     protected _imports: Set<A_Scope> = new Set();
 
     /**
-     * Downstream scopes whose `_resolveCache` (and friends) depend on this scope.
-     * Populated when another scope `inherit()`s from us or `import()`s us; on
-     * `bumpVersion()` we recursively bump each live subscriber so cached
-     * lookups (including cached `undefined` negatives) never go stale.
+     * Downstream scopes that `inherit()` from us or `import()` us. Used by
+     * `destroy()` to detach them. Cache invalidation does NOT walk this set:
+     * downstream scopes validate their caches lazily (see `_validateCaches`).
      *
      * Held as `WeakRef`s so abandoned child scopes don't keep their parents
-     * pinned in memory. Dead refs are pruned lazily inside `bumpVersion()`.
+     * pinned in memory. Dead refs are pruned in amortized O(1) inside
+     * `_addSubscriber()`.
      */
     protected _subscribers: Set<WeakRef<A_Scope>> = new Set();
+    /**
+     * `_subscribers` size at which the next dead-ref prune happens.
+     */
+    private _subscribersPruneAt: number = 64;
 
     /**
      * Side-index for O(1) subscriber lookup/removal. Maps each subscribing
@@ -236,22 +258,16 @@ export class A_Scope<
      * will produce the same fingerprint. Dynamically recomputed when scope content changes.
      */
     get fingerprint(): string {
-        // Reuse the memoized aggregate version when available. It is cleared by
-        // bumpVersion() on any reachable-scope mutation, so a cached value is
-        // always valid and lets us avoid the O(scope-graph) aggregateVersion walk
-        // on every access (the hot path for feature-template cache keys).
-        let aggregateVersion = this._cachedAggVersion;
-        if (aggregateVersion === undefined) {
-            _avVisited.clear();
-            aggregateVersion = this.aggregateVersion(_avVisited);
-            this._cachedAggVersion = aggregateVersion;
-        }
-        if (this._cachedFingerprint !== undefined && this._cachedFingerprintVersion === aggregateVersion) {
+        this._validateCaches();
+        if (this._cachedFingerprint !== undefined)
             return this._cachedFingerprint;
+
+        this._fpComputing = true;
+        try {
+            this._cachedFingerprint = this.computeFingerprint(new Set());
+        } finally {
+            this._fpComputing = false;
         }
-        _fpVisited.clear();
-        this._cachedFingerprint = this.computeFingerprint(_fpVisited);
-        this._cachedFingerprintVersion = aggregateVersion;
         return this._cachedFingerprint;
     }
     // ===========================================================================
@@ -298,32 +314,77 @@ export class A_Scope<
     }
 
     /**
-     * Increments the scope version and clears internal caches.
+     * Advances the scope version and clears this scope's caches.
      * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
      *
-     * Also propagates the bump to every live downstream subscriber so their
-     * caches — which may include `undefined` negative entries that were
-     * resolved through us — are invalidated atomically. Dead `WeakRef`s are
-     * pruned in the same pass.
+     * O(1): downstream scopes (children / importers) are NOT visited. They
+     * detect the change lazily on their next cache read, because this scope's
+     * new version is greater than the stamp their caches were validated at.
      */
     protected bumpVersion(): void {
-        this._version++;
+        this._version = ++_scopeClock;
+        this._clearCaches();
+        this._cacheStamp = this._version;
+    }
+
+    private _clearCaches(): void {
         this._resolveConstructorCache.clear();
         this._resolveCache.clear();
         this._resolveFlatAllCache.clear();
         this._resolveAllCache.clear();
         this._cachedFingerprint = undefined;
-        this._cachedAggVersion = undefined;
+    }
 
-        if (this._subscribers.size === 0) return;
-        for (const ref of this._subscribers) {
-            const sub = ref.deref();
-            if (!sub) {
-                this._subscribers.delete(ref);
-                continue;
-            }
-            sub.bumpVersion();
+    /**
+     * Must be called before reading any cache that may depend on parent or
+     * imported scopes. Clears this scope's caches if any reachable scope
+     * (self, parents, imports, transitively) mutated since they were filled.
+     *
+     * O(1) when nothing mutated since the last call (same clock tick);
+     * otherwise a walk that is memoized per clock tick for every scope it visits.
+     */
+    private _validateCaches(): void {
+        if (this._validatedClock === _scopeClock) return;
+        this._validatedClock = _scopeClock;
+        const max = this._reachableMax();
+        if (max !== this._cacheStamp) {
+            this._clearCaches();
+            this._cacheStamp = max;
         }
+    }
+
+    /**
+     * Max `_version` over this scope and everything reachable through
+     * `_parent` and `_imports`. Memoized per global clock tick.
+     */
+    private _reachableMax(): number {
+        if (this._rmClock === _scopeClock) return this._rmValue;
+        if (this._rmInProgress) {
+            _reachableCycle = true;
+            return this._version;
+        }
+
+        this._rmInProgress = true;
+        const outerCycle = _reachableCycle;
+        _reachableCycle = false;
+
+        let max = this._version;
+        if (this._parent) {
+            const p = this._parent._reachableMax();
+            if (p > max) max = p;
+        }
+        for (const imp of this._imports) {
+            const i = imp._reachableMax();
+            if (i > max) max = i;
+        }
+
+        this._rmInProgress = false;
+        if (!_reachableCycle) {
+            this._rmClock = _scopeClock;
+            this._rmValue = max;
+        }
+        _reachableCycle = outerCycle || _reachableCycle;
+        return max;
     }
 
     /**
@@ -340,6 +401,12 @@ export class A_Scope<
         const ref = new WeakRef(child);
         this._subscribers.add(ref);
         this._subscriberTokens.set(child, ref);
+
+        if (this._subscribers.size >= this._subscribersPruneAt) {
+            for (const r of this._subscribers)
+                if (!r.deref()) this._subscribers.delete(r);
+            this._subscribersPruneAt = Math.max(64, this._subscribers.size * 2);
+        }
     }
 
     /**
@@ -356,19 +423,6 @@ export class A_Scope<
     }
 
     /**
-     * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
-     * Used to detect when any transitive dependency has changed, so the fingerprint cache can be invalidated.
-     */
-    private aggregateVersion(visited: Set<A_Scope>): number {
-        if (visited.has(this)) return 0;
-        visited.add(this);
-        let v = this._version;
-        if (this._parent) v += this._parent.aggregateVersion(visited);
-        for (const imp of this._imports) v += imp.aggregateVersion(visited);
-        return v;
-    }
-
-    /**
      * Computes a deterministic content-addressable fingerprint string.
      * Includes components, entities, fragments, errors, parent, and imports.
      */
@@ -378,8 +432,14 @@ export class A_Scope<
 
         const parts: string[] = [];
 
-        // Parent
-        parts.push('P:' + (this._parent ? this._parent.computeFingerprint(visited) : '-'));
+        // Parent. Reuse the parent's own cached fingerprint (validated by its
+        // getter) instead of recomputing the whole ancestor chain every time.
+        const parent = this._parent;
+        parts.push('P:' + (!parent
+            ? '-'
+            : (parent._fpComputing || visited.has(parent))
+                ? '~circular~'
+                : parent.fingerprint));
 
         // Allowed constructors (sorted by name for determinism).
         // `c.name` IS already the constructor's string name — no need to route
@@ -510,6 +570,52 @@ export class A_Scope<
         return parentScope as T
     }
 
+    private static isEmptyQuery(query: object): boolean {
+        for (const _ in query) return false;
+        return true;
+    }
+
+    private static entityNameOf(ctor: Function): string | undefined {
+        if (_entityNameCache.has(ctor)) return _entityNameCache.get(ctor);
+        let name: string | undefined;
+        try {
+            const value = (ctor as any).entity;
+            name = typeof value === 'string' ? value : undefined;
+        } catch {
+            name = undefined;
+        }
+        _entityNameCache.set(ctor, name);
+        return name;
+    }
+
+    /**
+     * Warns (once per pair of classes) when an entity constructor is added to a scope
+     * that already allows an UNRELATED entity constructor with the same `static entity`
+     * name. Resolving by that string would silently return whichever class matches first.
+     *
+     * Classes in the same inheritance chain are skipped: a subclass that inherits its
+     * parent's `entity` name is a deliberate specialization.
+     */
+    private warnOnDuplicateEntityName(ctor: Function): void {
+        const name = A_Scope.entityNameOf(ctor);
+        if (!name) return;
+
+        for (const other of this._allowedEntities) {
+            if (other === ctor || A_Scope.entityNameOf(other) !== name) continue;
+            if (A_CommonHelper.isInheritedFrom(ctor, other) || A_CommonHelper.isInheritedFrom(other, ctor)) continue;
+
+            const key = [other.name, ctor.name].sort().join('|') + '::' + name;
+            if (_reportedEntityNameClashes.has(key)) continue;
+            _reportedEntityNameClashes.add(key);
+
+            console.warn(
+                `[A-Concept] Entity classes "${other.name}" and "${ctor.name}" share the same entity name "${name}" `
+                + `in scope "${this.name}". Resolving by the string "${name}" is ambiguous — `
+                + `give one of them a unique \`static get entity()\` or resolve by class.`
+            );
+        }
+    }
+
 
     /**
      * Determines which initializer method to use based on the type of the first parameter.
@@ -549,6 +655,7 @@ export class A_Scope<
         if (config.parent) {
             this._parent = config.parent;
             (config.parent as A_Scope)._addSubscriber(this);
+            this.bumpVersion();
         }
     }
 
@@ -683,8 +790,7 @@ export class A_Scope<
         }
 
         // `bumpVersion()` clears all four resolution caches and the cached
-        // fingerprint, so we don't need to clear them explicitly above. It
-        // also walks `_subscribers`, but that set was just cleared.
+        // fingerprint, so we don't need to clear them explicitly above.
         this.bumpVersion();
     }
 
@@ -1019,6 +1125,23 @@ export class A_Scope<
         dependency: A_Dependency<T>
     ): T | Array<T> | undefined {
 
+        // Fast path for the most common strategy (plain @A_Inject / resolve(ctor)):
+        // a single instance from this scope, no parent offset, no create/require,
+        // no query. Equivalent to the general path below, without its per-call
+        // arrays, filters and slicing.
+        const strategy = dependency.resolutionStrategy;
+        if (strategy.parent === 0
+            && !strategy.create
+            && !strategy.require
+            && strategy.pagination.count === 1
+            && A_Scope.isEmptyQuery(strategy.query)
+        ) {
+            const key = dependency.target || dependency.name;
+            return (strategy.flat
+                ? this.resolveFlatOnce<T>(key)
+                : this.resolveOnce<T>(key)) || undefined;
+        }
+
         let result: Array<T> = [];
         let targetScope: A_Scope = this.parentOffset(dependency.parent) || this;
 
@@ -1215,6 +1338,7 @@ export class A_Scope<
 
         // ---- Optimization: check resolveConstructor cache for string lookups ----
         const cacheKey = name;
+        this._validateCaches();
         if (this._resolveConstructorCache.has(cacheKey)) {
             const cached = this._resolveConstructorCache.get(cacheKey);
             return (cached === null ? undefined : cached) as any;
@@ -1378,6 +1502,7 @@ export class A_Scope<
     ): Array<T> {
 
         // ── Fast path: return cached result ────────────────────────────────────
+        this._validateCaches();
         if (this._resolveAllCache.has(param1)) {
             return this._resolveAllCache.get(param1) as Array<T>;
         }
@@ -1477,6 +1602,7 @@ export class A_Scope<
     ): Array<T> {
 
         // ── Fast path: return cached result ────────────────────────────────────
+        this._validateCaches();
         if (this._resolveFlatAllCache.has(param1)) {
             return this._resolveFlatAllCache.get(param1) as Array<T>;
         }
@@ -1669,6 +1795,7 @@ export class A_Scope<
     ): T | undefined {
 
         // ── Fast path: return cached result ────────────────────────────────────
+        this._validateCaches();
         if (this._resolveCache.has(param1)) {
             return this._resolveCache.get(param1) as T | undefined;
         }
@@ -2158,8 +2285,10 @@ export class A_Scope<
                 A_Context.indexConstructor(param1.constructor);
                 A_Context.register(this, param1);
 
-                if (!this.allowedEntities.has(param1.constructor as _EntityType[number]))
+                if (!this.allowedEntities.has(param1.constructor as _EntityType[number])) {
+                    this.warnOnDuplicateEntityName(param1.constructor);
                     this.allowedEntities.add(param1.constructor as _EntityType[number]);
+                }
 
                 this._entities.set(aseidKey, param1 as InstanceType<_EntityType[number]>);
                 this.bumpVersion();
@@ -2226,6 +2355,7 @@ export class A_Scope<
             // 9) In case when it's a A-Entity constructor
             case A_TypeGuards.isEntityConstructor(param1): {
                 if (!this.allowedEntities.has(param1)) {
+                    this.warnOnDuplicateEntityName(param1);
                     this.allowedEntities.add(param1 as _EntityType[number]);
                     A_Context.indexConstructor(param1);
                     this.bumpVersion();

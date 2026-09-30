@@ -1097,4 +1097,35 @@ describe('A-Scope tests', () => {
         imported.register(MyComponentB);
         expect((scope as any)._version).toBe(versionBefore);
     });
+
+    it('Should warn once when two unrelated entity classes share the same entity name', () => {
+        class RunCommandDup extends A_Entity {
+            static get entity() { return 'dup-run'; }
+        }
+        class RunEntityDup extends A_Entity {
+            static get entity() { return 'dup-run'; }
+        }
+        class RunEntityDupChild extends RunEntityDup { }
+
+        const warn = jest.spyOn(console, 'warn').mockImplementation(() => { });
+        try {
+            const scope = new A_Scope({ name: 'DupEntityScope', entities: [RunCommandDup, RunEntityDup] });
+            expect(warn).toHaveBeenCalledTimes(1);
+            expect(String(warn.mock.calls[0][0])).toContain('dup-run');
+
+            // Same pair in another scope — reported only once
+            new A_Scope({ name: 'DupEntityScope2', entities: [RunCommandDup, RunEntityDup] });
+            expect(warn).toHaveBeenCalledTimes(1);
+
+            // Subclass inheriting the parent's name is not a clash with its parent
+            // (it still clashes with the unrelated RunCommandDup)
+            warn.mockClear();
+            new A_Scope({ name: 'DupEntityScope3', entities: [RunEntityDup, RunEntityDupChild] });
+            expect(warn).not.toHaveBeenCalled();
+
+            expect(scope.allowedEntities.size).toBe(2);
+        } finally {
+            warn.mockRestore();
+        }
+    });
 });

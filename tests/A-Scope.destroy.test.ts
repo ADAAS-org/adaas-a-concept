@@ -201,19 +201,20 @@ describe('A-Scope destroy: inheritance chain', () => {
         const parent = new A_Scope({ name: 'Parent' });
         const child = new A_Scope({ name: 'Child' }).inherit(parent);
 
-        const v0 = (child as any)._version;
-        // Sanity: mutating parent bumps child while subscribed.
-        parent.register(new TestComponent());
-        const v1 = (child as any)._version;
-        expect(v1).not.toBe(v0);
+        const f0 = child.fingerprint;
+        // Sanity: while attached, the child sees parent mutations.
+        const comp = new TestComponent();
+        parent.register(comp);
+        expect(child.fingerprint).not.toBe(f0);
+        expect(child.resolve(TestComponent)).toBe(comp);
 
         child.destroy();
 
-        const v2 = (child as any)._version;
-        // Mutating parent AFTER destroy must NOT bump child.
+        const f2 = child.fingerprint;
+        // Mutating parent AFTER destroy must NOT affect child.
         parent.register(new AnotherComponent());
-        const v3 = (child as any)._version;
-        expect(v3).toBe(v2);
+        expect(child.fingerprint).toBe(f2);
+        expect(child.resolve(AnotherComponent)).toBeUndefined();
     });
 
     it('Destroying the parent leaves children logically referencing a parent that is now empty', () => {
@@ -312,11 +313,12 @@ describe('A-Scope destroy: inheritance chain', () => {
         expect(b.components).toEqual([compB]);
         expect(b.resolve(AnotherComponent)).toBe(compB);
 
-        // Mutating parent after siblingA destroyed should still bump siblingB.
-        const vB0 = (b as any)._version;
-        parent.register(new TestFragment());
-        const vB1 = (b as any)._version;
-        expect(vB1).not.toBe(vB0);
+        // Mutating parent after siblingA destroyed should still be seen by siblingB.
+        const fB0 = b.fingerprint;
+        const frag = new TestFragment();
+        parent.register(frag);
+        expect(b.fingerprint).not.toBe(fB0);
+        expect(b.resolve(TestFragment)).toBe(frag);
     });
 });
 
@@ -332,22 +334,23 @@ describe('A-Scope destroy: imports', () => {
         const consumer = new A_Scope({ name: 'Consumer' });
         consumer.import(imported);
 
-        // sanity: mutating imported bumps consumer
-        const v0 = (consumer as any)._version;
-        imported.register(new TestComponent());
-        const v1 = (consumer as any)._version;
-        expect(v1).not.toBe(v0);
+        // sanity: consumer sees mutations of the imported scope
+        const f0 = consumer.fingerprint;
+        const comp = new TestComponent();
+        imported.register(comp);
+        expect(consumer.fingerprint).not.toBe(f0);
+        expect(consumer.resolve(TestComponent)).toBe(comp);
 
         consumer.destroy();
 
         // imports must be cleared
         expect(consumer.imports).toEqual([]);
 
-        // mutating imported AFTER consumer.destroy() must NOT bump consumer
-        const v2 = (consumer as any)._version;
+        // mutating imported AFTER consumer.destroy() must NOT affect consumer
+        const f2 = consumer.fingerprint;
         imported.register(new AnotherComponent());
-        const v3 = (consumer as any)._version;
-        expect(v3).toBe(v2);
+        expect(consumer.fingerprint).toBe(f2);
+        expect(consumer.resolve(AnotherComponent)).toBeUndefined();
     });
 
     it('Destroying the imported scope does not crash the importer', () => {

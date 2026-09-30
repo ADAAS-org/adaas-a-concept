@@ -1567,6 +1567,95 @@ describe('A-Feature tests', () => {
         expect(log).toEqual([]);
     });
 
+    it('Should keep the feature pipeline in sync when players attach to / detach from an ANCESTOR scope', async () => {
+        // Same as the test above, but the players live two levels up. The invoker's
+        // scope never mutates itself, so its cached fingerprint / resolution caches
+        // must be invalidated by changes in the ancestor scope.
+        const log: string[] = [];
+
+        class Worker extends A_Entity {
+            async process() { await this.call('process'); }
+        }
+        class PlayerA extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('A'); }
+        }
+        class PlayerB extends A_Component {
+            @A_Feature.Extend({ name: 'process' })
+            async run() { log.push('B'); }
+        }
+
+        const root = new A_Scope({ name: 'AncestorRoot' });
+        const middle = new A_Scope({ name: 'AncestorMiddle' }).inherit(root);
+        const leaf = new A_Scope({ name: 'AncestorLeaf', entities: [Worker] }).inherit(middle);
+        const worker = new Worker({ name: 'w-1' });
+        leaf.register(worker);
+
+        await worker.process();
+        expect(log).toEqual([]);
+
+        root.register(PlayerA);
+        log.length = 0;
+        await worker.process();
+        expect(log).toEqual(['A']);
+
+        root.register(PlayerB);
+        root.deregister(PlayerA);
+        log.length = 0;
+        await worker.process();
+        expect(log).toEqual(['B']);
+
+        root.deregister(PlayerB);
+        log.length = 0;
+        await worker.process();
+        expect(log).toEqual([]);
+    });
+
+    it('Should use the per-call feature scope only when a step needs it', async () => {
+        class CallState extends A_Fragment {
+            constructor(public value: number) { super({ name: 'CallState' }); }
+        }
+
+        let injectedScope: A_Scope | undefined;
+        let injectedScopeParent: A_Scope | undefined;
+        let received: CallState | undefined;
+
+        class Pipeline extends A_Component {
+            @A_Feature.Extend({ name: 'run' })
+            async first(@A_Inject(A_Feature) feature: A_Feature) {
+                // Registers into the per-call feature scope (allocated on demand).
+                feature.scope.register(new CallState(7));
+            }
+
+            @A_Feature.Extend({ name: 'run', after: ['Pipeline.first'] })
+            async second(@A_Inject(CallState) state: CallState) {
+                received = state;
+            }
+
+            @A_Feature.Extend({ name: 'probe' })
+            async probe(@A_Inject(A_Scope) scope: A_Scope) {
+                injectedScope = scope;
+                injectedScopeParent = scope.parent;
+            }
+        }
+
+        const scope = new A_Scope({ name: 'PipelineScope', components: [Pipeline] });
+        const pipeline = scope.resolve(Pipeline)!;
+
+        // A later step sees what an earlier step registered into the feature scope,
+        // and nothing leaks into the component scope.
+        await pipeline.call('run');
+        expect(received).toBeInstanceOf(CallState);
+        expect(received!.value).toBe(7);
+        expect(scope.resolve(CallState)).toBeUndefined();
+
+        // Injecting A_Scope still yields the per-call feature scope, not the component scope.
+        await pipeline.call('probe');
+        expect(injectedScope).toBeInstanceOf(A_Scope);
+        expect(injectedScope).not.toBe(scope);
+        expect(injectedScopeParent).toBe(scope);
+    });
+
     describe('A_Context.hasFeature (existence probe) parity', () => {
         // hasFeature now probes meta directly with an early-exit instead of building
         // a full featureTemplate. These cases lock in the invariant it relies on:

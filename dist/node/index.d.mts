@@ -316,6 +316,14 @@ declare class ASEID {
      */
     static readonly regexp: RegExp;
     /**
+     * Allowed characters for the id and shard parts (`.` separates shard from id)
+     */
+    static readonly partRegexp: RegExp;
+    /**
+     * Allowed characters for the entity part (e.g. `keydown.enter` event attributes)
+     */
+    static readonly entityRegexp: RegExp;
+    /**
      * Tests if the identity string is an ASEID
      *
      * @param identity
@@ -823,6 +831,15 @@ declare class A_Stage {
         params: any[];
     } | undefined;
     skip(): void;
+    /**
+     * True if resolving this step against the caller scope could differ from
+     * resolving it against the feature's own (empty, inheriting) scope, i.e. the
+     * step injects the scope itself, or uses flat / parent-offset / create /
+     * multi-instance / query / by-name resolution. Conservative: anything not
+     * provably equivalent returns true.
+     */
+    protected needsOwnScope(step: A_TYPES__A_StageStep): boolean;
+    private static isPlainLookup;
     /**
      * This method processes the stage by executing all the steps
      *
@@ -2109,6 +2126,19 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     get scope(): A_Scope;
     /**
+     * Scope used to resolve a step's dependencies when the feature is processed
+     * without an explicit scope.
+     *
+     * The feature's own scope is an empty child of the effective (caller) scope,
+     * so plain single-instance lookups resolve to the same instances from the
+     * effective scope. The own scope is therefore only allocated when the step
+     * actually depends on it (`needsOwnScope`), or reused when it already exists
+     * (an earlier step may have registered something into it).
+     *
+     * @internal used by A_Stage
+     */
+    stepScope(needsOwnScope: boolean): A_Scope;
+    /**
      * The number of stages in the feature
      */
     get size(): number;
@@ -3178,12 +3208,32 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _meta: A_Meta<_MetaItems>;
     /**
-     * Monotonically increasing version counter. Incremented on every mutation
-     * (register, deregister, import, deimport, inherit, destroy) so that
-     * external caches (e.g. A_Context feature-extension cache) can detect
-     * staleness cheaply via numeric comparison.
+     * Monotonically increasing version. On every mutation (register, deregister,
+     * import, deimport, inherit, destroy) it takes the next tick of the global
+     * scope clock, so external caches can detect staleness cheaply via numeric
+     * comparison, and downstream scopes can detect upstream changes lazily.
      */
     protected _version: number;
+    /**
+     * Max `_version` over the reachable graph at the moment the resolution caches
+     * and the fingerprint were last validated (see `_validateCaches`).
+     */
+    private _cacheStamp;
+    /**
+     * Clock tick at which `_validateCaches` last ran for this scope.
+     */
+    private _validatedClock;
+    /**
+     * Per-clock-tick memo of `_reachableMax()`.
+     */
+    private _rmClock;
+    private _rmValue;
+    private _rmInProgress;
+    /**
+     * Set while this scope's fingerprint is being computed (cycle guard for
+     * parent-fingerprint reuse through imports).
+     */
+    private _fpComputing;
     /**
      * Cache for resolveConstructor results (both positive and negative).
      * Key = constructor name (string) or constructor reference toString.
@@ -3207,21 +3257,9 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _resolveAllCache: Map<Function | string, any[]>;
     /**
-     * Cached fingerprint string. Invalidated on every bumpVersion() call.
+     * Cached fingerprint string. Cleared together with the resolution caches.
      */
     private _cachedFingerprint;
-    private _cachedFingerprintVersion;
-    /**
-     * Cached aggregate version (this scope + all reachable parents/imports).
-     *
-     * The aggregate version only changes when some reachable scope mutates, and
-     * every such mutation already propagates `bumpVersion()` downstream to this
-     * scope (see `inherit`/`import` → `_addSubscriber` + `bumpVersion`), which
-     * clears this cache. Therefore a non-`undefined` value is always current and
-     * we can skip re-walking the scope graph on every `fingerprint` access — the
-     * walk is the dominant cost on the feature-dispatch hot path.
-     */
-    private _cachedAggVersion;
     /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
@@ -3260,15 +3298,19 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _imports: Set<A_Scope>;
     /**
-     * Downstream scopes whose `_resolveCache` (and friends) depend on this scope.
-     * Populated when another scope `inherit()`s from us or `import()`s us; on
-     * `bumpVersion()` we recursively bump each live subscriber so cached
-     * lookups (including cached `undefined` negatives) never go stale.
+     * Downstream scopes that `inherit()` from us or `import()` us. Used by
+     * `destroy()` to detach them. Cache invalidation does NOT walk this set:
+     * downstream scopes validate their caches lazily (see `_validateCaches`).
      *
      * Held as `WeakRef`s so abandoned child scopes don't keep their parents
-     * pinned in memory. Dead refs are pruned lazily inside `bumpVersion()`.
+     * pinned in memory. Dead refs are pruned in amortized O(1) inside
+     * `_addSubscriber()`.
      */
     protected _subscribers: Set<WeakRef<A_Scope>>;
+    /**
+     * `_subscribers` size at which the next dead-ref prune happens.
+     */
+    private _subscribersPruneAt;
     /**
      * Side-index for O(1) subscriber lookup/removal. Maps each subscribing
      * child scope to the `WeakRef` instance stored in `_subscribers`, so
@@ -3353,15 +3395,29 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     get parent(): A_Scope | undefined;
     /**
-     * Increments the scope version and clears internal caches.
+     * Advances the scope version and clears this scope's caches.
      * Must be called on every scope mutation (register, deregister, import, deimport, inherit, destroy).
      *
-     * Also propagates the bump to every live downstream subscriber so their
-     * caches — which may include `undefined` negative entries that were
-     * resolved through us — are invalidated atomically. Dead `WeakRef`s are
-     * pruned in the same pass.
+     * O(1): downstream scopes (children / importers) are NOT visited. They
+     * detect the change lazily on their next cache read, because this scope's
+     * new version is greater than the stamp their caches were validated at.
      */
     protected bumpVersion(): void;
+    private _clearCaches;
+    /**
+     * Must be called before reading any cache that may depend on parent or
+     * imported scopes. Clears this scope's caches if any reachable scope
+     * (self, parents, imports, transitively) mutated since they were filled.
+     *
+     * O(1) when nothing mutated since the last call (same clock tick);
+     * otherwise a walk that is memoized per clock tick for every scope it visits.
+     */
+    private _validateCaches;
+    /**
+     * Max `_version` over this scope and everything reachable through
+     * `_parent` and `_imports`. Memoized per global clock tick.
+     */
+    private _reachableMax;
     /**
      * Register `child` as a downstream subscriber so any future mutation on
      * `this` invalidates the child's resolution caches.
@@ -3374,11 +3430,6 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * side-index — no full-set iteration required.
      */
     protected _removeSubscriber(child: A_Scope): void;
-    /**
-     * Computes the aggregate version of this scope and all reachable scopes (parent + imports).
-     * Used to detect when any transitive dependency has changed, so the fingerprint cache can be invalidated.
-     */
-    private aggregateVersion;
     /**
      * Computes a deterministic content-addressable fingerprint string.
      * Includes components, entities, fragments, errors, parent, and imports.
@@ -3433,6 +3484,17 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * - level -2 - grandparent
      */
     layerOffset: number): T | undefined;
+    private static isEmptyQuery;
+    private static entityNameOf;
+    /**
+     * Warns (once per pair of classes) when an entity constructor is added to a scope
+     * that already allows an UNRELATED entity constructor with the same `static entity`
+     * name. Resolving by that string would silently return whichever class matches first.
+     *
+     * Classes in the same inheritance chain are skipped: a subclass that inherits its
+     * parent's `entity` name is a deliberate specialization.
+     */
+    private warnOnDuplicateEntityName;
     /**
      * Determines which initializer method to use based on the type of the first parameter.
      *
@@ -4556,6 +4618,16 @@ declare class A_Context {
      */
     static getInstance(): A_Context;
     /**
+     * Warns once when a second copy of `@adaas/a-concept` is loaded in the same
+     * realm (e.g. a library bundled its own copy, or a nested node_modules
+     * resolved a different version). Each copy keeps its own metadata, so
+     * decorators (features, event handlers) registered through one copy are
+     * invisible to the other and silently never run.
+     *
+     * Skipped under Jest, where `resetModules` legitimately reloads the module.
+     */
+    private static detectDuplicateRuntime;
+    /**
      * Returns `true` when the given component/fragment/entity instance is
      * currently registered (owned) by some scope in the context.
      *
@@ -5144,6 +5216,7 @@ declare class A_CommonHelper {
      * @returns
      */
     static isInheritedFrom(childClass: any, parentClass: any): boolean;
+    private static walkInheritance;
     /**
      * Get all parent classes of a given class
      *
