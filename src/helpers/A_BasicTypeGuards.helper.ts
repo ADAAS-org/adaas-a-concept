@@ -55,17 +55,28 @@ export class A_BasicTypeGuards {
     }
 
     /**
+     * Check if value is an Error, including one created in another realm
+     * (vm context, worker, iframe) where `instanceof Error` is false.
+     *
+     * @param value
+     * @returns
+     */
+    static isError(value: any): value is Error {
+        return value instanceof Error || Object.prototype.toString.call(value) === '[object Error]';
+    }
+
+    /**
      * Allows to check if the provided param is of constructor type.
      * 
      * @param param 
      * @returns 
      */
     static isErrorConstructorType<T = any>(param: any): param is T {
-        return !!param && A_BasicTypeGuards.isObject(param) && !(param instanceof Error) && "title" in param;
+        return !!param && A_BasicTypeGuards.isObject(param) && !A_BasicTypeGuards.isError(param) && "title" in param;
     }
 
     static isErrorSerializedType<T = any>(param: any): param is T {
-        return !!param && A_BasicTypeGuards.isObject(param) && !(param instanceof Error) && "aseid" in param && A_BasicTypeGuards.isString((param as any).aseid);
+        return !!param && A_BasicTypeGuards.isObject(param) && !A_BasicTypeGuards.isError(param) && "aseid" in param && A_BasicTypeGuards.isString((param as any).aseid);
     }
 
     /**

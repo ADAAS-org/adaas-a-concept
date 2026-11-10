@@ -760,6 +760,11 @@ declare class A_Stage {
      */
     private _status;
     /**
+     * Set once the loadable injections were loaded, so a loader that could not
+     * provide a dependency does not cause another load round.
+     */
+    private _loaded;
+    /**
      * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
      * [!] Depending on the Stage Definition type sync/async function can be executed correspondingly.
      *
@@ -840,6 +845,14 @@ declare class A_Stage {
      */
     protected needsOwnScope(step: A_TYPES__A_StageStep): boolean;
     private static isPlainLookup;
+    /**
+     * The step handler's injections marked with `@A_Dependency.Load()`.
+     */
+    protected loadableInjections(scope: A_Scope, step: A_TYPES__A_StageStep): A_Dependency<any>[];
+    /**
+     * Loads the missing `@A_Dependency.Load()` injections, then processes the stage.
+     */
+    protected loadAndProcess(loadScope: A_Scope, pending: A_Dependency<any>[], scope?: A_Scope): Promise<void>;
     /**
      * This method processes the stage by executing all the steps
      *
@@ -1080,6 +1093,8 @@ declare class A_Meta<_StorageItems extends Record<any, any> = any, _SerializedTy
      * Avoids re-compiling the same regex pattern on every find() call.
      */
     private _regExpCache?;
+    /** Keys matching each name `find` was asked for (see `find`). */
+    private _findCache?;
     private convertToRegExp;
     /**
      * Method to find values in the map by name.
@@ -2139,6 +2154,14 @@ declare class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES_
      */
     stepScope(needsOwnScope: boolean): A_Scope;
     /**
+     * The scope the feature was called in (component / caller / external scope).
+     * Lazily loaded dependencies (`@A_Dependency.Load()`) are registered here so they
+     * outlive the feature and take part in later features of the same scope.
+     *
+     * @internal used by A_Stage
+     */
+    get effectiveScope(): A_Scope;
+    /**
      * The number of stages in the feature
      */
     get size(): number;
@@ -2333,6 +2356,10 @@ type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_DependencyInje
      */
     load: boolean;
     /**
+     * Where to load the dependency from (package specifier, URL, …), interpreted by the scope's A_DependencyLoader
+     */
+    source?: string;
+    /**
      * Number of levels to go up in the parent chain when resolving the dependency
      */
     parent: number;
@@ -2362,6 +2389,7 @@ type A_TYPES__A_Dependency_Serialized<T extends A_TYPES__A_DependencyInjectable 
     all: boolean;
     require: boolean;
     load: boolean;
+    source?: string;
     parent: number;
     flat: boolean;
     create: any;
@@ -2390,6 +2418,11 @@ type A_TYPES__A_Dependency_RequireDecoratorReturn<T = any> = (target: T, propert
  * A-Dependency load decorator return type
  */
 type A_TYPES__A_Dependency_LoadDecoratorReturn<T = any> = (target: T, propertyKey: string | symbol | undefined, parameterIndex: number) => void;
+/**
+ * What an A_DependencyLoader hands back: classes (components, entities, fragments, errors)
+ * and/or instances (fragments, entities) to register into the requesting scope.
+ */
+type A_TYPES__A_DependencyLoaded = Array<A_TYPES__Ctor<any> | A_TYPES__A_DependencyInjectable>;
 /**
  * A-Dependency default decorator return type
  */
@@ -2427,9 +2460,11 @@ declare function A_Dependency_Default(
 declare function A_Dependency_Flat(): A_TYPES__A_Dependency_FlatDecoratorReturn;
 
 /**
- * Should indicate which Load is required
+ * Marks an injected parameter as loadable. If the dependency is not in the scope
+ * when a feature step runs, the scope's A_DependencyLoader loads it first
+ * (see A_Scope.load). `source` is passed to the loader as-is (package specifier, URL, …).
  */
-declare function A_Dependency_Load(): A_TYPES__A_Dependency_LoadDecoratorReturn;
+declare function A_Dependency_Load(source?: string): A_TYPES__A_Dependency_LoadDecoratorReturn;
 
 /**
  * Should indicate which dependency is required
@@ -2471,7 +2506,14 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
      */
     static get Required(): typeof A_Dependency_Require;
     /**
-     * Allows to indicate which dependency should be loaded from a specific path
+     * Marks an injected parameter as loadable: when it is not in the scope, the
+     * scope's A_DependencyLoader loads it (optionally from `source`) before the step runs.
+     *
+     * @returns
+     */
+    static get Load(): typeof A_Dependency_Load;
+    /**
+     * Alias of {@link A_Dependency.Load}
      *
      * @returns
      */
@@ -2517,6 +2559,7 @@ declare class A_Dependency<T extends A_TYPES__A_DependencyInjectable = A_TYPES__
     get flat(): boolean;
     get require(): boolean;
     get load(): boolean;
+    get source(): string | undefined;
     /**
      * Indicates cases when it's necessary to search across all instances
      */
@@ -2577,6 +2620,33 @@ declare class A_DependencyError extends A_Error {
     static readonly InvalidLoadPath = "Invalid Load Path";
     static readonly InvalidDefaultTarget = "Invalid Default Target";
     static readonly ResolutionParametersError = "Dependency Resolution Parameters Error";
+}
+
+/**
+ * Pluggable hook a scope consults when a loadable dependency
+ * (`@A_Dependency.Load()` or `scope.load(...)`) is not registered.
+ *
+ * Register a concrete loader in a scope (or a parent scope) to enable runtime /
+ * lazy loading: fetch code from a package, a URL, a dynamic `import()`, … The
+ * scope registers whatever the loader returns, so the dependency (and every
+ * `@A_Feature.Extend` step of the loaded classes) takes part from then on.
+ *
+ * Implementations own the transport, verification and memoization (the same
+ * source must not be fetched twice). Loaded code must share the host's
+ * `@adaas/a-concept` instance, otherwise its metadata lands in another A_Context.
+ *
+ * Server-side twin of the ARE `AreComponentResolver`. Opt-in: without a loader
+ * resolution is unchanged and a missing loadable dependency resolves to undefined.
+ */
+declare abstract class A_DependencyLoader extends A_Fragment {
+    /**
+     * Load the classes / instances that satisfy the dependency.
+     * Return `undefined` (or `[]`) when this loader can't provide it.
+     *
+     * @param dependency - the requested dependency (`name`, `target`, `source`)
+     * @param scope - the scope that will register the result
+     */
+    abstract load(dependency: A_Dependency<any>, scope: A_Scope): Promise<A_TYPES__A_DependencyLoaded | undefined>;
 }
 
 /**
@@ -3261,6 +3331,20 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     private _cachedFingerprint;
     /**
+     * Cached feature fingerprint string. Cleared together with the resolution caches.
+     */
+    private _cachedFeatureFingerprint;
+    /**
+     * Set while this scope's feature fingerprint is being computed (cycle guard).
+     */
+    private _ffpComputing;
+    /**
+     * `hasFlat` answers that come from this scope's own allowed sets (not from
+     * its issuer), valid for `_hasFlatStamp` — the scope's own version.
+     */
+    private _hasFlatCache;
+    private _hasFlatStamp;
+    /**
      * A set of allowed components, A set of constructors that are allowed in the scope
      *
      */
@@ -3297,6 +3381,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Storage for imported scopes
      */
     protected _imports: Set<A_Scope>;
+    /**
+     * In-flight `load()` calls, keyed by dependency name + source, so concurrent
+     * loads of the same dependency share one loader call.
+     */
+    protected _loading: Map<string, Promise<void>>;
     /**
      * Downstream scopes that `inherit()` from us or `import()` us. Used by
      * `destroy()` to detach them. Cache invalidation does NOT walk this set:
@@ -3358,6 +3447,17 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * will produce the same fingerprint. Dynamically recomputed when scope content changes.
      */
     get fingerprint(): string;
+    /**
+     * Returns a fingerprint of what decides a feature's steps in this scope: the
+     * components and containers `has()` finds through the parent chain (allowed
+     * components, a container issuer) and imports. Entities, fragments and errors
+     * never contribute steps, so they are left out — and a scope that adds none
+     * of the above (an ARE node's scope, a call's scope) shares its parent's
+     * fingerprint, so the feature templates built for the parent are reused.
+     *
+     * [!] The issuer is read when the fingerprint is computed: it is fixed when the scope is allocated.
+     */
+    get featureFingerprint(): string;
     /**
      * Returns an Array of entities registered in the scope
      *
@@ -3431,6 +3531,11 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     protected _removeSubscriber(child: A_Scope): void;
     /**
+     * Computes the feature fingerprint (see `featureFingerprint`): the parent's,
+     * unchanged when this scope adds no components, container issuer or imports.
+     */
+    private computeFeatureFingerprint;
+    /**
      * Computes a deterministic content-addressable fingerprint string.
      * Includes components, entities, fragments, errors, parent, and imports.
      */
@@ -3485,6 +3590,15 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     layerOffset: number): T | undefined;
     private static isEmptyQuery;
+    /** Per-process identity of each class seen in a fingerprint. */
+    private static _classIds;
+    private static _nextClassId;
+    /**
+     * A class in a fingerprint: its name plus its identity, so two classes of
+     * the same name (e.g. two versions of a package loaded into one process)
+     * never share cached feature templates.
+     */
+    private static classKey;
     private static entityNameOf;
     /**
      * Warns (once per pair of classes) when an entity constructor is added to a scope
@@ -3693,6 +3807,12 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      */
     constructor: string): boolean;
     /**
+     * hasFlat's lookup in the scope's own allowed sets: the answer for a scope,
+     * a name, a component, an entity, a fragment or an error constructor;
+     * `undefined` for any other constructor.
+     */
+    private hasFlatInAllowed;
+    /**
      * Allows to resolve a specific dependency
      *
      * @param dependency
@@ -3854,6 +3974,41 @@ declare class A_Scope<_MetaItems extends Record<string, any> = any, _ComponentTy
      * Provide a component constructor to resolve its instance from the scope
      */
     component: string): T | Array<T> | undefined;
+    /**
+     * Loads a dependency that is not registered yet (lazy loading).
+     *
+     * - If the dependency already resolves, it is returned as is (nothing is loaded).
+     * - Otherwise the scope's A_DependencyLoader (own scope, parents or imports) loads it;
+     *   everything the loader returns is registered in THIS scope, so loaded components'
+     *   `@A_Feature.Extend` steps take part in features called in this scope from now on.
+     * - Concurrent loads of the same dependency in one scope share a single loader call.
+     *
+     * [!] Throws A_ScopeError.ResolutionError when no A_DependencyLoader is available.
+     *
+     * @param param1 - constructor, name or dependency to load
+     * @param source - where to load it from (passed to the loader as `dependency.source`)
+     * @returns the resolved dependency after loading (undefined if the loader could not provide it)
+     */
+    load<T extends A_TYPES__A_DependencyInjectable>(param1: A_TYPES__Ctor<T> | A_Dependency<T> | string, source?: string): Promise<T | Array<T> | undefined>;
+    /**
+     * Whether a loadable dependency is still missing in this scope
+     * (and an A_DependencyLoader is available to load it).
+     *
+     * Used by A_Stage to decide whether a step must await `load` before it runs.
+     *
+     * @param dependency
+     * @returns
+     */
+    needsLoad(dependency: A_Dependency<any>): boolean;
+    /**
+     * Resolves a dependency without throwing (even when marked as required).
+     * Empty arrays are treated as "not resolved".
+     */
+    protected resolveLoaded<T extends A_TYPES__A_DependencyInjectable>(dependency: A_Dependency<T>): T | Array<T> | undefined;
+    /**
+     * Asks the A_DependencyLoader for the dependency and registers the result in this scope.
+     */
+    protected loadWithLoader(dependency: A_Dependency<any>): Promise<void>;
     /**
      * This method allows to resolve/inject a component, fragment or entity from the scope
      * Depending on the provided parameters it can resolve:
@@ -4576,7 +4731,7 @@ declare class A_Context {
     /**
      * Two-level cache for featureTemplate results.
      * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
-     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Inner key: `${featureName}::s${scope.featureFingerprint}::m${metaVersion}` — no getComponentName.
      * Automatically invalidated when scope fingerprint or meta version changes.
      */
     protected _featureCache: WeakMap<object, Map<string, Array<A_TYPES__A_StageStep>>>;
@@ -5559,6 +5714,14 @@ declare class A_BasicTypeGuards {
      */
     static isArray(value: any): value is any[];
     /**
+     * Check if value is an Error, including one created in another realm
+     * (vm context, worker, iframe) where `instanceof Error` is false.
+     *
+     * @param value
+     * @returns
+     */
+    static isError(value: any): value is Error;
+    /**
      * Allows to check if the provided param is of constructor type.
      *
      * @param param
@@ -5613,4 +5776,4 @@ declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES: {
 type A_TYPES__ConceptENVVariables = (typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES)[keyof typeof A_CONSTANTS__DEFAULT_ENV_VARIABLES][];
 declare const A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY: readonly ["A_CONCEPT_NAME", "A_CONCEPT_ROOT_SCOPE", "A_CONCEPT_ENVIRONMENT", "A_CONCEPT_RUNTIME_ENVIRONMENT", "A_CONCEPT_ROOT_FOLDER", "A_ERROR_DEFAULT_DESCRIPTION"];
 
-export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_FeatureInterruption, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_QueryDecoratorReturn, type A_TYPES__A_Dependency_QueryTarget, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, type A_TYPES__EntityFeatureNames, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureError_Serialized, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };
+export { ASEID, A_Abstraction, A_AbstractionError, A_Abstraction_Extend, A_BasicTypeGuards, A_CONCEPT_ENV, A_CONSTANTS__DEFAULT_ENV_VARIABLES, A_CONSTANTS__DEFAULT_ENV_VARIABLES_ARRAY, A_CONSTANTS__ERROR_CODES, A_CONSTANTS__ERROR_DESCRIPTION, A_Caller, A_CallerError, A_CommonHelper, A_Component, A_ComponentMeta, A_Concept, A_ConceptMeta, A_Container, A_ContainerMeta, A_Context, A_ContextError, A_Dependency, A_DependencyError, A_DependencyLoader, A_Dependency_All, A_Dependency_Default, A_Dependency_Flat, A_Dependency_Load, A_Dependency_Parent, A_Dependency_Query, A_Dependency_Require, A_Entity, A_EntityError, A_EntityMeta, A_Error, A_Feature, A_FeatureError, A_FeatureInterruption, A_Feature_Define, A_Feature_Extend, A_FormatterHelper, A_Fragment, type A_ID_TYPES__TimeId_Parts, A_IdentityHelper, A_Inject, A_InjectError, A_Meta, A_MetaDecorator, A_Scope, A_ScopeError, A_Stage, A_StageError, A_StepManagerError, A_StepsManager, type A_TYPES_ScopeDependentComponents, type A_TYPES_ScopeIndependentComponents, type A_TYPES_StageExecutionBehavior, type A_TYPES__ASEID_Constructor, type A_TYPES__ASEID_ConstructorConfig, type A_TYPES__ASEID_JSON, type A_TYPES__A_DependencyConstructor, type A_TYPES__A_DependencyInjectable, type A_TYPES__A_DependencyLoaded, type A_TYPES__A_DependencyResolutionStrategy, type A_TYPES__A_DependencyResolutionType, type A_TYPES__A_Dependency_AllDecoratorReturn, type A_TYPES__A_Dependency_DefaultDecoratorReturn, type A_TYPES__A_Dependency_EntityInjectionPagination, type A_TYPES__A_Dependency_EntityInjectionQuery, type A_TYPES__A_Dependency_EntityResolutionConfig, type A_TYPES__A_Dependency_FlatDecoratorReturn, type A_TYPES__A_Dependency_LoadDecoratorReturn, type A_TYPES__A_Dependency_ParentDecoratorReturn, type A_TYPES__A_Dependency_QueryDecoratorReturn, type A_TYPES__A_Dependency_QueryTarget, type A_TYPES__A_Dependency_RequireDecoratorReturn, type A_TYPES__A_Dependency_Serialized, type A_TYPES__A_InjectDecoratorDescriptor, type A_TYPES__A_InjectDecoratorReturn, type A_TYPES__A_InjectDecorator_Meta, type A_TYPES__A_StageStep, type A_TYPES__A_StageStepProcessingExtraParams, A_TYPES__A_Stage_Status, type A_TYPES__AbstractionAvailableComponents, type A_TYPES__AbstractionDecoratorConfig, type A_TYPES__AbstractionDecoratorDescriptor, type A_TYPES__Abstraction_Constructor, type A_TYPES__Abstraction_Init, type A_TYPES__Abstraction_Serialized, type A_TYPES__CallerComponent, type A_TYPES__Caller_Constructor, type A_TYPES__Caller_Init, type A_TYPES__Caller_Serialized, type A_TYPES__ComponentMeta, type A_TYPES__ComponentMetaExtension, A_TYPES__ComponentMetaKey, type A_TYPES__Component_Constructor, type A_TYPES__Component_Init, type A_TYPES__Component_Serialized, type A_TYPES__ConceptAbstraction, type A_TYPES__ConceptAbstractionMeta, A_TYPES__ConceptAbstractions, type A_TYPES__ConceptENVVariables, A_TYPES__ConceptMetaKey, type A_TYPES__Concept_Constructor, type A_TYPES__Concept_Init, type A_TYPES__Concept_Serialized, type A_TYPES__ContainerMeta, type A_TYPES__ContainerMetaExtension, A_TYPES__ContainerMetaKey, type A_TYPES__Container_Constructor, type A_TYPES__Container_Init, type A_TYPES__Container_Serialized, type A_TYPES__ContextEnvironment, type A_TYPES__Ctor, type A_TYPES__DeepPartial, type A_TYPES__Dictionary, type A_TYPES__EntityFeatureNames, A_TYPES__EntityFeatures, type A_TYPES__EntityMeta, A_TYPES__EntityMetaKey, type A_TYPES__Entity_Constructor, type A_TYPES__Entity_Init, type A_TYPES__Entity_Serialized, type A_TYPES__Error_Constructor, type A_TYPES__Error_Init, type A_TYPES__Error_Serialized, type A_TYPES__ExtractNested, type A_TYPES__ExtractProperties, type A_TYPES__FeatureAvailableComponents, type A_TYPES__FeatureAvailableConstructors, type A_TYPES__FeatureDefineDecoratorConfig, type A_TYPES__FeatureDefineDecoratorDescriptor, type A_TYPES__FeatureDefineDecoratorMeta, type A_TYPES__FeatureDefineDecoratorTarget, type A_TYPES__FeatureDefineDecoratorTemplateItem, type A_TYPES__FeatureError_Init, type A_TYPES__FeatureError_Serialized, type A_TYPES__FeatureExtendDecoratorConfig, type A_TYPES__FeatureExtendDecoratorDescriptor, type A_TYPES__FeatureExtendDecoratorMeta, type A_TYPES__FeatureExtendDecoratorScopeConfig, type A_TYPES__FeatureExtendDecoratorScopeItem, type A_TYPES__FeatureExtendDecoratorTarget, type A_TYPES__FeatureExtendableMeta, A_TYPES__FeatureState, type A_TYPES__Feature_Constructor, type A_TYPES__Feature_Init, type A_TYPES__Feature_InitWithComponent, type A_TYPES__Feature_InitWithTemplate, type A_TYPES__Feature_Serialized, type A_TYPES__Fragment_Constructor, type A_TYPES__Fragment_Init, type A_TYPES__Fragment_Serialized, type A_TYPES__IEntity, type A_TYPES__InjectableTargets, type A_TYPES__MetaLinkedComponentConstructors, type A_TYPES__MetaLinkedComponents, type A_TYPES__Meta_Constructor, type A_TYPES__NonObjectPaths, type A_TYPES__ObjectKeyEnum, type A_TYPES__Paths, type A_TYPES__PathsToObject, type A_TYPES__Required, type A_TYPES__ScopeConfig, type A_TYPES__ScopeLinkedComponents, type A_TYPES__ScopeLinkedConstructors, type A_TYPES__Scope_Constructor, type A_TYPES__Scope_Init, type A_TYPES__Scope_Serialized, type A_TYPES__Stage_Serialized, type A_TYPES__UnionToIntersection, A_TypeGuards };

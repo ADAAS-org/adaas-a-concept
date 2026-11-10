@@ -31,7 +31,16 @@ export class A_Dependency<
         return A_Dependency_Require;
     }
     /**
-     * Allows to indicate which dependency should be loaded from a specific path
+     * Marks an injected parameter as loadable: when it is not in the scope, the
+     * scope's A_DependencyLoader loads it (optionally from `source`) before the step runs.
+     * 
+     * @returns 
+     */
+    static get Load(): typeof A_Dependency_Load {
+        return A_Dependency_Load;
+    }
+    /**
+     * Alias of {@link A_Dependency.Load}
      * 
      * @returns 
      */
@@ -112,6 +121,9 @@ export class A_Dependency<
     }
     get load(): boolean {
         return this._resolutionStrategy.load;
+    }
+    get source(): string | undefined {
+        return this._resolutionStrategy.source;
     }
     /**
      * Indicates cases when it's necessary to search across all instances
@@ -227,6 +239,7 @@ export class A_Dependency<
             all: this.all,
             require: this.require,
             load: this.load,
+            source: this.source,
             parent: this.parent,
             flat: this.flat,
             create: this.create,

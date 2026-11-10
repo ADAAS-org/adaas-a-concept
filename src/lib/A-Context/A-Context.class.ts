@@ -156,7 +156,7 @@ export class A_Context {
     /**
      * Two-level cache for featureTemplate results.
      * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
-     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Inner key: `${featureName}::s${scope.featureFingerprint}::m${metaVersion}` — no getComponentName.
      * Automatically invalidated when scope fingerprint or meta version changes.
      */
     protected _featureCache: WeakMap<object, Map<string, Array<A_TYPES__A_StageStep>>> = new WeakMap();
@@ -1040,7 +1040,8 @@ export class A_Context {
         //    cache it (fresh instance per key) — future probes AND featureTemplate()
         //    calls under the same fingerprint then hit the O(1) fast path above,
         //    preserving the documented "free on hot paths" behavior.
-        this.storeFeatureTemplate(instance, componentCtor, cacheKey, []);
+        // Keyed after the probe, like featureTemplate: the probe may create the caller's meta.
+        this.storeFeatureTemplate(instance, componentCtor, this.featureCacheKey(name, effectiveScope, instance), []);
         return false;
     }
 
@@ -1089,7 +1090,11 @@ export class A_Context {
             ...this.featureExtensions(name, component, scope)
         ];
 
-        this.storeFeatureTemplate(instance, componentCtor, cacheKey, steps);
+        // Store under the key as it stands AFTER the build: building creates the
+        // caller's meta on first use (bumping the meta version) before reading
+        // any extension, so the template already reflects it — keyed by the
+        // pre-build version it would never be hit again.
+        this.storeFeatureTemplate(instance, componentCtor, this.featureCacheKey(name, scope, instance), steps);
 
         return steps;
     }
@@ -1103,7 +1108,7 @@ export class A_Context {
         scope: A_Scope,
         instance: A_Context
     ): string {
-        return `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+        return `${String(name)}::s${scope.featureFingerprint}::m${instance._metaVersion}`;
     }
 
     /**

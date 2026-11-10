@@ -11,6 +11,7 @@ import {
 import { A_Inject } from "@adaas/a-concept/a-inject";
 import { A_Scope } from "@adaas/a-concept/a-scope";
 import { A_StageError } from "@adaas/a-concept/a-stage";
+import vm from "node:vm";
 
 jest.retryTimes(0);
 
@@ -158,6 +159,54 @@ describe('A-Feature error handling: PR1 invariants', () => {
                 expect(err.originalError).toBeInstanceOf(DomainError);
                 expect((err.originalError as DomainError).title).toBe(DomainError.Kind);
             }
+        });
+    });
+
+    describe('async handlers rejecting with foreign throwables settle (never hang)', () => {
+        // An Error created in another realm (vm context, worker, jest sandbox
+        // vs. node core) fails `instanceof Error`. Recording such a failure
+        // used to throw inside a `new Promise(async …)` executor, leaving the
+        // feature pending forever.
+        const throwables: Array<[string, () => unknown]> = [
+            ['an Error from another realm', () => vm.runInNewContext('new Error("socket hang up")')],
+            ['a number', () => 42],
+            ['a plain object', () => ({ code: 'E_FOREIGN' })],
+            ['undefined', () => undefined],
+        ];
+
+        it.each(throwables)('rejects with A_FeatureError for %s', async (_label, make) => {
+            const value = make();
+
+            class ForeignFailure extends A_Component {
+                async failsForeign(): Promise<void> {
+                    throw value;
+                }
+            }
+
+            const scope = new A_Scope({ name: 'foreign-throwable' });
+            scope.register(new ForeignFailure());
+            const feature = new A_Feature({
+                name: 'foreign-throwable',
+                scope,
+                template: [{
+                    name: 'failing-foreign',
+                    dependency: new A_Dependency(ForeignFailure),
+                    handler: 'failsForeign',
+                }],
+            });
+
+            let thrown: unknown;
+            try {
+                await feature.process(scope);
+            } catch (err) {
+                thrown = err;
+            }
+
+            expect(thrown).toBeInstanceOf(A_FeatureError);
+            expect(feature.error).toBe(thrown);
+            expect((thrown as A_FeatureError).originalError).toBe(value);
+
+            scope.destroy();
         });
     });
 

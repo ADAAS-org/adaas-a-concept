@@ -175,6 +175,16 @@ export class A_Feature<T extends A_TYPES__FeatureAvailableComponents = A_TYPES__
             : this._effectiveScope;
     }
     /**
+     * The scope the feature was called in (component / caller / external scope).
+     * Lazily loaded dependencies (`@A_Dependency.Load()`) are registered here so they
+     * outlive the feature and take part in later features of the same scope.
+     *
+     * @internal used by A_Stage
+     */
+    get effectiveScope(): A_Scope {
+        return this._effectiveScope;
+    }
+    /**
      * The number of stages in the feature
      */
     get size(): number {

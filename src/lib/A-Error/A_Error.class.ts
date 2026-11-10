@@ -159,7 +159,7 @@ export class A_Error<
             case param1 instanceof A_Error:
                 return param1 as A_Error<_ConstructorType, _SerializedType>;
 
-            case param1 instanceof Error:
+            case A_BasicTypeGuards.isError(param1):
                 super(param1.message);
                 break;
 
@@ -358,7 +358,7 @@ export class A_Error<
             case A_BasicTypeGuards.isString(param1) && !!param2:
                 return this.fromTitle;
 
-            case param1 instanceof Error:
+            case A_BasicTypeGuards.isError(param1):
                 return this.fromError;
 
             case A_BasicTypeGuards.isErrorSerializedType<_SerializedType>(param1):

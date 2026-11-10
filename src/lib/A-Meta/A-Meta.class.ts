@@ -1,4 +1,5 @@
 import { A_MetaDecorator } from "./A-Meta.decorator";
+import { A_META_CONSTANTS__FIND_CACHE_MAX_SIZE } from "./A-Meta.constants";
 import { A_TYPES__Meta_Constructor } from "./A-Meta.types";
 
 /**
@@ -53,6 +54,7 @@ export class A_Meta<
         meta: A_Meta<_StorageItems>
     ): A_Meta<_StorageItems> {
         this.meta = new Map(meta.meta);
+        this._findCache = undefined;
 
         return this;
     }
@@ -90,6 +92,7 @@ export class A_Meta<
                 : { ...inheritedValue };
 
         this.meta.set(key, value);
+        this._findCache = undefined;
 
     }
     /**
@@ -108,6 +111,7 @@ export class A_Meta<
      * @returns 
      */
     delete(key: keyof _StorageItems): boolean {
+        this._findCache = undefined;
         return this.meta.delete(key);
     }
     /**
@@ -135,6 +139,8 @@ export class A_Meta<
      * Avoids re-compiling the same regex pattern on every find() call.
      */
     private _regExpCache?: Map<string, RegExp>;
+    /** Keys matching each name `find` was asked for (see `find`). */
+    private _findCache?: Map<string, Array<keyof _StorageItems>>;
 
     private convertToRegExp(key: string | RegExp): RegExp {
         if (key instanceof RegExp) return key;
@@ -159,12 +165,20 @@ export class A_Meta<
      * @returns 
      */
     find(name: string) {
-        const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
-        for (const [key, value] of this.meta.entries()) {
-            if (this.convertToRegExp(String(key)).test(name)) {
-                results.push([key, value]);
+        // Which keys match a name only changes with the key set (set / delete /
+        // clear / from drop it); values are always read fresh.
+        if (!this._findCache) this._findCache = new Map();
+        let keys = this._findCache.get(name);
+        if (!keys) {
+            keys = [];
+            for (const key of this.meta.keys()) {
+                if (this.convertToRegExp(String(key)).test(name)) keys.push(key);
             }
+            if (this._findCache.size >= A_META_CONSTANTS__FIND_CACHE_MAX_SIZE) this._findCache.clear();
+            this._findCache.set(name, keys);
         }
+        const results: Array<[keyof _StorageItems, _StorageItems[keyof _StorageItems]]> = [];
+        for (const key of keys) results.push([key, this.meta.get(key) as _StorageItems[keyof _StorageItems]]);
         return results;
     }
     /**
@@ -205,6 +219,7 @@ export class A_Meta<
      * Method to clear the map
      */
     clear(): void {
+        this._findCache = undefined;
         this.meta.clear();
     }
     /**

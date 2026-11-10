@@ -75,34 +75,37 @@ const concept = new A_Concept({
 });
 ```
 
-Extend it with fragments and containers:
+A container gives it a scope; components contribute the steps of the features that entities call:
 
 ```typescript
-import { A_Concept, A_Config, A_ConfigLoader } from '@adaas/a-concept';
+import { A_Caller, A_Component, A_Concept, A_Container, A_Entity, A_Feature, A_Inject } from '@adaas/a-concept';
+
+class Greeting extends A_Entity<{ name: string }> {
+    name!: string;
+    text = '';
+    fromNew(init: { name: string }) { this.aseid = this.generateASEID(); this.name = init.name; }
+    async greet() { await this.call('greet'); return this.text; }        // a verb calls a feature
+}
+
+class Greeter extends A_Component {
+    @A_Feature.Extend({ name: 'greet', scope: [Greeting] })              // a step of that feature
+    greeterSay(@A_Inject(A_Caller) greeting: Greeting) { greeting.text = `Hello, ${greeting.name}!`; }
+}
 
 (async () => {
-    const concept = new A_Concept({
-        name: 'test-simple',
-        fragments: [
-            new A_Config({
-                variables: ['CONFIG_VERBOSE'],
-                defaults: {
-                    'CONFIG_VERBOSE': true
-                }
-            })
-        ],
-        containers: [
-            new A_ConfigLoader({
-                components: [
-                    ENVConfigReader
-                ]
-            })
-        ]
-    });
+    const app = new A_Container({ name: 'app', components: [Greeter], entities: [Greeting] });
+    const concept = new A_Concept({ name: 'hello', containers: [app] });
+    await concept.load();
 
-    await concept.start();
+    const greeting = new Greeting({ name: 'world' });
+    app.scope.register(greeting);                                         // entities call features through their scope
+    console.log(await greeting.greet());                                  // Hello, world!
 })();
 ```
+
+Configuration, logging and the HTTP server come from `@adaas/a-utils` (`@adaas/a-utils/a-config`,
+`@adaas/a-utils/a-logger`) and `@adaas/a-server`. A complete app on the whole stack (API + UI + docker-compose, with
+docs on the patterns) lives in `adaas-composer-new/starter/`. Known issues: [KNOWN_ISSUES.md](./KNOWN_ISSUES.md).
 
 ---
 

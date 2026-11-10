@@ -7,7 +7,8 @@ import { A_Context } from "@adaas/a-concept/a-context";
 import type { A_Feature } from "@adaas/a-concept/a-feature";
 import type { A_Scope } from "@adaas/a-concept/a-scope";
 import { A_StageError } from "./A-Stage.error";
-import { A_Error } from "@adaas/a-concept/a-error";
+import { A_Error, A_CONSTANTS__ERROR_CODES } from "@adaas/a-concept/a-error";
+import { A_BasicTypeGuards } from "@adaas/a-concept/helpers/A_BasicTypeGuards.helper";
 import { A_TypeGuards} from "@adaas/a-concept/helpers/A_TypeGuards.helper";
 import type { A_TYPES__Container_Constructor } from "@adaas/a-concept/a-container";
 import type { A_TYPES__Component_Constructor } from "@adaas/a-concept/a-component";
@@ -20,6 +21,11 @@ import type { A_Dependency } from "@adaas/a-concept/a-dependency";
  * so this is computed once per step definition.
  */
 const _stepNeedsOwnScope = new WeakMap<A_TYPES__A_StageStep, boolean>();
+/**
+ * Per-step memo of the step handler's `@A_Dependency.Load()` injections
+ * (empty for almost every step, so the sync fast path stays a single lookup).
+ */
+const _stepLoadables = new WeakMap<A_TYPES__A_StageStep, A_Dependency<any>[]>();
 
 
 export class A_Stage {
@@ -40,6 +46,11 @@ export class A_Stage {
      * Indicates the current status of the stage
      */
     private _status: A_TYPES__A_Stage_Status = A_TYPES__A_Stage_Status.INITIALIZED;
+    /**
+     * Set once the loadable injections were loaded, so a loader that could not
+     * provide a dependency does not cause another load round.
+     */
+    private _loaded: boolean = false;
 
 
     /**
@@ -324,6 +335,69 @@ export class A_Stage {
 
 
     /**
+     * The step handler's injections marked with `@A_Dependency.Load()`.
+     */
+    protected loadableInjections(
+        scope: A_Scope,
+        step: A_TYPES__A_StageStep
+    ): A_Dependency<any>[] {
+        let result = _stepLoadables.get(step);
+        if (result) return result;
+
+        const target = step.dependency.target as A_TYPES__Container_Constructor | A_TYPES__Component_Constructor | undefined;
+
+        try {
+            const resolverConstructor = target || scope.resolveConstructor(step.dependency.name);
+
+            result = resolverConstructor
+                ? A_Context
+                    .meta(resolverConstructor as any)
+                    .injections(step.handler)
+                    .filter(dependency => dependency.load)
+                : [];
+        } catch {
+            // Let the regular path (getStepComponent / getStepArgs) report errors.
+            result = [];
+        }
+
+        // By-name steps may resolve to different constructors per scope: memoize only typed steps.
+        if (target)
+            _stepLoadables.set(step, result);
+
+        return result;
+    }
+
+    /**
+     * Loads the missing `@A_Dependency.Load()` injections, then processes the stage.
+     */
+    protected async loadAndProcess(
+        loadScope: A_Scope,
+        pending: A_Dependency<any>[],
+        scope?: A_Scope
+    ): Promise<void> {
+        try {
+            await Promise.all(pending.map(dependency => loadScope.load(dependency)));
+        } catch (error) {
+            const loadError = new A_StageError({
+                title: A_StageError.ArgumentsResolutionError,
+                description: `Failed to load ${pending.map(d => d.name).join(', ')} for handler '${this._definition.handler}' in stage ${this.name} (scope: ${loadScope.name}).`,
+                originalError: error,
+            });
+
+            this.failed(loadError);
+
+            if (this._definition.throwOnError) return;
+
+            throw loadError;
+        }
+
+        this._loaded = true;
+
+        await this.process(scope);
+    }
+
+
+    /**
      * This method processes the stage by executing all the steps
      * 
      * @param scope - Scope to be used to resolve the steps dependencies
@@ -334,6 +408,28 @@ export class A_Stage {
          */
         scope?: A_Scope,
     ): Promise<void> | void {
+
+        if (!this.isProcessed && !this._loaded) {
+            // Lazy loading: `@A_Dependency.Load()` injections that are not in the
+            // scope yet are loaded (and registered in the caller scope) first.
+            const loadables = this.loadableInjections(
+                A_TypeGuards.isScopeInstance(scope) ? scope : this._feature.effectiveScope,
+                this._definition
+            );
+
+            if (loadables.length) {
+                const loadScope = A_TypeGuards.isScopeInstance(scope)
+                    ? scope
+                    : this._feature.effectiveScope;
+
+                const pending = loadables.filter(dependency => loadScope.needsLoad(dependency));
+
+                if (pending.length) {
+                    this._status = A_TYPES__A_Stage_Status.PROCESSING;
+                    return this.loadAndProcess(loadScope, pending, scope);
+                }
+            }
+        }
 
         const targetScope = A_TypeGuards.isScopeInstance(scope)
             ? scope
@@ -357,33 +453,18 @@ export class A_Stage {
 
             if (A_TypeGuards.isPromiseInstance(result)) {
 
-                return new Promise<void>(
-                    async (resolve, reject) => {
-                        try {
-                            await result;
+                // A plain promise chain (not `new Promise(async …)`): anything
+                // thrown while recording the failure still rejects the stage
+                // instead of leaving it pending forever.
+                return result.then(
+                    () => this.completed(),
+                    (error) => {
+                        // Propagate the error AS-IS so the sync and async
+                        // paths behave identically. `failed()` records it on
+                        // the stage for in-process introspection.
+                        this.failed(error);
 
-                            this.completed();
-
-                            return resolve();
-                        } catch (error) {
-                            // Propagate the error AS-IS so the sync and async
-                            // paths behave identically. Previously we wrapped
-                            // every async failure into `new A_Error(error)`,
-                            // which collapsed the domain title into
-                            // UNEXPECTED_ERROR and made async vs. sync
-                            // failures look superficially different in logs
-                            // for the same handler.
-                            //
-                            // `failed()` still records the original error on
-                            // the stage for in-process introspection.
-                            this.failed(error);
-
-                            if (this._definition.throwOnError) {
-                                return resolve();
-                            } else {
-                                return reject(error);
-                            }
-                        }
+                        if (!this._definition.throwOnError) throw error;
                     });
             } else {
                 this.completed();
@@ -407,10 +488,18 @@ export class A_Stage {
         // Preserve the original error instance when it is already an A_Error
         // (or subclass). Wrapping with `new A_Error(error)` here used to flatten
         // the domain title into UNEXPECTED_ERROR and erase any structured fields
-        // a subclass had attached. Only wrap plain non-Error throwables.
+        // a subclass had attached. Only wrap other throwables; values that are
+        // neither an Error nor a message (numbers, plain objects, undefined)
+        // are kept as the original error.
         this._error = error instanceof A_Error
             ? error
-            : new A_Error(error);
+            : A_BasicTypeGuards.isError(error) || A_BasicTypeGuards.isString(error)
+                ? new A_Error(error)
+                : new A_Error({
+                    title: A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR,
+                    description: String(error),
+                    originalError: error,
+                });
 
         this._status = A_TYPES__A_Stage_Status.FAILED;
     }

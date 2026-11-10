@@ -45,6 +45,10 @@ export type A_TYPES__A_DependencyResolutionStrategy<T extends A_TYPES__A_Depende
      */
     load: boolean
     /**
+     * Where to load the dependency from (package specifier, URL, …), interpreted by the scope's A_DependencyLoader
+     */
+    source?: string
+    /**
      * Number of levels to go up in the parent chain when resolving the dependency
      */
     parent: number
@@ -77,6 +81,7 @@ export type A_TYPES__A_Dependency_Serialized<T extends A_TYPES__A_DependencyInje
     all: boolean,
     require: boolean,
     load: boolean,
+    source?: string,
     parent: number,
     flat: boolean,
     create: any,
@@ -129,6 +134,12 @@ export type A_TYPES__A_Dependency_LoadDecoratorReturn<T = any> = (
     propertyKey: string | symbol | undefined,
     parameterIndex: number
 ) => void
+
+/**
+ * What an A_DependencyLoader hands back: classes (components, entities, fragments, errors)
+ * and/or instances (fragments, entities) to register into the requesting scope.
+ */
+export type A_TYPES__A_DependencyLoaded = Array<A_TYPES__Ctor<any> | A_TYPES__A_DependencyInjectable>
 
 /**
  * A-Dependency default decorator return type

@@ -6,6 +6,7 @@ import {
     A_CONSTANTS__ERROR_DESCRIPTION
 } from "@adaas/a-concept/a-error";
 import { A_FormatterHelper} from "@adaas/a-concept/helpers/A_Formatter.helper";
+import vm from "node:vm";
 
 jest.retryTimes(0);
 
@@ -32,6 +33,18 @@ describe('A-Error Tests', () => {
         expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
         expect(error.code).toBe(A_FormatterHelper.toKebabCase(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR));
         expect(error.type).toBe('a-error');
+        expect(error.originalError).toBe(originalError);
+    });
+
+    it('It Should be possible to create an A_Error instance from an Error of another realm', async () => {
+
+        const originalError = vm.runInNewContext('new Error("Foreign error")');
+        expect(originalError instanceof Error).toBe(false);
+
+        const error = new A_Error(originalError);
+
+        expect(error.message).toBe('Foreign error');
+        expect(error.title).toBe(A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR);
         expect(error.originalError).toBe(originalError);
     });
 

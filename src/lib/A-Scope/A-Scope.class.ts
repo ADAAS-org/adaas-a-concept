@@ -34,6 +34,7 @@ import { A_ScopeError } from '@adaas/a-concept/a-scope';
 import { A_Meta } from '@adaas/a-concept/a-meta';
 import {
     A_Dependency,
+    A_DependencyLoader,
     A_TYPES__A_DependencyInjectable
 } from '@adaas/a-concept/a-dependency';
 import { A_TYPES__Ctor } from '@adaas/a-concept/types';
@@ -142,6 +143,20 @@ export class A_Scope<
      * Cached fingerprint string. Cleared together with the resolution caches.
      */
     private _cachedFingerprint: string | undefined;
+    /**
+     * Cached feature fingerprint string. Cleared together with the resolution caches.
+     */
+    private _cachedFeatureFingerprint: string | undefined;
+    /**
+     * Set while this scope's feature fingerprint is being computed (cycle guard).
+     */
+    private _ffpComputing: boolean = false;
+    /**
+     * `hasFlat` answers that come from this scope's own allowed sets (not from
+     * its issuer), valid for `_hasFlatStamp` — the scope's own version.
+     */
+    private _hasFlatCache: Map<unknown, boolean> = new Map();
+    private _hasFlatStamp: number = -1;
 
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
@@ -189,6 +204,11 @@ export class A_Scope<
      * Storage for imported scopes 
      */
     protected _imports: Set<A_Scope> = new Set();
+    /**
+     * In-flight `load()` calls, keyed by dependency name + source, so concurrent
+     * loads of the same dependency share one loader call.
+     */
+    protected _loading: Map<string, Promise<void>> = new Map();
 
     /**
      * Downstream scopes that `inherit()` from us or `import()` us. Used by
@@ -270,6 +290,29 @@ export class A_Scope<
         }
         return this._cachedFingerprint;
     }
+    /**
+     * Returns a fingerprint of what decides a feature's steps in this scope: the
+     * components and containers `has()` finds through the parent chain (allowed
+     * components, a container issuer) and imports. Entities, fragments and errors
+     * never contribute steps, so they are left out — and a scope that adds none
+     * of the above (an ARE node's scope, a call's scope) shares its parent's
+     * fingerprint, so the feature templates built for the parent are reused.
+     *
+     * [!] The issuer is read when the fingerprint is computed: it is fixed when the scope is allocated.
+     */
+    get featureFingerprint(): string {
+        this._validateCaches();
+        if (this._cachedFeatureFingerprint !== undefined)
+            return this._cachedFeatureFingerprint;
+
+        this._ffpComputing = true;
+        try {
+            this._cachedFeatureFingerprint = this.computeFeatureFingerprint(new Set());
+        } finally {
+            this._ffpComputing = false;
+        }
+        return this._cachedFeatureFingerprint;
+    }
     // ===========================================================================
     // --------------------Readonly Registered Properties--------------------------
     // ===========================================================================
@@ -333,6 +376,7 @@ export class A_Scope<
         this._resolveFlatAllCache.clear();
         this._resolveAllCache.clear();
         this._cachedFingerprint = undefined;
+        this._cachedFeatureFingerprint = undefined;
     }
 
     /**
@@ -423,6 +467,42 @@ export class A_Scope<
     }
 
     /**
+     * Computes the feature fingerprint (see `featureFingerprint`): the parent's,
+     * unchanged when this scope adds no components, container issuer or imports.
+     */
+    private computeFeatureFingerprint(visited: Set<A_Scope>): string {
+        if (visited.has(this)) return '~circular~';
+        visited.add(this);
+
+        const parent = this._parent;
+        const parentPart = !parent
+            ? '-'
+            : (parent._ffpComputing || visited.has(parent))
+                ? '~circular~'
+                : parent.featureFingerprint;
+
+        const issuer = A_Context.issuer(this);
+        const containerIssuer = A_TypeGuards.isContainerInstance(issuer) ? A_Scope.classKey(issuer.constructor) : '';
+
+        if (!this._allowedComponents.size && !this._imports.size && !containerIssuer)
+            return parentPart;
+
+        const raw = [
+            'P:' + parentPart,
+            'AC:' + Array.from(this._allowedComponents).map(c => A_Scope.classKey(c)).sort().join(','),
+            'CI:' + containerIssuer,
+            'I:' + Array.from(this._imports).map(s => s.computeFeatureFingerprint(visited)).sort().join(','),
+        ].join('|');
+
+        // djb2 hash
+        let hash = 5381;
+        for (let i = 0; i < raw.length; i++) {
+            hash = ((hash << 5) + hash + raw.charCodeAt(i)) | 0;
+        }
+        return (hash >>> 0).toString(16);
+    }
+
+    /**
      * Computes a deterministic content-addressable fingerprint string.
      * Includes components, entities, fragments, errors, parent, and imports.
      */
@@ -447,28 +527,28 @@ export class A_Scope<
         // strings). Skip the array/sort/join entirely for empty categories,
         // which is the common case for transient per-call / per-node scopes.
         if (this._allowedComponents.size) {
-            const allowedComponentNames = Array.from(this._allowedComponents).map(c => c.name).sort();
+            const allowedComponentNames = Array.from(this._allowedComponents).map(c => A_Scope.classKey(c)).sort();
             parts.push('AC:' + allowedComponentNames.join(','));
         } else {
             parts.push('AC:');
         }
 
         if (this._allowedEntities.size) {
-            const allowedEntityNames = Array.from(this._allowedEntities).map(e => e.name).sort();
+            const allowedEntityNames = Array.from(this._allowedEntities).map(e => A_Scope.classKey(e)).sort();
             parts.push('AE:' + allowedEntityNames.join(','));
         } else {
             parts.push('AE:');
         }
 
         if (this._allowedFragments.size) {
-            const allowedFragmentNames = Array.from(this._allowedFragments).map(f => f.name).sort();
+            const allowedFragmentNames = Array.from(this._allowedFragments).map(f => A_Scope.classKey(f)).sort();
             parts.push('AF:' + allowedFragmentNames.join(','));
         } else {
             parts.push('AF:');
         }
 
         if (this._allowedErrors.size) {
-            const allowedErrorNames = Array.from(this._allowedErrors).map(e => e.name).sort();
+            const allowedErrorNames = Array.from(this._allowedErrors).map(e => A_Scope.classKey(e)).sort();
             parts.push('AR:' + allowedErrorNames.join(','));
         } else {
             parts.push('AR:');
@@ -573,6 +653,24 @@ export class A_Scope<
     private static isEmptyQuery(query: object): boolean {
         for (const _ in query) return false;
         return true;
+    }
+
+    /** Per-process identity of each class seen in a fingerprint. */
+    private static _classIds = new WeakMap<Function, number>();
+    private static _nextClassId = 0;
+
+    /**
+     * A class in a fingerprint: its name plus its identity, so two classes of
+     * the same name (e.g. two versions of a package loaded into one process)
+     * never share cached feature templates.
+     */
+    private static classKey(ctor: Function): string {
+        let id = A_Scope._classIds.get(ctor);
+        if (id === undefined) {
+            id = ++A_Scope._nextClassId;
+            A_Scope._classIds.set(ctor, id);
+        }
+        return `${ctor.name}#${id}`;
     }
 
     private static entityNameOf(ctor: Function): string | undefined {
@@ -744,6 +842,7 @@ export class A_Scope<
         this._allowedFragments.clear();
         this._allowedEntities.clear();
         this._allowedErrors.clear();
+        this._hasFlatCache.clear();
 
         // Detach from upstream scopes so they stop notifying us.
         for (const imp of this._imports) {
@@ -1042,6 +1141,37 @@ export class A_Scope<
     hasFlat(
         ctor: unknown
     ): boolean {
+        // Answers from the own allowed sets change only with this scope's
+        // version: has() asks every scope up the chain for every meta on each
+        // feature-template build, so they are kept per version.
+        if (this._hasFlatStamp !== this._version) {
+            this._hasFlatCache.clear();
+            this._hasFlatStamp = this._version;
+        }
+        const known = this._hasFlatCache.get(ctor);
+        if (known !== undefined) return known;
+
+        const found = this.hasFlatInAllowed(ctor);
+        if (found !== undefined) {
+            this._hasFlatCache.set(ctor, found);
+            return found;
+        }
+
+        // Anything else (a container, a feature …) is found through the scope's
+        // issuer. Never cached: an issuer can be attached to an existing scope.
+        const issuer = this.issuer();
+        return !!issuer && (issuer.constructor === ctor
+            || A_Context.isIndexedInheritedFrom(issuer.constructor, ctor as Function));
+    }
+
+    /**
+     * hasFlat's lookup in the scope's own allowed sets: the answer for a scope,
+     * a name, a component, an entity, a fragment or an error constructor;
+     * `undefined` for any other constructor.
+     */
+    private hasFlatInAllowed(
+        ctor: unknown
+    ): boolean | undefined {
 
         let found = false;
 
@@ -1101,14 +1231,8 @@ export class A_Scope<
                 break;
             }
 
-            // 7) Check scope issuer
-            case this.issuer()
-                && (this.issuer()!.constructor === ctor
-                    || A_Context.isIndexedInheritedFrom(this.issuer()!.constructor, ctor as Function)
-                ): {
-                    found = true;
-                    break;
-                }
+            default:
+                return undefined;
         }
 
         return found;
@@ -1718,6 +1842,103 @@ export class A_Scope<
             new A_Dependency<T>(param1)
 
         return this.resolveDependency<T>(dependency);
+    }
+
+
+    /**
+     * Loads a dependency that is not registered yet (lazy loading).
+     * 
+     * - If the dependency already resolves, it is returned as is (nothing is loaded).
+     * - Otherwise the scope's A_DependencyLoader (own scope, parents or imports) loads it;
+     *   everything the loader returns is registered in THIS scope, so loaded components'
+     *   `@A_Feature.Extend` steps take part in features called in this scope from now on.
+     * - Concurrent loads of the same dependency in one scope share a single loader call.
+     * 
+     * [!] Throws A_ScopeError.ResolutionError when no A_DependencyLoader is available.
+     * 
+     * @param param1 - constructor, name or dependency to load
+     * @param source - where to load it from (passed to the loader as `dependency.source`)
+     * @returns the resolved dependency after loading (undefined if the loader could not provide it)
+     */
+    async load<T extends A_TYPES__A_DependencyInjectable>(
+        param1: A_TYPES__Ctor<T> | A_Dependency<T> | string,
+        source?: string
+    ): Promise<T | Array<T> | undefined> {
+
+        const dependency = A_TypeGuards.isDependencyInstance(param1)
+            ? param1 as A_Dependency<T>
+            : new A_Dependency<T>(param1, { load: true, source });
+
+        const existing = this.resolveLoaded<T>(dependency);
+        if (existing !== undefined)
+            return existing;
+
+        const key = `${dependency.name}#${dependency.source || ''}`;
+
+        let pending = this._loading.get(key);
+
+        if (!pending) {
+            pending = this.loadWithLoader(dependency)
+                .finally(() => this._loading.delete(key));
+            this._loading.set(key, pending);
+        }
+
+        await pending;
+
+        return this.resolveDependency<T>(dependency);
+    }
+
+    /**
+     * Whether a loadable dependency is still missing in this scope
+     * (and an A_DependencyLoader is available to load it).
+     * 
+     * Used by A_Stage to decide whether a step must await `load` before it runs.
+     * 
+     * @param dependency 
+     * @returns 
+     */
+    needsLoad(dependency: A_Dependency<any>): boolean {
+        return dependency.load
+            && this.resolveLoaded(dependency) === undefined
+            && !!this.resolve(A_DependencyLoader as any);
+    }
+
+    /**
+     * Resolves a dependency without throwing (even when marked as required).
+     * Empty arrays are treated as "not resolved".
+     */
+    protected resolveLoaded<T extends A_TYPES__A_DependencyInjectable>(
+        dependency: A_Dependency<T>
+    ): T | Array<T> | undefined {
+        const probe = new A_Dependency<T>(
+            dependency.target || dependency.name,
+            { ...dependency.resolutionStrategy, require: false }
+        );
+
+        const resolved = this.resolveDependency<T>(probe);
+
+        if (Array.isArray(resolved))
+            return resolved.length ? resolved : undefined;
+
+        return resolved || undefined;
+    }
+
+    /**
+     * Asks the A_DependencyLoader for the dependency and registers the result in this scope.
+     */
+    protected async loadWithLoader(dependency: A_Dependency<any>): Promise<void> {
+        const loader = this.resolve(A_DependencyLoader as any) as A_DependencyLoader | undefined;
+
+        if (!loader)
+            throw new A_ScopeError(
+                A_ScopeError.ResolutionError,
+                `Unable to load dependency ${dependency.name}${dependency.source ? ` from ${dependency.source}` : ''}: no A_DependencyLoader is registered in the scope ${this.name} or its parents`
+            );
+
+        const loaded = await loader.load(dependency, this) || [];
+
+        for (const item of loaded)
+            this.register(item as any);
     }
 
     /**

@@ -301,19 +301,11 @@ export class ASEID {
             case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1) && !param1.entity:
                 throw new Error('ASEID entity is required')
 
-            // 4) object parts must be parseable back from the string form
-            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1) && !ASEID.entityRegexp.test(param1.entity):
-                throw new Error(`Invalid ASEID entity provided: ${param1.entity}`)
-
-            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1)
-                && A_BasicTypeGuards.isString(param1.id)
-                && !ASEID.partRegexp.test(param1.id):
-                throw new Error(`Invalid ASEID id provided: ${param1.id}`)
-
-            case A_BasicTypeGuards.isObject<A_TYPES__ASEID_Constructor>(param1)
-                && !!param1.shard
-                && !ASEID.partRegexp.test(param1.shard):
-                throw new Error(`Invalid ASEID shard provided: ${param1.shard}`)
+            // Object parts are NOT character-validated: callers build ASEIDs from
+            // names/ids they do not control (attribute names like `@a-input:submit`,
+            // DOM ids, owner ASEIDs). Rejecting them would crash those callers.
+            // Only parts matching `entityRegexp` / `partRegexp` round-trip through
+            // the string form; use `ASEID.isASEID(aseid.toString())` to check.
         }
     }
 }

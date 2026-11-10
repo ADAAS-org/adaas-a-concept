@@ -1,6 +1,7 @@
 export { A_Dependency } from './A-Dependency.class'
 // export {A_DependencyMeta} from './A-Dependency.meta'
 export { A_DependencyError } from './A-Dependency.error'
+export { A_DependencyLoader } from './A-Dependency-Loader.fragment'
 export * from './A-Dependency.types'
 // export * from './A-Dependency.constants'
 

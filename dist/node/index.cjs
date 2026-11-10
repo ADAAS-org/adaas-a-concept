@@ -235,16 +235,26 @@ var _A_BasicTypeGuards = class _A_BasicTypeGuards {
     return Array.isArray(value);
   }
   /**
+   * Check if value is an Error, including one created in another realm
+   * (vm context, worker, iframe) where `instanceof Error` is false.
+   *
+   * @param value
+   * @returns
+   */
+  static isError(value) {
+    return value instanceof Error || Object.prototype.toString.call(value) === "[object Error]";
+  }
+  /**
    * Allows to check if the provided param is of constructor type.
    * 
    * @param param 
    * @returns 
    */
   static isErrorConstructorType(param) {
-    return !!param && _A_BasicTypeGuards.isObject(param) && !(param instanceof Error) && "title" in param;
+    return !!param && _A_BasicTypeGuards.isObject(param) && !_A_BasicTypeGuards.isError(param) && "title" in param;
   }
   static isErrorSerializedType(param) {
-    return !!param && _A_BasicTypeGuards.isObject(param) && !(param instanceof Error) && "aseid" in param && _A_BasicTypeGuards.isString(param.aseid);
+    return !!param && _A_BasicTypeGuards.isObject(param) && !_A_BasicTypeGuards.isError(param) && "aseid" in param && _A_BasicTypeGuards.isString(param.aseid);
   }
   /**
    * Check if scope is of type A_Scope instance
@@ -417,13 +427,6 @@ var _ASEID = class _ASEID {
       // 3) check for object and validate required fields
       case (A_BasicTypeGuards.isObject(param1) && !param1.entity):
         throw new Error("ASEID entity is required");
-      // 4) object parts must be parseable back from the string form
-      case (A_BasicTypeGuards.isObject(param1) && !_ASEID.entityRegexp.test(param1.entity)):
-        throw new Error(`Invalid ASEID entity provided: ${param1.entity}`);
-      case (A_BasicTypeGuards.isObject(param1) && A_BasicTypeGuards.isString(param1.id) && !_ASEID.partRegexp.test(param1.id)):
-        throw new Error(`Invalid ASEID id provided: ${param1.id}`);
-      case (A_BasicTypeGuards.isObject(param1) && !!param1.shard && !_ASEID.partRegexp.test(param1.shard)):
-        throw new Error(`Invalid ASEID shard provided: ${param1.shard}`);
     }
   }
 };
@@ -703,7 +706,7 @@ var _A_Error = class _A_Error extends Error {
     switch (true) {
       case param1 instanceof _A_Error:
         return param1;
-      case param1 instanceof Error:
+      case A_BasicTypeGuards.isError(param1):
         super(param1.message);
         break;
       case A_BasicTypeGuards.isErrorSerializedType(param1):
@@ -877,7 +880,7 @@ var _A_Error = class _A_Error extends Error {
         return this.fromMessage;
       case (A_BasicTypeGuards.isString(param1) && !!param2):
         return this.fromTitle;
-      case param1 instanceof Error:
+      case A_BasicTypeGuards.isError(param1):
         return this.fromError;
       case A_BasicTypeGuards.isErrorSerializedType(param1):
         return this.fromJSON;
@@ -1368,6 +1371,9 @@ function A_MetaDecorator(constructor) {
 }
 chunkPK6SKIKE_cjs.__name(A_MetaDecorator, "A_MetaDecorator");
 
+// src/lib/A-Meta/A-Meta.constants.ts
+var A_META_CONSTANTS__FIND_CACHE_MAX_SIZE = 256;
+
 // src/lib/A-Meta/A-Meta.class.ts
 var _A_Meta = class _A_Meta {
   constructor() {
@@ -1404,6 +1410,7 @@ var _A_Meta = class _A_Meta {
    */
   from(meta) {
     this.meta = new Map(meta.meta);
+    this._findCache = void 0;
     return this;
   }
   /**
@@ -1429,6 +1436,7 @@ var _A_Meta = class _A_Meta {
       ...inheritedValue
     ] : value instanceof Map ? new Map(inheritedValue) : { ...inheritedValue };
     this.meta.set(key, value);
+    this._findCache = void 0;
   }
   /**
    * Method to get values from the map
@@ -1446,6 +1454,7 @@ var _A_Meta = class _A_Meta {
    * @returns 
    */
   delete(key) {
+    this._findCache = void 0;
     return this.meta.delete(key);
   }
   /**
@@ -1477,12 +1486,18 @@ var _A_Meta = class _A_Meta {
    * @returns 
    */
   find(name) {
-    const results = [];
-    for (const [key, value] of this.meta.entries()) {
-      if (this.convertToRegExp(String(key)).test(name)) {
-        results.push([key, value]);
+    if (!this._findCache) this._findCache = /* @__PURE__ */ new Map();
+    let keys = this._findCache.get(name);
+    if (!keys) {
+      keys = [];
+      for (const key of this.meta.keys()) {
+        if (this.convertToRegExp(String(key)).test(name)) keys.push(key);
       }
+      if (this._findCache.size >= A_META_CONSTANTS__FIND_CACHE_MAX_SIZE) this._findCache.clear();
+      this._findCache.set(name, keys);
     }
+    const results = [];
+    for (const key of keys) results.push([key, this.meta.get(key)]);
     return results;
   }
   /**
@@ -1523,6 +1538,7 @@ var _A_Meta = class _A_Meta {
    * Method to clear the map
    */
   clear() {
+    this._findCache = void 0;
     this.meta.clear();
   }
   /**
@@ -2215,7 +2231,13 @@ function A_Dependency_Flat() {
 chunkPK6SKIKE_cjs.__name(A_Dependency_Flat, "A_Dependency_Flat");
 
 // src/lib/A-Dependency/A-Dependency-Load.decorator.ts
-function A_Dependency_Load() {
+function A_Dependency_Load(source) {
+  if (source !== void 0 && (typeof source !== "string" || !source)) {
+    throw new A_DependencyError(
+      A_DependencyError.InvalidLoadPath,
+      `A-Load decorator requires a non-empty source string when a source is provided`
+    );
+  }
   return function(target, methodName, parameterIndex) {
     const componentName = A_CommonHelper.getComponentName(target);
     if (!A_TypeGuards.isTargetAvailableForInjection(target)) {
@@ -2241,7 +2263,8 @@ function A_Dependency_Load() {
     const existedMeta = inheritedMeta ? inheritedMeta.clone() : new A_Meta();
     const paramsArray = existedMeta.get(method) ? [...existedMeta.get(method)] : [];
     paramsArray[parameterIndex].resolutionStrategy = {
-      load: true
+      load: true,
+      source
     };
     existedMeta.set(method, paramsArray);
     A_Context.meta(target).set(
@@ -2452,7 +2475,16 @@ var _A_Dependency = class _A_Dependency {
     return A_Dependency_Require;
   }
   /**
-   * Allows to indicate which dependency should be loaded from a specific path
+   * Marks an injected parameter as loadable: when it is not in the scope, the
+   * scope's A_DependencyLoader loads it (optionally from `source`) before the step runs.
+   * 
+   * @returns 
+   */
+  static get Load() {
+    return A_Dependency_Load;
+  }
+  /**
+   * Alias of {@link A_Dependency.Load}
    * 
    * @returns 
    */
@@ -2510,6 +2542,9 @@ var _A_Dependency = class _A_Dependency {
   }
   get load() {
     return this._resolutionStrategy.load;
+  }
+  get source() {
+    return this._resolutionStrategy.source;
   }
   /**
    * Indicates cases when it's necessary to search across all instances
@@ -2595,6 +2630,7 @@ var _A_Dependency = class _A_Dependency {
       all: this.all,
       require: this.require,
       load: this.load,
+      source: this.source,
       parent: this.parent,
       flat: this.flat,
       create: this.create,
@@ -2606,6 +2642,12 @@ var _A_Dependency = class _A_Dependency {
 };
 chunkPK6SKIKE_cjs.__name(_A_Dependency, "A_Dependency");
 var A_Dependency = _A_Dependency;
+
+// src/lib/A-Dependency/A-Dependency-Loader.fragment.ts
+var _A_DependencyLoader = class _A_DependencyLoader extends A_Fragment {
+};
+chunkPK6SKIKE_cjs.__name(_A_DependencyLoader, "A_DependencyLoader");
+var A_DependencyLoader = _A_DependencyLoader;
 
 // src/helpers/A_TypeGuards.helper.ts
 var _A_TypeGuards = class _A_TypeGuards {
@@ -3101,6 +3143,7 @@ var A_StageError = _A_StageError;
 
 // src/lib/A-Stage/A-Stage.class.ts
 var _stepNeedsOwnScope = /* @__PURE__ */ new WeakMap();
+var _stepLoadables = /* @__PURE__ */ new WeakMap();
 var _A_Stage = class _A_Stage {
   /**
    * A_Stage is a callable A_Function within A_Feature that should be run with specific parameters.
@@ -3113,6 +3156,11 @@ var _A_Stage = class _A_Stage {
      * Indicates the current status of the stage
      */
     this._status = "INITIALIZED" /* INITIALIZED */;
+    /**
+     * Set once the loadable injections were loaded, so a loader that could not
+     * provide a dependency does not cause another load round.
+     */
+    this._loaded = false;
     this._feature = feature;
     this._definition = step;
   }
@@ -3286,11 +3334,61 @@ var _A_Stage = class _A_Stage {
     return true;
   }
   /**
+   * The step handler's injections marked with `@A_Dependency.Load()`.
+   */
+  loadableInjections(scope, step) {
+    let result = _stepLoadables.get(step);
+    if (result) return result;
+    const target = step.dependency.target;
+    try {
+      const resolverConstructor = target || scope.resolveConstructor(step.dependency.name);
+      result = resolverConstructor ? A_Context.meta(resolverConstructor).injections(step.handler).filter((dependency) => dependency.load) : [];
+    } catch {
+      result = [];
+    }
+    if (target)
+      _stepLoadables.set(step, result);
+    return result;
+  }
+  /**
+   * Loads the missing `@A_Dependency.Load()` injections, then processes the stage.
+   */
+  async loadAndProcess(loadScope, pending, scope) {
+    try {
+      await Promise.all(pending.map((dependency) => loadScope.load(dependency)));
+    } catch (error) {
+      const loadError = new A_StageError({
+        title: A_StageError.ArgumentsResolutionError,
+        description: `Failed to load ${pending.map((d) => d.name).join(", ")} for handler '${this._definition.handler}' in stage ${this.name} (scope: ${loadScope.name}).`,
+        originalError: error
+      });
+      this.failed(loadError);
+      if (this._definition.throwOnError) return;
+      throw loadError;
+    }
+    this._loaded = true;
+    await this.process(scope);
+  }
+  /**
    * This method processes the stage by executing all the steps
    * 
    * @param scope - Scope to be used to resolve the steps dependencies
    */
   process(scope) {
+    if (!this.isProcessed && !this._loaded) {
+      const loadables = this.loadableInjections(
+        A_TypeGuards.isScopeInstance(scope) ? scope : this._feature.effectiveScope,
+        this._definition
+      );
+      if (loadables.length) {
+        const loadScope = A_TypeGuards.isScopeInstance(scope) ? scope : this._feature.effectiveScope;
+        const pending = loadables.filter((dependency) => loadScope.needsLoad(dependency));
+        if (pending.length) {
+          this._status = "PROCESSING" /* PROCESSING */;
+          return this.loadAndProcess(loadScope, pending, scope);
+        }
+      }
+    }
     const targetScope = A_TypeGuards.isScopeInstance(scope) ? scope : this._feature.stepScope(this.needsOwnScope(this._definition));
     if (!this.isProcessed) {
       this._status = "PROCESSING" /* PROCESSING */;
@@ -3302,20 +3400,11 @@ var _A_Stage = class _A_Stage {
       const { component, method, params } = call;
       const result = component[method](...params);
       if (A_TypeGuards.isPromiseInstance(result)) {
-        return new Promise(
-          async (resolve, reject) => {
-            try {
-              await result;
-              this.completed();
-              return resolve();
-            } catch (error) {
-              this.failed(error);
-              if (this._definition.throwOnError) {
-                return resolve();
-              } else {
-                return reject(error);
-              }
-            }
+        return result.then(
+          () => this.completed(),
+          (error) => {
+            this.failed(error);
+            if (!this._definition.throwOnError) throw error;
           }
         );
       } else {
@@ -3330,7 +3419,11 @@ var _A_Stage = class _A_Stage {
     this._status = "COMPLETED" /* COMPLETED */;
   }
   failed(error) {
-    this._error = error instanceof A_Error ? error : new A_Error(error);
+    this._error = error instanceof A_Error ? error : A_BasicTypeGuards.isError(error) || A_BasicTypeGuards.isString(error) ? new A_Error(error) : new A_Error({
+      title: A_CONSTANTS__ERROR_CODES.UNEXPECTED_ERROR,
+      description: String(error),
+      originalError: error
+    });
     this._status = "FAILED" /* FAILED */;
   }
   // ==========================================
@@ -3615,6 +3708,16 @@ var _A_Feature = class _A_Feature {
    */
   stepScope(needsOwnScope) {
     return needsOwnScope || this._scopeAllocated ? this.scope : this._effectiveScope;
+  }
+  /**
+   * The scope the feature was called in (component / caller / external scope).
+   * Lazily loaded dependencies (`@A_Dependency.Load()`) are registered here so they
+   * outlive the feature and take part in later features of the same scope.
+   *
+   * @internal used by A_Stage
+   */
+  get effectiveScope() {
+    return this._effectiveScope;
   }
   /**
    * The number of stages in the feature
@@ -4136,6 +4239,16 @@ var _A_Scope = class _A_Scope {
      * Cleared on every bumpVersion() call.
      */
     this._resolveAllCache = /* @__PURE__ */ new Map();
+    /**
+     * Set while this scope's feature fingerprint is being computed (cycle guard).
+     */
+    this._ffpComputing = false;
+    /**
+     * `hasFlat` answers that come from this scope's own allowed sets (not from
+     * its issuer), valid for `_hasFlatStamp` — the scope's own version.
+     */
+    this._hasFlatCache = /* @__PURE__ */ new Map();
+    this._hasFlatStamp = -1;
     // ===========================================================================
     // --------------------ALLowed Constructors--------------------------------
     // ===========================================================================
@@ -4179,6 +4292,11 @@ var _A_Scope = class _A_Scope {
      * Storage for imported scopes 
      */
     this._imports = /* @__PURE__ */ new Set();
+    /**
+     * In-flight `load()` calls, keyed by dependency name + source, so concurrent
+     * loads of the same dependency share one loader call.
+     */
+    this._loading = /* @__PURE__ */ new Map();
     /**
      * Downstream scopes that `inherit()` from us or `import()` us. Used by
      * `destroy()` to detach them. Cache invalidation does NOT walk this set:
@@ -4259,6 +4377,28 @@ var _A_Scope = class _A_Scope {
     }
     return this._cachedFingerprint;
   }
+  /**
+   * Returns a fingerprint of what decides a feature's steps in this scope: the
+   * components and containers `has()` finds through the parent chain (allowed
+   * components, a container issuer) and imports. Entities, fragments and errors
+   * never contribute steps, so they are left out — and a scope that adds none
+   * of the above (an ARE node's scope, a call's scope) shares its parent's
+   * fingerprint, so the feature templates built for the parent are reused.
+   *
+   * [!] The issuer is read when the fingerprint is computed: it is fixed when the scope is allocated.
+   */
+  get featureFingerprint() {
+    this._validateCaches();
+    if (this._cachedFeatureFingerprint !== void 0)
+      return this._cachedFeatureFingerprint;
+    this._ffpComputing = true;
+    try {
+      this._cachedFeatureFingerprint = this.computeFeatureFingerprint(/* @__PURE__ */ new Set());
+    } finally {
+      this._ffpComputing = false;
+    }
+    return this._cachedFeatureFingerprint;
+  }
   // ===========================================================================
   // --------------------Readonly Registered Properties--------------------------
   // ===========================================================================
@@ -4329,6 +4469,7 @@ var _A_Scope = class _A_Scope {
     this._resolveFlatAllCache.clear();
     this._resolveAllCache.clear();
     this._cachedFingerprint = void 0;
+    this._cachedFeatureFingerprint = void 0;
   }
   /**
    * Must be called before reading any cache that may depend on parent or
@@ -4410,6 +4551,31 @@ var _A_Scope = class _A_Scope {
     tokens.delete(child);
   }
   /**
+   * Computes the feature fingerprint (see `featureFingerprint`): the parent's,
+   * unchanged when this scope adds no components, container issuer or imports.
+   */
+  computeFeatureFingerprint(visited) {
+    if (visited.has(this)) return "~circular~";
+    visited.add(this);
+    const parent = this._parent;
+    const parentPart = !parent ? "-" : parent._ffpComputing || visited.has(parent) ? "~circular~" : parent.featureFingerprint;
+    const issuer = A_Context.issuer(this);
+    const containerIssuer = A_TypeGuards.isContainerInstance(issuer) ? _A_Scope.classKey(issuer.constructor) : "";
+    if (!this._allowedComponents.size && !this._imports.size && !containerIssuer)
+      return parentPart;
+    const raw = [
+      "P:" + parentPart,
+      "AC:" + Array.from(this._allowedComponents).map((c) => _A_Scope.classKey(c)).sort().join(","),
+      "CI:" + containerIssuer,
+      "I:" + Array.from(this._imports).map((s) => s.computeFeatureFingerprint(visited)).sort().join(",")
+    ].join("|");
+    let hash = 5381;
+    for (let i = 0; i < raw.length; i++) {
+      hash = (hash << 5) + hash + raw.charCodeAt(i) | 0;
+    }
+    return (hash >>> 0).toString(16);
+  }
+  /**
    * Computes a deterministic content-addressable fingerprint string.
    * Includes components, entities, fragments, errors, parent, and imports.
    */
@@ -4420,25 +4586,25 @@ var _A_Scope = class _A_Scope {
     const parent = this._parent;
     parts.push("P:" + (!parent ? "-" : parent._fpComputing || visited.has(parent) ? "~circular~" : parent.fingerprint));
     if (this._allowedComponents.size) {
-      const allowedComponentNames = Array.from(this._allowedComponents).map((c) => c.name).sort();
+      const allowedComponentNames = Array.from(this._allowedComponents).map((c) => _A_Scope.classKey(c)).sort();
       parts.push("AC:" + allowedComponentNames.join(","));
     } else {
       parts.push("AC:");
     }
     if (this._allowedEntities.size) {
-      const allowedEntityNames = Array.from(this._allowedEntities).map((e) => e.name).sort();
+      const allowedEntityNames = Array.from(this._allowedEntities).map((e) => _A_Scope.classKey(e)).sort();
       parts.push("AE:" + allowedEntityNames.join(","));
     } else {
       parts.push("AE:");
     }
     if (this._allowedFragments.size) {
-      const allowedFragmentNames = Array.from(this._allowedFragments).map((f) => f.name).sort();
+      const allowedFragmentNames = Array.from(this._allowedFragments).map((f) => _A_Scope.classKey(f)).sort();
       parts.push("AF:" + allowedFragmentNames.join(","));
     } else {
       parts.push("AF:");
     }
     if (this._allowedErrors.size) {
-      const allowedErrorNames = Array.from(this._allowedErrors).map((e) => e.name).sort();
+      const allowedErrorNames = Array.from(this._allowedErrors).map((e) => _A_Scope.classKey(e)).sort();
       parts.push("AR:" + allowedErrorNames.join(","));
     } else {
       parts.push("AR:");
@@ -4486,6 +4652,19 @@ var _A_Scope = class _A_Scope {
   static isEmptyQuery(query) {
     for (const _ in query) return false;
     return true;
+  }
+  /**
+   * A class in a fingerprint: its name plus its identity, so two classes of
+   * the same name (e.g. two versions of a package loaded into one process)
+   * never share cached feature templates.
+   */
+  static classKey(ctor) {
+    let id = _A_Scope._classIds.get(ctor);
+    if (id === void 0) {
+      id = ++_A_Scope._nextClassId;
+      _A_Scope._classIds.set(ctor, id);
+    }
+    return `${ctor.name}#${id}`;
   }
   static entityNameOf(ctor) {
     if (_entityNameCache.has(ctor)) return _entityNameCache.get(ctor);
@@ -4629,6 +4808,7 @@ var _A_Scope = class _A_Scope {
     this._allowedFragments.clear();
     this._allowedEntities.clear();
     this._allowedErrors.clear();
+    this._hasFlatCache.clear();
     for (const imp of this._imports) {
       imp._removeSubscriber(this);
     }
@@ -4789,6 +4969,26 @@ var _A_Scope = class _A_Scope {
     return found;
   }
   hasFlat(ctor) {
+    if (this._hasFlatStamp !== this._version) {
+      this._hasFlatCache.clear();
+      this._hasFlatStamp = this._version;
+    }
+    const known = this._hasFlatCache.get(ctor);
+    if (known !== void 0) return known;
+    const found = this.hasFlatInAllowed(ctor);
+    if (found !== void 0) {
+      this._hasFlatCache.set(ctor, found);
+      return found;
+    }
+    const issuer = this.issuer();
+    return !!issuer && (issuer.constructor === ctor || A_Context.isIndexedInheritedFrom(issuer.constructor, ctor));
+  }
+  /**
+   * hasFlat's lookup in the scope's own allowed sets: the answer for a scope,
+   * a name, a component, an entity, a fragment or an error constructor;
+   * `undefined` for any other constructor.
+   */
+  hasFlatInAllowed(ctor) {
     let found = false;
     switch (true) {
       // 1) Check if it's a Scope. It's always true since it returns itself
@@ -4826,11 +5026,8 @@ var _A_Scope = class _A_Scope {
         found = this.isAllowedError(ctor) || !!A_Context.findDescendantIn(ctor, this.allowedErrors);
         break;
       }
-      // 7) Check scope issuer
-      case (this.issuer() && (this.issuer().constructor === ctor || A_Context.isIndexedInheritedFrom(this.issuer().constructor, ctor))): {
-        found = true;
-        break;
-      }
+      default:
+        return void 0;
     }
     return found;
   }
@@ -5084,6 +5281,75 @@ var _A_Scope = class _A_Scope {
   resolve(param1) {
     const dependency = A_TypeGuards.isDependencyInstance(param1) ? param1 : new A_Dependency(param1);
     return this.resolveDependency(dependency);
+  }
+  /**
+   * Loads a dependency that is not registered yet (lazy loading).
+   * 
+   * - If the dependency already resolves, it is returned as is (nothing is loaded).
+   * - Otherwise the scope's A_DependencyLoader (own scope, parents or imports) loads it;
+   *   everything the loader returns is registered in THIS scope, so loaded components'
+   *   `@A_Feature.Extend` steps take part in features called in this scope from now on.
+   * - Concurrent loads of the same dependency in one scope share a single loader call.
+   * 
+   * [!] Throws A_ScopeError.ResolutionError when no A_DependencyLoader is available.
+   * 
+   * @param param1 - constructor, name or dependency to load
+   * @param source - where to load it from (passed to the loader as `dependency.source`)
+   * @returns the resolved dependency after loading (undefined if the loader could not provide it)
+   */
+  async load(param1, source) {
+    const dependency = A_TypeGuards.isDependencyInstance(param1) ? param1 : new A_Dependency(param1, { load: true, source });
+    const existing = this.resolveLoaded(dependency);
+    if (existing !== void 0)
+      return existing;
+    const key = `${dependency.name}#${dependency.source || ""}`;
+    let pending = this._loading.get(key);
+    if (!pending) {
+      pending = this.loadWithLoader(dependency).finally(() => this._loading.delete(key));
+      this._loading.set(key, pending);
+    }
+    await pending;
+    return this.resolveDependency(dependency);
+  }
+  /**
+   * Whether a loadable dependency is still missing in this scope
+   * (and an A_DependencyLoader is available to load it).
+   * 
+   * Used by A_Stage to decide whether a step must await `load` before it runs.
+   * 
+   * @param dependency 
+   * @returns 
+   */
+  needsLoad(dependency) {
+    return dependency.load && this.resolveLoaded(dependency) === void 0 && !!this.resolve(A_DependencyLoader);
+  }
+  /**
+   * Resolves a dependency without throwing (even when marked as required).
+   * Empty arrays are treated as "not resolved".
+   */
+  resolveLoaded(dependency) {
+    const probe = new A_Dependency(
+      dependency.target || dependency.name,
+      { ...dependency.resolutionStrategy, require: false }
+    );
+    const resolved = this.resolveDependency(probe);
+    if (Array.isArray(resolved))
+      return resolved.length ? resolved : void 0;
+    return resolved || void 0;
+  }
+  /**
+   * Asks the A_DependencyLoader for the dependency and registers the result in this scope.
+   */
+  async loadWithLoader(dependency) {
+    const loader = this.resolve(A_DependencyLoader);
+    if (!loader)
+      throw new A_ScopeError(
+        A_ScopeError.ResolutionError,
+        `Unable to load dependency ${dependency.name}${dependency.source ? ` from ${dependency.source}` : ""}: no A_DependencyLoader is registered in the scope ${this.name} or its parents`
+      );
+    const loaded = await loader.load(dependency, this) || [];
+    for (const item of loaded)
+      this.register(item);
   }
   resolveOnce(param1) {
     this._validateCaches();
@@ -5631,6 +5897,9 @@ var _A_Scope = class _A_Scope {
   }
 };
 chunkPK6SKIKE_cjs.__name(_A_Scope, "A_Scope");
+/** Per-process identity of each class seen in a fingerprint. */
+_A_Scope._classIds = /* @__PURE__ */ new WeakMap();
+_A_Scope._nextClassId = 0;
 var A_Scope = _A_Scope;
 
 // src/lib/A-Scope/A-Scope.error.ts
@@ -5736,7 +6005,7 @@ var _A_Context = class _A_Context {
     /**
      * Two-level cache for featureTemplate results.
      * Outer key: component object reference (WeakMap — no string needed, O(1) lookup, GC-friendly).
-     * Inner key: `${featureName}::s${scope.fingerprint}::m${metaVersion}` — no getComponentName.
+     * Inner key: `${featureName}::s${scope.featureFingerprint}::m${metaVersion}` — no getComponentName.
      * Automatically invalidated when scope fingerprint or meta version changes.
      */
     this._featureCache = /* @__PURE__ */ new WeakMap();
@@ -6183,7 +6452,7 @@ var _A_Context = class _A_Context {
         if (meta.extensions(callNames[i]).length > 0) return true;
       }
     }
-    this.storeFeatureTemplate(instance, componentCtor, cacheKey, []);
+    this.storeFeatureTemplate(instance, componentCtor, this.featureCacheKey(name, effectiveScope, instance), []);
     return false;
   }
   static featureTemplate(name, component, scope = this.scope(component)) {
@@ -6203,7 +6472,7 @@ var _A_Context = class _A_Context {
       ...this.featureDefinition(name, component),
       ...this.featureExtensions(name, component, scope)
     ];
-    this.storeFeatureTemplate(instance, componentCtor, cacheKey, steps);
+    this.storeFeatureTemplate(instance, componentCtor, this.featureCacheKey(name, scope, instance), steps);
     return steps;
   }
   /**
@@ -6211,7 +6480,7 @@ var _A_Context = class _A_Context {
    * (featureTemplate, hasFeature) uses an identical key and can never drift.
    */
   static featureCacheKey(name, scope, instance) {
-    return `${String(name)}::s${scope.fingerprint}::m${instance._metaVersion}`;
+    return `${String(name)}::s${scope.featureFingerprint}::m${instance._metaVersion}`;
   }
   /**
    * Stores a built feature template in the two-level `_featureCache`, creating
@@ -7174,6 +7443,7 @@ exports.A_Context = A_Context;
 exports.A_ContextError = A_ContextError;
 exports.A_Dependency = A_Dependency;
 exports.A_DependencyError = A_DependencyError;
+exports.A_DependencyLoader = A_DependencyLoader;
 exports.A_Dependency_All = A_Dependency_All;
 exports.A_Dependency_Default = A_Dependency_Default;
 exports.A_Dependency_Flat = A_Dependency_Flat;

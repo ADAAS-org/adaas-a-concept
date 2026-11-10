@@ -14,18 +14,20 @@ import { A_CommonHelper} from "@adaas/a-concept/helpers/A_Common.helper";
 
 
 /**
- * Should indicate which Load is required
+ * Marks an injected parameter as loadable. If the dependency is not in the scope
+ * when a feature step runs, the scope's A_DependencyLoader loads it first
+ * (see A_Scope.load). `source` is passed to the loader as-is (package specifier, URL, …).
  */
 export function A_Dependency_Load(
-
+    source?: string
 ): A_TYPES__A_Dependency_LoadDecoratorReturn {
 
-    // if (!path || typeof path !== 'string') {
-    //     throw new A_DependencyError(
-    //         A_DependencyError.InvalidLoadPath,
-    //         `A-Load decorator requires a valid path string to the dependency`
-    //     );
-    // }
+    if (source !== undefined && (typeof source !== 'string' || !source)) {
+        throw new A_DependencyError(
+            A_DependencyError.InvalidLoadPath,
+            `A-Load decorator requires a non-empty source string when a source is provided`
+        );
+    }
 
     return function (
         target: A_TYPES__InjectableTargets,
@@ -68,7 +70,8 @@ export function A_Dependency_Load(
 
         // set the parameter injection info
         paramsArray[parameterIndex].resolutionStrategy = {
-            load: true
+            load: true,
+            source,
         }
         // save back the updated injections array
         existedMeta.set(method, paramsArray);

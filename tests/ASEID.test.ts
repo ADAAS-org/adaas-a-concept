@@ -124,15 +124,20 @@ describe('ASEID Tests', () => {
         expect(ASEID.compare(aseid, str)).toBe(true);
     });
 
-    it('Should reject "|" and other invalid characters', async () => {
+    it('Should reject "|" and other invalid characters in the string form', async () => {
         expect(ASEID.isASEID('my|concept@scope:entity:id')).toBe(false);
         expect(ASEID.isASEID('concept@scope:entity:i|d')).toBe(false);
         expect(ASEID.isASEID('concept@scope:entity:id@v1|2')).toBe(false);
+        expect(() => new ASEID('concept@scope:entity:i|d')).toThrow();
+    });
 
-        expect(() => new ASEID({ entity: 'entity', id: 'a|b' })).toThrow();
-        expect(() => new ASEID({ entity: 'ent:ity', id: 'abc' })).toThrow();
-        expect(() => new ASEID({ entity: 'entity', id: 'abc', shard: 's@1' })).toThrow();
-        expect(() => new ASEID({ entity: 'entity', id: 'a.b' })).toThrow();
+    it('Should NOT throw when built from an object with non-canonical parts (backward compatible)', async () => {
+        // e.g. are-html attribute names and owner ASEIDs used as ids
+        const aseid = new ASEID({ concept: 'c', scope: 's', entity: 'a-input:submit', id: 'a-sso@core:user:1' });
+
+        expect(aseid.entity).toBe('a-input:submit');
+        expect(aseid.id).toBe('a-sso@core:user:1');
+        expect(ASEID.isASEID(aseid.toString())).toBe(false);
     });
 
     it('Should accept "." in the entity (e.g. event attributes like keydown.enter)', async () => {
